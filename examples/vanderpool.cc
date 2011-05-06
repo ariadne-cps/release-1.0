@@ -81,7 +81,7 @@ int main()
     g << orbit;
     g.write("vanderpool-orbit-forward");
 
-    evolver.settings().direction = BACKWARD;
+    evolver.settings().direction = DIRECTION_BACKWARD;
 
     initial_enclosure = HybridEnclosureType(one,orbit.final().bounding_box());
 
