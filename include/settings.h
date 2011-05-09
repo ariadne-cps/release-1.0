@@ -296,10 +296,12 @@ class VerificationSettings {
 	 * due to error radii. */
 	bool use_param_midpoints_for_disproving;
 
-        //! \brief Enable forward/backward refinement for safety proving.
- 	//! \details The refinement itself is done only if an outer approximation is obtained as a
- 	//! result of the first forward phase.
- 	bool enable_fb_refinement_for_safety_proving;
+    //! \brief Enable forward/backward refinement for proving.
+ 	//! \details The refinement itself is done only after a reachability restriction is available (including the
+	//! depth at which such restriction is first obtained).
+	//! If quick proving is allowed, then the refinement is actually
+	//! performed only once, i.e. when a reachability restriction is obtained for the first time.
+ 	bool enable_fb_refinement_for_proving;
 };
 
 inline
@@ -341,7 +343,7 @@ VerificationSettings::VerificationSettings() :
     	allow_quick_dominance_disproving(true),
     	use_param_midpoints_for_proving(false),
     	use_param_midpoints_for_disproving(true),
-	enable_fb_refinement_for_safety_proving(false)
+    	enable_fb_refinement_for_proving(false)
 { }
 
 
@@ -439,7 +441,7 @@ operator<<(std::ostream& os, const VerificationSettings& p)
        << ",\n  allow_quick_dominance_disproving=" << p.allow_quick_dominance_disproving
        << ",\n  use_param_midpoints_for_proving=" << p.use_param_midpoints_for_proving
        << ",\n  use_param_midpoints_for_disproving=" << p.use_param_midpoints_for_disproving
-       << ",\n  enable_fb_refinement_for_safety_proving=" << p.enable_fb_refinement_for_safety_proving
+       << ",\n  enable_fb_refinement_for_safety_proving=" << p.enable_fb_refinement_for_proving
        << "\n)\n";
     return os;
 }

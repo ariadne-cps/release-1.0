@@ -60,6 +60,30 @@ Verifier::~Verifier()
 {
 }
 
+
+bool
+Verifier::
+_forward_backward_refinement_check(
+		SystemType& system,
+		const HybridImageSet& initial_set,
+		const HybridBoxes& target_region,
+		const HybridGridTreeSet& reach) const
+{
+	bool result = false;
+
+	ARIADNE_LOG(5, "Performing forward-backward refinement...\n");
+	if (_outer_analyser->fb_refinement_check(system,initial_set,target_region,reach)) {
+		ARIADNE_LOG(5, "Successful.\n");
+		result = true;
+	} else {
+		ARIADNE_LOG(5, "Failed.\n");
+		result = false;
+	}
+
+	return result;
+}
+
+
 bool
 Verifier::
 _safety_proving_once(
@@ -94,31 +118,27 @@ _safety_proving_once(
 
 		HybridGridTreeSet reach = _outer_analyser->outer_chain_reach(system,initial_set,DIRECTION_FORWARD,terminate_as_soon_as_unprovable,safe_region,NOT_INSIDE_TARGET);
 
-		result = definitely(reach.subset(safe_region));
-
-		ARIADNE_LOG(5, "The reachable set is " << (!result ? "not ":"") << "inside the safe region.\n");
-
-		// We refine only if we have no result from the initial reach set and the grid has already been set using a coarse
-		// outer approximation
-		if (!result && _safety_coarse_outer_approximation->is_set() && _settings->enable_fb_refinement_for_safety_proving) {
-			ARIADNE_LOG(5, "Performing forward-backward refinement...\n");
-			if (_outer_analyser->fb_refinement_check(system,initial_set,safe_region,reach))
-				result = true;
-		}
-
 		if (_safety_coarse_outer_approximation->is_set())
 			_safety_reachability_restriction = reach;
 		else
 			_safety_coarse_outer_approximation->set(reach);
 
+		result = definitely(reach.subset(safe_region));
+
+		ARIADNE_LOG(5, "The reachable set is " << (!result ? "not ":"") << "inside the safe region.\n");
+
 		if (_settings->plot_results)
 			_plot_reach(reach,UPPER_SEMANTICS);
 
+		// We refine only if we have no result from the initial reach set and we have a restriction on the reachability
+		if (!result && !_safety_reachability_restriction.empty() && _settings->enable_fb_refinement_for_proving)
+			result = _forward_backward_refinement_check(system,initial_set,safe_region,_safety_reachability_restriction);
+
 	} catch (ReachOutOfDomainException ex) {
-		ARIADNE_LOG(5, "The outer reached region is partially out of the domain (" << ex.what() << ").\n");
+		ARIADNE_LOG(5, "The outer reached region is partially out of the domain (skipped).\n");
 		result = false;
 	} catch (ReachOutOfTargetException ex) {
-		ARIADNE_LOG(5, "The outer reached region is partially out of the safe region (" << ex.what() << ").\n");
+		ARIADNE_LOG(5, "The outer reached region is not inside the safe region (skipped).\n");
 		result = false;
 	}
 
@@ -894,12 +914,21 @@ Verifier::_dominance_proving_once(
 
 		result = inside(dominating_bounds,shrinked_dominated_bounds);
 
+		ARIADNE_LOG(4, "The outer reached region of the dominating system is " << (!result ? "not ":"") <<
+					   "inside the projected shrinked lower reached region of the dominated system.\n");
+
+		// We refine only if we have no result from the initial reach set and we have a restriction on the reachability
+		if (!result && !_dominating_reachability_restriction.empty() && _settings->enable_fb_refinement_for_proving) {
+			result = _forward_backward_refinement_check(dominating.getSystem(),dominating.getInitialSet(),
+					shrinked_dominated_bounds_on_dominating_space,_dominating_reachability_restriction);
+		}
+
 	} catch (ReachOutOfDomainException ex) {
-		ARIADNE_LOG(4,"The outer reached region of the dominating system is partially out of the domain.\n");
+		ARIADNE_LOG(4,"The outer reached region of the dominating system is partially out of the domain (skipped).\n");
 		result = false;
 	} catch (ReachOutOfTargetException ex) {
 		ARIADNE_LOG(4,"The outer reached region of the dominating system is not inside " +
-				"the projected shrinked lower reached region of the dominated system.\n");
+				"the projected shrinked lower reached region of the dominated system (skipped).\n");
 		result = false;
 	}
 
@@ -937,11 +966,11 @@ Verifier::_dominance_disproving_once(
 		result = !inside(shrinked_dominating_bounds,dominated_bounds);
 
 	} catch (ReachOutOfDomainException ex) {
-		ARIADNE_LOG(4,"The outer reached region of the dominated system is partially out of the domain.\n");
+		ARIADNE_LOG(4,"The outer reached region of the dominated system is partially out of the domain (skipped).\n");
 		result = false;
 	} catch (ReachEnclosesTargetException ex) {
 		ARIADNE_LOG(4,"The outer reached region of the dominated system encloses " +
-				"the projected shrinked lower reached region of the dominated system.\n");
+				"the projected shrinked lower reached region of the dominated system (skipped).\n");
 		result = true;
 	}
 
@@ -1018,15 +1047,15 @@ _dominance_outer_bounds(
 	HybridGridTreeSet reach = _outer_analyser->outer_chain_reach(verInput.getSystem(),verInput.getInitialSet(),
 			DIRECTION_FORWARD,terminate_as_soon_as_unprovable,lower_bounds_on_this_space,SUPERSET_OF_TARGET);
 
-	Box projected_bounds = Ariadne::project(reach.bounding_box(),verInput.getProjection());
-
-	ARIADNE_LOG(5,"Projected " << descriptor << " bounds: " << projected_bounds << "\n");
-
 	if (!outer_approximation_cache.is_set()) {
 		outer_approximation_cache.set(reach);
 	} else {
 		reachability_restriction = reach;
 	}
+
+	Box projected_bounds = Ariadne::project(reach.bounding_box(),verInput.getProjection());
+
+	ARIADNE_LOG(5,"Projected " << descriptor << " bounds: " << projected_bounds << "\n");
 
 	if (_settings->plot_results)
 		_plot_dominance(reach,dominanceSystem,UPPER_SEMANTICS);

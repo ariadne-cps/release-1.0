@@ -353,6 +353,12 @@ class Verifier
 	//@{
 	//! \name Other helper methods
 
+	bool _forward_backward_refinement_check(
+			HybridAutomaton& system,
+			const HybridImageSet& initial_set,
+			const HybridBoxes& target_region,
+			const HybridGridTreeSet& reach) const;
+
 	/* \brief Processes the \a result in order to update the \a positive_int interval, possibly updating \a negative_int too. */
 	void _process_positive_bisection_result(
 			const tribool& result,
