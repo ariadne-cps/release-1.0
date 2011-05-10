@@ -68,6 +68,17 @@ superset(const HybridBoxes& box1, const HybridBoxes& box2)
 }
 
 
+bool
+covers(const HybridBoxes& hboxes, const HybridBox& hbox)
+{
+	HybridBoxes::const_iterator hboxes_in_location = hboxes.find(hbox.first);
+	ARIADNE_ASSERT_MSG(hboxes_in_location != hboxes.end(),
+			"The location " << hbox.first << " is not present in the HybridBoxes.");
+
+	return hboxes_in_location->second.covers(hbox.second);
+}
+
+
 HybridBoxes
 shrink_in(const HybridBoxes& box, const HybridFloatVector& epsilon)
 {

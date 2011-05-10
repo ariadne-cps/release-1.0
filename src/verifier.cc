@@ -114,7 +114,7 @@ _safety_proving_once(
 
 		// We quicken the outer reachability calculation only if we already have a constraint available,
 		// otherwise we would never obtain an outer approximation for tuning the grid and restricting the reachability.
-		bool terminate_as_soon_as_unprovable = _settings->allow_quick_safety_proving && !_safety_reachability_restriction.empty();
+		bool terminate_as_soon_as_unprovable = _settings->allow_quick_proving && !_safety_reachability_restriction.empty();
 
 		HybridGridTreeSet reach = _outer_analyser->outer_chain_reach(system,initial_set,DIRECTION_FORWARD,terminate_as_soon_as_unprovable,safe_region,NOT_INSIDE_TARGET);
 
@@ -176,7 +176,7 @@ _safety_disproving_once(
 
 	// We have no benefit in getting the "whole" lower chain reachability, if we already have disproved:
 	// hence we can safely quicken the termination at any depth
-	bool terminate_as_soon_as_disproved = _settings->allow_quick_safety_disproving && true;
+	bool terminate_as_soon_as_disproved = _settings->allow_quick_disproving && true;
 
 	std::pair<HybridGridTreeSet,DisproveData> reachAndDisproveData =
 			_lower_analyser->lower_chain_reach(system,initial_set,safe_region,terminate_as_soon_as_disproved);
@@ -1042,7 +1042,9 @@ _dominance_outer_bounds(
 
 	ARIADNE_LOG(4,"Getting the outer reached region of the " << descriptor << " system...\n");
 
-	bool terminate_as_soon_as_unprovable = _settings->allow_quick_dominance_proving && !reachability_restriction.empty();
+	bool terminate_as_soon_as_unprovable = (dominanceSystem == DOMINATING_SYSTEM ?
+			_settings->allow_quick_proving : _settings->allow_quick_disproving)
+			&& !reachability_restriction.empty();
 
 	HybridGridTreeSet reach = _outer_analyser->outer_chain_reach(verInput.getSystem(),verInput.getInitialSet(),
 			DIRECTION_FORWARD,terminate_as_soon_as_unprovable,lower_bounds_on_this_space,SUPERSET_OF_TARGET);

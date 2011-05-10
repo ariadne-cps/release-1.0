@@ -192,8 +192,8 @@ class HybridReachabilityAnalyser
 			const HybridBoxes& target_bounds,
 			OuterReachabilitySkippingPolicy skippingPolicy) const;
 
-	/*! \brief Checks by means of forward/backward refinement if \a reachability of \a system (starting from
-	 * \a initial_set) is inside \a target_bounds */
+	/*! \brief Checks by means of forward/backward refinement if a refinement of \a reachability of \a system
+	 * (starting from \a initial_set) is inside \a target_bounds */
 	bool fb_refinement_check(
 			SystemType& system,
 			const HybridImageSet& initial_set,
@@ -375,6 +375,21 @@ class HybridReachabilityAnalyser
     std::list<RealConstantSet> _getSplitConstantsIntervalsSet(
     		HybridAutomaton system,
     		float tolerance) const;
+
+    /*! \brief Performs a check of one step (in a given \a direction) of the forward/backward refinement.
+     * \details Returns true if \a output_enclosures is empty, false if \a new_restriction is equal to
+     * \a old_restriction, indeterminate otherwise. */
+    tribool _fb_refinement_step_check(
+    		SystemType& system,
+    		const HybridImageSet& initial_set,
+    		const HybridBoxes& target_bounds,
+    		HybridGridTreeSet& old_restriction,
+    		HybridGridTreeSet& new_restriction,
+    		EvolutionDirection direction,
+    		string plot_dirpath);
+
+    /*! \brief Refines the analyser settings in forward/backward reachability refinement. */
+    void _fb_refine_settings();
 };
 
 template<class HybridEnclosureType>
@@ -512,6 +527,14 @@ HybridFloatVector getHybridMaximumAbsoluteDerivatives(
 		const SystemType& system,
 		const HybridGridTreeSet& outer_approx_constraint,
 		const HybridBoxes& domain_constraint);
+
+/*! \brief Checks whether \a new_restriction is equal to \a old_restriction.
+ * \details The routine assumes that \a new_restriction has been obtained from \a old_restriction, thus
+ * eliminating the need for any check of the two tree sets.
+ */
+bool new_reachability_restriction_equals(
+		const HybridGridTreeSet& new_restriction,
+		const HybridGridTreeSet& old_restriction);
 
 } // namespace Ariadne
 

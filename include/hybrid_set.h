@@ -113,6 +113,9 @@ hull(const HybridBoxes& box1, const HybridBoxes& box2);
 bool
 superset(const HybridBoxes& box1, const HybridBoxes& box2);
 
+bool
+covers(const HybridBoxes& hboxes, const HybridBox& hbox);
+
 HybridBoxes
 shrink_in(const HybridBoxes& box, const HybridFloatVector& epsilon);
 

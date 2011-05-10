@@ -711,11 +711,8 @@ fb_refinement_check(
 {
 	bool result = false;
 
-	HybridGrid grid = *_settings->grid;
 	HybridGridTreeSet forward_reach = reachability;
-	HybridGridTreeSet backward_reach(grid);
-
-	std::list<EnclosureType> initial_enclosures, final_enclosures;
+	HybridGridTreeSet backward_reach(*_settings->grid);
 
 	int& maximum_grid_depth = _settings->maximum_grid_depth;
 	int initial_maximum_grid_depth = maximum_grid_depth;
@@ -730,120 +727,50 @@ fb_refinement_check(
 	mkdir(foldername.c_str(),0777);
 	string plot_dirpath = foldername;
 
-	_plot_reach(forward_reach,plot_dirpath,"forward");
+	/* Given the initial set I, forward reachability F, and unsafe region U:
 
-	/* Flow, given the initial reachability O:
-	1. Refine the accuracy parameters;
-	2. Evaluate the final unsafe set H = O ∩ U ; if H = ∅, terminate with success (“true”);
-	3. Obtain the backward reachability B under the constraint set O;
-	4. If B = O, terminate with failure (“indeterminate”);
-	5. Refine the accuracy parameters;
-	6. Evaluate the new initial set I = B ∩ I; if I = ∅, terminate with success (“true”);
-	7. Starting from I = I , obtain the forward reachability O under the constraint set B;
-	8. If O = B, terminate with failure (“indeterminate”);
-	9. Restart from 1.
+	(if the settings can be refined)
+	1. Refine the accuracy settings;
+	2. Evaluate the final unsafe set H = F ∩ U ; if H = ∅, return TRUE;
+	3. If the accuracy is over the maximum, return FALSE;
+	4. Obtain the backward reachability B under the constraint set F;
+	5. If B = F, return FALSE;
+	(if the settings can be refined)
+	6. Refine the accuracy settings;
+	7. Evaluate the new initial set I = B ∩ I; if I = ∅, return TRUE;
+	8. If the accuracy is over the maximum, return FALSE;
+	9. Starting from I, obtain the forward reachability F under the constraint set B;
+	10. If F = B, return FALSE;
+
+	11. Restart from 1.
+
 	*/
 
 	while (true) {
 
-		++maximum_grid_depth;
-		_discretiser->settings().maximum_enclosure_cell = getMaximumEnclosureCell(grid,maximum_grid_depth);
-		for (std::map<DiscreteState,Float>::iterator step_it = _discretiser->settings().hybrid_maximum_step_size.begin();
-													 step_it != _discretiser->settings().hybrid_maximum_step_size.end();
-													 ++step_it) {
-			step_it->second /= 2;
-		}
-
-		ARIADNE_LOG(1,"Depth " << maximum_grid_depth << "\n");
-		forward_reach.mince(maximum_grid_depth);
-
-		HybridGridTreeSet final(grid);
-		final_enclosures.clear();
-		for (HybridGridTreeSet::const_iterator cell_it = forward_reach.begin(); cell_it != forward_reach.end(); ++cell_it) {
-			const DiscreteState& loc = cell_it->first;
-			const Box& cell_box = cell_it->second.box();
-			HybridBoxes::const_iterator target_bounds_for_location = target_bounds.find(loc);
-			if (target_bounds_for_location != target_bounds.end() && !target_bounds_for_location->second.covers(cell_box)) {
-				final_enclosures.push_back(EnclosureType(loc,cell_box));
-				final.adjoin(*cell_it);
-			}
-		}
-
-		ARIADNE_LOG(1,"Final enclosures size: " << final_enclosures.size() << "\n");
-
-		if (final_enclosures.empty()) {
-			result = true;
-			break;
-		}
-
-		_plot_reach(final,plot_dirpath,"final");
-
-		if (maximum_grid_depth > _settings->highest_maximum_grid_depth) {
+		if (maximum_grid_depth >= _settings->highest_maximum_grid_depth) {
 			result = false;
 			break;
 		}
 
-		ARIADNE_LOG(1,"Performing backward refinement...\n");
+		tribool backward_result = _fb_refinement_step_check(system,initial_set,target_bounds,forward_reach,
+				backward_reach,DIRECTION_BACKWARD,plot_dirpath);
 
-		backward_reach = _outer_chain_reach(system,final_enclosures,DIRECTION_BACKWARD,forward_reach);
+		if (!indeterminate(backward_result)) {
+			result = backward_result;
+			break;
+		}
 
-		_plot_reach(backward_reach,plot_dirpath,"backward");
-
-		HybridGridTreeSet temp_forward_reach = forward_reach;
-		temp_forward_reach.remove(backward_reach);
-		if (temp_forward_reach.empty()) {
+		if (maximum_grid_depth >= _settings->highest_maximum_grid_depth) {
 			result = false;
 			break;
 		}
 
-		++maximum_grid_depth;
-		_discretiser->settings().maximum_enclosure_cell = getMaximumEnclosureCell(grid,maximum_grid_depth);
-		for (std::map<DiscreteState,Float>::iterator step_it = _discretiser->settings().hybrid_maximum_step_size.begin();
-													 step_it != _discretiser->settings().hybrid_maximum_step_size.end();
-													 ++step_it) {
-			step_it->second /= 2;
-		}
+		tribool forward_result = _fb_refinement_step_check(system,initial_set,target_bounds,backward_reach,
+				forward_reach,DIRECTION_FORWARD,plot_dirpath);
 
-		ARIADNE_LOG(1,"Depth " << maximum_grid_depth << "\n");
-		backward_reach.mince(maximum_grid_depth);
-
-		HybridGridTreeSet initial(grid);
-		initial_enclosures.clear();
-		for (HybridGridTreeSet::const_iterator cell_it = backward_reach.begin(); cell_it != backward_reach.end(); ++cell_it) {
-			const DiscreteState& loc = cell_it->first;
-			const Box& cell_box = cell_it->second.box();
-			HybridBox hcell_box(loc,cell_box);
-
-			if (initial_set.overlaps(hcell_box)) {
-				initial_enclosures.push_back(EnclosureType(loc,cell_box));
-				initial.adjoin(*cell_it);
-			}
-		}
-
-		ARIADNE_LOG(1,"Initial enclosures size: " << initial_enclosures.size() << "\n");
-
-		if (initial_enclosures.empty()) {
-			result = true;
-			break;
-		}
-
-		_plot_reach(initial,plot_dirpath,"initial");
-
-		if (maximum_grid_depth > _settings->highest_maximum_grid_depth) {
-			result = false;
-			break;
-		}
-
-		ARIADNE_LOG(1,"Performing forward refinement...\n");
-
-		forward_reach = _outer_chain_reach(system,initial_enclosures,DIRECTION_FORWARD,backward_reach);
-
-		_plot_reach(forward_reach,plot_dirpath,"forward");
-
-		HybridGridTreeSet temp_backward_reach = backward_reach;
-		temp_backward_reach.remove(forward_reach);
-		if (temp_backward_reach.empty()) {
-			result = false;
+		if (!indeterminate(forward_result)) {
+			result = forward_result;
 			break;
 		}
 	}
@@ -851,6 +778,76 @@ fb_refinement_check(
 	_settings->maximum_grid_depth = initial_maximum_grid_depth;
 
 	return result;
+}
+
+
+tribool
+HybridReachabilityAnalyser::
+_fb_refinement_step_check(
+		SystemType& system,
+		const HybridImageSet& initial_set,
+		const HybridBoxes& target_bounds,
+		HybridGridTreeSet& old_restriction,
+		HybridGridTreeSet& new_restriction,
+		EvolutionDirection direction,
+		string plot_dirpath)
+{
+	// TODO: Completely remove the plotting calls.
+	bool plot = true;
+
+	int& maximum_grid_depth = _settings->maximum_grid_depth;
+
+	_fb_refine_settings();
+
+	ARIADNE_LOG(1,"Depth " << maximum_grid_depth << "\n");
+	old_restriction.mince(maximum_grid_depth);
+
+	HybridGridTreeSet output(*_settings->grid);
+	std::list<EnclosureType> starting_enclosures;
+	for (HybridGridTreeSet::const_iterator cell_it = old_restriction.begin(); cell_it != old_restriction.end(); ++cell_it) {
+		const DiscreteState& loc = cell_it->first;
+		const Box& cell_box = cell_it->second.box();
+		HybridBox hcell_box(loc,cell_box);
+
+		bool add_enclosure = (direction == DIRECTION_FORWARD ?
+				possibly(initial_set.overlaps(hcell_box)) : !Ariadne::covers(target_bounds,hcell_box));
+
+		if (add_enclosure) {
+			starting_enclosures.push_back(EnclosureType(loc,cell_box));
+			if (plot) output.adjoin(*cell_it);
+		}
+	}
+
+	ARIADNE_LOG(1,"Starting enclosures size: " << starting_enclosures.size() << "\n");
+
+	if (plot) _plot_reach(output,plot_dirpath,(direction == DIRECTION_FORWARD ? "initial" : "final"));
+
+	if (starting_enclosures.empty())
+		return true;
+
+	ARIADNE_LOG(1,"Performing " << (direction == DIRECTION_FORWARD ? "forward" : "backward") << " refinement...\n");
+
+	new_restriction = _outer_chain_reach(system,starting_enclosures,direction,old_restriction);
+
+	if (plot) _plot_reach(new_restriction,plot_dirpath,(direction == DIRECTION_FORWARD ? "forward" : "backward"));
+
+	if (new_reachability_restriction_equals(new_restriction,old_restriction))
+		return false;
+
+	return indeterminate;
+}
+
+void
+HybridReachabilityAnalyser::
+_fb_refine_settings()
+{
+	_settings->maximum_grid_depth++;
+	_discretiser->settings().maximum_enclosure_cell = getMaximumEnclosureCell(*_settings->grid,_settings->maximum_grid_depth);
+	for (std::map<DiscreteState,Float>::iterator step_it = _discretiser->settings().hybrid_maximum_step_size.begin();
+												 step_it != _discretiser->settings().hybrid_maximum_step_size.end();
+												 ++step_it) {
+		step_it->second /= 2;
+	}
 }
 
 
@@ -1702,6 +1699,17 @@ getHybridMaximumStepSize(
 	return hmss;
 }
 
+
+bool
+new_reachability_restriction_equals(
+		const HybridGridTreeSet& new_restriction,
+		const HybridGridTreeSet& old_restriction)
+{
+	HybridGridTreeSet old_restriction_copy = old_restriction;
+	old_restriction_copy.remove(new_restriction);
+
+	return old_restriction_copy.empty();
+}
 
 
 } // namespace Ariadne
