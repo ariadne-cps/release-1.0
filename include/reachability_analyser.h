@@ -193,7 +193,7 @@ class HybridReachabilityAnalyser
 			OuterReachabilitySkippingPolicy skippingPolicy) const;
 
 	/*! \brief Checks by means of forward/backward refinement if a refinement of \a reachability of \a system
-	 * (starting from \a initial_set) is inside \a target_bounds */
+	 * (starting from \a initial_set) is inside \a target_bounds. */
 	bool fb_refinement_check(
 			SystemType& system,
 			const HybridImageSet& initial_set,

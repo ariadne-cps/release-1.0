@@ -914,7 +914,7 @@ Verifier::_dominance_proving_once(
 
 		result = inside(dominating_bounds,shrinked_dominated_bounds);
 
-		ARIADNE_LOG(4, "The outer reached region of the dominating system is " << (!result ? "not ":"") <<
+		ARIADNE_LOG(4, "The outer reached region of the dominating system is " << (!result ? "not ": "") <<
 					   "inside the projected shrinked lower reached region of the dominated system.\n");
 
 		// We refine only if we have no result from the initial reach set and we have a restriction on the reachability

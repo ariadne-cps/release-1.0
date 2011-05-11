@@ -21,8 +21,8 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-/*! \file reachability_analyser.h
- *  \brief Methods for computing abstract reachable sets.
+/*! \file verifier.h
+ *  \brief Methods for performing verification over hybrid systems.
  */
 
 #ifndef ARIADNE_VERIFIER_H_
@@ -288,13 +288,13 @@ class Verifier
 			Semantics semantics) const;
 
 	/**
-	 * \brief Performs dominance checking with \a constants substituted into the \a dominating system.
+	 * \brief Performs dominance checking with \a constant substituted into the \a dominating system.
 	 * \details Verifies if the \a dominating system dominates the \a dominated system.
 	 */
 	tribool _dominance(
 			DominanceVerificationInput& dominating,
 			DominanceVerificationInput& dominated,
-			const RealConstant& constants) const;
+			const RealConstant& constant) const;
 
 	/**
 	 * \brief Performs dominance checking with \a constant substituted into the \a dominating system with a value of \a value.

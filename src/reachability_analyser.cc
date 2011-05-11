@@ -613,7 +613,7 @@ _outer_chain_reach_backward_pushSourceEnclosures(
 
 	ContinuousEnclosureType sourceEncl(sourceBox);
 
-	// In order to add a source hybrid box, just one possibly overlapping target enclosure is sufficient
+	// In order to add a source hybrid box, just one possibly overlapping target enclosure suffices
 	for (list<DiscreteTransition>::const_iterator trans_it = transitions.begin(); trans_it != transitions.end(); trans_it++)
 	{
 		ARIADNE_LOG(7,"Target: "<<trans_it->target()<<", Forced?: " << trans_it->forced() << "\n");
@@ -793,7 +793,7 @@ _fb_refinement_step_check(
 		string plot_dirpath)
 {
 	// TODO: Completely remove the plotting calls.
-	bool plot = true;
+	bool plot = false;
 
 	int& maximum_grid_depth = _settings->maximum_grid_depth;
 
@@ -959,7 +959,7 @@ _lower_chain_reach(const SystemType& system,
 	const uint concurrency = boost::thread::hardware_concurrency() - free_cores;
 	ARIADNE_ASSERT_MSG(concurrency>0 && concurrency <= boost::thread::hardware_concurrency(),"Error: concurrency must be positive and less than the maximum allowed.");
 
-	HybridGrid grid = *_settings->grid;
+	HybridGrid grid = grid_for(system,*_settings);
     GTS reach(grid);
 
 	TimeType lock_time(_settings->lock_to_grid_time,_settings->lock_to_grid_steps);
@@ -987,12 +987,12 @@ _lower_chain_reach(const SystemType& system,
 		ARIADNE_LOG(4,"Initial enclosures size = " << initial_enclosures.size() << "\n");
 
 		LowerChainReachWorker worker(_discretiser,initial_enclosures,system,lock_time,grid,
-									 _settings->maximum_grid_depth,concurrency, feasibility_region, terminate_as_soon_as_infeasible);
+				_settings->maximum_grid_depth,concurrency, feasibility_region, terminate_as_soon_as_infeasible);
 
 		ARIADNE_LOG(4,"Evolving and discretising...\n");
 
 		make_ltuple<std::pair<HUM,HUM>,EL,GTS,DisproveData>(evolve_sizes,final_enclosures,
-																new_reach,newFalsInfo) = worker.get_result();
+				new_reach,newFalsInfo) = worker.get_result();
 
 		globalFalsInfo.updateWith(newFalsInfo);
 
@@ -1031,7 +1031,7 @@ _filter_enclosures(
 
 		if (use_domain_checking && encl_box.disjoint(_settings->domain_bounds[loc])) {
 			ARIADNE_FAIL_MSG("Found an enclosure in location " << loc.name() << " with bounding box " << encl.continuous_state_set().bounding_box() <<
-							 " lying outside the domain in lower semantics: the domain is incorrect.\n");
+					" lying outside the domain in lower semantics: the domain is incorrect.\n");
 		}
 
 		/* If pruning is to be performed, push only a fraction of the final_enclosures into the initial_enclosures;

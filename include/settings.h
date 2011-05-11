@@ -52,7 +52,9 @@ class ContinuousEvolutionSettings {
     //! \brief Default constructer gives reasonable values. 
     ContinuousEvolutionSettings();
 
-	//! \brief The direction of continuous evolution. */
+	//! \brief The direction of continuous evolution.
+    //! \details Please note that backward hybrid evolution is supported only in the context of
+    //! outer chain reachability calculation. */
 	EvolutionDirection direction;
 
     //! \brief A suggested order for the representation of enclosure sets.
