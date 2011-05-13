@@ -270,7 +270,53 @@ class HybridImageSet
 //! A set comprising a ConstraintSet in each location.
 class HybridConstraintSet
     : public std::map<DiscreteState,ConstraintSet>
+    , public HybridRegularSetInterface
 {
+  public:
+	typedef std::map<DiscreteState,ConstraintSet>::iterator locations_iterator;
+	typedef std::map<DiscreteState,ConstraintSet>::const_iterator locations_const_iterator;
+	locations_iterator locations_begin() {
+		return this->std::map<DiscreteState,ConstraintSet>::begin(); }
+	locations_iterator locations_end() {
+		return this->std::map<DiscreteState,ConstraintSet>::end(); }
+	locations_const_iterator locations_begin() const {
+		return this->std::map<DiscreteState,ConstraintSet>::begin(); }
+	locations_const_iterator locations_end() const {
+		return this->std::map<DiscreteState,ConstraintSet>::end(); }
+
+	using std::map<DiscreteState,ConstraintSet>::insert;
+
+    virtual HybridConstraintSet* clone() const { return new HybridConstraintSet(*this); }
+    virtual HybridSpace space() const { return HybridSpace(*this); }
+    virtual ConstraintSet& operator[](DiscreteState q) {
+    	return this->std::map<DiscreteState,ConstraintSet>::operator[](q); }
+    virtual ConstraintSet const& operator[](DiscreteState q) const {
+        ARIADNE_ASSERT(this->find(q)!=this->locations_end());
+        return this->find(q)->second; }
+
+    virtual tribool overlaps(const HybridBox& hbx) const {
+        locations_const_iterator loc_iter=this->find(hbx.first);
+        if (loc_iter!=this->locations_end()) return loc_iter->second.overlaps(hbx.second);
+		else return false; }
+    virtual tribool disjoint(const HybridBox& hbx) const {
+        locations_const_iterator loc_iter=this->find(hbx.first);
+        if (loc_iter!=this->locations_end()) return loc_iter->second.disjoint(hbx.second);
+		else return true; }
+    virtual tribool covers(const HybridBox& hbx) const {
+        locations_const_iterator loc_iter=this->find(hbx.first);
+        if (loc_iter!=this->locations_end()) return loc_iter->second.covers(hbx.second);
+		else return false; }
+
+    virtual std::ostream& write(std::ostream& os) const {
+        os << "HybridConstraintSet(";
+        for(locations_const_iterator loc_iter=this->begin(); loc_iter!=this->locations_end(); ++loc_iter) {
+          if (loc_iter!=this->begin()) os << ", ";
+          os << loc_iter->first << ":" << loc_iter->second;
+        }
+        os << ")";
+        return os;
+    }
+
 };
 
 //! A set comprising a %ListSet in each location.

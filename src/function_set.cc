@@ -169,7 +169,10 @@ ImageSet::write(std::ostream& os) const
 }
 
 
-
+ConstraintSet::ConstraintSet()
+    : _codomain(), _function(new VectorScalingFunction())
+{
+}
 
 
 ConstraintSet::ConstraintSet(const Vector<Interval>& codom, const VectorFunction& fn)
@@ -195,28 +198,28 @@ ConstraintSet::dimension() const
 tribool
 ConstraintSet::disjoint(const Box& bx) const
 {
-    ARIADNE_NOT_IMPLEMENTED;
+    return ImageSet(bx,this->_function).disjoint(this->_codomain);
 }
 
 
 tribool
 ConstraintSet::overlaps(const Box& bx) const
 {
-    ARIADNE_NOT_IMPLEMENTED;
+    return ImageSet(bx,this->_function).overlaps(this->_codomain);
 }
 
 
 tribool
 ConstraintSet::covers(const Box& bx) const
 {
-    ARIADNE_NOT_IMPLEMENTED;
+    return Box(this->_function.evaluate(bx)).inside(this->_codomain);
 }
 
 
 std::ostream&
 ConstraintSet::write(std::ostream& os) const
 {
-    ARIADNE_NOT_IMPLEMENTED;
+    return os << "ConstraintSet( function=" << this->_function << ", codomain=" << this->_codomain << ")";
 }
 
 

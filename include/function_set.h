@@ -108,14 +108,18 @@ class ConstraintSet
     Vector<Interval> _codomain;
     VectorFunction _function;
   public:
+    //! \brief Default constructor constructs the singleton in \f$\R^0\f$.
+    ConstraintSet();
     //! \brief Construct the preimage of \a codom under \a fn.
     ConstraintSet(const Vector<Interval>& codom, const VectorFunction& fn);
-    //! \brief Construct from a polyhedron.
-    ConstraintSet(const Polyhedron& p);
     //! \brief The codomain of the set.
     const Vector<Interval>& codomain() const { return this->_codomain; }
     //! \brief The function used to define the set.
-    const VectorFunction& function() const { return this->_function; };
+    const VectorFunction& function() const { return this->_function; }
+
+    //! \brief Equality operator. Compares functions by referential equality.
+    bool operator==(const ConstraintSet& cos) const {
+        return this->_codomain==cos._codomain && this->_function.pointer()==cos._function.pointer(); }
 
     ConstraintSet* clone() const;
     uint dimension() const;

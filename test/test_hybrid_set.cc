@@ -43,6 +43,7 @@ class TestHybridSet {
   private:
     void test_hybrid_image_set();
     void test_hybrid_list_set();
+    void test_hybrid_constraint_set();
 };
 
 void 
@@ -50,6 +51,7 @@ TestHybridSet::test()
 {
     ARIADNE_TEST_CALL(test_hybrid_image_set());
     ARIADNE_TEST_CALL(test_hybrid_list_set());
+    ARIADNE_TEST_CALL(test_hybrid_constraint_set());
 }
 
 
@@ -78,6 +80,29 @@ TestHybridSet::test_hybrid_image_set()
 
 
 void 
+TestHybridSet::test_hybrid_constraint_set()
+{
+    HybridConstraintSet hcs;
+    Box bx=Box::unit_box(2);
+    Matrix<Float> A=Matrix<Float>::identity(2);
+    Vector<Float> b1=Vector<Float>::unit(2,0);
+    Vector<Float> b2=Vector<Float>::unit(2,1);
+    DiscreteState loc1(23);
+    DiscreteState loc2(5);
+    ConstraintSet cos1(bx,VectorAffineFunction(A,b1));
+    ConstraintSet cos2(bx,VectorAffineFunction(A,b2));
+    hcs.insert(make_pair(loc1,cos1));
+    hcs[loc2]=cos2;
+
+    HybridConstraintSet::locations_const_iterator iter=hcs.locations_begin();
+    ARIADNE_ASSERT_EQUAL(iter->second,cos1);
+    ++iter;
+    ARIADNE_ASSERT_EQUAL(iter->second,cos2);
+    ++iter;
+    ARIADNE_TEST_ASSERT(iter==hcs.locations_end());
+}
+
+void
 TestHybridSet::test_hybrid_list_set() 
 {
     HybridListSet<Box> hls;
