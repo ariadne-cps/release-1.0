@@ -10,8 +10,8 @@ pkgconfig_DATA = ariadne.pc
 AM_CXXFLAGS = -Wall -fno-strict-aliasing
 
 INCLUDES = -I$(top_srcdir)/include $(CAIRO_CFLAGS) $(GTK_CFLAGS)
-LIBS =  $(CAIRO_LIBS) $(GTK_LIBS)
-LDADD =  $(LIBS)
+LIBS +=  $(CAIRO_LIBS) $(GTK_LIBS)
+LDADD =  $(LIBS) 
 
 SRC = \
 	numeric.cc \

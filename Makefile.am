@@ -6,8 +6,8 @@ AM_CXXFLAGS = -Wall -fno-strict-aliasing
 
 ACLOCAL_AMFLAGS = -I m4
 
-EXAMPLES_DESTDIR = $(DESTDIR)/usr/share/doc/libariadne-dev
 DOCS_DESTDIR = $(DESTDIR)/usr/share/doc/libariadne-doc
+EXAMPLES_DESTDIR = $(DOCS_DESTDIR)
 
 .PHONY: shiny doc all lib examples profiles check-lib 
 
@@ -20,7 +20,9 @@ evn:
 
 shiny: maintainer-clean
 	-rm -rf *~ */*~
+	-mv doc/evolve.eps doc/evolve.eps.tmp 
 	-rm -f *.log */*.log */*.eps
+	-mv doc/evolve.eps.tmp doc/evolve.eps
 	-rm -rf docs 
 	-rm -rf test/*.png test/*.txt test/*.log  
 	-rm -rf */.deps */.libs
@@ -63,14 +65,18 @@ install-lib: lib
 
 install-doc: doc
 	install -d $(DOCS_DESTDIR)
-	cp -rp docs/refman.pdf $(DOCS_DESTDIR)/ariadne-manual.pdf
-	cp -rp docs/html $(DOCS_DESTDIR)
+	-cp -rp docs/refman.pdf $(DOCS_DESTDIR)/ariadne-manual.pdf
+	-cp -rp docs/html $(DOCS_DESTDIR)
 
 install-examples: install-cxx-examples 
 
 install-cxx-examples:
 	install -d $(EXAMPLES_DESTDIR)
-	tar -zcf $(EXAMPLES_DESTDIR)/c++-examples.tar.gz examples/*.h examples/*.cc \
-		examples/*.plt examples/Makefile-bin.am examples/Makefile-examples 
+	-mv examples/Makefile examples/Makefile.orig
+	-cp examples/Makefile-examples examples/Makefile
+	tar -zcf $(EXAMPLES_DESTDIR)/c++-examples.tar.gz examples/*.h \
+		examples/*.cc examples/*.plt examples/Makefile-bin.am \
+		examples/Makefile 
+	-mv examples/Makefile.orig examples/Makefile
 
 install-am: install-doc install-cxx-examples
