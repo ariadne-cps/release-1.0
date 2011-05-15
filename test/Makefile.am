@@ -33,6 +33,7 @@ check_PROGRAMS = \
 	test_taylor_function \
 	test_taylor_set \
 	test_function \
+	test_function_set \
 	test_grid_set \
 	test_hybrid_set \
 	test_discrete_evolution \
@@ -73,6 +74,7 @@ test_taylor_model_SOURCES=test_taylor_model.cc
 test_taylor_function_SOURCES=test_taylor_function.cc
 test_taylor_set_SOURCES=test_taylor_set.cc
 test_function_SOURCES=test_function.cc
+test_function_set_SOURCES=test_function_set.cc
 test_grid_set_SOURCES=test_grid_set.cc
 test_hybrid_io_automaton_SOURCES=test_hybrid_io_automaton.cc
 test_hybrid_set_SOURCES=test_hybrid_set.cc
@@ -90,5 +92,5 @@ EXTRA_DIST =
 SUBDIRS =
 
 TESTS = $(check_PROGRAMS)
-XFAIL_TESTS = test_taylor_set test_hybrid_system test_hybrid_evolution
+XFAIL_TESTS = test_taylor_set test_hybrid_system test_hybrid_evolution test_function
 testsubdir = ./

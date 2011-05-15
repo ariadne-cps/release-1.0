@@ -35,6 +35,7 @@
 #include "function.h"
 #include "predicate.h"
 #include "real.h"
+#include "box.h"
 
 #include "test.h"
 
@@ -50,6 +51,7 @@ class TestFunction
     void test_concept();
     void test_scalar_function();
     void test_vector_function();
+    void test_cosine_function();
     void test_expression();
     void test_conversions();
     void test_differentiation();
@@ -59,6 +61,7 @@ void TestFunction::test()
 {
     ARIADNE_TEST_CALL(test_scalar_function());
     ARIADNE_TEST_CALL(test_vector_function());
+    ARIADNE_TEST_CALL(test_cosine_function());
     ARIADNE_TEST_CALL(test_expression());
     ARIADNE_TEST_CALL(test_conversions());
     ARIADNE_TEST_CALL(test_differentiation());
@@ -132,6 +135,23 @@ void TestFunction::test_vector_function()
     ARIADNE_TEST_EXECUTE(f.set(0,f[1]));
     ARIADNE_TEST_PRINT(f);
     ARIADNE_TEST_EQUAL(f[0](Vector<Float>(3, 2.0,3.0,5.0)),3.0);
+}
+
+
+void TestFunction::test_cosine_function()
+{
+	RealVariable x("x");
+	List<RealVariable> varlist;
+	varlist.append(x);
+
+	RealExpression x_f = Ariadne::cos(x);
+
+	ScalarFunction img_f(x_f,varlist);
+
+	Box pt(1,2.75,2.75);
+	Interval fc=img_f.evaluate(pt);
+
+	ARIADNE_TEST_ASSERT(fc.lower() >= -0.9244 && fc.upper() <= -0.9243);
 }
 
 

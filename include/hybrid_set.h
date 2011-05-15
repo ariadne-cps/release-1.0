@@ -681,15 +681,12 @@ class HybridGridTreeSet
 			return false;
     }
 
-    tribool subset(const HybridBoxes& hbx) const  {
-		bool result = true; // Initially assumed as true
-        for( locations_const_iterator loc_iter = this->locations_begin(); loc_iter != this->locations_end(); ++loc_iter ) 
-		{
-		    if( !loc_iter->second.empty() ) // If there are cells in the location
-			{
-                HybridBoxes::const_iterator hbx_loc_iter = hbx.find( loc_iter->first ); // Gets the corresponding hybrid box
-                if( hbx_loc_iter != hbx.end()) // If the location exists in the hybrid box
-				{
+    tribool subset(const HybridBoxes& hbx) const {
+		bool result = true;
+        for( locations_const_iterator loc_iter = this->locations_begin(); loc_iter != this->locations_end(); ++loc_iter ) {
+		    if( !loc_iter->second.empty() ) {
+                HybridBoxes::const_iterator hbx_loc_iter = hbx.find( loc_iter->first );
+                if( hbx_loc_iter != hbx.end()) {
 					const tribool temp_result = loc_iter->second.subset( hbx_loc_iter->second ); // Temporarily store the result
 					if (!possibly(temp_result)) return false; // If the cells are not included in the box of the location, directly return false
 					else if (indeterminate(temp_result)) result = indeterminate; // Otherwise if indeterminate, set the result as indeterminate
