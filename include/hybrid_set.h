@@ -814,6 +814,22 @@ template<class DS> inline FigureInterface& operator<<(FigureInterface& figure, c
 }
 
 
+//! \brief Whether \a cons_set is disjoint from \a grid_set.
+//! \details Note that if \a cons_set does not have one location of \a grid_set, then for that location the result is true.
+tribool disjoint(const HybridConstraintSet& cons_set, const HybridGridTreeSet& grid_set);
+//! \brief Whether \a cons_set overlaps with \a grid_set.
+//! \details Note that if \a cons_set does not have one location of \a grid_set, then for that location the result is false.
+tribool overlaps(const HybridConstraintSet& cons_set, const HybridGridTreeSet& grid_set);
+//! \brief Whether \a cons_set covers \a grid_set.
+//! \details Note that if \a cons_set does not have one location of \a grid_set, then for that location the result is true.
+tribool covers(const HybridConstraintSet& cons_set, const HybridGridTreeSet& grid_set);
+
+//! \brief Evaluates \a grid_set on \a cons_set in order to obtain the overlapping cells.
+HybridGridTreeSet overlapping_cells(const HybridGridTreeSet& grid_set, const HybridConstraintSet& cons_set);
+//! \brief Applies \a cons_set to \a grid_set in order to obtain the uncovered cells.
+HybridGridTreeSet uncovered_cells(const HybridGridTreeSet& grid_set, const HybridConstraintSet& cons_set);
+
+
 } // namespace Ariadne
 
 namespace boost { namespace serialization {

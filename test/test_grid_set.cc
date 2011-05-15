@@ -28,11 +28,18 @@
 #include <sstream>
 #include <string>
 
+#include "config.h"
+
 #include "stlio.h"
 
 #include "macros.h"
 #include "tribool.h"
 #include "numeric.h"
+#include "formula.h"
+#include "expression.h"
+#include "function.h"
+#include "predicate.h"
+#include "real.h"
 
 #include "function_set.h"
 #include "grid_set.h"
@@ -2953,6 +2960,135 @@ void test_subset_superset_box(){
 
 }
 
+
+void test_constraintset_vs_gridtreeset_checks()
+{
+	RealVariable x("x");
+	List<RealVariable> varlist;
+	varlist.append(x);
+
+	RealExpression id_x = x;
+	List<RealExpression> consexpr;
+	consexpr.append(id_x);
+
+	VectorFunction cons_f(consexpr,varlist);
+	Box codomain(1,0.0,1.0);
+
+	ConstraintSet cons(codomain,cons_f);
+
+	Grid gr(1);
+
+    ARIADNE_PRINT_TEST_CASE_TITLE("Testing a constraint set against different discretized intervals.");
+    ARIADNE_PRINT_TEST_COMMENT("Constraint set: " << cons << "\n");
+
+	GridTreeSet gts1(gr);
+	Box bx1(1,0.0,4.5);
+	gts1.adjoin_outer_approximation(bx1,0);
+
+	ARIADNE_PRINT_TEST_COMMENT("Testing " << bx1 << " (overlapping)\n");
+	ARIADNE_PRINT_TEST_COMMENT("Grid tree set size: " << gts1.size() << "\n");
+
+	ARIADNE_TEST_ASSERT(!disjoint(cons,gts1));
+	ARIADNE_TEST_ASSERT(overlaps(cons,gts1));
+	ARIADNE_TEST_ASSERT(!covers(cons,gts1));
+
+	GridTreeSet gts2(gr);
+	Box bx2(1,1.1,1.8);
+	gts2.adjoin_outer_approximation(bx2,0);
+
+	ARIADNE_PRINT_TEST_COMMENT("Testing " << bx2 << " (touching the border)\n");
+	ARIADNE_PRINT_TEST_COMMENT("Grid tree set size: " << gts2.size() << "\n");
+
+	ARIADNE_TEST_ASSERT(indeterminate(disjoint(cons,gts2)));
+	ARIADNE_TEST_ASSERT(indeterminate(overlaps(cons,gts2)));
+	ARIADNE_TEST_ASSERT(!covers(cons,gts2));
+
+	GridTreeSet gts3(gr);
+	Box bx3(1,2.1,2.9);
+	gts3.adjoin_outer_approximation(bx3,0);
+
+	ARIADNE_PRINT_TEST_COMMENT("Testing " << bx3 << " (disjoint)\n");
+	ARIADNE_PRINT_TEST_COMMENT("Grid tree set size: " << gts3.size() << "\n");
+
+	ARIADNE_TEST_ASSERT(disjoint(cons,gts3));
+	ARIADNE_TEST_ASSERT(!overlaps(cons,gts3));
+	ARIADNE_TEST_ASSERT(!covers(cons,gts3));
+
+	GridTreeSet gts4(gr);
+	Box bx4(1,0.6,0.8);
+	gts4.adjoin_outer_approximation(bx4,3);
+
+	ARIADNE_PRINT_TEST_COMMENT("Testing " << bx4 << " (inside)\n");
+	ARIADNE_PRINT_TEST_COMMENT("Grid tree set size: " << gts4.size() << "\n");
+
+	ARIADNE_TEST_ASSERT(!disjoint(cons,gts4));
+	ARIADNE_TEST_ASSERT(overlaps(cons,gts4));
+	ARIADNE_TEST_ASSERT(covers(cons,gts4));
+
+}
+
+void test_constraintset_vs_gridtreeset_operations()
+{
+	RealVariable x("x");
+	List<RealVariable> varlist;
+	varlist.append(x);
+
+	RealExpression id_x = x;
+	List<RealExpression> consexpr;
+	consexpr.append(id_x);
+
+	VectorFunction cons_f(consexpr,varlist);
+	Box codomain(1,0.0,1.0);
+
+	ConstraintSet cons(codomain,cons_f);
+
+	Grid gr(1);
+
+    ARIADNE_PRINT_TEST_CASE_TITLE("Testing overlapping and uncovered sets obtained from the intersection between a constraint set and the discretization of an interval.");
+    ARIADNE_PRINT_TEST_COMMENT("Constraint set: " << cons << "\n");
+
+	GridTreeSet gts1(gr);
+	Box bx1(1,-1.0,4.5);
+	gts1.adjoin_lower_approximation(bx1,0);
+
+	ARIADNE_PRINT_TEST_COMMENT("Testing " << bx1 << " (overlapping)\n");
+	ARIADNE_PRINT_TEST_COMMENT("Grid tree set size: " << gts1.size() << "\n");
+
+	ARIADNE_TEST_EQUAL(overlapping_cells(gts1,cons).size(),3);
+	ARIADNE_TEST_EQUAL(uncovered_cells(gts1,cons).size(),6);
+
+	GridTreeSet gts2(gr);
+	Box bx2(1,1.1,1.8);
+	gts2.adjoin_lower_approximation(bx2,0);
+
+	ARIADNE_PRINT_TEST_COMMENT("Testing " << bx2 << " (touching the border)\n");
+	ARIADNE_PRINT_TEST_COMMENT("Grid tree set size: " << gts2.size() << "\n");
+
+	ARIADNE_TEST_EQUAL(overlapping_cells(gts2,cons).size(),1);
+	ARIADNE_TEST_EQUAL(uncovered_cells(gts2,cons).size(),1);
+
+	GridTreeSet gts3(gr);
+	Box bx3(1,2.1,2.9);
+	gts3.adjoin_lower_approximation(bx3,0);
+
+	ARIADNE_PRINT_TEST_COMMENT("Testing " << bx3 << " (disjoint)\n");
+	ARIADNE_PRINT_TEST_COMMENT("Grid tree set size: " << gts3.size() << "\n");
+
+	ARIADNE_TEST_EQUAL(overlapping_cells(gts3,cons).size(),0);
+	ARIADNE_TEST_EQUAL(uncovered_cells(gts3,cons).size(),1);
+
+	GridTreeSet gts4(gr);
+	Box bx4(1,0.6,0.8);
+	gts4.adjoin_lower_approximation(bx4,3);
+
+	ARIADNE_PRINT_TEST_COMMENT("Testing " << bx4 << " (inside)\n");
+	ARIADNE_PRINT_TEST_COMMENT("Grid tree set size: " << gts4.size() << "\n");
+
+	ARIADNE_TEST_EQUAL(overlapping_cells(gts4,cons).size(),3);
+	ARIADNE_TEST_EQUAL(uncovered_cells(gts4,cons).size(),0);
+}
+
+
 int main() {
 
     test_grid();
@@ -3003,6 +3139,9 @@ int main() {
     test_subset_overlaps_box();
     test_subset_subset_box();
     test_subset_superset_box();
+
+    test_constraintset_vs_gridtreeset_checks();
+    test_constraintset_vs_gridtreeset_operations();
 
     return ARIADNE_TEST_FAILURES;
 }

@@ -149,6 +149,7 @@ void TestFunction::test_cosine_function()
 	ScalarFunction img_f(x_f,varlist);
 
 	Box pt(1,2.75,2.75);
+	// This will fail: please note that the current trunk (r1578) does not fail.
 	Interval fc=img_f.evaluate(pt);
 
 	ARIADNE_TEST_ASSERT(fc.lower() >= -0.9244 && fc.upper() <= -0.9243);

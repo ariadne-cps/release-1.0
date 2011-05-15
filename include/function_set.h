@@ -118,8 +118,8 @@ class ConstraintSet
     const VectorFunction& function() const { return this->_function; }
 
     //! \brief Equality operator. Compares functions by referential equality.
-    bool operator==(const ConstraintSet& cos) const {
-        return this->_codomain==cos._codomain && this->_function.pointer()==cos._function.pointer(); }
+    bool operator==(const ConstraintSet& cons_set) const {
+        return this->_codomain==cons_set._codomain && this->_function.pointer()==cons_set._function.pointer(); }
 
     ConstraintSet* clone() const;
     uint dimension() const;
@@ -128,9 +128,6 @@ class ConstraintSet
     tribool covers(const Box&) const;
     std::ostream& write(std::ostream&) const;
 };
-
-
-
 
 } // namespace Ariadne 
 

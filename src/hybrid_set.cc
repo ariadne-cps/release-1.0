@@ -164,5 +164,75 @@ project(const Box& box, const std::vector<uint>& dimensions, const HybridSpace& 
 }
 
 
+tribool disjoint(const HybridConstraintSet& cons_set, const HybridGridTreeSet& grid_set)
+{
+    tribool result = true;
+
+    for (HybridGridTreeSet::locations_const_iterator gts_it = grid_set.locations_begin(); gts_it != grid_set.locations_end(); ++gts_it) {
+    	HybridConstraintSet::locations_const_iterator cs_it = cons_set.find(gts_it->first);
+    	if (cs_it != cons_set.locations_end()) {
+    		tribool disjoint_gts = disjoint(cs_it->second,gts_it->second);
+    		if (!disjoint_gts)
+    			return false;
+    		else
+    			result = result && disjoint_gts;
+    	}
+    }
+    return result;
+}
+
+
+tribool overlaps(const HybridConstraintSet& cons_set, const HybridGridTreeSet& grid_set)
+{
+    return !disjoint(cons_set,grid_set);
+}
+
+
+tribool covers(const HybridConstraintSet& cons_set, const HybridGridTreeSet& grid_set)
+{
+    tribool result = true;
+
+    for (HybridGridTreeSet::locations_const_iterator gts_it = grid_set.locations_begin(); gts_it != grid_set.locations_end(); ++gts_it) {
+    	HybridConstraintSet::locations_const_iterator cs_it = cons_set.find(gts_it->first);
+    	if (cs_it != cons_set.locations_end()) {
+    		tribool covered_gts = covers(cs_it->second,gts_it->second);
+    		if (!covered_gts)
+    			return false;
+    		else
+    			result = result && covered_gts;
+    	}
+    }
+    return result;
+
+}
+
+
+HybridGridTreeSet overlapping_cells(const HybridGridTreeSet& grid_set, const HybridConstraintSet& cons_set)
+{
+	HybridGridTreeSet result(grid_set.grid());
+
+    for (HybridGridTreeSet::locations_const_iterator gts_it = grid_set.locations_begin(); gts_it != grid_set.locations_end(); ++gts_it) {
+    	HybridConstraintSet::locations_const_iterator cs_it = cons_set.find(gts_it->first);
+    	if (cs_it != cons_set.locations_end())
+    		result[gts_it->first] = overlapping_cells(gts_it->second,cs_it->second);
+    }
+
+	return result;
+}
+
+
+HybridGridTreeSet uncovered_cells(const HybridGridTreeSet& grid_set, const HybridConstraintSet& cons_set)
+{
+	HybridGridTreeSet result(grid_set.grid());
+
+    for (HybridGridTreeSet::locations_const_iterator gts_it = grid_set.locations_begin(); gts_it != grid_set.locations_end(); ++gts_it) {
+    	HybridConstraintSet::locations_const_iterator cs_it = cons_set.find(gts_it->first);
+    	if (cs_it != cons_set.locations_end())
+    		result[gts_it->first] = uncovered_cells(gts_it->second,cs_it->second);
+    }
+
+	return result;
+}
+
 
 } // namespace Ariadne

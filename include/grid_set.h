@@ -51,6 +51,7 @@
 #include "vector.h"
 #include "grid.h"
 #include "taylor_set.h"
+#include "function_set.h"
 #include "graphics_interface.h"
 
 #include "hybrid_automaton.h"
@@ -2370,6 +2371,17 @@ template<class A> void serialize(A& archive, Ariadne::GridTreeSet& set, const un
 }
 
 
+//! \brief Whether \a cons_set is disjoint from \a grid_set.
+tribool disjoint(const ConstraintSet& cons_set, const GridTreeSet& grid_set);
+//! \brief Whether \a cons_set overlaps with \a grid_set.
+tribool overlaps(const ConstraintSet& cons_set, const GridTreeSet& grid_set);
+//! \brief Whether \a cons_set covers \a grid_set.
+tribool covers(const ConstraintSet& cons_set, const GridTreeSet& grid_set);
+
+//! \brief Evaluates \a grid_set on \a cons_set in order to obtain the overlapping cells.
+GridTreeSet overlapping_cells(const GridTreeSet& grid_set, const ConstraintSet& cons_set);
+//! \brief Applies \a cons_set to \a grid_set in order to obtain the uncovered cells.
+GridTreeSet uncovered_cells(const GridTreeSet& grid_set, const ConstraintSet& cons_set);
 
 } // namespace Ariadne
 

@@ -223,5 +223,4 @@ ConstraintSet::write(std::ostream& os) const
 }
 
 
-
 } // namespace Ariadne
