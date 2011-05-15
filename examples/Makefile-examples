@@ -1,0 +1,7 @@
+include Makefile-bin.am
+
+%: %.cc
+	$(CC) -o $@ `pkg-config --libs --cflags ariadne` $<
+
+all: $(bin_PROGRAMS)
+

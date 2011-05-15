@@ -50,10 +50,6 @@ A more detailed explanation of how to analyse a hybrid system can be found on th
 
 An example of the use of %Ariadne for reachability analysis of a simple hybrid system is given on the \ref tutorial_page  page. The example is contained in the file  \link examples/tutorial.cc tutorial.cc \endlink.
 
-\section mainpage_advanced_usage Advanced Usage
-
-A guide for advanced users on to use the internal data types including the function calculus and Taylor calculus can be found on the \ref python_tutorial_page documentation page.
-
 \section mainpage_mathematical_foundations Mathematical Foundations
 
 More information on the mathematical foundations of %Ariadne can be found on the following pages:
@@ -80,7 +76,6 @@ More information on the mathematical foundations of %Ariadne can be found on the
 Coding guideline are given on the \ref coding_guidelines_page documentation page.
 
 \example examples/tutorial.cc A simple nonlinear model of a heating system.
-\example examples/tutorial.py A tutorial on using the Python interface.
 
 
 */

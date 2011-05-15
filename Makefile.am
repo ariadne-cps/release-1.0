@@ -1,4 +1,4 @@
-SUBDIRS = include src test wrap examples cifparser
+SUBDIRS = include src test examples cifparser
 
 EXTRA_DIST = Doxyfile
 
@@ -6,9 +6,12 @@ AM_CXXFLAGS = -Wall -fno-strict-aliasing
 
 ACLOCAL_AMFLAGS = -I m4
 
-.PHONY: shiny doc all lib wrap examples profiles check-lib check-python
+EXAMPLES_DESTDIR = $(DESTDIR)/usr/share/doc/libariadne-dev
+DOCS_DESTDIR = $(DESTDIR)/usr/share/doc/libariadne-doc
 
-all: lib wrap tests examples profiles doc 
+.PHONY: shiny doc all lib examples profiles check-lib 
+
+all: lib tests examples profiles doc 
 
 # Show the values of the environment variables
 evn:
@@ -19,6 +22,7 @@ shiny: maintainer-clean
 	-rm -rf *~ */*~
 	-rm -f *.log */*.log */*.eps
 	-rm -rf docs 
+	-rm -rf test/*.png test/*.txt test/*.log  
 	-rm -rf */.deps */.libs
 	-rm -f aclocal.m4 config.* configure depcomp install-sh libtool ltmain.sh missing mkinstalldirs stamp-h* .tm_project.cache
 	-rm -rf autom4te.cache
@@ -42,12 +46,6 @@ lib:
 cifparser: lib
 	(cd cifparser; make)
 
-wrap: lib
-	(cd wrap; make wrap)
-
-python: lib
-	(cd wrap; make python)
-
 tests: lib
 	(cd test; make tests)
 
@@ -57,9 +55,6 @@ profiles: lib
 check-lib: lib
 	(cd test; make check)
 
-check-python: python
-	(cd python; make check)
-
 profile-lib: lib profiles
 	(cd test; make profile-lib)
 
@@ -67,22 +62,15 @@ install-lib: lib
 	(cd src; make install)
 
 install-doc: doc
-	install -d $(DESTDIR)/usr/share/doc/libariadne-doc/
-	cp -rp docs/refman.pdf $(DESTDIR)/usr/share/doc/libariadne-doc/ariadne-manual.pdf
-	cp -rp docs/html $(DESTDIR)/usr/share/doc/libariadne-doc/
+	install -d $(DOCS_DESTDIR)
+	cp -rp docs/refman.pdf $(DOCS_DESTDIR)/ariadne-manual.pdf
+	cp -rp docs/html $(DOCS_DESTDIR)
 
-install-examples: install-cxx-examples install-python-examples
+install-examples: install-cxx-examples 
 
 install-cxx-examples:
-	install -d $(DESTDIR)/usr/share/doc/libariadne-doc/examples/cxx
-	cp -rp examples/*.h $(DESTDIR)/usr/share/doc/libariadne-doc/cxx/examples/
-	cp -rp examples/*.cc $(DESTDIR)/usr/share/doc/libariadne-doc/cxx/examples/
-	cp -rp examples/*.plt $(DESTDIR)/usr/share/doc/libariadne-doc/cxx/examples/
+	install -d $(EXAMPLES_DESTDIR)
+	tar -zcf $(EXAMPLES_DESTDIR)/c++-examples.tar.gz examples/*.h examples/*.cc \
+		examples/*.plt examples/Makefile-bin.am examples/Makefile-examples 
 
-install-python-examples:
-	install -d $(DESTDIR)/usr/share/doc/libariadne-doc/examples/python
-	cp -rp python/*.py $(DESTDIR)/usr/share/doc/libariadne-doc/python/examples/
-
-
-install-am: install-doc 
-
+install-am: install-doc install-cxx-examples

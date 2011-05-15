@@ -8,6 +8,5 @@ Description: C++ library for set-based analysis of dynamical and control systems
 Version: @VERSION@
 
 @PKGCONFIG_REQUIRES@: @ARIADNE_REQUIRES@
-Libs: -L${libdir} -lariadne
-Libs.private: @ARIADNE_NONPKGCONFIG_LIBS@
+Libs: -L${libdir} @LIBS@ -lariadne
 Cflags: -I${includedir}/ariadne 

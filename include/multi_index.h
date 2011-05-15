@@ -57,11 +57,6 @@ template<> class Reference<const MultiIndex>;
 
 //! \brief An array of non-negative integers, suitable for storing the
 //! powers of a term in some polynomial expansion, ordered by degree.
-//!
-//! \par Python interface
-//! In the Python interface, multi-indices can be constructed and automatically converted from Python tuple literals \c (a1,...,am)
-//!
-//! \b Rationale: The reason why tuples are used for multi-index literals is that they can be used as keys in Python \c dict objects.
 class MultiIndex {
   public:
     typedef unsigned int size_type;

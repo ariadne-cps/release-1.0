@@ -121,31 +121,6 @@ AC_CHECK_LIB([$lib],[main],[ARIADNE_NONPKGCONFIG_LIBS="$ARIADNE_NONPKGCONFIG_LIB
 lib=boost_thread-mt
 AC_CHECK_LIB([$lib],[main],[ARIADNE_NONPKGCONFIG_LIBS="$ARIADNE_NONPKGCONFIG_LIBS -l$lib"],[AC_MSG_ERROR([Boost thread library is missing. You must install the Boost C++ libraries.])])
 
-# Find Python paths (optional)
-AM_PATH_PYTHON(2.5,, :)
-AC_MSG_NOTICE([PYTHON_VERSION=$PYTHON_VERSION])
-AM_CHECK_PYTHON_HEADERS([PYTHON_LIB="-lpython$PYTHON_VERSION"], 
-         [AC_MSG_WARN([could not find Python headers. You cannot compile the Python binding.])])
-AC_SUBST(PYTHON_LIB)
-
-# Add Python include directory to include path since otherwise check for Boost Python fails
-CPPFLAGS+=" $PYTHON_INCLUDES "
-
-# Check for Boost python library (optional)
-AC_CHECK_HEADER([boost/python.hpp],[AC_DEFINE([HAVE_BOOST_PYTHON_HPP],[1],[Define to 1 if you have the <boost/python.hpp> header file.]) HAVE_BOOST_PYTHON_HPP=true],[AC_MSG_WARN([Boost Python library development files are missing. You cannot compile the Python binding.])])
-
-BOOST_PYTHON=$( echo boost_python-mt-py${PYTHON_VERSION} | awk '{ sub("\.","");print }' )
-
-# Check for Boost Python library (optional)
-AC_CHECK_LIB([${BOOST_PYTHON}],[main],[
-     [BOOST_PYTHON_LIB="-l${BOOST_PYTHON}"] 
-     AC_DEFINE([HAVE_LIBBOOST_PYTHON],[1],
-       [Define to 1 if you have the `boost_python` library.])
-     [HAVE_LIBBOOST_PYTHON=true]],
-   AC_MSG_WARN([Boost Python library is missing. You cannot compile the Python binding.]),[$PYTHON_LIB])
-
-AM_CONDITIONAL([WANT_PYTHON_INTERFACE], [test x$HAVE_BOOST_PYTHON_HPP = xtrue && test x$HAVE_LIBBOOST_PYTHON = xtrue])
-
 # Check for Doxygen (optional)
 AC_PATH_PROG(DOXYGEN, doxygen)
 if test -f "${DOXYGEN}"; then
@@ -184,18 +159,12 @@ LIBS="$LIBS $ARIADNE_NONPKGCONFIG_LIBS"
 AC_MSG_NOTICE([LIBS=$LIBS])
 AC_MSG_NOTICE([GTK_LIBS=$GTK_LIBS])
 AC_MSG_NOTICE([CAIRO_LIBS=$CAIRO_LIBS])
-AC_MSG_NOTICE([PYTHON_LIB=$PYTHON_LIB])
-AC_MSG_NOTICE([BOOST_PYTHON_LIB=$BOOST_PYTHON_LIB])
-AC_MSG_NOTICE([HAVE_BOOST_PYTHON_HPP='$HAVE_BOOST_PYTHON_HPP'])
-AC_MSG_NOTICE([HAVE_LIBBOOST_PYTHON='$HAVE_LIBBOOST_PYTHON'])
-AC_MSG_NOTICE([WANT_PYTHON_INTERFACE=$WANT_PYTHON_INTERFACE])
 AC_MSG_NOTICE([EXEC_LDFLAGS=$EXEC_LDFLAGS])
 
-AC_SUBST(BOOST_PYTHON_LIB)
 AC_SUBST(EXEC_LDFLAGS)
 
 # Declare which Makefiles need to be built
-AC_CONFIG_FILES([Makefile include/Makefile src/Makefile wrap/Makefile python/Makefile test/Makefile examples/Makefile cifparser/Makefile src/ariadne.pc])
+AC_CONFIG_FILES([Makefile include/Makefile src/Makefile test/Makefile examples/Makefile cifparser/Makefile src/ariadne.pc])
 
 # Output results of autoconf tests
 AC_OUTPUT

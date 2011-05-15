@@ -1,6 +1,3 @@
-ariadne_includedir = $(pkgincludedir)
+ariadnedir = $(pkgincludedir)
 
-ariadne_include_DATA = *.h
-
-EXTRA_DIST = \
-	$(ariadne_include_DATA)
+ariadne_HEADERS = ../config.h *.h

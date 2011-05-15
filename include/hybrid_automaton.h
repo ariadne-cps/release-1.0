@@ -573,10 +573,10 @@ class HybridAutomaton
     //! \brief The discrete transition with given \a event and \a source location.
     const DiscreteTransition& transition(DiscreteEvent event, DiscreteState source) const;
 
-    //! \brief The set of discrete modes. (Not available in Python interface)
+    //! \brief The set of discrete modes. 
     const std::list< DiscreteMode >& modes() const;
 
-    //! \brief The set of discrete transitions. (Not available in Python interface)
+    //! \brief The set of discrete transitions. 
     const std::list< DiscreteTransition >& transitions() const;
 
     //! \brief The discrete transitions from location \a source.
