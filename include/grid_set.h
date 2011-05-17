@@ -2378,10 +2378,13 @@ tribool overlaps(const ConstraintSet& cons_set, const GridTreeSet& grid_set);
 //! \brief Whether \a cons_set covers \a grid_set.
 tribool covers(const ConstraintSet& cons_set, const GridTreeSet& grid_set);
 
-//! \brief Evaluates \a grid_set on \a cons_set in order to obtain the overlapping cells.
-GridTreeSet overlapping_cells(const GridTreeSet& grid_set, const ConstraintSet& cons_set);
-//! \brief Applies \a cons_set to \a grid_set in order to obtain the uncovered cells.
-GridTreeSet uncovered_cells(const GridTreeSet& grid_set, const ConstraintSet& cons_set);
+//! \brief Evaluates \a grid_set on \a cons_set in order to obtain (a superset of) the overlapping cells.
+GridTreeSet possibly_overlapping_cells(const GridTreeSet& grid_set, const ConstraintSet& cons_set);
+//! \brief Applies \a cons_set to \a grid_set in order to obtain the covered cells.
+GridTreeSet covered_cells(const GridTreeSet& grid_set, const ConstraintSet& cons_set);
+
+//! \brief Evaluates the codomain of \a func applied on the cells of \a grid_set, each widened by \a eps.
+Box eps_codomain(const GridTreeSet& grid_set, const Vector<Float> eps, const VectorFunction& func);
 
 } // namespace Ariadne
 

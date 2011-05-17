@@ -95,7 +95,7 @@ _safety_proving_once(
 	bool result;
 
 	ARIADNE_LOG(4,"Proving...\n");
-	if (!_is_grid_depth_within_bounds(UPPER_SEMANTICS)) {
+	if (!_grid_depth_is_within_bounds_under(UPPER_SEMANTICS)) {
 		ARIADNE_LOG(4,"Not proved.\n");
 		return false;
 	}
@@ -118,10 +118,7 @@ _safety_proving_once(
 
 		HybridGridTreeSet reach = _outer_analyser->outer_chain_reach(system,initial_set,DIRECTION_FORWARD,terminate_as_soon_as_unprovable,safe_region,NOT_INSIDE_TARGET);
 
-		if (_safety_coarse_outer_approximation->is_set())
-			_safety_reachability_restriction = reach;
-		else
-			_safety_coarse_outer_approximation->set(reach);
+		_update_safety_cached_reachability_with(reach);
 
 		result = definitely(reach.subset(safe_region));
 
@@ -159,7 +156,7 @@ _safety_disproving_once(
 		const RealConstantSet& constants) const
 {
 	ARIADNE_LOG(4,"Disproving...\n");
-	if (!_is_grid_depth_within_bounds(LOWER_SEMANTICS)) {
+	if (!_grid_depth_is_within_bounds_under(LOWER_SEMANTICS)) {
 		ARIADNE_LOG(4,"Not disproved.\n");
 		return false;
 	}
@@ -174,8 +171,8 @@ _safety_disproving_once(
 
 	ARIADNE_LOG(4,"Performing lower reachability analysis and getting disprove data...\n");
 
-	// We have no benefit in getting the "whole" lower chain reachability, if we already have disproved:
-	// hence we can safely quicken the termination at any depth
+	// We have no benefit in getting a larger lower chain reachability, if we already have disproved:
+	// hence we can freely quicken the termination at each depth
 	bool terminate_as_soon_as_disproved = _settings->allow_quick_disproving && true;
 
 	std::pair<HybridGridTreeSet,DisproveData> reachAndDisproveData =
@@ -194,6 +191,16 @@ _safety_disproving_once(
 	system.substitute(original_constants);
 
 	return isDisproved;
+}
+
+void
+Verifier::
+_update_safety_cached_reachability_with(const HybridGridTreeSet& reach) const
+{
+	if (_safety_coarse_outer_approximation->is_set())
+		_safety_reachability_restriction = reach;
+	else
+		_safety_coarse_outer_approximation->set(reach);
 }
 
 
@@ -278,7 +285,7 @@ _safety_nosplitting(
 	if (_settings->plot_results)
 		_plot_dirpath_init(system.name());
 
-	_chooseInitialSafetySettings(system,verInput.getDomain(),verInput.getSafeRegion(),constants);
+	_resetAndChooseInitialSafetySettings(system,verInput.getDomain(),verInput.getSafeRegion(),constants);
 
 	int initial_depth = min(_outer_analyser->settings().lowest_maximum_grid_depth,
 							_lower_analyser->settings().lowest_maximum_grid_depth);
@@ -302,16 +309,16 @@ _safety_nosplitting(
 
 bool
 Verifier::
-_is_grid_depth_within_bounds(Semantics semantics) const
+_grid_depth_is_within_bounds_under(Semantics semantics) const
 {
 	const DiscreteEvolutionSettings& settings = (semantics == UPPER_SEMANTICS ? _outer_analyser->settings() : _lower_analyser->settings());
 
 	if (settings.maximum_grid_depth < settings.lowest_maximum_grid_depth) {
-		ARIADNE_LOG(4,"Skipped verification since the depth is lower than the lowest allowed.\n");
+		ARIADNE_LOG(4,"Will skip verification since the depth is lower than the lowest allowed.\n");
 		return false;
 	}
 	if (settings.maximum_grid_depth > settings.highest_maximum_grid_depth) {
-		ARIADNE_LOG(4,"Skipped verification since the depth is higher than the highest allowed.\n");
+		ARIADNE_LOG(4,"Will skip verification since the depth is higher than the highest allowed.\n");
 		return false;
 	}
 
@@ -860,7 +867,7 @@ Verifier::_dominance(
 	if (_settings->plot_results)
 		_plot_dirpath_init(dominating.getSystem().name() + "&" + dominated.getSystem().name());
 
-	_chooseInitialDominanceSettings();
+	_resetAndChooseInitialDominanceSettings();
 
 	int initial_depth = max(_outer_analyser->settings().lowest_maximum_grid_depth,
 							_lower_analyser->settings().lowest_maximum_grid_depth);
@@ -1068,7 +1075,7 @@ _dominance_outer_bounds(
 
 void
 Verifier::
-_chooseInitialSafetySettings(
+_resetAndChooseInitialSafetySettings(
 		const HybridAutomaton& system,
 		const HybridBoxes& domain,
 		const HybridBoxes& safe_region,
@@ -1119,7 +1126,7 @@ _tuneIterativeStepSettings(
 	// where the outer analyser must deal with either the dominating or dominated system)
 	analyser.settings().reachability_restriction = reachability_restriction;
 
-	ARIADNE_LOG(5, "Derivatives evaluation policy: " << (hgts_domain.empty() ? "Domain box" : "Outer approximation") << "\n");
+	ARIADNE_LOG(5, "Derivatives evaluation source: " << (hgts_domain.empty() ? "Domain box" : "Outer approximation") << "\n");
 
 	HybridFloatVector hmad = getHybridMaximumAbsoluteDerivatives(system,hgts_domain,analyser.settings().domain_bounds);
 	ARIADNE_LOG(5, "Derivatives bounds: " << hmad << "\n");
@@ -1127,14 +1134,14 @@ _tuneIterativeStepSettings(
 			new HybridGrid(getHybridGrid(hmad,analyser.settings().domain_bounds)));
 	ARIADNE_LOG(5, "Grid lengths: " << analyser.settings().grid->lengths() << "\n");
 
-	ARIADNE_LOG(5, "Use restriction: " << pretty_print(!reachability_restriction.empty()) << "\n");
+	ARIADNE_LOG(5, "Use reachability restriction: " << pretty_print(!reachability_restriction.empty()) << "\n");
 
 	analyser.tuneEvolverSettings(system,hmad,analyser.settings().maximum_grid_depth,semantics);
 }
 
 void
 Verifier::
-_chooseInitialDominanceSettings() const
+_resetAndChooseInitialDominanceSettings() const
 {
 	_dominating_coarse_outer_approximation->reset();
 	_dominated_coarse_outer_approximation->reset();

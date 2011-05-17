@@ -3131,7 +3131,7 @@ tribool covers(const ConstraintSet& cons_set, const GridTreeSet& grid_set)
 }
 
 
-GridTreeSet overlapping_cells(const GridTreeSet& grid_set, const ConstraintSet& cons_set)
+GridTreeSet possibly_overlapping_cells(const GridTreeSet& grid_set, const ConstraintSet& cons_set)
 {
 	GridTreeSet result(grid_set.grid());
 
@@ -3144,13 +3144,30 @@ GridTreeSet overlapping_cells(const GridTreeSet& grid_set, const ConstraintSet& 
 }
 
 
-GridTreeSet uncovered_cells(const GridTreeSet& grid_set, const ConstraintSet& cons_set)
+GridTreeSet covered_cells(const GridTreeSet& grid_set, const ConstraintSet& cons_set)
 {
 	GridTreeSet result(grid_set.grid());
 
 	for (GridTreeSet::const_iterator cell_it = grid_set.begin(); cell_it != grid_set.end(); ++cell_it) {
-		if (definitely(!cons_set.covers(cell_it->box())))
+		if (definitely(cons_set.covers(cell_it->box())))
 			result.adjoin(*cell_it);
+	}
+
+	return result;
+}
+
+
+Box eps_codomain(const GridTreeSet& grid_set, const Vector<Float> eps, const VectorFunction& func)
+{
+	ARIADNE_ASSERT(grid_set.dimension() == func.argument_size());
+	ARIADNE_ASSERT(grid_set.dimension() == eps.size());
+
+	Box result = Box::empty_box(func.result_size());
+
+	for (GridTreeSet::const_iterator cell_it = grid_set.begin(); cell_it != grid_set.end(); ++cell_it) {
+		Box cell_box = cell_it->box();
+		cell_box.widen(eps);
+		result = hull(result,func.evaluate(cell_box));
 	}
 
 	return result;

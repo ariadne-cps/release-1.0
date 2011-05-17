@@ -36,7 +36,7 @@
 namespace Ariadne {
 
 /**
- * \brief This is a structure for keeping data obtained during lower chain reach, in order to get info for falsification.
+ * \brief This is a structure for holding data obtained during lower chain reach analysis, in order to get info for disproving.
  */
 struct DisproveData
 {
@@ -48,16 +48,21 @@ private:
 
 public:
 
-	DisproveData(const HybridSpace& space): _isDisproved(false) {
-		for (HybridSpace::const_iterator space_it = space.begin(); space_it != space.end(); ++space_it) {
-			_reachBounds.insert(std::pair<DiscreteState,Box>(space_it->first,Box::empty_box(space_it->second)));
-			_epsilon.insert(std::pair<DiscreteState,Vector<Float> >(space_it->first,Vector<Float>(space_it->second)));
+	DisproveData(const HybridSpace& space) :
+		_isDisproved(false) {
+			for (HybridSpace::const_iterator space_it = space.begin(); space_it != space.end(); ++space_it) {
+				_reachBounds.insert(std::pair<DiscreteState,Box>(space_it->first,Box::empty_box(space_it->second)));
+				_epsilon.insert(std::pair<DiscreteState,Vector<Float> >(space_it->first,Vector<Float>(space_it->second)));
 		}
 	}
 
-	DisproveData(bool isDisproved, HybridBoxes reachBounds, HybridFloatVector epsilon): _isDisproved(isDisproved),
-																							 _reachBounds(reachBounds),
-																							 _epsilon(epsilon) { }
+	DisproveData(
+			bool isDisproved,
+			HybridBoxes reachBounds,
+			HybridFloatVector epsilon) :
+				_isDisproved(isDisproved),
+				_reachBounds(reachBounds),
+				_epsilon(epsilon) { }
 
 	const bool& getIsDisproved() const { return _isDisproved; }
 	const HybridBoxes& getReachBounds() const { return _reachBounds; }
@@ -74,12 +79,16 @@ public:
 		_isDisproved = _isDisproved || isDisproved;
 	}
 
-	void updateReachBounds(const DiscreteState& location, const Box& bounds) {
+	void updateReachBounds(
+			const DiscreteState& location,
+			const Box& bounds) {
 		ARIADNE_ASSERT_MSG(_reachBounds.find(location) != _reachBounds.end(),"The reach bounds location provided is not present into the target falsification info.");
 		_reachBounds[location] = hull(_reachBounds[location],bounds);
 	}
 
-	void updateEpsilon(const DiscreteState& location, const Vector<Float>& epsilon) {
+	void updateEpsilon(
+			const DiscreteState& location,
+			const Vector<Float>& epsilon) {
 		ARIADNE_ASSERT_MSG(_epsilon.find(location) != _epsilon.end(),"The epsilon location provided is not present into the target falsification info.");
 		_epsilon[location] = max(_epsilon[location],epsilon);
 	}
@@ -90,8 +99,12 @@ public:
 	}
 };
 
-inline std::ostream& operator<<(std::ostream& os, const DisproveData& falsInfo) {
-    return falsInfo.write(os); }
+inline std::ostream& operator<<(
+		std::ostream& os,
+		const DisproveData& dData)
+{
+    return dData.write(os);
+}
 
 }
 

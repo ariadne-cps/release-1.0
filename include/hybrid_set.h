@@ -824,11 +824,10 @@ tribool overlaps(const HybridConstraintSet& cons_set, const HybridGridTreeSet& g
 //! \details Note that if \a cons_set does not have one location of \a grid_set, then for that location the result is true.
 tribool covers(const HybridConstraintSet& cons_set, const HybridGridTreeSet& grid_set);
 
-//! \brief Evaluates \a grid_set on \a cons_set in order to obtain the overlapping cells.
-HybridGridTreeSet overlapping_cells(const HybridGridTreeSet& grid_set, const HybridConstraintSet& cons_set);
-//! \brief Applies \a cons_set to \a grid_set in order to obtain the uncovered cells.
-HybridGridTreeSet uncovered_cells(const HybridGridTreeSet& grid_set, const HybridConstraintSet& cons_set);
-
+//! \brief Evaluates \a grid_set on \a cons_set in order to obtain (a superset of) the overlapping cells.
+HybridGridTreeSet possibly_overlapping_cells(const HybridGridTreeSet& grid_set, const HybridConstraintSet& cons_set);
+//! \brief Applies \a cons_set to \a grid_set in order to obtain the covered cells.
+HybridGridTreeSet covered_cells(const HybridGridTreeSet& grid_set, const HybridConstraintSet& cons_set);
 
 } // namespace Ariadne
 

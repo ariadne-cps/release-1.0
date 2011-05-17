@@ -720,7 +720,7 @@ _lower_evolution_disprove_step(std::list< HybridTimedSetType >& working_sets,
 			ARIADNE_LOG(2,"Terminating lower evolution due to possibly initially active invariant or urgent transition with nonnegative crossing.\n");
 
 			disproveData.updateReachBounds(location,set_model.bounding_box());
-			disproveData.updateEpsilon(location,set_model.bounding_box().halfWidths());
+			disproveData.updateEpsilon(location,set_model.bounding_box().widths());
 			return disproveData;
     	}
     }
@@ -766,7 +766,7 @@ _lower_evolution_disprove_step(std::list< HybridTimedSetType >& working_sets,
     // Updates all the fields of the falsification info
     disproveData.updateIsDisproved(isDisproved);
     disproveData.updateReachBounds(location,reachable_set.bounding_box());
-    disproveData.updateEpsilon(location,reachable_set.bounding_box().halfWidths());
+    disproveData.updateEpsilon(location,reachable_set.bounding_box().widths());
 
     if(blocking_events.size()==1)
     	_computeEvolutionForEvents(working_sets,intermediate_sets,system,location,blocking_events,events,

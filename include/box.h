@@ -106,14 +106,6 @@ class Box
     	return vec;
     }
 
-    /** Half the widths of the box on each dimension */
-    Vector<Float> halfWidths() const {
-    	Vector<Float> vec(this->size());
-    	for (uint i=0; i!=this->size(); ++i)
-    		vec[i] = (*this)[i].width()/2;
-    	return vec;
-    }
-
     //! An approximation to the Lesbegue measure (area, volume) of the box.
     Float measure() const {
         Float meas=1;
@@ -211,6 +203,16 @@ class Box
         static const Float min(std::numeric_limits<double>::min());
         static const Interval eps(-min,+min);
         static_cast<Vector<Interval>&>(*this) += Vector<Interval>(this->dimension(),eps);
+    }
+
+    //! \brief Widens the box by the \a eps increment.
+    //! The result is guaranteed to contain the box in its interior.
+    void widen(const Vector<Float> eps) {
+    	ARIADNE_ASSERT(this->size() == eps.size());
+    	Vector<Interval> eps_int(eps.size());
+    	for (uint i=0;i<eps.size();++i)
+    		eps_int[i] = Interval(-eps[i],eps[i]);
+        static_cast<Vector<Interval>&>(*this) += eps_int;
     }
 
     //! \brief Creates a box with only the dimensions given by \a dimensions. */

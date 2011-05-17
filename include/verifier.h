@@ -375,14 +375,14 @@ class Verifier
 			const Float& current_value,
 			const bool& safeOnBottom) const;
 
-	/*! \brief Choose the initial evolution settings for safety verification of the proper analyser. */
-	void _chooseInitialSafetySettings(
+	/*! \brief Resets cached information, then chooses the initial evolution settings for safety verification of the proper analyser. */
+	void _resetAndChooseInitialSafetySettings(
 			const HybridAutomaton& system,
 			const HybridBoxes& domain,
 			const HybridBoxes& safe,
 			const RealConstantSet& locked_constants) const;
 
-	/*! \brief Choose the initial evolution settings for safety verification of the proper analyser, given the \a semantics.*/
+	/*! \brief Chooses the initial evolution settings for safety verification of the proper analyser, given the \a semantics.*/
 	void _chooseInitialSafetySettings(
 			const HybridAutomaton& system,
 			const HybridBoxes& domain,
@@ -390,10 +390,10 @@ class Verifier
 			const RealConstantSet& locked_constants,
 			Semantics semantics) const;
 
-	/*! \brief Choose the initial settings for dominance verification.
-	 * \details Cannot set the analysers since they are used on different systems on each iteration.
+	/*! \brief Resets cached information, then chooses the initial settings for dominance verification.
+	 * \details It is not allowed to tune the analysers, since they are used on different systems on each iteration.
 	 */
-	void _chooseInitialDominanceSettings() const;
+	void _resetAndChooseInitialDominanceSettings() const;
 
 	/*! \brief Tune the settings for the next iterative verification step. */
 	void _tuneIterativeStepSettings(
@@ -403,7 +403,13 @@ class Verifier
 			Semantics semantics) const;
 
 	/*! \brief Checks whether a grid depth value is allowed for use in iterative verification, based on the \a semantics. */
-	bool _is_grid_depth_within_bounds(Semantics semantics) const;
+	bool _grid_depth_is_within_bounds_under(Semantics semantics) const;
+
+	/*! \brief Updates with \a reach the outer approximation or the reachability restriction.
+	 * \details Which field is set depends on the current state of such variables: if no coarse outer
+	 * approximation is set, then it is set, otherwise the reachability restriction is set (updated).
+	 */
+	void _update_safety_cached_reachability_with(const HybridGridTreeSet& reach) const;
 
 	// Reached region plotting methods
 	void _plot_dirpath_init(std::string basename) const;

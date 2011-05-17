@@ -207,28 +207,28 @@ tribool covers(const HybridConstraintSet& cons_set, const HybridGridTreeSet& gri
 }
 
 
-HybridGridTreeSet overlapping_cells(const HybridGridTreeSet& grid_set, const HybridConstraintSet& cons_set)
+HybridGridTreeSet possibly_overlapping_cells(const HybridGridTreeSet& grid_set, const HybridConstraintSet& cons_set)
 {
 	HybridGridTreeSet result(grid_set.grid());
 
     for (HybridGridTreeSet::locations_const_iterator gts_it = grid_set.locations_begin(); gts_it != grid_set.locations_end(); ++gts_it) {
     	HybridConstraintSet::locations_const_iterator cs_it = cons_set.find(gts_it->first);
     	if (cs_it != cons_set.locations_end())
-    		result[gts_it->first] = overlapping_cells(gts_it->second,cs_it->second);
+    		result[gts_it->first] = possibly_overlapping_cells(gts_it->second,cs_it->second);
     }
 
 	return result;
 }
 
 
-HybridGridTreeSet uncovered_cells(const HybridGridTreeSet& grid_set, const HybridConstraintSet& cons_set)
+HybridGridTreeSet covered_cells(const HybridGridTreeSet& grid_set, const HybridConstraintSet& cons_set)
 {
 	HybridGridTreeSet result(grid_set.grid());
 
     for (HybridGridTreeSet::locations_const_iterator gts_it = grid_set.locations_begin(); gts_it != grid_set.locations_end(); ++gts_it) {
     	HybridConstraintSet::locations_const_iterator cs_it = cons_set.find(gts_it->first);
     	if (cs_it != cons_set.locations_end())
-    		result[gts_it->first] = uncovered_cells(gts_it->second,cs_it->second);
+    		result[gts_it->first] = covered_cells(gts_it->second,cs_it->second);
     }
 
 	return result;

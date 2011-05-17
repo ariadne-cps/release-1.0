@@ -102,10 +102,12 @@ _plot_reach(
 
 
 HybridGridTreeSet
-HybridReachabilityAnalyser::_upper_reach(const HybridAutomaton& sys,
-                                         const HybridGridTreeSet& set,
-                                         const HybridTime& time,
-                                         const int accuracy) const
+HybridReachabilityAnalyser::
+_upper_reach(
+		const HybridAutomaton& sys,
+        const HybridGridTreeSet& set,
+        const HybridTime& time,
+        const int accuracy) const
 {
     HybridGrid grid=grid_for(sys,*_settings);
     HybridGridTreeSet result(grid);
@@ -120,10 +122,12 @@ HybridReachabilityAnalyser::_upper_reach(const HybridAutomaton& sys,
 
 
 std::pair<HybridGridTreeSet,HybridGridTreeSet>
-HybridReachabilityAnalyser::_upper_reach_evolve(const HybridAutomaton& sys,
-                                                const HybridGridTreeSet& set,
-                                                const HybridTime& time,
-                                                const int accuracy) const
+HybridReachabilityAnalyser::
+_upper_reach_evolve(
+		const HybridAutomaton& sys,
+        const HybridGridTreeSet& set,
+        const HybridTime& time,
+        const int accuracy) const
 {
     ARIADNE_LOG(4,"HybridReachabilityAnalyser::_upper_reach_evolve(...)\n");
 
@@ -145,11 +149,13 @@ HybridReachabilityAnalyser::_upper_reach_evolve(const HybridAutomaton& sys,
 }
 
 std::pair<HybridGridTreeSet,HybridGridTreeSet>
-HybridReachabilityAnalyser::_upper_reach_evolve_continuous(const HybridAutomaton& sys,
-                                                		   const list<EnclosureType>& initial_enclosures,
-                                                		   const HybridTime& time,
-                                                		   EvolutionDirection direction,
-                                                		   int accuracy) const
+HybridReachabilityAnalyser::
+_upper_reach_evolve_continuous(
+		const HybridAutomaton& sys,
+        const list<EnclosureType>& initial_enclosures,
+        const HybridTime& time,
+        EvolutionDirection direction,
+        int accuracy) const
 {
 	std::pair<GTS,GTS> result;
 	GTS& reach = result.first;
@@ -173,16 +179,18 @@ HybridReachabilityAnalyser::_upper_reach_evolve_continuous(const HybridAutomaton
 
 HybridReachabilityAnalyser::SetApproximationType
 HybridReachabilityAnalyser::
-lower_evolve(const SystemType& system,
-             const HybridImageSet& initial_set,
-             const TimeType& time) const
+lower_evolve(
+		const SystemType& system,
+        const HybridImageSet& initial_set,
+        const TimeType& time) const
 {
     ARIADNE_LOG(2,"HybridReachabilityAnalyser::lower_evolve(...)\n");
 
     HybridGrid grid=grid_for(system,*_settings);
     GTS evolve;
 
-    list<EnclosureType> initial_enclosures = split_initial_set(initial_set,grid,_settings->maximum_grid_depth,LOWER_SEMANTICS);
+   list<EnclosureType> initial_enclosures = enclosures_from_split_domain_midpoints(initial_set,
+		   min_cell_widths(grid,_settings->maximum_grid_depth));
 
 	ARIADNE_LOG(3,"Computing evolution...\n");
     for (list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); encl_it++) {
@@ -196,16 +204,18 @@ lower_evolve(const SystemType& system,
 
 HybridReachabilityAnalyser::SetApproximationType
 HybridReachabilityAnalyser::
-lower_reach(const SystemType& system,
-            const HybridImageSet& initial_set,
-            const TimeType& time) const
+lower_reach(
+		const SystemType& system,
+        const HybridImageSet& initial_set,
+        const TimeType& time) const
 {
     ARIADNE_LOG(2,"HybridReachabilityAnalyser::lower_reach(...)\n");
 
     HybridGrid grid=grid_for(system,*_settings);
     GTS reach(grid);
 
-    list<EnclosureType> initial_enclosures = split_initial_set(initial_set,grid,_settings->maximum_grid_depth,LOWER_SEMANTICS);
+    list<EnclosureType> initial_enclosures = enclosures_from_split_domain_midpoints(initial_set,
+    		   min_cell_widths(grid,_settings->maximum_grid_depth));
 
     ARIADNE_LOG(3,"Evolving and discretising...\n");
 
@@ -219,16 +229,18 @@ lower_reach(const SystemType& system,
 
 std::pair<HybridReachabilityAnalyser::SetApproximationType,HybridReachabilityAnalyser::SetApproximationType>
 HybridReachabilityAnalyser::
-lower_reach_evolve(const SystemType& system,
-                   const HybridImageSet& initial_set,
-                   const TimeType& time) const
+lower_reach_evolve(
+		const SystemType& system,
+        const HybridImageSet& initial_set,
+        const TimeType& time) const
 {
     ARIADNE_LOG(2,"HybridReachabilityAnalyser::lower_reach_evolve(...)\n");
 
     HybridGrid grid=grid_for(system,*_settings);
     GTS reach; GTS evolve;
 
-    list<EnclosureType> initial_enclosures = split_initial_set(initial_set,grid,_settings->maximum_grid_depth,LOWER_SEMANTICS);
+    list<EnclosureType> initial_enclosures = enclosures_from_split_domain_midpoints(initial_set,
+    		   min_cell_widths(grid,_settings->maximum_grid_depth));
 
 	ARIADNE_LOG(3,"Computing evolution...\n");
     for (list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); encl_it++) {
@@ -244,9 +256,10 @@ lower_reach_evolve(const SystemType& system,
 
 HybridReachabilityAnalyser::SetApproximationType
 HybridReachabilityAnalyser::
-upper_evolve(const SystemType& system,
-             const HybridImageSet& initial_set,
-             const TimeType& time) const
+upper_evolve(
+		const SystemType& system,
+        const HybridImageSet& initial_set,
+        const TimeType& time) const
 {
     ARIADNE_LOG(2,"HybridReachabilityAnalyser::upper_evolve(system,set,time)\n");
  
@@ -260,9 +273,10 @@ upper_evolve(const SystemType& system,
 
 HybridReachabilityAnalyser::SetApproximationType
 HybridReachabilityAnalyser::
-upper_reach(const SystemType& system,
-            const HybridImageSet& initial_set,
-            const TimeType& time) const
+upper_reach(
+		const SystemType& system,
+        const HybridImageSet& initial_set,
+        const TimeType& time) const
 {
     ARIADNE_LOG(2,"HybridReachabilityAnalyser::upper_reach(system,set,time)\n");
 
@@ -275,15 +289,16 @@ upper_reach(const SystemType& system,
 
 std::pair<HybridReachabilityAnalyser::SetApproximationType,HybridReachabilityAnalyser::SetApproximationType>
 HybridReachabilityAnalyser::
-upper_reach_evolve(const SystemType& system,
-                   const HybridImageSet& initial_set,
-                   const TimeType& time) const
+upper_reach_evolve(
+		const SystemType& system,
+        const HybridImageSet& initial_set,
+        const TimeType& time) const
 {
     ARIADNE_LOG(2,"HybridReachabilityAnalyser::upper_reach_evolve(system,set,time)\n");
     ARIADNE_LOG(3,"initial_set="<<initial_set<<"\n");
 
     HybridGrid grid=grid_for(system,*_settings);
-    GTS found(grid),evolve(grid),reach(grid);
+    GTS initial(grid),found(grid),evolve(grid),reach(grid);
     int maximum_grid_depth = _settings->maximum_grid_depth;
     Float real_time=time.continuous_time();
     uint discrete_steps=time.discrete_time();
@@ -300,11 +315,12 @@ upper_reach_evolve(const SystemType& system,
     ARIADNE_LOG(3,"real_time="<<real_time<<"\n");
     ARIADNE_LOG(3,"time_steps="<<time_steps<<"  lock_to_grid_time="<<lock_to_grid_time<<"\n");
 
-    list<EnclosureType> initial_enclosures = split_initial_set(initial_set,grid,maximum_grid_depth,UPPER_SEMANTICS);
+    ARIADNE_LOG(3,"Computing initial evolution...\n");
+    initial.adjoin_outer_approximation(initial_set,maximum_grid_depth);
 
-	ARIADNE_LOG(3,"Computing initial evolution...\n");
-    for (list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); encl_it++) {
-        GTS cell_reach,cell_final;
+    std::list<EnclosureType> initial_enclosures = cells_to_smallest_enclosures(initial,maximum_grid_depth);
+    for (std::list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); ++encl_it) {
+    	GTS cell_reach,cell_final;
         make_lpair(cell_reach,cell_final)=_discretiser->evolution(system,*encl_it,hybrid_lock_to_grid_time,grid,maximum_grid_depth,UPPER_SEMANTICS);
         reach.adjoin(cell_reach);
         evolve.adjoin(cell_final);
@@ -336,8 +352,9 @@ upper_reach_evolve(const SystemType& system,
 
 HybridReachabilityAnalyser::SetApproximationType
 HybridReachabilityAnalyser::
-chain_reach(const SystemType& system,
-            const HybridImageSet& initial_set) const
+chain_reach(
+		const SystemType& system,
+        const HybridImageSet& initial_set) const
 {
     ARIADNE_LOG(2,"HybridReachabilityAnalyser::chain_reach(system,initial_set)\n");
 
@@ -360,7 +377,7 @@ chain_reach(const SystemType& system,
 			ARIADNE_FAIL_MSG("Error: the system state space and the bounding domain space do not match on the continuous space."); }}
 
     HybridGrid grid=grid_for(system,*_settings);
-    GTS bounding(grid), evolve(grid), reach(grid), found(grid), intermediate(grid);
+    GTS initial(grid), bounding(grid), evolve(grid), reach(grid), found(grid), intermediate(grid);
 
     bounding.adjoin_outer_approximation(domain,0u); 
     ARIADNE_LOG(4,"bounding_size(pre recombine)="<<bounding.size()<<"\n");
@@ -373,13 +390,13 @@ chain_reach(const SystemType& system,
         transient_steps = lock_to_grid_steps; }
 
     HybridTime hybrid_transient_time(transient_time, transient_steps);
-    ARIADNE_LOG(3,"Computing first evolution step...\n");
-
-    list<EnclosureType> initial_enclosures = split_initial_set(initial_set,grid,maximum_grid_depth,UPPER_SEMANTICS);
 
 	ARIADNE_LOG(3,"Computing transient evolution...\n");
-    for (list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); encl_it++) {
-        GTS cell_reach,cell_final;
+    initial.adjoin_outer_approximation(initial_set,maximum_grid_depth);
+
+    std::list<EnclosureType> initial_enclosures = cells_to_smallest_enclosures(initial,maximum_grid_depth);
+    for (std::list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); ++encl_it) {
+    	GTS cell_reach,cell_final;
         make_lpair(cell_reach,cell_final)=_discretiser->evolution(system,*encl_it,hybrid_transient_time,grid,maximum_grid_depth,UPPER_SEMANTICS);
         reach.adjoin(cell_reach);
         evolve.adjoin(cell_final);
@@ -503,10 +520,11 @@ _outer_chain_reach_splitted(
 
 void
 HybridReachabilityAnalyser::
-_outer_chain_reach_forward_pushTargetCells(const HybridGridTreeSet& reachCells,
-										   const SystemType& system,
-										   std::list<EnclosureType>& result_enclosures,
-										   bool use_domain_checking) const
+_outer_chain_reach_forward_pushTargetCells(
+		const HybridGridTreeSet& reachCells,
+		const SystemType& system,
+		std::list<EnclosureType>& result_enclosures,
+		bool use_domain_checking) const
 {
 	for (HybridGridTreeSet::const_iterator cell_it = reachCells.begin(); cell_it != reachCells.end(); cell_it++)
 	{
@@ -552,8 +570,9 @@ _outer_chain_reach_backward_pushSourceCells(
 
 bool
 HybridReachabilityAnalyser::
-_outer_chain_reach_isOutsideInvariants(const Box& bx,
-									   const std::map<DiscreteEvent,VectorFunction>& invariants) const
+_outer_chain_reach_isOutsideInvariants(
+		const Box& bx,
+		const std::map<DiscreteEvent,VectorFunction>& invariants) const
 {
 	ARIADNE_LOG(6,"Checking invariants...\n");
 
@@ -682,9 +701,10 @@ _is_transition_feasible(
 
 void
 HybridReachabilityAnalyser::
-_outer_chain_reach_pushLocalFinalCells(const HybridGridTreeSet& finalCells,
-									   std::list<EnclosureType>& result_enclosures,
-									   bool use_domain_checking) const
+_outer_chain_reach_pushLocalFinalCells(
+		const HybridGridTreeSet& finalCells,
+		std::list<EnclosureType>& result_enclosures,
+		bool use_domain_checking) const
 {
 	for (GTS::const_iterator cell_it = finalCells.begin(); cell_it != finalCells.end(); ++cell_it) {
 		const DiscreteState& loc = cell_it->first;
@@ -793,7 +813,7 @@ _fb_refinement_step_check(
 		string plot_dirpath)
 {
 	// TODO: Completely remove the plotting calls.
-	bool plot = false;
+	bool plot = true;
 
 	int& maximum_grid_depth = _settings->maximum_grid_depth;
 
@@ -858,7 +878,9 @@ outer_chain_reach(
 		const HybridImageSet& initial_set,
 		EvolutionDirection direction) const
 {
-	const std::list<EnclosureType> initial_enclosures = split_initial_set(initial_set,*_settings->grid,_settings->maximum_grid_depth,UPPER_SEMANTICS);
+	HybridGridTreeSet initial(*_settings->grid);
+    initial.adjoin_outer_approximation(initial_set,_settings->maximum_grid_depth);
+    std::list<EnclosureType> initial_enclosures = cells_to_smallest_enclosures(initial,_settings->maximum_grid_depth);
 
 	return _outer_chain_reach(system,initial_enclosures,direction,_settings->reachability_restriction);
 }
@@ -889,7 +911,9 @@ outer_chain_reach(
 		const HybridBoxes& target_bounds_for_skipping,
 		OuterReachabilitySkippingPolicy skippingPolicy) const
 {
-	const std::list<EnclosureType> initial_enclosures = split_initial_set(initial_set,*_settings->grid,_settings->maximum_grid_depth,UPPER_SEMANTICS);
+	HybridGridTreeSet initial(*_settings->grid);
+	initial.adjoin_outer_approximation(initial_set,_settings->maximum_grid_depth);
+    std::list<EnclosureType> initial_enclosures = cells_to_smallest_enclosures(initial,_settings->maximum_grid_depth);
 
 	return _outer_chain_reach(system,initial_enclosures,direction,_settings->reachability_restriction,check_target_bounds_for_skipping,target_bounds_for_skipping,skippingPolicy);
 }
@@ -948,10 +972,11 @@ _outer_chain_reach(
 
 std::pair<HybridReachabilityAnalyser::SetApproximationType,DisproveData>
 HybridReachabilityAnalyser::
-_lower_chain_reach(const SystemType& system,
-				  const HybridImageSet& initial_set,
-				  const HybridBoxes& feasibility_region,
-				  bool terminate_as_soon_as_infeasible) const
+_lower_chain_reach(
+		const SystemType& system,
+		const HybridImageSet& initial_set,
+		const HybridBoxes& feasibility_region,
+		bool terminate_as_soon_as_infeasible) const
 {
 	typedef std::list<EnclosureType> EL;
 	typedef std::map<DiscreteState,uint> HUM;
@@ -968,7 +993,8 @@ _lower_chain_reach(const SystemType& system,
 
     DisproveData globalFalsInfo(system.state_space());
 
-    EL initial_enclosures = split_initial_set(initial_set,grid,_settings->maximum_grid_depth,LOWER_SEMANTICS);
+    EL initial_enclosures = enclosures_from_split_domain_midpoints(initial_set,
+    		min_cell_widths(grid,_settings->maximum_grid_depth));
 
     ARIADNE_LOG(3,"Computing recurrent evolution...\n");
 
@@ -1154,63 +1180,86 @@ _getSplitConstantsIntervalsSet(
 	return result;
 }
 
-list<HybridBasicSet<TaylorSet> >
-split_initial_set(
+
+HybridFloatVector min_cell_widths(
+		const HybridGrid& grid,
+		int maximum_grid_depth)
+{
+	HybridFloatVector result;
+
+	for (HybridGrid::const_iterator grid_it = grid.begin(); grid_it != grid.end(); ++grid_it)
+		result.insert(std::pair<DiscreteState,Vector<Float> >(grid_it->first,grid_it->second.lengths()/(1 << maximum_grid_depth)));
+
+	return result;
+}
+
+
+list<EnclosureType>
+enclosures_from_split_domain_midpoints(
 		const HybridImageSet initial_set,
-		const HybridGrid grid,
-		int maximum_grid_depth,
-		Semantics semantics)
+		const HybridFloatVector max_cell_widths)
 {
 	list<EnclosureType> result;
 
-	// For each location, split the original enclosure into a list of enclosures
-	// having widths lesser than the grid lengths at maximum depth
 	for(HybridImageSet::locations_const_iterator loc_iter=initial_set.locations_begin();
-		 loc_iter!=initial_set.locations_end(); ++loc_iter)
-		{
-		// Get the grid lengths at the maximum depth (i.e. the minimum cell widths)
-		Vector<Float> mincell_widths = grid[loc_iter->first].lengths()/(1 << maximum_grid_depth);
+		 loc_iter!=initial_set.locations_end(); ++loc_iter) {
+		const DiscreteState& loc = loc_iter->first;
+		const ImageSet& img_set = loc_iter->second;
+		const VectorFunction& img_func = img_set.function();
+		Vector<Float> local_max_cell_widths = max_cell_widths.find(loc)->second;
 
-		// Keep a list of the continuous enclosures to split
-		list<ContinuousEnclosureType> continuous_enclosures;
-		// Insert the original continuous enclosure
-		continuous_enclosures.push_front(ContinuousEnclosureType(loc_iter->second));
+		list<Box> temporaries;
+		temporaries.push_back(img_set.domain());
 
-		/* While there are continuous enclosures:
+		/* While there are boxes:
 		 * a) pick one, pop it and check it against the mincell_lengths
-		 * 	 i) if larger, split it and put the couple into the continuous_enclosures
-		 *   ii) if not, put the enclosure (paired with the location) into the result
+		 * 	 i) if larger, split it and put the couple into the temporaries
+		 *   ii) if not, push the result
 		 */
-		while (!continuous_enclosures.empty()) {
-			ContinuousEnclosureType enclosure = continuous_enclosures.back();
-			continuous_enclosures.pop_back();
+		while (!temporaries.empty()) {
+			Box domain = temporaries.back();
+			temporaries.pop_back();
+			Box codomain = img_func.evaluate(domain);
 
 			bool hasBeenSplit = false;
-			for (uint dim=0; dim < enclosure.dimension(); ++dim) {
-				if (enclosure[dim].range().width() > mincell_widths[dim]) {
-					pair<ContinuousEnclosureType,ContinuousEnclosureType> split_result = enclosure.split(dim);
-					continuous_enclosures.push_front(split_result.first);
-					continuous_enclosures.push_front(split_result.second);
-					// Set the flag as true and skip the remaining checks
+			for (uint dim=0; dim < codomain.size(); ++dim) {
+				if (codomain[dim].width() > local_max_cell_widths[dim]) {
+					std::pair<Box,Box> split_boxes = domain.split(dim);
+					temporaries.push_back(split_boxes.first);
+					temporaries.push_back(split_boxes.second);
 					hasBeenSplit = true;
 					break;
 				}
 			}
-			// If it has not been split, put the hybrid enclosure into the initial enclosures
-			if (!hasBeenSplit)
-			{
-				// For the case of lower semantics, we want to reduce the enclosure to its centre in order to minimize the radius
-				if (semantics == LOWER_SEMANTICS)
-					enclosure = ContinuousEnclosureType(Vector<Interval>(enclosure.centre()));
-				result.push_back(EnclosureType(loc_iter->first,enclosure));
+			if (!hasBeenSplit) {
+
+				Vector<Interval> domain_centre_box(domain.centre());
+				result.push_back(EnclosureType(loc,ContinuousEnclosureType(img_func,domain_centre_box)));
 			}
+
 		}
 	}
 
-	// Returns
 	return result;
 }
 
+
+list<EnclosureType> enclosures_of_domains_midpoints(
+		const list<HybridBox>& domains,
+		const HybridImageSet& img_set)
+{
+	list<EnclosureType> result;
+
+	for (list<HybridBox>::const_iterator box_it = domains.begin(); box_it != domains.end(); ++box_it) {
+		const DiscreteState& loc = box_it->first;
+		const Box& domain = box_it->second;
+		const VectorFunction& func = img_set.find(loc)->second.function();
+		Vector<Interval> domain_centre_box(domain.centre());
+		result.push_back(EnclosureType(loc,ContinuousEnclosureType(func,domain_centre_box)));
+	}
+
+	return result;
+}
 
 
 RealConstantIntMap
@@ -1709,6 +1758,20 @@ new_reachability_restriction_equals(
 	old_restriction_copy.remove(new_restriction);
 
 	return old_restriction_copy.empty();
+}
+
+std::list<EnclosureType>
+cells_to_smallest_enclosures(HybridGridTreeSet cells, int maximum_grid_depth)
+{
+    cells.mince(maximum_grid_depth);
+
+    std::list<EnclosureType> enclosures;
+    for (HybridGridTreeSet::const_iterator cell_it = cells.begin(); cell_it != cells.end(); ++cell_it) {
+        EnclosureType encl(cell_it->first,cell_it->second.box());
+        enclosures.push_back(encl);
+    }
+
+    return enclosures;
 }
 
 

@@ -102,8 +102,9 @@ class HybridReachabilityAnalyser
 
     /*! \brief Construct from evolution parameters and a method for evolving basic sets. */
     template<class HybridEnclosureType>
-    HybridReachabilityAnalyser(const EvolutionSettingsType& parameters,
-                               const EvolverInterface<HybridAutomaton,HybridEnclosureType>& evolver);
+    HybridReachabilityAnalyser(
+    		const EvolutionSettingsType& parameters,
+            const EvolverInterface<HybridAutomaton,HybridEnclosureType>& evolver);
 
     template<class HybridEnclosureType>
     HybridReachabilityAnalyser(const EvolverInterface<HybridAutomaton,HybridEnclosureType>& evolver);
@@ -418,14 +419,16 @@ HybridReachabilityAnalyser(
 	internal_evolver.verb_tab_prefix = verb_tab_prefix + analyser_max_verbosity_level_used;
 }
 
+/*! \brief Gets the minimum allowed widths of the cells of the \a grid under \a maximum_grid_depth */
+HybridFloatVector min_cell_widths(
+		const HybridGrid& grid,
+		int maximum_grid_depth);
 
-/*! \brief Generates a list of hybrid enclosures from the \a initial_set, depending on the minimum cell size
- * given by the \a grid. */
-list<HybridBasicSet<TaylorSet> > split_initial_set(
-		const HybridImageSet initial_set,
-		const HybridGrid grid,
-		int maximum_grid_depth,
-		Semantics semantics);
+/*! \brief Generates a list of hybrid enclosures from the domain midpoints of a splitting of \a img_set,
+ * where the image of each part has bounding box widths lower than the corresponding \a max_cell_widths */
+list<EnclosureType> enclosures_from_split_domain_midpoints(
+		const HybridImageSet img_set,
+		const HybridFloatVector max_cell_widths);
 
 /*! \brief Gets for each non-singleton constant the factor determining the number of chunks its interval should be split into.
  *
@@ -535,6 +538,12 @@ HybridFloatVector getHybridMaximumAbsoluteDerivatives(
 bool new_reachability_restriction_equals(
 		const HybridGridTreeSet& new_restriction,
 		const HybridGridTreeSet& old_restriction);
+
+/*! \brief Turns the cells from the grid tree set \a cells into enclosures of smallest size in respect to a given
+ * \a maximum_grid_depth. */
+std::list<EnclosureType> cells_to_smallest_enclosures(
+		HybridGridTreeSet cells,
+		int maximum_grid_depth);
 
 } // namespace Ariadne
 
