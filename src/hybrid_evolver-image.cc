@@ -266,10 +266,12 @@ _upper_evolution_continuous(EnclosureListType& final_sets,
 		bool isEnclosureTooLarge = _isEnclosureTooLarge(initial_set_model);
 
         if(initial_time_model.range().lower()>=maximum_hybrid_time.continuous_time()) {
-            ARIADNE_LOG(3,"\n\nFinal time reached: adjoining the initial set to the final sets.\n\n");
+            ARIADNE_LOG(3,"\n\n")
+            ARIADNE_LOG(3,"Final time reached: adjoining the initial set to the final sets.\n\n");
             final_sets.adjoin(initial_location,this->_toolbox->enclosure(initial_set_model));
         } else if(isEnclosureTooLarge) {
-            ARIADNE_LOG(1,"\n\nTerminating evolution at time " << initial_time_model.value()
+        	ARIADNE_LOG(1,"\n\n");
+            ARIADNE_LOG(1,"Terminating evolution at time " << initial_time_model.value()
                         << " and set centre " << initial_set_model.centre() << " due to the enclosure being too large: adjoining the initial set to the final sets.\n\n");
             final_sets.adjoin(initial_location,this->_toolbox->enclosure(initial_set_model));
         } else {
@@ -329,7 +331,8 @@ _lower_evolution_disprove(EnclosureListType& final_sets,
             _add_models_subdivisions_time(working_sets,initial_set_model,initial_time_model,initial_location,initial_events);
 		} else if(!this->_settings->enable_subdivisions &&
                   this->_settings->enable_premature_termination && isEnclosureTooLarge) {
-            ARIADNE_LOG(1,"\n\nWARNING: Terminating evolution at time " << initial_time_model.value()
+            ARIADNE_LOG(1,"\n\n");
+            ARIADNE_LOG(1,"WARNING: Terminating evolution at time " << initial_time_model.value()
                         << " and set " << initial_set_model.centre() << " due to maximum enclosure bounds being exceeded.\n\n");
         } else {
             // Compute evolution and get the result for this working set

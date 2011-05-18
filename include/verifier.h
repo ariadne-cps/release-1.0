@@ -35,7 +35,7 @@
 namespace Ariadne {
 
 // Keep this value in sync with the maximum verbosity level on the Verifier methods
-const unsigned verifier_max_verbosity_level_used = 4;
+const unsigned verifier_max_verbosity_level_used = 6;
 
 class HybridReachabilityAnalyser;
 
@@ -128,32 +128,6 @@ class Verifier
 			SafetyVerificationInput& verInput,
 			const RealConstantSet& params) const;
 
-	/*! \brief Compute an underapproximation of the safety/unsafety intervals of \a parameter (defined as an interval) for the automaton
-		\a system starting in \a initial_set, where the safe region is \a safe inside \a domain.
-        \details The procedure uses the bisection method. The parameter is assumed as having separable safe and unsafe intervals in its range.
-        \return The intervals of safety and unsafety. */
-	std::pair<Interval,Interval> parametric_safety_1d_bisection(
-			SafetyVerificationInput& verInput,
-			const RealConstant& parameter) const;
-
-	/**
-	 * \brief Performs a parametric verification on two parameters \a xParam, \a yParam.
-	 * \details The procedure uses the bisection method. Saves the results in a file called "<systemName>-<xName>-<yName>" and
-	 * generates a "<systemName>-<xName>-<yName>.png" plot, where <systemName> is the name of the system,
-	 * <xName> is the name of xParam and <yName> is the name of yParam.
-	 */
-	Parametric2DBisectionResults parametric_safety_2d_bisection(
-			SafetyVerificationInput& verInput,
-			const RealConstant& xParam,
-			const RealConstant& yParam) const;
-
-	/**
-	 * \brief Performs a parametric verification on a set of two parameters \a params, by using bisection.
-	 */
-	Parametric2DBisectionResults parametric_safety_2d_bisection(
-			SafetyVerificationInput& verInput,
-			const RealConstantSet& params) const;
-
 	//@}
 
 	//@{
@@ -181,37 +155,6 @@ class Verifier
 			DominanceVerificationInput& dominated,
 			const RealConstantSet& dominating_params) const;
 
-	/*! \brief Compute an underapproximation of the dominating/non-dominating intervals of \a parameter for the dominance problem.
-        \details The parameter is varied on the \a dominating system alone. The procedure uses the bisection method. The parameter is assumed as having separable dominating and non-dominating intervals in its range.
-        The tolerance in [0 1] is a percentage of the parameter interval width and is used to provide a termination condition for the
-		bisection search.
-        \return The intervals of safety and unsafety. */
-	std::pair<Interval,Interval> parametric_dominance_1d_bisection(
-			DominanceVerificationInput& dominating,
-			DominanceVerificationInput& dominated,
-			const RealConstant& parameter) const;
-
-	/**
-	 * \brief Performs a parametric dominance checking on two parameters \a xParam, \a yParam,
-	 * discretizing with \a numPointsPerAxis points for each axis.
-	 * \details The procedure uses the bisection method. Saves the results in a file called "<dominatingName>&<dominatedName>-<xName>-<yName>" and
-	 * generates a "<dominatingName>&<dominatedName>-<xName>-<yName>.png" plot, where <systemName> is the name of the system,
-	 * <xName> is the name of xParam and <yName> is the name of yParam.
-	 */
-	Parametric2DBisectionResults parametric_dominance_2d_bisection(
-			DominanceVerificationInput& dominating,
-			DominanceVerificationInput& dominated,
-			const RealConstant& xParam,
-			const RealConstant& yParam) const;
-
-	/**
-	 * \brief Performs a parametric dominance checking on a set of two parameters \a params, by using bisection.
-	 */
-	Parametric2DBisectionResults parametric_dominance_2d_bisection(
-			DominanceVerificationInput& dominating,
-			DominanceVerificationInput& dominated,
-			const RealConstantSet& params) const;
-
 	//@}
 
   private:
@@ -227,6 +170,21 @@ class Verifier
 			const HybridImageSet& initial_set,
 			const HybridConstraintSet& safety_constraint,
 			const RealConstantSet& constants) const;
+
+	/*! brief Check whether the refinement of the \a reachability ends up satisfying the \a constraint_set. */
+	bool _forward_backward_refinement_check(
+			HybridAutomaton& system,
+			const HybridImageSet& initial_set,
+			const HybridConstraintSet& constraint_set,
+			const HybridGridTreeSet& reachability) const;
+
+    /*! \brief Returns the new initial grid tree set for a chain reach. */
+    HybridGridTreeSet _reachability_refinement_starting_set(
+    		HybridAutomaton& system,
+    		const HybridImageSet& initial_set,
+    		const HybridConstraintSet& constraint_set,
+    		const HybridGridTreeSet& reachability_restriction,
+    		EvolutionDirection direction) const;
 
 	/*! \brief Prove (once, i.e. for a given grid depth) that the reachable set of \a system starting in \a initial_set
 	 * does definitely DOES NOT respect the \a safety_constraint.
@@ -264,14 +222,6 @@ class Verifier
 	tribool _safety_nosplitting(
 			SafetyVerificationInput& verInput,
 			const RealConstantSet& constants) const;
-
-	/*! \brief Performs one verification sweep along the X axis if \a sweepOnX is true, the Y axis otherwise. */
-	void _parametric_safety_2d_bisection_sweep(
-			Parametric2DBisectionResults& results,
-			SafetyVerificationInput& verInput,
-			RealConstant xParam,
-			RealConstant yParam,
-			bool sweepOnX) const;
 
 	//@}
 
@@ -339,41 +289,10 @@ class Verifier
 			const RealConstantSet& constants,
 			DominanceSystem dominanceSystem) const;
 
-	/*! \brief Performs one dominance sweep along the X axis if \a sweepOnX is true, the Y axis otherwise. */
-	void _parametric_dominance_2d_bisection_sweep(
-			Parametric2DBisectionResults& results,
-			DominanceVerificationInput& dominating,
-			DominanceVerificationInput& dominated,
-			RealConstant xParam,
-			RealConstant yParam,
-			bool sweepOnX) const;
-
 	//@}
 
 	//@{
 	//! \name Other helper methods
-
-	bool _forward_backward_refinement_check(
-			HybridAutomaton& system,
-			const HybridImageSet& initial_set,
-			const HybridConstraintSet& constraint_set,
-			const HybridGridTreeSet& reach) const;
-
-	/* \brief Processes the \a result in order to update the \a positive_int interval, possibly updating \a negative_int too. */
-	void _process_positive_bisection_result(
-			const tribool& result,
-			Interval& positive_int,
-			Interval& negative_int,
-			const Float& current_value,
-			const bool& safeOnBottom) const;
-
-	/*! \brief Processes the \a result in order to update the \a negative_int interval, possibly updating \a positive_int too. */
-	void _process_negative_bisection_result(
-			const tribool& result,
-			Interval& positive_int,
-			Interval& negative_int,
-			const Float& current_value,
-			const bool& safeOnBottom) const;
 
 	/*! \brief Resets cached information, then chooses the initial evolution settings for safety verification of the proper analyser. */
 	void _resetAndChooseInitialSafetySettings(
@@ -413,7 +332,8 @@ class Verifier
 	void _plot_dirpath_init(std::string basename) const;
 	void _plot_reach(
 			const HybridGridTreeSet& reach,
-			Semantics semantics) const;
+			string base_filename,
+			int accuracy) const;
 	void _plot_dominance(
 			const HybridGridTreeSet& reach,
 			DominanceSystem dominanceSystem,
@@ -425,27 +345,6 @@ class Verifier
 
 /* \brief Provides a better printing of a tribool verification result */
 std::string pretty_print(tribool value);
-
-/*! \brief Processes the \a positive_int and \a negative_int initial intervals based on the lower and upper results.
- *  \return A variable determining if we must proceed further with bisection refining, and another variable determining
- *  if positive values are found on the lower bound of \a positive_int (and consequently, negative values are found on the upper
- *  bound of \a negative_int ).
- */
-std::pair<bool,bool> process_initial_bisection_results(
-		Interval& positive_int,
-		Interval& negative_int,
-		const Interval& parameter_range,
-		const tribool& lower_result,
-		const tribool& upper_result);
-
-/*! \brief Converts the positive/negative search intervals into positive/negative bounds.
- * \details The result is obtained by knowing the range of the parameter \a parameter_range and the side where
- * positive values hold, deduced from \a positiveOnBottom. */
-std::pair<Interval,Interval> pos_neg_bounds_from_search_intervals(
-		const Interval& positive_int,
-		const Interval& negative_int,
-		const Interval& parameter_range,
-		bool positiveOnBottom);
 
 /*! \brief Splits the parameters to the maximum based on the \a tolerance
  *  \details The \a numIntervalsPerParam is the number of intervals to split for each parameter.

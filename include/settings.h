@@ -214,10 +214,6 @@ class DiscreteEvolutionSettings {
 	//! This parameters is only used in the chain_reach() routines.
     HybridBoxes domain_bounds;
 
-    //! \brief The reached region for restricting a reachability analysis.
-    //! \details Practically, restricting affects outer reachability only.
-    HybridGridTreeSet reachability_restriction;
-
     //! \brief The grid to use.
     boost::shared_ptr<HybridGrid> grid;
 
@@ -333,7 +329,7 @@ VerificationSettings::VerificationSettings() :
     	maximum_parameter_depth(3),
     	use_param_midpoints_for_proving(false),
     	use_param_midpoints_for_disproving(true),
-    	enable_fb_refinement_for_proving(false)
+    	enable_fb_refinement_for_proving(true)
 { }
 
 
@@ -374,7 +370,6 @@ operator<<(std::ostream& os, const DiscreteEvolutionSettings& p)
        << ",\n  highest_maximum_grid_depth=" << p.highest_maximum_grid_depth
        << ",\n  maximum_grid_height=" << p.maximum_grid_height
        << ",\n  bounding_domain=" << p.domain_bounds
-       << ",\n  reachability_restriction=" << p.reachability_restriction
        << ",\n  grid=" << *p.grid
        << ",\n  splitting_constants_target_ratio=" << p.splitting_constants_target_ratio
        << ",\n  enable_lower_pruning=" << p.enable_lower_pruning
@@ -409,7 +404,6 @@ operator<<(std::ostream& os, const EvolutionSettings& p)
        << ",\n  highest_maximum_grid_depth=" << p.highest_maximum_grid_depth
        << ",\n  maximum_grid_height=" << p.maximum_grid_height
        << ",\n  bounding_domain=" << p.domain_bounds
-       << ",\n  reachability_restriction=" << p.reachability_restriction
        << ",\n  grid=" << *p.grid
        << ",\n  splitting_constants_target_ratio=" << p.splitting_constants_target_ratio
        << ",\n  enable_lower_pruning=" << p.enable_lower_pruning

@@ -721,152 +721,10 @@ _outer_chain_reach_pushLocalFinalCells(
 }
 
 
-bool
-HybridReachabilityAnalyser::
-fb_refinement_check(
-		SystemType& system,
-		const HybridImageSet& initial_set,
-		const HybridConstraintSet& constraint_set,
-		const HybridGridTreeSet& reachability)
-{
-	bool result = false;
-
-	HybridGridTreeSet forward_reach = reachability;
-	HybridGridTreeSet backward_reach(*_settings->grid);
-
-	int& maximum_grid_depth = _settings->maximum_grid_depth;
-	int initial_maximum_grid_depth = maximum_grid_depth;
-
-	time_t mytime;
-	time(&mytime);
-	string foldername = system.name()+"-fbr-png";
-	mkdir(foldername.c_str(),0777);
-	string timestring = asctime(localtime(&mytime));
-	timestring.erase(std::remove(timestring.begin(), timestring.end(), '\n'), timestring.end());
-	foldername = foldername+"/"+timestring;
-	mkdir(foldername.c_str(),0777);
-	string plot_dirpath = foldername;
-
-	/* Given the initial set I, forward reachability F, and unsafe region U:
-
-	(if the settings can be refined)
-	1. Refine the accuracy settings;
-	2. Evaluate the final unsafe set H = F ∩ U ; if H = ∅, return TRUE;
-	3. If the accuracy is over the maximum, return FALSE;
-	4. Obtain the backward reachability B under the constraint set F;
-	5. If B = F, return FALSE;
-	(if the settings can be refined)
-	6. Refine the accuracy settings;
-	7. Evaluate the new initial set I = B ∩ I; if I = ∅, return TRUE;
-	8. If the accuracy is over the maximum, return FALSE;
-	9. Starting from I, obtain the forward reachability F under the constraint set B;
-	10. If F = B, return FALSE;
-
-	11. Restart from 1.
-
-	*/
-
-	while (true) {
-
-		if (maximum_grid_depth >= _settings->highest_maximum_grid_depth) {
-			result = false;
-			break;
-		}
-
-		tribool backward_result = _fb_refinement_step_check(system,initial_set,constraint_set,forward_reach,
-				backward_reach,DIRECTION_BACKWARD,plot_dirpath);
-
-		if (!indeterminate(backward_result)) {
-			result = backward_result;
-			break;
-		}
-
-		if (maximum_grid_depth >= _settings->highest_maximum_grid_depth) {
-			result = false;
-			break;
-		}
-
-		tribool forward_result = _fb_refinement_step_check(system,initial_set,constraint_set,backward_reach,
-				forward_reach,DIRECTION_FORWARD,plot_dirpath);
-
-		if (!indeterminate(forward_result)) {
-			result = forward_result;
-			break;
-		}
-	}
-
-	_settings->maximum_grid_depth = initial_maximum_grid_depth;
-
-	return result;
-}
-
-
-tribool
-HybridReachabilityAnalyser::
-_fb_refinement_step_check(
-		SystemType& system,
-		const HybridImageSet& initial_set,
-		const HybridConstraintSet& constraint_set,
-		HybridGridTreeSet& old_restriction,
-		HybridGridTreeSet& new_restriction,
-		EvolutionDirection direction,
-		string plot_dirpath)
-{
-	// TODO: Completely remove the plotting calls.
-	bool plot = true;
-
-	int& maximum_grid_depth = _settings->maximum_grid_depth;
-
-	_fb_refine_settings();
-
-	ARIADNE_LOG(1,"Depth " << maximum_grid_depth << "\n");
-	old_restriction.mince(maximum_grid_depth);
-
-	HybridGridTreeSet output(*_settings->grid);
-	std::list<EnclosureType> starting_enclosures;
-	for (HybridGridTreeSet::const_iterator cell_it = old_restriction.begin(); cell_it != old_restriction.end(); ++cell_it) {
-		const DiscreteState& loc = cell_it->first;
-		const Box& cell_box = cell_it->second.box();
-		HybridBox hcell_box(loc,cell_box);
-
-		bool add_enclosure = false;
-
-		if (direction == DIRECTION_FORWARD) {
-			add_enclosure = possibly(initial_set.overlaps(hcell_box));
-		} else {
-			add_enclosure = possibly(!constraint_set.covers(hcell_box));
-		}
-
-		if (add_enclosure) {
-			starting_enclosures.push_back(EnclosureType(loc,cell_box));
-			if (plot) output.adjoin(*cell_it);
-		}
-	}
-
-	ARIADNE_LOG(1,"Starting enclosures size: " << starting_enclosures.size() << "\n");
-
-	if (plot) _plot_reach(output,plot_dirpath,(direction == DIRECTION_FORWARD ? "initial" : "final"));
-
-	if (starting_enclosures.empty())
-		return true;
-
-	ARIADNE_LOG(1,"Performing " << (direction == DIRECTION_FORWARD ? "forward" : "backward") << " refinement...\n");
-
-	new_restriction = _outer_chain_reach(system,starting_enclosures,direction,old_restriction);
-
-	if (plot) _plot_reach(new_restriction,plot_dirpath,(direction == DIRECTION_FORWARD ? "forward" : "backward"));
-
-	if (new_reachability_restriction_equals(new_restriction,old_restriction))
-		return false;
-
-	return indeterminate;
-}
-
 void
 HybridReachabilityAnalyser::
-_fb_refine_settings()
+forward_backward_refine_evolution_settings()
 {
-	_settings->maximum_grid_depth++;
 	_discretiser->settings().maximum_enclosure_cell = getMaximumEnclosureCell(*_settings->grid,_settings->maximum_grid_depth);
 	for (std::map<DiscreteState,Float>::iterator step_it = _discretiser->settings().hybrid_maximum_step_size.begin();
 												 step_it != _discretiser->settings().hybrid_maximum_step_size.end();
@@ -881,13 +739,28 @@ HybridReachabilityAnalyser::
 outer_chain_reach(
 		SystemType& system,
 		const HybridImageSet& initial_set,
-		EvolutionDirection direction) const
+		EvolutionDirection direction,
+		const HybridGridTreeSet& reachability_restriction) const
 {
 	HybridGridTreeSet initial(*_settings->grid);
     initial.adjoin_outer_approximation(initial_set,_settings->maximum_grid_depth);
     std::list<EnclosureType> initial_enclosures = cells_to_smallest_enclosures(initial,_settings->maximum_grid_depth);
 
-	return _outer_chain_reach(system,initial_enclosures,direction,_settings->reachability_restriction);
+	return _outer_chain_reach(system,initial_enclosures,direction,reachability_restriction);
+}
+
+
+HybridReachabilityAnalyser::SetApproximationType
+HybridReachabilityAnalyser::
+outer_chain_reach(
+		SystemType& system,
+		const HybridGridTreeSet& initial,
+		EvolutionDirection direction,
+		const HybridGridTreeSet& reachability_restriction) const
+{
+    std::list<EnclosureType> initial_enclosures = cells_to_smallest_enclosures(initial,_settings->maximum_grid_depth);
+
+	return _outer_chain_reach(system,initial_enclosures,direction,reachability_restriction);
 }
 
 
@@ -938,7 +811,8 @@ HybridReachabilityAnalyser::
 _lower_chain_reach(
 		const SystemType& system,
 		const HybridImageSet& initial_set,
-		const HybridConstraintSet& constraint_set) const
+		const HybridConstraintSet& constraint_set,
+		const HybridGridTreeSet& reachability_restriction) const
 {
 	typedef std::list<EnclosureType> EL;
 	typedef std::map<DiscreteState,uint> HUM;
@@ -951,7 +825,7 @@ _lower_chain_reach(
 
 	TimeType lock_time(_settings->lock_to_grid_time,_settings->lock_to_grid_steps);
 
-	bool use_domain_checking = _settings->reachability_restriction.empty();
+	bool use_domain_checking = reachability_restriction.empty();
 
     DisproveData globalFalsInfo(system.state_space());
 
@@ -983,14 +857,12 @@ _lower_chain_reach(
 				new_reach,newFalsInfo) = worker.get_result();
 
 		if (!constraint_set.empty()) {
-			HybridGridTreeSet reachability_restriction;
-			if (_settings->reachability_restriction.empty())
-				reachability_restriction.adjoin_outer_approximation(_settings->domain_bounds,_settings->maximum_grid_depth);
-			else
-				reachability_restriction = _settings->reachability_restriction;
+			HybridGridTreeSet local_reachability_restriction = reachability_restriction;
+			if (local_reachability_restriction.empty())
+				local_reachability_restriction.adjoin_outer_approximation(_settings->domain_bounds,_settings->maximum_grid_depth);
 
 			HybridGridTreeSet possibly_feasible_cells = this->possibly_feasible_cells(
-					new_reach,constraint_set,newFalsInfo.getEpsilon(),reachability_restriction);
+					new_reach,constraint_set,newFalsInfo.getEpsilon(),local_reachability_restriction);
 
 			if (possibly_feasible_cells.size() < new_reach.size()) {
 				throw ReachUnsatisfiesConstraintException("The lower reached region partially does not satisfy the constraint.");
@@ -1027,7 +899,6 @@ possibly_feasible_cells(
 {
 	reachability_restriction.mince(_settings->maximum_grid_depth);
 	HybridGridTreeSet feasible_reachability_restriction = possibly_overlapping_cells(reachability_restriction,constraint);
-	feasible_reachability_restriction.recombine();
 	HybridVectorFunction constraint_functions = constraint.functions();
 	HybridBoxes eps_constraint_codomain = eps_codomain(feasible_reachability_restriction, eps, constraint_functions);
 
@@ -1075,10 +946,11 @@ std::pair<HybridReachabilityAnalyser::SetApproximationType,DisproveData>
 HybridReachabilityAnalyser::
 lower_chain_reach(
 		SystemType& system,
-		const HybridImageSet& initial_set) const
+		const HybridImageSet& initial_set,
+		const HybridGridTreeSet& reachability_restriction) const
 {
 	HybridConstraintSet constraint_set;
-	return lower_chain_reach(system,initial_set,constraint_set);
+	return lower_chain_reach(system,initial_set,constraint_set,reachability_restriction);
 }
 
 std::pair<HybridReachabilityAnalyser::SetApproximationType,DisproveData>
@@ -1086,7 +958,8 @@ HybridReachabilityAnalyser::
 lower_chain_reach(
 		SystemType& system,
 		const HybridImageSet& initial_set,
-		const HybridConstraintSet& constraint_set) const
+		const HybridConstraintSet& constraint_set,
+		const HybridGridTreeSet& reachability_restriction) const
 {
 	HybridGridTreeSet reach(*_settings->grid);
 	DisproveData disproveData(system.state_space());
@@ -1108,7 +981,7 @@ lower_chain_reach(
 			system.substitute(*set_it);
 
 			std::pair<HybridGridTreeSet,DisproveData> reachAndDisproveData =
-					_lower_chain_reach(system,initial_set,constraint_set);
+					_lower_chain_reach(system,initial_set,constraint_set,reachability_restriction);
 
 			reach.adjoin(reachAndDisproveData.first);
 			disproveData.updateWith(reachAndDisproveData.second);

@@ -171,19 +171,18 @@ class HybridReachabilityAnalyser
 
     /*! \brief Compute an outer-approximation to the chain-reachable set of \a system starting in \a initial_set with a given \a direction, using
      * upper semantics; the method performs discretisation before transitions, then checks activations on the discretised cells.
-     * \return The reach set */
+     * \return The reach set. */
     virtual SetApproximationType outer_chain_reach(
     		SystemType& system,
 			const HybridImageSet& initial_set,
-			EvolutionDirection direction) const;
+			EvolutionDirection direction,
+			const HybridGridTreeSet& reachability_restriction) const;
 
-	/*! \brief Checks by means of forward/backward refinement if a refinement of \a reachability of \a system
-	 * (starting from \a initial_set) satisfies \a constraint_set. */
-	bool fb_refinement_check(
-			SystemType& system,
-			const HybridImageSet& initial_set,
-			const HybridConstraintSet& constraint_set,
-			const HybridGridTreeSet& reachability);
+    virtual SetApproximationType outer_chain_reach(
+    		SystemType& system,
+    		const HybridGridTreeSet& initial,
+    		EvolutionDirection direction,
+    		const HybridGridTreeSet& reachability_restriction) const;
 
     /*! \brief Compute an outer-approximation to the chain-reachable set of \a system starting in \a initial_set, with
      * lower semantics.
@@ -191,7 +190,8 @@ class HybridReachabilityAnalyser
      * \return The reach set and the falsification information (namely, only the reach bounds and the epsilon). */
     virtual std::pair<SetApproximationType,DisproveData> lower_chain_reach(
     		SystemType& system,
-			const HybridImageSet& initial_set) const;
+			const HybridImageSet& initial_set,
+			const HybridGridTreeSet& reachability_restriction) const;
 
     /*! \brief Compute an outer-approximation to the chain-reachable set of \a system starting in \a initial_set, with
      * lower semantics, checking for inclusion into a \a safe_region.
@@ -202,7 +202,8 @@ class HybridReachabilityAnalyser
     virtual std::pair<SetApproximationType,DisproveData> lower_chain_reach(
     		SystemType& system,
 			const HybridImageSet& initial_set,
-			const HybridConstraintSet& constraint_set) const;
+			const HybridConstraintSet& constraint_set,
+			const HybridGridTreeSet& reachability_restriction) const;
   
     /*! \brief Tunes the settings of the internal evolver. */
     void tuneEvolverSettings(
@@ -218,6 +219,9 @@ class HybridReachabilityAnalyser
     		const HybridConstraintSet& constraint,
     		const HybridFloatVector eps,
     		HybridGridTreeSet reachability_restriction) const;
+
+    /*! \brief Refines the analyser settings in forward/backward reachability refinement. */
+    void forward_backward_refine_evolution_settings();
 
     //@}
 
@@ -261,13 +265,14 @@ class HybridReachabilityAnalyser
     		EvolutionDirection direction,
     		int accuracy) const;
 
+    /*! \brief Performs outer chain reach calculation. */
     SetApproximationType _outer_chain_reach(
     		SystemType& system,
     		const std::list<EnclosureType>& initial_enclosures,
     		EvolutionDirection direction,
     		const HybridGridTreeSet& reachability_restriction) const;
 
-    /*! \brief Performs outer chain reach calculation, where the constants of the \a system are assumed to be already splitted */
+    /*! \brief Performs outer chain reach calculation, where the constants of the \a system are assumed to be already splitted. */
     SetApproximationType _outer_chain_reach_splitted(
     		const SystemType& system,
     		const std::list<EnclosureType>& initial_enclosures,
@@ -335,7 +340,8 @@ class HybridReachabilityAnalyser
     std::pair<SetApproximationType,DisproveData> _lower_chain_reach(
     		const SystemType& system,
     		const HybridImageSet& initial_set,
-			const HybridConstraintSet& constraint_set) const;
+			const HybridConstraintSet& constraint_set,
+			const HybridGridTreeSet& reachability_restriction) const;
 
     /*! \brief Filters \a final_enclosures into \a initial_enclosures.
      * \details The procedure prunes a percentage of the enclosures based on \a adjoined_evolve_sizes and \a superposed_evolve_sizes. */
@@ -355,21 +361,6 @@ class HybridReachabilityAnalyser
     std::list<RealConstantSet> _getSplitConstantsIntervalsSet(
     		HybridAutomaton system,
     		float tolerance) const;
-
-    /*! \brief Performs a check of one step (in a given \a direction) of the forward/backward refinement.
-     * \details Returns true if \a output_enclosures is empty, false if \a new_restriction is equal to
-     * \a old_restriction, indeterminate otherwise. */
-    tribool _fb_refinement_step_check(
-    		SystemType& system,
-    		const HybridImageSet& initial_set,
-    		const HybridConstraintSet& constraint_set,
-    		HybridGridTreeSet& old_restriction,
-    		HybridGridTreeSet& new_restriction,
-    		EvolutionDirection direction,
-    		string plot_dirpath);
-
-    /*! \brief Refines the analyser settings in forward/backward reachability refinement. */
-    void _fb_refine_settings();
 };
 
 template<class HybridEnclosureType>
