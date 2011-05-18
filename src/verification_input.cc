@@ -75,9 +75,9 @@ SafetyVerificationInput::SafetyVerificationInput(
 		HybridAutomaton& system,
 		HybridImageSet& initial_set,
 		HybridBoxes& domain,
-		HybridBoxes& safe_region) :
+		HybridConstraintSet& safety_constraint) :
 		VerificationInput(system,initial_set,domain),
-	    _safe_region(safe_region)
+	    _safety_constraint(safety_constraint)
 {
 	_check_fields();
 }
@@ -88,12 +88,14 @@ void SafetyVerificationInput::_check_fields() const
 	VerificationInput::_check_fields();
 
 	HybridSpace hspace = getSystem().state_space();
-	for (HybridSpace::const_iterator hspace_it = hspace.begin(); hspace_it != hspace.end(); ++hspace_it) {
-		HybridBoxes::const_iterator safe_it = _safe_region.find(hspace_it->first);
-		ARIADNE_ASSERT_MSG(safe_it != _safe_region.end(),
-						   "The location " << hspace_it->first.name() << "is not present into the safe region.");
-		ARIADNE_ASSERT_MSG(hspace_it->second == safe_it->second.dimension(),
-						   "The dimension of the continuous space in the safe region for location " << hspace_it->first.name() << " does not match the system space");
+
+	for (HybridConstraintSet::const_iterator constraint_it = _safety_constraint.begin();
+			constraint_it != _safety_constraint.end(); ++constraint_it) {
+		HybridSpace::const_iterator space_it = hspace.find(constraint_it->first);
+		ARIADNE_ASSERT_MSG(space_it != hspace.end(),
+						   "The location " << constraint_it->first.name() << "is not present into the hybrid space of the system.");
+		ARIADNE_ASSERT_MSG(space_it->second == constraint_it->second.function().argument_size(),
+						   "The dimension of the continuous space for location " << space_it->first.name() << " does not match the argument size of the constraint.");
 	}
 }
 
@@ -102,7 +104,7 @@ std::ostream&
 SafetyVerificationInput::write(std::ostream& os) const
 {
 	os << "(System: " << getSystem() << "; Initial set: " << getInitialSet() << "; Domain: " <<
-			getDomain() << "; Safe region: " << _safe_region << ")";
+			getDomain() << "; Safety constraint: " << _safety_constraint << ")";
 	return os;
 }
 

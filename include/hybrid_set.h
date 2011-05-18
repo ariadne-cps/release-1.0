@@ -60,6 +60,7 @@ class HybridImageSet;
 class HybridConstraintSet;
 
 typedef std::map<DiscreteState,Vector<Float> > HybridFloatVector;
+typedef std::map<DiscreteState,VectorFunction > HybridVectorFunction;
 
 template<class HBS> class HybridBasicSetExpression { };
 template<class HDS> class HybridDenotableSetExpression { };
@@ -286,6 +287,16 @@ class HybridConstraintSet
 
 	using std::map<DiscreteState,ConstraintSet>::insert;
 
+	HybridConstraintSet() { }
+	/** \brief Constructs from a \a codomain and some functions \a func.
+	 * \details The \a func can be a superset of \a codomain, meaning that the absence of codomain
+	   for a location is equivalent to the absence of constraint. On the other hand, functions for all
+	   the locations of \a codomain must be explicitated. */
+	HybridConstraintSet(const HybridVectorFunction& func, const HybridBoxes& codomain);
+
+	/** \brief Constructs from a \a constraint, copied in all locations from \a hspace */
+	HybridConstraintSet(const HybridSpace& hspace, ConstraintSet constraint);
+
     virtual HybridConstraintSet* clone() const { return new HybridConstraintSet(*this); }
     virtual HybridSpace space() const { return HybridSpace(*this); }
     virtual ConstraintSet& operator[](DiscreteState q) {
@@ -293,6 +304,13 @@ class HybridConstraintSet
     virtual ConstraintSet const& operator[](DiscreteState q) const {
         ARIADNE_ASSERT(this->find(q)!=this->locations_end());
         return this->find(q)->second; }
+
+    virtual HybridVectorFunction functions() const {
+    	HybridVectorFunction result;
+    	for (HybridConstraintSet::const_iterator loc_it = this->begin(); loc_it != this->end(); ++loc_it)
+    		result.insert(std::pair<DiscreteState,VectorFunction>(loc_it->first,loc_it->second.function()));
+    	return result;
+    }
 
     virtual tribool overlaps(const HybridBox& hbx) const {
         locations_const_iterator loc_iter=this->find(hbx.first);
@@ -828,6 +846,9 @@ tribool covers(const HybridConstraintSet& cons_set, const HybridGridTreeSet& gri
 HybridGridTreeSet possibly_overlapping_cells(const HybridGridTreeSet& grid_set, const HybridConstraintSet& cons_set);
 //! \brief Applies \a cons_set to \a grid_set in order to obtain the covered cells.
 HybridGridTreeSet covered_cells(const HybridGridTreeSet& grid_set, const HybridConstraintSet& cons_set);
+
+//! \brief Evaluates the codomain of the function \a func applied on the cells of \a grid_set, each widened by \a eps.
+HybridBoxes eps_codomain(const HybridGridTreeSet& grid_set, const HybridFloatVector& eps, const HybridVectorFunction& func);
 
 } // namespace Ariadne
 

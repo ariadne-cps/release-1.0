@@ -300,9 +300,7 @@ public:
 					 const HybridTime& time, 
 					 const HybridGrid& grid,
 					 const int& accuracy,
-					 const uint& concurrency,
-					 const HybridBoxes& feasible_bounds,
-					 const bool& terminate_as_soon_as_infeasible)
+					 const uint& concurrency)
 	: _discretiser(discretiser),
 	  _initial_enclosures(initial_enclosures),
 	  _sys(sys), 
@@ -310,8 +308,6 @@ public:
 	  _grid(grid),
 	  _accuracy(accuracy),
 	  _concurrency(concurrency),
-	  _disprove_bounds(feasible_bounds),
-	  _skip_if_disproved(terminate_as_soon_as_infeasible),
 	  _falsInfo(DisproveData(sys.state_space()))
     {
     	_reach = HGTS(grid);
@@ -327,8 +323,6 @@ public:
     {
     	if (_concurrency == 1) {
     		for (EL::const_iterator encl_it = _initial_enclosures.begin(); encl_it != _initial_enclosures.end(); ++encl_it) {
-				if (_skip_if_disproved && _falsInfo.getIsDisproved())
-					break;
 
 				HybridBasicSet<CE> current_initial_enclosure = *encl_it;
 				DisproveData current_falsInfo(_sys.state_space());
@@ -337,8 +331,7 @@ public:
 
 				// Get the enclosures from the initial enclosure, in a lock_time flight
 				make_ltuple<ELS,ELS,DisproveData>(current_reach_enclosures,current_evolve_enclosures,current_falsInfo) =
-										_discretiser->evolver()->lower_chain_reach_evolve_disprove(_sys,current_initial_enclosure,_time,
-																						  _disprove_bounds, _skip_if_disproved);
+										_discretiser->evolver()->lower_chain_reach_evolve_disprove(_sys,current_initial_enclosure,_time);
 
 				current_reach = _discretiser->_discretise(current_reach_enclosures,_grid,_accuracy);
 				current_evolve = _discretiser->_discretise(current_evolve_enclosures,_grid,_accuracy);
@@ -386,10 +379,6 @@ private:
 	EL _final_enclosures;
 	// The reached region
 	HGTS _reach;
-	// The disprove bounds for verification
-	const HybridBoxes& _disprove_bounds;
-	// Whether to skip the evolution as soon as a disproving is obtained
-	const bool& _skip_if_disproved;
 	// The falsification info
 	DisproveData _falsInfo;
 
@@ -413,8 +402,8 @@ private:
         {
 			_inp_mutex.lock();
 
-			// If all initial enclosures have been picked or if we have disproved and we must skip
-			if (_initial_enclosures.empty() || (_skip_if_disproved && _falsInfo.getIsDisproved()))
+			// If all initial enclosures have been picked
+			if (_initial_enclosures.empty())
 			{
 				_inp_mutex.unlock();					
 				break;
@@ -433,8 +422,7 @@ private:
 
 				// Get the enclosures from the initial enclosure, in a lock_time flight
 				make_ltuple<ELS,ELS,DisproveData>(current_reach_enclosures,current_evolve_enclosures,current_falsInfo) =
-										_discretiser->evolver()->lower_chain_reach_evolve_disprove(_sys,current_initial_enclosure,_time,
-																						  _disprove_bounds, _skip_if_disproved);
+										_discretiser->evolver()->lower_chain_reach_evolve_disprove(_sys,current_initial_enclosure,_time);
 
 				// Get the discretisation
 				current_reach = _discretiser->_discretise(current_reach_enclosures,_grid,_accuracy);

@@ -49,8 +49,7 @@ class VerificationInput
 	VerificationInput(
 			HybridAutomaton& system,
 			HybridImageSet& initial_set,
-			HybridBoxes& domain
-			);
+			HybridBoxes& domain);
 
 	virtual std::ostream& write(std::ostream&) const;
 
@@ -68,17 +67,16 @@ inline std::ostream& operator<<(std::ostream& os, const VerificationInput& verIn
 class SafetyVerificationInput : public VerificationInput
 {
   private:
-	HybridBoxes _safe_region;
+	HybridConstraintSet _safety_constraint;
 
   public:
-	const HybridBoxes& getSafeRegion() const { return _safe_region; }
+	const HybridConstraintSet& getSafetyConstraint() const { return _safety_constraint; }
 
 	SafetyVerificationInput(
 			HybridAutomaton& system,
 			HybridImageSet& initial_set,
 			HybridBoxes& domain,
-			HybridBoxes& safe_region
-			);
+			HybridConstraintSet& safety_constraint);
 
 	virtual std::ostream& write(std::ostream&) const;
 
@@ -91,8 +89,7 @@ protected:
 
 inline std::ostream& operator<<(
 		std::ostream& os,
-		const SafetyVerificationInput& verInput
-		)
+		const SafetyVerificationInput& verInput)
 {
     return verInput.write(os);
 }
@@ -111,8 +108,7 @@ class DominanceVerificationInput : public VerificationInput
 			HybridAutomaton& system,
 			HybridImageSet& initial_set,
 			HybridBoxes& domain,
-			std::vector<uint>& projection
-			);
+			std::vector<uint>& projection);
 
 	virtual std::ostream& write(std::ostream&) const;
 

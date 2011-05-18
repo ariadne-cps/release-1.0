@@ -220,30 +220,30 @@ class Verifier
 	//! \name Safety methods
 
 	/*! \brief Prove (once, i.e. for a given grid depth) that the the reachable set of \a system starting in \a initial_set
-	 * definitely remains in the \a safe region.
+	 * definitely respects the \a safety_constraint.
 	 * \details The \a constants are substituted into the system. */
 	bool _safety_proving_once(
 			HybridAutomaton& system,
 			const HybridImageSet& initial_set,
-			const HybridBoxes& safe_region,
+			const HybridConstraintSet& safety_constraint,
 			const RealConstantSet& constants) const;
 
 	/*! \brief Prove (once, i.e. for a given grid depth) that the reachable set of \a system starting in \a initial_set
-	 * does definitely NOT remain in the \a safe region.
+	 * does definitely DOES NOT respect the \a safety_constraint.
 	 * \details The \a constants are substituted into the system. */
 	bool _safety_disproving_once(
 			HybridAutomaton& system,
 			const HybridImageSet& initial_set,
-			const HybridBoxes& safe_region,
+			const HybridConstraintSet& safety_constraint,
 			const RealConstantSet& constants) const;
 
     /*! \brief Attempt (once, i.e. for a given grid depth) to verify that the reachable set of \a system starting in \a initial_set
-     * remains in a safe_box.
+     * respects the \a safety_constraint.
      * \details The \a constants are substituted into the system. */
     tribool _safety_once(
     		HybridAutomaton& system,
 			const HybridImageSet& initial_set,
-			const HybridBoxes& safe_region,
+			const HybridConstraintSet& safety_constraint,
 			const RealConstantSet& constants) const;
 
 	/*! \brief Performs iterative safety verification where \a constant is substituted into the system.
@@ -356,7 +356,7 @@ class Verifier
 	bool _forward_backward_refinement_check(
 			HybridAutomaton& system,
 			const HybridImageSet& initial_set,
-			const HybridBoxes& target_region,
+			const HybridConstraintSet& constraint_set,
 			const HybridGridTreeSet& reach) const;
 
 	/* \brief Processes the \a result in order to update the \a positive_int interval, possibly updating \a negative_int too. */
@@ -379,14 +379,12 @@ class Verifier
 	void _resetAndChooseInitialSafetySettings(
 			const HybridAutomaton& system,
 			const HybridBoxes& domain,
-			const HybridBoxes& safe,
 			const RealConstantSet& locked_constants) const;
 
 	/*! \brief Chooses the initial evolution settings for safety verification of the proper analyser, given the \a semantics.*/
 	void _chooseInitialSafetySettings(
 			const HybridAutomaton& system,
 			const HybridBoxes& domain,
-			const HybridBoxes& safe,
 			const RealConstantSet& locked_constants,
 			Semantics semantics) const;
 

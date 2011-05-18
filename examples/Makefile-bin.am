@@ -4,14 +4,13 @@ bin_PROGRAMS= 	tutorial \
 		watertank-nonlinear-monolithic-hysteresis \
 		watertank-nonlinear-monolithic-proportional \
 		watertank-compositional-hysteresis \
-		watertank-aasap watertank-time \
+		watertank-aasap \
 		watertank-monolithic-dominance \
 		watertank-nonlinear-monolithic-dominance \
-		pss-revised boost_power_converter \
+		boost_power_converter \
 		bouncingball 3bouncingballs ecoli sinusoid-sin \
-		rectifier rectifier_oneloc springs \
+		rectifier springs \
 		cmos_inverter_analoginput robotarm \
-		coconut-demo coconut-final-demo vanderpool \
 		fb_refinement
 
 tutorial_SOURCES= tutorial.cc 
@@ -23,13 +22,8 @@ sinusoid_sin_SOURCES= sinusoid-sin.cc
 rectifier_SOURCES= rectifier.cc
 springs_SOURCES= springs.cc
 cmos_inverter_analoginput_SOURCES= cmos_inverter_analoginput.cc
-rectifier_oneloc_SOURCES= rectifier_oneloc.cc
 robotarm_SOURCES= robotarm.cc
-pss_revised_SOURCES= pss-revised.cc
-coconut_final_demo_SOURCES= coconut-final-demo.cc
-coconut_demo_SOURCES= coconut-demo.cc powermanagement.cc coconut-demo.h coconut-system.h
 watertank_aasap_SOURCES= watertank-aasap.cc
-watertank_time_SOURCES= watertank-time.cc
 watertank_compositional_hysteresis_SOURCES= watertank-compositional-hysteresis.cc
 watertank_monolithic_proportional_SOURCES= watertank-monolithic-proportional.cc
 watertank_monolithic_hysteresis_SOURCES= watertank-monolithic-hysteresis.cc
@@ -37,6 +31,5 @@ watertank_nonlinear_monolithic_proportional_SOURCES= watertank-nonlinear-monolit
 watertank_nonlinear_monolithic_hysteresis_SOURCES= watertank-nonlinear-monolithic-hysteresis.cc
 watertank_monolithic_dominance_SOURCES = watertank-monolithic-dominance.cc
 watertank_nonlinear_monolithic_dominance_SOURCES = watertank-nonlinear-monolithic-dominance.cc
-vanderpool_SOURCES = vanderpool.cc
 fb_refinement_SOURCES = fb_refinement.cc
 

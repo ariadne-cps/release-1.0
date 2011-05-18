@@ -89,8 +89,8 @@ TestHybridSet::test_hybrid_constraint_set()
     Vector<Float> b2=Vector<Float>::unit(2,1);
     DiscreteState loc1(23);
     DiscreteState loc2(5);
-    ConstraintSet cos1(bx,VectorAffineFunction(A,b1));
-    ConstraintSet cos2(bx,VectorAffineFunction(A,b2));
+    ConstraintSet cos1(VectorAffineFunction(A,b1),bx);
+    ConstraintSet cos2(VectorAffineFunction(A,b2),bx);
     hcs.insert(make_pair(loc1,cos1));
     hcs[loc2]=cos2;
 

@@ -120,8 +120,7 @@ class EvolverInterface
     tuple<EnclosureListType,EnclosureListType,DisproveData>
     lower_chain_reach_evolve_disprove(const SystemType& system,
 									  const EnclosureType& initial_set,
-									  const TimeType& time, const HybridBoxes& disprove_bounds,
-									  const bool& skip_if_disproved) const = 0;
+									  const TimeType& time) const = 0;
   
     //! \brief Compute an approximation to the evolved set under the given semantics. 
     virtual 

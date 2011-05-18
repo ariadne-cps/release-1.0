@@ -45,10 +45,20 @@ int main(int argc,char *argv[])
 	// The domain
 	HybridBoxes domain = bounding_boxes(system.state_space(),Box(2,-0.1,10.0,-0.1,1.1));
 
-	// The safe region
-	HybridBoxes safe_box = bounding_boxes(system.state_space(),Box(2, 5.25, 8.25, -std::numeric_limits<double>::max(), std::numeric_limits<double>::max()));
+	// The safety constraint
+	RealVariable x("x");
+	RealVariable y("y");
+	List<RealVariable> varlist;
+	varlist.append(x);
+	varlist.append(y);
+	RealExpression expr = x;
+	List<RealExpression> consexpr;
+	consexpr.append(expr);
+	VectorFunction cons_f(consexpr,varlist);
+	Box codomain(1,5.25,8.25);
+	HybridConstraintSet safety_constraint(system.state_space(),ConstraintSet(cons_f,codomain));
 
-	SafetyVerificationInput verInfo(system, initial_set, domain, safe_box);
+	SafetyVerificationInput verInfo(system, initial_set, domain, safety_constraint);
 
 	/// Verification
 

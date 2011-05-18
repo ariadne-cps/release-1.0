@@ -170,13 +170,13 @@ ImageSet::write(std::ostream& os) const
 
 
 ConstraintSet::ConstraintSet()
-    : _codomain(), _function(new VectorScalingFunction())
+    : _function(new VectorScalingFunction()), _codomain()
 {
 }
 
 
-ConstraintSet::ConstraintSet(const Vector<Interval>& codom, const VectorFunction& fn)
-    : _codomain(codom), _function(fn)
+ConstraintSet::ConstraintSet(const VectorFunction& fn, const Vector<Interval>& codom)
+    : _function(fn), _codomain(codom)
 {
     ARIADNE_ASSERT(codom.size()==fn.result_size());
 }

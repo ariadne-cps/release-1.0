@@ -47,10 +47,22 @@ int main(int argc,char *argv[])
 	// The domain
 	HybridBoxes domain = bounding_boxes(system.state_space(),Box(2,1.0,10.0,-0.1,1.1));
 
-	// The safe region
-	HybridBoxes safe_box = bounding_boxes(system.state_space(),Box(2, 5.25, 8.25, -std::numeric_limits<double>::max(), std::numeric_limits<double>::max()));
+	// The safety constraint
+	RealVariable x("x");
+	RealVariable y("y");
+	List<RealVariable> varlist;
+	varlist.append(x);
+	varlist.append(y);
 
-	SafetyVerificationInput verInfo(system, initial_set, domain, safe_box);
+	RealExpression expr = x;
+	List<RealExpression> consexpr;
+	consexpr.append(expr);
+
+	VectorFunction cons_f(consexpr,varlist);
+	Box codomain(1,6.2,8.25);
+	HybridConstraintSet safety_constraint(system.state_space(),ConstraintSet(cons_f,codomain));
+
+	SafetyVerificationInput verInfo(system, initial_set, domain, safety_constraint);
 
 	/// Verification
 
@@ -63,18 +75,19 @@ int main(int argc,char *argv[])
 	HybridReachabilityAnalyser outer_analyser(outer_evolver);
 	HybridReachabilityAnalyser lower_analyser(lower_evolver);
 	outer_analyser.settings().lowest_maximum_grid_depth = 2;
-	lower_analyser.settings().lowest_maximum_grid_depth = 1;
+	lower_analyser.settings().lowest_maximum_grid_depth = 2;
 	outer_analyser.settings().highest_maximum_grid_depth = 5;
 	lower_analyser.settings().highest_maximum_grid_depth = 5;
 	Verifier verifier(outer_analyser,lower_analyser);
 	verifier.verbosity = verifierVerbosity;
 	verifier.settings().maximum_parameter_depth = 5;
-	verifier.settings().plot_results = false;
+	verifier.settings().plot_results = true;
 
 	RealConstantSet parameters;
 	parameters.insert(RealConstant("ref",Interval(5.25,8.25)));
 	parameters.insert(RealConstant("Kp",Interval(0.2,0.8)));
 
-	std::list<ParametricOutcome> results = verifier.parametric_safety(verInfo, parameters);
-	draw(system.name(),results);
+	cout << verifier.safety(verInfo);
+	//std::list<ParametricOutcome> results = verifier.parametric_safety(verInfo, parameters);
+	//draw(system.name(),results);
 }

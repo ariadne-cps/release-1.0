@@ -112,10 +112,6 @@ int main()
     double MAX_STEP_SIZE = 0.01;
     int VERBOSITY = 1;
 
-    /// Sets the analyzer parameters
-    double LOCK_TO_GRID_TIME = 3.0;
-    int MAX_GRID_DEPTH = 12;
-
     /// Builds the Hybrid System
   
     /// Creates a HybridAutomaton object
@@ -369,6 +365,10 @@ int main()
     std::cout << " done." << std::endl;
 
 /*
+    /// Sets the analyzer parameters
+    double LOCK_TO_GRID_TIME = 3.0;
+    int MAX_GRID_DEPTH = 12;
+
     /// Creates a ReachabilityAnalyser object
     HybridReachabilityAnalyser analyser(evolver);
     analyser.verbosity = 1;

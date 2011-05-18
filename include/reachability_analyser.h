@@ -69,8 +69,6 @@ class HybridGridTreeSet;
 template<class ES> class HybridListSet;
 template<class ES> class HybridDiscretiser;
 
-enum OuterReachabilitySkippingPolicy { NOT_INSIDE_TARGET, SUPERSET_OF_TARGET };
-
 // Keep this value in sync with the maximum verbosity level on the Analyser methods
 const unsigned analyser_max_verbosity_level_used = 7;
 
@@ -179,26 +177,12 @@ class HybridReachabilityAnalyser
 			const HybridImageSet& initial_set,
 			EvolutionDirection direction) const;
 
-    /*! \brief Compute an outer-approximation to the chain-reachable set of \a system starting in \a initial_set, with
-     * upper semantics.
-     * \details The method performs discretisation before transitions, then checks activations on the discretised cells.
-     * If \a skipIfOutOfTargetRegion is set, it checks online whether the reachable area is inside the \a target_region, skipping
-     * further calculations in that case (useful for safety proving).
-     * \return The reach set. */
-    virtual SetApproximationType outer_chain_reach(
-    		SystemType& system,
-			const HybridImageSet& initial_set,
-			EvolutionDirection direction,
-			bool check_target_bounds_for_skipping,
-			const HybridBoxes& target_bounds,
-			OuterReachabilitySkippingPolicy skippingPolicy) const;
-
 	/*! \brief Checks by means of forward/backward refinement if a refinement of \a reachability of \a system
-	 * (starting from \a initial_set) is inside \a target_bounds. */
+	 * (starting from \a initial_set) satisfies \a constraint_set. */
 	bool fb_refinement_check(
 			SystemType& system,
 			const HybridImageSet& initial_set,
-			const HybridBoxes& target_bounds,
+			const HybridConstraintSet& constraint_set,
 			const HybridGridTreeSet& reachability);
 
     /*! \brief Compute an outer-approximation to the chain-reachable set of \a system starting in \a initial_set, with
@@ -213,14 +197,12 @@ class HybridReachabilityAnalyser
      * lower semantics, checking for inclusion into a \a safe_region.
      * \details the method performs periodical discretisations and checks the new reached region for inclusion
      * The resulting set is a subset of the outer-approximation of the whole evolution set.
-     * If \a enable_quick_safety_disproving is set, it checks online whether the reachable area is outside the \a safe_region, skipping
-     * further calculations in that case (useful for safety disproving).
+     * If \a constraint_set is not empty, it checks online whether the reachable area does not satisfy the constraint.
      * \return The reach set and the falsification information. */
     virtual std::pair<SetApproximationType,DisproveData> lower_chain_reach(
     		SystemType& system,
 			const HybridImageSet& initial_set,
-			const HybridBoxes& safe_region,
-			bool enable_quick_safety_disproving) const;
+			const HybridConstraintSet& constraint_set) const;
   
     /*! \brief Tunes the settings of the internal evolver. */
     void tuneEvolverSettings(
@@ -228,6 +210,14 @@ class HybridReachabilityAnalyser
     		const HybridFloatVector& hmad,
 			uint maximum_grid_depth,
 			Semantics semantics);
+
+    /*! \brief Gets the cells from \a reach (inside \a reachability_restriction) that satisfy \a constraint
+     * under a relaxation of the reachability given by \a eps. */
+    HybridGridTreeSet possibly_feasible_cells(
+    		const HybridGridTreeSet& reach,
+    		const HybridConstraintSet& constraint,
+    		const HybridFloatVector eps,
+    		HybridGridTreeSet reachability_restriction) const;
 
     //@}
 
@@ -277,21 +267,12 @@ class HybridReachabilityAnalyser
     		EvolutionDirection direction,
     		const HybridGridTreeSet& reachability_restriction) const;
 
-    SetApproximationType _outer_chain_reach(
-    		SystemType& system,
-			const std::list<EnclosureType>& initial_enclosures,
-    		EvolutionDirection direction,
-    		const HybridGridTreeSet& reachability_restriction,
-    		bool check_target_bounds_for_skipping,
-    		const HybridBoxes& target_bounds,
-    		OuterReachabilitySkippingPolicy skippingPolicy) const;
-
     /*! \brief Performs outer chain reach calculation, where the constants of the \a system are assumed to be already splitted */
     SetApproximationType _outer_chain_reach_splitted(
     		const SystemType& system,
     		const std::list<EnclosureType>& initial_enclosures,
     		EvolutionDirection direction,
-    		const HybridGridTreeSet& restriction) const;
+    		const HybridGridTreeSet& reachability_restriction) const;
 
     /*! \brief Pushes into \a result_enclosures the enclosures from \a reachCells.
      * \details Ignores enclosures that lie outside the domain.
@@ -349,14 +330,12 @@ class HybridReachabilityAnalyser
     		bool use_domain_checking) const;
 
     /*! \brief Performs the lower chain reachability of \a system.
-     * \details If \a terminate_as_soon_as_infeasible is set, the \a feasibility_region is checked: if an enclosure definitely lies
-     * out of such set, the reachability procedure is gracefully terminated.
-     */
+     * \details The \a constraint_set is checked: if not empty and its epsilon relaxation is not satisfied
+     * for the current lower reach, an exception is raised. */
     std::pair<SetApproximationType,DisproveData> _lower_chain_reach(
     		const SystemType& system,
     		const HybridImageSet& initial_set,
-    		const HybridBoxes& feasibility_region,
-    		bool terminate_as_soon_as_infeasible) const;
+			const HybridConstraintSet& constraint_set) const;
 
     /*! \brief Filters \a final_enclosures into \a initial_enclosures.
      * \details The procedure prunes a percentage of the enclosures based on \a adjoined_evolve_sizes and \a superposed_evolve_sizes. */
@@ -383,7 +362,7 @@ class HybridReachabilityAnalyser
     tribool _fb_refinement_step_check(
     		SystemType& system,
     		const HybridImageSet& initial_set,
-    		const HybridBoxes& target_bounds,
+    		const HybridConstraintSet& constraint_set,
     		HybridGridTreeSet& old_restriction,
     		HybridGridTreeSet& new_restriction,
     		EvolutionDirection direction,

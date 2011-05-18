@@ -726,7 +726,7 @@ HybridReachabilityAnalyser::
 fb_refinement_check(
 		SystemType& system,
 		const HybridImageSet& initial_set,
-		const HybridBoxes& target_bounds,
+		const HybridConstraintSet& constraint_set,
 		const HybridGridTreeSet& reachability)
 {
 	bool result = false;
@@ -773,7 +773,7 @@ fb_refinement_check(
 			break;
 		}
 
-		tribool backward_result = _fb_refinement_step_check(system,initial_set,target_bounds,forward_reach,
+		tribool backward_result = _fb_refinement_step_check(system,initial_set,constraint_set,forward_reach,
 				backward_reach,DIRECTION_BACKWARD,plot_dirpath);
 
 		if (!indeterminate(backward_result)) {
@@ -786,7 +786,7 @@ fb_refinement_check(
 			break;
 		}
 
-		tribool forward_result = _fb_refinement_step_check(system,initial_set,target_bounds,backward_reach,
+		tribool forward_result = _fb_refinement_step_check(system,initial_set,constraint_set,backward_reach,
 				forward_reach,DIRECTION_FORWARD,plot_dirpath);
 
 		if (!indeterminate(forward_result)) {
@@ -806,7 +806,7 @@ HybridReachabilityAnalyser::
 _fb_refinement_step_check(
 		SystemType& system,
 		const HybridImageSet& initial_set,
-		const HybridBoxes& target_bounds,
+		const HybridConstraintSet& constraint_set,
 		HybridGridTreeSet& old_restriction,
 		HybridGridTreeSet& new_restriction,
 		EvolutionDirection direction,
@@ -829,8 +829,13 @@ _fb_refinement_step_check(
 		const Box& cell_box = cell_it->second.box();
 		HybridBox hcell_box(loc,cell_box);
 
-		bool add_enclosure = (direction == DIRECTION_FORWARD ?
-				possibly(initial_set.overlaps(hcell_box)) : !Ariadne::covers(target_bounds,hcell_box));
+		bool add_enclosure = false;
+
+		if (direction == DIRECTION_FORWARD) {
+			add_enclosure = possibly(initial_set.overlaps(hcell_box));
+		} else {
+			add_enclosure = possibly(!constraint_set.covers(hcell_box));
+		}
 
 		if (add_enclosure) {
 			starting_enclosures.push_back(EnclosureType(loc,cell_box));
@@ -894,42 +899,6 @@ _outer_chain_reach(
 		EvolutionDirection direction,
 		const HybridGridTreeSet& reachability_restriction) const
 {
-	HybridBoxes feasibility_bounds = unbounded_hybrid_boxes(system.state_space());
-
-	// Uses dummy arguments
-	return _outer_chain_reach(system,initial_enclosures,direction,reachability_restriction,false,feasibility_bounds,NOT_INSIDE_TARGET);
-}
-
-
-HybridReachabilityAnalyser::SetApproximationType
-HybridReachabilityAnalyser::
-outer_chain_reach(
-		SystemType& system,
-		const HybridImageSet& initial_set,
-		EvolutionDirection direction,
-		bool check_target_bounds_for_skipping,
-		const HybridBoxes& target_bounds_for_skipping,
-		OuterReachabilitySkippingPolicy skippingPolicy) const
-{
-	HybridGridTreeSet initial(*_settings->grid);
-	initial.adjoin_outer_approximation(initial_set,_settings->maximum_grid_depth);
-    std::list<EnclosureType> initial_enclosures = cells_to_smallest_enclosures(initial,_settings->maximum_grid_depth);
-
-	return _outer_chain_reach(system,initial_enclosures,direction,_settings->reachability_restriction,check_target_bounds_for_skipping,target_bounds_for_skipping,skippingPolicy);
-}
-
-
-HybridReachabilityAnalyser::SetApproximationType
-HybridReachabilityAnalyser::
-_outer_chain_reach(
-		SystemType& system,
-		const std::list<EnclosureType>& initial_enclosures,
-		EvolutionDirection direction,
-		const HybridGridTreeSet& reachability_restriction,
-		bool check_target_bounds_for_skipping,
-		const HybridBoxes& target_bounds_for_skipping,
-		OuterReachabilitySkippingPolicy skippingPolicy) const
-{
 	HybridGridTreeSet reach;
 
 	RealConstantSet original_constants = system.nonsingleton_accessible_constants();
@@ -943,23 +912,17 @@ _outer_chain_reach(
 
 			system.substitute(*set_it);
 
-			HybridGridTreeSet local_reach = _outer_chain_reach_splitted(system,initial_enclosures,direction,reachability_restriction);
+			HybridGridTreeSet local_reach = _outer_chain_reach_splitted(system,initial_enclosures,
+					direction,reachability_restriction);
 
 			reach.adjoin(local_reach);
-
-			if (check_target_bounds_for_skipping) {
-				if (skippingPolicy == NOT_INSIDE_TARGET && definitely(!local_reach.subset(target_bounds_for_skipping))) {
-					system.substitute(original_constants);
-					throw ReachOutOfTargetException("The reached set is not inside the target region.");
-				} else if (skippingPolicy == SUPERSET_OF_TARGET && definitely(superset(local_reach.bounding_box(),target_bounds_for_skipping))) {
-					system.substitute(original_constants);
-					throw ReachEnclosesTargetException("The reached set encloses the target region.");
-				}
-			}
 		}
 	} catch (ReachOutOfDomainException ex) {
 		system.substitute(original_constants);
-		throw ReachOutOfDomainException(ex.what());
+		throw ex;
+	} catch (ReachUnsatisfiesConstraintException ex) {
+		system.substitute(original_constants);
+		throw ex;
 	}
 
 	system.substitute(original_constants);
@@ -975,8 +938,7 @@ HybridReachabilityAnalyser::
 _lower_chain_reach(
 		const SystemType& system,
 		const HybridImageSet& initial_set,
-		const HybridBoxes& feasibility_region,
-		bool terminate_as_soon_as_infeasible) const
+		const HybridConstraintSet& constraint_set) const
 {
 	typedef std::list<EnclosureType> EL;
 	typedef std::map<DiscreteState,uint> HUM;
@@ -1013,12 +975,27 @@ _lower_chain_reach(
 		ARIADNE_LOG(4,"Initial enclosures size = " << initial_enclosures.size() << "\n");
 
 		LowerChainReachWorker worker(_discretiser,initial_enclosures,system,lock_time,grid,
-				_settings->maximum_grid_depth,concurrency, feasibility_region, terminate_as_soon_as_infeasible);
+				_settings->maximum_grid_depth,concurrency);
 
 		ARIADNE_LOG(4,"Evolving and discretising...\n");
 
 		make_ltuple<std::pair<HUM,HUM>,EL,GTS,DisproveData>(evolve_sizes,final_enclosures,
 				new_reach,newFalsInfo) = worker.get_result();
+
+		if (!constraint_set.empty()) {
+			HybridGridTreeSet reachability_restriction;
+			if (_settings->reachability_restriction.empty())
+				reachability_restriction.adjoin_outer_approximation(_settings->domain_bounds,_settings->maximum_grid_depth);
+			else
+				reachability_restriction = _settings->reachability_restriction;
+
+			HybridGridTreeSet possibly_feasible_cells = this->possibly_feasible_cells(
+					new_reach,constraint_set,newFalsInfo.getEpsilon(),reachability_restriction);
+
+			if (possibly_feasible_cells.size() < new_reach.size()) {
+				throw ReachUnsatisfiesConstraintException("The lower reached region partially does not satisfy the constraint.");
+			}
+		}
 
 		globalFalsInfo.updateWith(newFalsInfo);
 
@@ -1038,6 +1015,27 @@ _lower_chain_reach(
 
 	return make_pair<GTS,DisproveData>(reach,globalFalsInfo);
 }
+
+
+HybridGridTreeSet
+HybridReachabilityAnalyser::
+possibly_feasible_cells(
+		const HybridGridTreeSet& reach,
+		const HybridConstraintSet& constraint,
+		const HybridFloatVector eps,
+		HybridGridTreeSet reachability_restriction) const
+{
+	reachability_restriction.mince(_settings->maximum_grid_depth);
+	HybridGridTreeSet feasible_reachability_restriction = possibly_overlapping_cells(reachability_restriction,constraint);
+	feasible_reachability_restriction.recombine();
+	HybridVectorFunction constraint_functions = constraint.functions();
+	HybridBoxes eps_constraint_codomain = eps_codomain(feasible_reachability_restriction, eps, constraint_functions);
+
+	HybridConstraintSet eps_constraint(constraint_functions,eps_constraint_codomain);
+
+	return possibly_overlapping_cells(reach,eps_constraint);
+}
+
 
 void
 HybridReachabilityAnalyser::
@@ -1079,9 +1077,8 @@ lower_chain_reach(
 		SystemType& system,
 		const HybridImageSet& initial_set) const
 {
-	HybridBoxes safe_region = unbounded_hybrid_boxes(system.state_space());
-
-	return lower_chain_reach(system,initial_set,safe_region,false);
+	HybridConstraintSet constraint_set;
+	return lower_chain_reach(system,initial_set,constraint_set);
 }
 
 std::pair<HybridReachabilityAnalyser::SetApproximationType,DisproveData>
@@ -1089,8 +1086,7 @@ HybridReachabilityAnalyser::
 lower_chain_reach(
 		SystemType& system,
 		const HybridImageSet& initial_set,
-		const HybridBoxes& safe_region,
-		bool terminate_as_soon_as_disproved) const
+		const HybridConstraintSet& constraint_set) const
 {
 	HybridGridTreeSet reach(*_settings->grid);
 	DisproveData disproveData(system.state_space());
@@ -1100,27 +1096,30 @@ lower_chain_reach(
 	std::list<RealConstantSet> split_intervals_set = _getSplitConstantsIntervalsSet(system,_settings->splitting_constants_target_ratio);
 	std::list<RealConstantSet> split_midpoints_set = getSplitConstantsMidpointsSet(split_intervals_set);
 
-	uint i = 0;
-	// Progressively adds the results for each subsystem
-	for (std::list<RealConstantSet>::const_iterator set_it = split_midpoints_set.begin();
-												    set_it != split_midpoints_set.end();
-												    ++set_it) {
-		ARIADNE_LOG(2,"<Split constants set #" << ++i << " : " << *set_it << " >\n");
+	try {
 
-		system.substitute(*set_it);
+		uint i = 0;
+		// Progressively adds the results for each subsystem
+		for (std::list<RealConstantSet>::const_iterator set_it = split_midpoints_set.begin();
+														set_it != split_midpoints_set.end();
+														++set_it) {
+			ARIADNE_LOG(2,"<Split constants set #" << ++i << " : " << *set_it << " >\n");
 
-		std::pair<HybridGridTreeSet,DisproveData> reachAndDisproveData =
-				_lower_chain_reach(system,initial_set,safe_region,terminate_as_soon_as_disproved);
+			system.substitute(*set_it);
 
-		reach.adjoin(reachAndDisproveData.first);
-		disproveData.updateWith(reachAndDisproveData.second);
+			std::pair<HybridGridTreeSet,DisproveData> reachAndDisproveData =
+					_lower_chain_reach(system,initial_set,constraint_set);
 
-		ARIADNE_LOG(3,"Disprove data: " << reachAndDisproveData.second << "\n");
+			reach.adjoin(reachAndDisproveData.first);
+			disproveData.updateWith(reachAndDisproveData.second);
 
-		if (terminate_as_soon_as_disproved && reachAndDisproveData.second.getIsDisproved())
-			break;
+			ARIADNE_LOG(3,"Disprove data: " << reachAndDisproveData.second << "\n");
+		}
+
+	} catch (ReachUnsatisfiesConstraintException ex) {
+		system.substitute(original_constants);
+		throw ex;
 	}
-	system.substitute(original_constants);
 
 	return std::pair<HybridGridTreeSet,DisproveData>(reach,disproveData);
 }
@@ -1212,9 +1211,9 @@ enclosures_from_split_domain_midpoints(
 		temporaries.push_back(img_set.domain());
 
 		/* While there are boxes:
-		 * a) pick one, pop it and check it against the mincell_lengths
+		 * a) pick one, pop it and check it against the max_cell_widths
 		 * 	 i) if larger, split it and put the couple into the temporaries
-		 *   ii) if not, push the result
+		 *   ii) if not, push the image resulting from the centre of such domain
 		 */
 		while (!temporaries.empty()) {
 			Box domain = temporaries.back();
@@ -1231,12 +1230,8 @@ enclosures_from_split_domain_midpoints(
 					break;
 				}
 			}
-			if (!hasBeenSplit) {
-
-				Vector<Interval> domain_centre_box(domain.centre());
-				result.push_back(EnclosureType(loc,ContinuousEnclosureType(img_func,domain_centre_box)));
-			}
-
+			if (!hasBeenSplit)
+				result.push_back(EnclosureType(loc,ContinuousEnclosureType(img_func,domain.centre())));
 		}
 	}
 

@@ -97,8 +97,8 @@ int main(int argc, char** argv)
     Float Jm1 = Jm + Jg1;   Float Jm2 = Jm + Jg2;   // kg m^2
     Float N1 = 90.0;        Float N2 = 220.0;       // coupling ratio
     
-    Float pmin = 0.5;                                 // Sampling period
-    Float pmax = 1.25;                                 // Sampling period
+    //Float pmin = 0.5;                                 // Sampling period
+    //Float pmax = 1.25;                                 // Sampling period
     Float lper = 30.0;                              // Switching period
     
     // State variables

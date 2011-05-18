@@ -105,13 +105,13 @@ class ModelSet
 class ConstraintSet
     : public RegularSetInterface
 {
-    Vector<Interval> _codomain;
     VectorFunction _function;
+    Vector<Interval> _codomain;
   public:
     //! \brief Default constructor constructs the singleton in \f$\R^0\f$.
     ConstraintSet();
     //! \brief Construct the preimage of \a codom under \a fn.
-    ConstraintSet(const Vector<Interval>& codom, const VectorFunction& fn);
+    ConstraintSet(const VectorFunction& fn, const Vector<Interval>& codom);
     //! \brief The codomain of the set.
     const Vector<Interval>& codomain() const { return this->_codomain; }
     //! \brief The function used to define the set.

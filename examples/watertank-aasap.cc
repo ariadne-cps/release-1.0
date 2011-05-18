@@ -223,38 +223,20 @@ int main(int argc,char *argv[])
 	HybridImageSet initial_set;
 	initial_set[DiscreteState("flow,idle,shallow,nothing")] = Box(3, 0.0,0.0, 6.0,6.0, 1.0,1.0);
 
-	// The safe region
-	HybridBoxes safe_box = bounding_boxes(system.state_space(),Box(3, -std::numeric_limits<double>::max(), std::numeric_limits<double>::max(),
-																      5.25, 8.25,
-																	  -std::numeric_limits<double>::max(), std::numeric_limits<double>::max()));
-
+	// The safety constraint
+	List<RealVariable> varlist;
+	varlist.append(x);
+	varlist.append(y);
+	varlist.append(t_out);
+	RealExpression expr = x;
+	List<RealExpression> consexpr;
+	consexpr.append(expr);
+	VectorFunction cons_f(consexpr,varlist);
+	Box codomain(1,5.25,8.25);
+	HybridConstraintSet safety_constraint(system.state_space(),ConstraintSet(cons_f,codomain));
 
 	HybridBoxes domain = bounding_boxes(system.state_space(),Box(3,-0.1,0.2,4.0,10.0,-0.5,1.5));
-/*
 
-	// The domain
-	HybridBoxes domain;
-
-	// The level is rising
-	domain[DiscreteState("flow,idle,shallow,nothing")] = Box(3, -0.1,0.2, 4.5,8.5, 0.9,1.1);
-	// A CLOSE command will be issued
-	domain[DiscreteState("flow,idle,deep,decrease")] = Box(3, -0.1,0.2, 7.5,9.0, 0.1,1.1);
-	// The valve is closing
-	domain[DiscreteState("flow,closing,deep,nothing")] = Box(3, -0.1,0.2, 7.5,9.5, -0.1,1.1);
-	// The level is falling
-	domain[DiscreteState("flow,idle,deep,nothing")] = Box(3, -0.1,0.2, 5.0,8.5, -0.1,0.1);
-	// An OPEN command will be issued
-	domain[DiscreteState("flow,idle,shallow,increase")] = Box(3, -0.1,0.2, 4.5,6.0, -0.1,0.1);
-	// The valve is opening
-	domain[DiscreteState("flow,opening,shallow,nothing")] = Box(3, -0.1,0.2, 4.0,6.5, -0.1,1.1);
-
-	// Spurious: the valve is closing but an OPEN command will be issued
-	domain[DiscreteState("flow,closing,shallow,increase")] = Box(3, -0.1,0.2, 7.5,9.0, -0.1,1.1);
-	// Spurious: the valve is opening but a CLOSE command will be issued
-	domain[DiscreteState("flow,opening,deep,decrease")] = Box(3, -0.1,0.2, 4.5,6.0, -0.1,1.1);
-
-
-*/
 	/// Verification
 
 	// Create an evolver and analyser objects, then set their verbosity
@@ -266,10 +248,7 @@ int main(int argc,char *argv[])
 	Verifier verifier(analyser);
 	verifier.verbosity = verifierVerbosity;
 
-	// The resulting safe and unsafe intervals
-	Interval safe_int, unsafe_int;
-
-	SafetyVerificationInput verInfo(system, initial_set, domain, safe_box);
+	SafetyVerificationInput verInfo(system, initial_set, domain, safety_constraint);
     verifier.safety(verInfo);
 
 }

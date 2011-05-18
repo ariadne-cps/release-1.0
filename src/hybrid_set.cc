@@ -37,6 +37,29 @@ lengths() const
 	return result;
 }
 
+HybridConstraintSet::
+HybridConstraintSet(const HybridVectorFunction& func,const HybridBoxes& codomain)
+{
+	ARIADNE_ASSERT_MSG(codomain.size() == func.size(), "The codomain and functions have different sizes.");
+
+	for (HybridBoxes::const_iterator cod_it = codomain.begin(); cod_it != codomain.end(); ++cod_it) {
+		HybridVectorFunction::const_iterator func_it = func.find(cod_it->first);
+		ARIADNE_ASSERT_MSG(func_it != func.end(), "No function for location " << cod_it->first.name() << " is present.");
+		this->insert(std::pair<DiscreteState,ConstraintSet>(
+				cod_it->first,ConstraintSet(func_it->second,cod_it->second)));
+	}
+}
+
+HybridConstraintSet::
+HybridConstraintSet(const HybridSpace& hspace, ConstraintSet constraint)
+{
+	for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
+		ARIADNE_ASSERT_MSG(hs_it->second == constraint.function().argument_size(),
+				"The continuous space would not match the constraint function.");
+		this->insert(std::pair<DiscreteState,ConstraintSet>(hs_it->first,constraint));
+	}
+}
+
 
 HybridBoxes
 hull(const HybridBoxes& box1, const HybridBoxes& box2)
@@ -230,6 +253,26 @@ HybridGridTreeSet covered_cells(const HybridGridTreeSet& grid_set, const HybridC
     	if (cs_it != cons_set.locations_end())
     		result[gts_it->first] = covered_cells(gts_it->second,cs_it->second);
     }
+
+	return result;
+}
+
+
+HybridBoxes eps_codomain(
+		const HybridGridTreeSet& grid_set,
+		const HybridFloatVector& eps,
+		const HybridVectorFunction& func)
+{
+	HybridBoxes result;
+
+	for (HybridGridTreeSet::locations_const_iterator loc_it = grid_set.locations_begin(); loc_it != grid_set.locations_end(); ++loc_it) {
+		const DiscreteState& loc = loc_it->first;
+		HybridFloatVector::const_iterator eps_it = eps.find(loc);
+		HybridVectorFunction::const_iterator func_it = func.find(loc);
+		ARIADNE_ASSERT(eps_it != eps.end());
+		if (func_it != func.end())
+			result.insert(std::pair<DiscreteState,Box>(loc,eps_codomain(loc_it->second,eps_it->second,func_it->second)));
+	}
 
 	return result;
 }

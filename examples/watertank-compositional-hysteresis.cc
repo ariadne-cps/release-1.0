@@ -189,8 +189,16 @@ int main(int argc,char *argv[])
 	domain[DiscreteState("flow,idle,falling")] = Box(2,5.0,9.0,-0.1,0.1);
 	domain[DiscreteState("flow,idle,rising")] = Box(2,5.0,9.0,0.9,1.1);
 
-	// The safe region
-	HybridBoxes safe_box = bounding_boxes(system.state_space(),Box(2, 5.25, 8.25, -std::numeric_limits<double>::max(), std::numeric_limits<double>::max()));
+	// The safety constraint
+	List<RealVariable> varlist;
+	varlist.append(x);
+	varlist.append(y);
+	RealExpression expr = x;
+	List<RealExpression> consexpr;
+	consexpr.append(expr);
+	VectorFunction cons_f(consexpr,varlist);
+	Box codomain(1,5.25,8.25);
+	HybridConstraintSet safety_constraint(system.state_space(),ConstraintSet(cons_f,codomain));
 
 	/// Verification
 
@@ -208,7 +216,7 @@ int main(int argc,char *argv[])
 	parameters.insert(RealConstant("hmin",Interval(5.0,6.0)));
 	parameters.insert(RealConstant("hmax",Interval(7.5,8.5)));
 
-	SafetyVerificationInput verInfo(system, initial_set, domain, safe_box);
+	SafetyVerificationInput verInfo(system, initial_set, domain, safety_constraint);
 
 	std::list<ParametricOutcome> results = verifier.parametric_safety(verInfo, parameters);
 	draw(system.name(),results);

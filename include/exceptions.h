@@ -77,9 +77,9 @@ class ReachOutOfDomainException : public ReachOutOfRegionException {
 	ReachOutOfDomainException(const std::string& str) : ReachOutOfRegionException(str) { }
 };
 
-class ReachOutOfTargetException : public ReachOutOfRegionException {
+class ReachUnsatisfiesConstraintException : public std::runtime_error {
   public:
-	ReachOutOfTargetException(const std::string& str) : ReachOutOfRegionException(str) { }
+	ReachUnsatisfiesConstraintException(const std::string& str) : std::runtime_error(str) { }
 };
 
 class ReachEnclosesTargetException : public std::runtime_error {

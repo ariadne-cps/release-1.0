@@ -2974,7 +2974,7 @@ void test_constraintset_vs_gridtreeset_checks()
 	VectorFunction cons_f(consexpr,varlist);
 	Box codomain(1,0.0,1.0);
 
-	ConstraintSet cons(codomain,cons_f);
+	ConstraintSet cons(cons_f,codomain);
 
 	Grid gr(1);
 
@@ -3040,7 +3040,7 @@ void test_constraintset_vs_gridtreeset_operations()
 	VectorFunction cons_f(consexpr,varlist);
 	Box codomain(1,0.0,1.0);
 
-	ConstraintSet cons(codomain,cons_f);
+	ConstraintSet cons(cons_f,codomain);
 
 	Grid gr(1);
 

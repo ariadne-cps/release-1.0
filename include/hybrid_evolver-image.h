@@ -159,11 +159,9 @@ class ImageSetHybridEvolver
     //! \brief Compute an approximation to the evolution set under the given semantics, returning the reached and final sets, and the information
     //! on having disproved.
     tuple<EnclosureListType,EnclosureListType,DisproveData> lower_chain_reach_evolve_disprove(const SystemType& system, const EnclosureType& initial_set,
-																					  const TimeType& time, const HybridBoxes& disprove_bounds,
-																					  const bool& skip_if_disproved) const {
+																					  const TimeType& time) const {
         EnclosureListType final; EnclosureListType reachable; EnclosureListType intermediate;
-        DisproveData falsInfo = this->_lower_evolution_disprove(final,reachable,intermediate,system,initial_set,time,
-														   	    disprove_bounds,skip_if_disproved);
+        DisproveData falsInfo = this->_lower_evolution_disprove(final,reachable,intermediate,system,initial_set,time);
         reachable.adjoin(final);
         return make_tuple<EnclosureListType,EnclosureListType,DisproveData>(reachable,final,falsInfo); }
 
@@ -174,8 +172,7 @@ class ImageSetHybridEvolver
 
     virtual DisproveData _lower_evolution_disprove(EnclosureListType& final, EnclosureListType& reachable,
 										   EnclosureListType& intermediate, const SystemType& system,
-										   const EnclosureType& initial, const TimeType& time,
-										   const HybridBoxes& disprove_bounds, bool skip_if_disproved) const;
+										   const EnclosureType& initial, const TimeType& time) const;
 
     virtual void _upper_evolution_continuous(EnclosureListType& final, EnclosureListType& reachable, EnclosureListType& intermediate,
                             const SystemType& system, const EnclosureType& initial, const TimeType& time) const;
@@ -191,8 +188,7 @@ class ImageSetHybridEvolver
 
     virtual DisproveData _lower_evolution_disprove_step(std::list< HybridTimedSetType >& working_sets,
 												EnclosureListType& reachable, EnclosureListType& intermediate,
-												const SystemType& system, const HybridTimedSetType& current_set, const TimeType& time,
-												const HybridBoxes& disprove_bounds) const;
+												const SystemType& system, const HybridTimedSetType& current_set, const TimeType& time) const;
 
   protected:
     TimeModelType crossing_time(VectorFunction guard, const FlowSetModelType& flow_set) const;

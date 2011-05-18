@@ -93,9 +93,16 @@ int main(int argc,char *argv[])
 	// The domain
 	HybridBoxes domain = bounding_boxes(system.state_space(),Box(2,-2.0,25.0,-2.0,25.0));
 
-	// The safe region
-	HybridBoxes safe_box = bounding_boxes(system.state_space(),
-			Box(2, -std::numeric_limits<double>::max(), 9.5,-std::numeric_limits<double>::max(), 9.5));
+	// The safety constraint
+	RealExpression consexpr_x = x;
+	RealExpression consexpr_y = y;
+	List<RealExpression> consexpr;
+	consexpr.append(consexpr_x);
+	consexpr.append(consexpr_y);
+
+	VectorFunction cons_f(consexpr,varlist);
+	Box codomain(2,-std::numeric_limits<double>::max(),9.42,-std::numeric_limits<double>::max(), 9.42);
+	HybridConstraintSet safety_constraint(system.state_space(),ConstraintSet(cons_f,codomain));
 
 	/// Verification
 
@@ -106,15 +113,14 @@ int main(int argc,char *argv[])
 	HybridReachabilityAnalyser outer_analyser(outer_evolver);
 	HybridReachabilityAnalyser lower_analyser(lower_evolver);
 	outer_analyser.verbosity = 0;
-	outer_analyser.settings().highest_maximum_grid_depth = 10;
+	outer_analyser.settings().highest_maximum_grid_depth = 11;
 	lower_analyser.settings().highest_maximum_grid_depth = -1;
 	Verifier verifier(outer_analyser,lower_analyser);
 	verifier.verbosity = verifierVerbosity;
 	verifier.settings().enable_fb_refinement_for_proving = true;
-	verifier.settings().allow_quick_proving = false;
 	verifier.settings().maximum_parameter_depth = 2;
 	verifier.settings().plot_results = false;
 
-	SafetyVerificationInput verInput(system, initial_set, domain, safe_box);
+	SafetyVerificationInput verInput(system, initial_set, domain, safety_constraint);
 	cout << verifier.safety(verInput);
 }

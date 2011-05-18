@@ -66,13 +66,13 @@ Verifier::
 _forward_backward_refinement_check(
 		SystemType& system,
 		const HybridImageSet& initial_set,
-		const HybridBoxes& target_region,
+		const HybridConstraintSet& constraint_set,
 		const HybridGridTreeSet& reach) const
 {
 	bool result = false;
 
 	ARIADNE_LOG(5, "Performing forward-backward refinement...\n");
-	if (_outer_analyser->fb_refinement_check(system,initial_set,target_region,reach)) {
+	if (_outer_analyser->fb_refinement_check(system,initial_set,constraint_set,reach)) {
 		ARIADNE_LOG(5, "Successful.\n");
 		result = true;
 	} else {
@@ -89,7 +89,7 @@ Verifier::
 _safety_proving_once(
 		SystemType& system,
 		const HybridImageSet& initial_set,
-		const HybridBoxes& safe_region,
+		const HybridConstraintSet& safety_constraint,
 		const RealConstantSet& constants) const
 {
 	bool result;
@@ -112,29 +112,26 @@ _safety_proving_once(
 
 	try {
 
-		// We quicken the outer reachability calculation only if we already have a constraint available,
-		// otherwise we would never obtain an outer approximation for tuning the grid and restricting the reachability.
-		bool terminate_as_soon_as_unprovable = _settings->allow_quick_proving && !_safety_reachability_restriction.empty();
-
-		HybridGridTreeSet reach = _outer_analyser->outer_chain_reach(system,initial_set,DIRECTION_FORWARD,terminate_as_soon_as_unprovable,safe_region,NOT_INSIDE_TARGET);
+		HybridGridTreeSet reach = _outer_analyser->outer_chain_reach(system,initial_set,DIRECTION_FORWARD);
 
 		_update_safety_cached_reachability_with(reach);
 
-		result = definitely(reach.subset(safe_region));
+		result = definitely(covers(safety_constraint,reach));
 
-		ARIADNE_LOG(5, "The reachable set is " << (!result ? "not ":"") << "inside the safe region.\n");
+		ARIADNE_LOG(5, "The reachable set " << (!result ? "does not satisfy":"satisfies") << " the safety constraint.\n");
 
 		if (_settings->plot_results)
 			_plot_reach(reach,UPPER_SEMANTICS);
 
 		// We refine only if we have no result from the initial reach set and we have a restriction on the reachability
 		if (!result && !_safety_reachability_restriction.empty() && _settings->enable_fb_refinement_for_proving)
-			result = _forward_backward_refinement_check(system,initial_set,safe_region,_safety_reachability_restriction);
+			result = _forward_backward_refinement_check(system,initial_set,safety_constraint,_safety_reachability_restriction);
+
 
 	} catch (ReachOutOfDomainException ex) {
 		ARIADNE_LOG(5, "The outer reached region is partially out of the domain (skipped).\n");
 		result = false;
-	} catch (ReachOutOfTargetException ex) {
+	} catch (ReachUnsatisfiesConstraintException ex) {
 		ARIADNE_LOG(5, "The outer reached region is not inside the safe region (skipped).\n");
 		result = false;
 	}
@@ -152,7 +149,7 @@ Verifier::
 _safety_disproving_once(
 		SystemType& system,
 		const HybridImageSet& initial_set,
-		const HybridBoxes& safe_region,
+		const HybridConstraintSet& safety_constraint,
 		const RealConstantSet& constants) const
 {
 	ARIADNE_LOG(4,"Disproving...\n");
@@ -160,6 +157,8 @@ _safety_disproving_once(
 		ARIADNE_LOG(4,"Not disproved.\n");
 		return false;
 	}
+
+	bool result = false;
 
 	RealConstantSet original_constants = system.accessible_constants();
 
@@ -171,27 +170,37 @@ _safety_disproving_once(
 
 	ARIADNE_LOG(4,"Performing lower reachability analysis and getting disprove data...\n");
 
-	// We have no benefit in getting a larger lower chain reachability, if we already have disproved:
-	// hence we can freely quicken the termination at each depth
-	bool terminate_as_soon_as_disproved = _settings->allow_quick_disproving && true;
+	try {
+		std::pair<HybridGridTreeSet,DisproveData> reachAndDisproveData =
+				_lower_analyser->lower_chain_reach(system,initial_set,safety_constraint);
+		const HybridGridTreeSet& reach = reachAndDisproveData.first;
+		const DisproveData& disproveData = reachAndDisproveData.second;
 
-	std::pair<HybridGridTreeSet,DisproveData> reachAndDisproveData =
-			_lower_analyser->lower_chain_reach(system,initial_set,safe_region,terminate_as_soon_as_disproved);
-	const HybridGridTreeSet& reach = reachAndDisproveData.first;
-	const DisproveData& disproveData = reachAndDisproveData.second;
-	const bool& isDisproved = disproveData.getIsDisproved();
+		ARIADNE_LOG(5,"Epsilon: " << disproveData.getEpsilon() << "\n");
 
-	if (_settings->plot_results)
-		_plot_reach(reach,LOWER_SEMANTICS);
+		HybridGridTreeSet reachability_restriction;
+		reachability_restriction.adjoin_outer_approximation(_lower_analyser->settings().domain_bounds,_lower_analyser->settings().maximum_grid_depth);
 
-	ARIADNE_LOG(5,"Disprove data: " << disproveData << "\n");
+		HybridGridTreeSet possibly_safe_cells = _lower_analyser->possibly_feasible_cells(
+				reach,safety_constraint,disproveData.getEpsilon(),reachability_restriction);
 
-	ARIADNE_LOG(4, (isDisproved ? "Disproved.\n" : "Not disproved.\n") );
+		result = (possibly_safe_cells.size() < reach.size());
+
+		if (_settings->plot_results)
+			_plot_reach(reach,LOWER_SEMANTICS);
+
+	} catch (ReachUnsatisfiesConstraintException ex) {
+		ARIADNE_LOG(5, "The lower reached region is partially outside the safe region (skipped).\n");
+		result = true;
+	}
 
 	system.substitute(original_constants);
 
-	return isDisproved;
+	ARIADNE_LOG(4, (result ? "Disproved.\n" : "Not disproved.\n") );
+
+	return result;
 }
+
 
 void
 Verifier::
@@ -209,20 +218,17 @@ Verifier::
 _safety_once(
 		SystemType& system,
 		const HybridImageSet& initial_set,
-		const HybridBoxes& safe_region,
+		const HybridConstraintSet& safety_constraint,
 		const RealConstantSet& constants) const
 {
 		ARIADNE_LOG(3, "Verification...\n");
 
-		if (_safety_proving_once(system,initial_set,safe_region,constants)) {
+		if (_safety_proving_once(system,initial_set,safety_constraint,constants)) {
 			ARIADNE_LOG(3, "Safe.\n");
 			return true;
 		}
 
-		// It is necessary to widen for disproving, in order to compensate for possible shrinking due to numerical rounding
-		HybridBoxes widened_safe_region = widen(safe_region);
-
-		if (_safety_disproving_once(system,initial_set,widened_safe_region,constants)) {
+		if (_safety_disproving_once(system,initial_set,safety_constraint,constants)) {
 			ARIADNE_LOG(3, "Unsafe.\n");
 			return false;
 		}
@@ -285,7 +291,7 @@ _safety_nosplitting(
 	if (_settings->plot_results)
 		_plot_dirpath_init(system.name());
 
-	_resetAndChooseInitialSafetySettings(system,verInput.getDomain(),verInput.getSafeRegion(),constants);
+	_resetAndChooseInitialSafetySettings(system,verInput.getDomain(),constants);
 
 	int initial_depth = min(_outer_analyser->settings().lowest_maximum_grid_depth,
 							_lower_analyser->settings().lowest_maximum_grid_depth);
@@ -297,7 +303,7 @@ _safety_nosplitting(
 
 		ARIADNE_LOG(2, "Depth " << depth << "\n");
 
-		tribool result = _safety_once(system,verInput.getInitialSet(),verInput.getSafeRegion(),constants);
+		tribool result = _safety_once(system,verInput.getInitialSet(),verInput.getSafetyConstraint(),constants);
 
 		if (!indeterminate(result))
 			return result;
@@ -924,16 +930,10 @@ Verifier::_dominance_proving_once(
 		ARIADNE_LOG(4, "The outer reached region of the dominating system is " << (!result ? "not ": "") <<
 					   "inside the projected shrinked lower reached region of the dominated system.\n");
 
-		// We refine only if we have no result from the initial reach set and we have a restriction on the reachability
-		if (!result && !_dominating_reachability_restriction.empty() && _settings->enable_fb_refinement_for_proving) {
-			result = _forward_backward_refinement_check(dominating.getSystem(),dominating.getInitialSet(),
-					shrinked_dominated_bounds_on_dominating_space,_dominating_reachability_restriction);
-		}
-
 	} catch (ReachOutOfDomainException ex) {
 		ARIADNE_LOG(4,"The outer reached region of the dominating system is partially out of the domain (skipped).\n");
 		result = false;
-	} catch (ReachOutOfTargetException ex) {
+	} catch (ReachUnsatisfiesConstraintException ex) {
 		ARIADNE_LOG(4,"The outer reached region of the dominating system is not inside " +
 				"the projected shrinked lower reached region of the dominated system (skipped).\n");
 		result = false;
@@ -1049,12 +1049,7 @@ _dominance_outer_bounds(
 
 	ARIADNE_LOG(4,"Getting the outer reached region of the " << descriptor << " system...\n");
 
-	bool terminate_as_soon_as_unprovable = (dominanceSystem == DOMINATING_SYSTEM ?
-			_settings->allow_quick_proving : _settings->allow_quick_disproving)
-			&& !reachability_restriction.empty();
-
-	HybridGridTreeSet reach = _outer_analyser->outer_chain_reach(verInput.getSystem(),verInput.getInitialSet(),
-			DIRECTION_FORWARD,terminate_as_soon_as_unprovable,lower_bounds_on_this_space,SUPERSET_OF_TARGET);
+	HybridGridTreeSet reach = _outer_analyser->outer_chain_reach(verInput.getSystem(),verInput.getInitialSet(),DIRECTION_FORWARD);
 
 	if (!outer_approximation_cache.is_set()) {
 		outer_approximation_cache.set(reach);
@@ -1078,15 +1073,14 @@ Verifier::
 _resetAndChooseInitialSafetySettings(
 		const HybridAutomaton& system,
 		const HybridBoxes& domain,
-		const HybridBoxes& safe_region,
 		const RealConstantSet& locked_constants) const
 {
 	_safety_coarse_outer_approximation->reset();
 
 	_safety_reachability_restriction = HybridGridTreeSet();
 
-	_chooseInitialSafetySettings(system,domain,safe_region,locked_constants,UPPER_SEMANTICS);
-	_chooseInitialSafetySettings(system,domain,safe_region,locked_constants,LOWER_SEMANTICS);
+	_chooseInitialSafetySettings(system,domain,locked_constants,UPPER_SEMANTICS);
+	_chooseInitialSafetySettings(system,domain,locked_constants,LOWER_SEMANTICS);
 }
 
 
@@ -1095,7 +1089,6 @@ Verifier::
 _chooseInitialSafetySettings(
 		const HybridAutomaton& system,
 		const HybridBoxes& domain,
-		const HybridBoxes& safe_region,
 		const RealConstantSet& locked_constants,
 		Semantics semantics) const
 {

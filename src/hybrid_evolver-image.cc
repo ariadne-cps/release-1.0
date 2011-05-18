@@ -289,9 +289,7 @@ _lower_evolution_disprove(EnclosureListType& final_sets,
 						  EnclosureListType& intermediate_sets,
 						  const SystemType& system,
 						  const EnclosureType& initial_set,
-						  const TimeType& maximum_hybrid_time,
-						  const HybridBoxes& disprove_bounds,
-						  bool enable_quick_disproving) const
+						  const TimeType& maximum_hybrid_time) const
 {
     ARIADNE_LOG(5,ARIADNE_PRETTY_FUNCTION<<"\n");
     ARIADNE_LOG(1,"Computing evolution up to "<<maximum_hybrid_time.continuous_time()<<" time units and "<<maximum_hybrid_time.discrete_time()<<" steps.\n");
@@ -336,11 +334,8 @@ _lower_evolution_disprove(EnclosureListType& final_sets,
         } else {
             // Compute evolution and get the result for this working set
             DisproveData localDisproveData = this->_lower_evolution_disprove_step(working_sets,reach_sets,intermediate_sets,
-																			system,current_set,maximum_hybrid_time,
-																			disprove_bounds);
+																			system,current_set,maximum_hybrid_time);
             disproveData.updateWith(localDisproveData);
-            if (enable_quick_disproving && disproveData.getIsDisproved())
-				return disproveData;
         }
 
 		_logStepAtVerbosity1(working_sets,reach_sets,initial_events,initial_time_model,initial_set_model,initial_location);
@@ -674,8 +669,7 @@ _lower_evolution_disprove_step(std::list< HybridTimedSetType >& working_sets,
                 EnclosureListType& intermediate_sets,
                 const SystemType& system,
                 const HybridTimedSetType& working_set,
-                const TimeType& maximum_hybrid_time,
-                const HybridBoxes& disprove_bounds) const
+                const TimeType& maximum_hybrid_time) const
 {
     const double SMALL_RELATIVE_TIME=1./16;
 
@@ -756,15 +750,7 @@ _lower_evolution_disprove_step(std::list< HybridTimedSetType >& working_sets,
     SetModelType reachable_set;
     _compute_and_adjoin_reachableSet(reach_sets,reachable_set,location,flow_set_model,zero_time_model,blocking_time_model);
 
-    // Check the reachable set against the disprove_bounds (up to numDivisions times)
-    const uint numDivisions = 10;
-    HybridBoxes::const_iterator bounds_it = disprove_bounds.find(location);
-    ARIADNE_LOG(2,"Disproving reachable set against box " << bounds_it->second << " ... \n");
-    const bool isDisproved = definitely(_is_reachableSet_outside_disproveBounds(numDivisions,reachable_set,bounds_it->second));
-    ARIADNE_LOG(2,"Result: " << isDisproved << "\n");
-
     // Updates all the fields of the falsification info
-    disproveData.updateIsDisproved(isDisproved);
     disproveData.updateReachBounds(location,reachable_set.bounding_box());
     disproveData.updateEpsilon(location,reachable_set.bounding_box().widths());
 

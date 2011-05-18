@@ -70,7 +70,7 @@ void TestFunctionSet::test_constraint_set_1D()
 	VectorFunction cons_f(consexpr,varlist);
 	Box codomain(1,0.0,1.0);
 
-	ConstraintSet cons(codomain,cons_f);
+	ConstraintSet cons(cons_f,codomain);
 
 	Box check_box1(1,-0.1,1.1);
     ARIADNE_TEST_ASSERT(cons.overlaps(check_box1));
