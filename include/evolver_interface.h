@@ -29,7 +29,7 @@
 #define ARIADNE_EVOLVER_INTERFACE_H
 
 #include "settings.h"
-#include "disprove_data.h"
+#include "epsilon_lower_bounds.h"
 
 namespace Ariadne {
 
@@ -113,14 +113,6 @@ class EvolverInterface
                  const EnclosureType& initial_set, 
                  const TimeType& time, 
                  Semantics semantics) const = 0;
-
-    //! \brief Compute an approximation to the evolved and reachable sets under lower semantics for chain reachability,
-    //! where the disproving result is provided.
-    virtual
-    tuple<EnclosureListType,EnclosureListType,DisproveData>
-    lower_chain_reach_evolve_disprove(const SystemType& system,
-									  const EnclosureType& initial_set,
-									  const TimeType& time) const = 0;
   
     //! \brief Compute an approximation to the evolved set under the given semantics. 
     virtual 

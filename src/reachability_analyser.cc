@@ -806,9 +806,9 @@ _outer_chain_reach(
 }
 
 
-std::pair<HybridReachabilityAnalyser::SetApproximationType,DisproveData>
+std::pair<HybridGridTreeSet,EpsilonLowerBounds>
 HybridReachabilityAnalyser::
-_lower_chain_reach(
+_lower_reach_and_bounds(
 		const SystemType& system,
 		const HybridImageSet& initial_set,
 		const HybridConstraintSet& constraint_set,
@@ -821,16 +821,19 @@ _lower_chain_reach(
 	ARIADNE_ASSERT_MSG(concurrency>0 && concurrency <= boost::thread::hardware_concurrency(),"Error: concurrency must be positive and less than the maximum allowed.");
 
 	HybridGrid grid = grid_for(system,*_settings);
-    GTS reach(grid);
 
 	TimeType lock_time(_settings->lock_to_grid_time,_settings->lock_to_grid_steps);
 
 	bool use_domain_checking = reachability_restriction.empty();
 
-    DisproveData globalFalsInfo(system.state_space());
+    HybridGridTreeSet reach(grid);
+    EpsilonLowerBounds bounds(system.state_space());
 
     EL initial_enclosures = enclosures_from_split_domain_midpoints(initial_set,
     		min_cell_widths(grid,_settings->maximum_grid_depth));
+
+    if (!reachability_restriction.empty())
+    	initial_enclosures = restrict_enclosures(initial_enclosures,reachability_restriction);
 
     ARIADNE_LOG(3,"Computing recurrent evolution...\n");
 
@@ -843,8 +846,8 @@ _lower_chain_reach(
 		HUM& adjoined_evolve_sizes = evolve_sizes.first;
 		HUM& superposed_evolve_sizes = evolve_sizes.second;
 
-		GTS new_reach;
-		DisproveData newFalsInfo(system.state_space());
+		GTS local_reach;
+		EpsilonLowerBounds local_bounds(system.state_space());
 
 		ARIADNE_LOG(4,"Initial enclosures size = " << initial_enclosures.size() << "\n");
 
@@ -853,8 +856,10 @@ _lower_chain_reach(
 
 		ARIADNE_LOG(4,"Evolving and discretising...\n");
 
-		make_ltuple<std::pair<HUM,HUM>,EL,GTS,DisproveData>(evolve_sizes,final_enclosures,
-				new_reach,newFalsInfo) = worker.get_result();
+		make_ltuple<std::pair<HUM,HUM>,EL,GTS,EpsilonLowerBounds>(evolve_sizes,final_enclosures,
+				local_reach,local_bounds) = worker.get_result();
+
+		bounds.updateWith(local_bounds);
 
 		if (!constraint_set.empty()) {
 			HybridGridTreeSet local_reachability_restriction = reachability_restriction;
@@ -862,30 +867,29 @@ _lower_chain_reach(
 				local_reachability_restriction.adjoin_outer_approximation(_settings->domain_bounds,_settings->maximum_grid_depth);
 
 			HybridGridTreeSet possibly_feasible_cells = this->possibly_feasible_cells(
-					new_reach,constraint_set,newFalsInfo.getEpsilon(),local_reachability_restriction);
+					local_reach,constraint_set,local_bounds.getEpsilon(),local_reachability_restriction);
 
-			if (possibly_feasible_cells.size() < new_reach.size()) {
+			if (possibly_feasible_cells.size() < local_reach.size()) {
 				throw ReachUnsatisfiesConstraintException("The lower reached region partially does not satisfy the constraint.");
 			}
 		}
 
-		globalFalsInfo.updateWith(newFalsInfo);
+		ARIADNE_LOG(4,"Reach size before removal = " << local_reach.size() << "\n");
 
-		ARIADNE_LOG(4,"Reach size before removal = " << new_reach.size() << "\n");
-
-		new_reach.remove(reach);
-		ARIADNE_LOG(4,"Reach size after removal  = " << new_reach.size() << "\n");
-		if (new_reach.empty())
+		local_reach.remove(reach);
+		ARIADNE_LOG(4,"Reach size after removal  = " << local_reach.size() << "\n");
+		if (local_reach.empty())
 			break;
 
-		reach.adjoin(new_reach);
+		reach.adjoin(local_reach);
 
 		ARIADNE_LOG(4,"Final enclosures size = " << final_enclosures.size() << "\n");
 
-		_filter_enclosures(final_enclosures,initial_enclosures,adjoined_evolve_sizes,superposed_evolve_sizes,use_domain_checking);
+		_filter_enclosures(final_enclosures,initial_enclosures,
+				adjoined_evolve_sizes,superposed_evolve_sizes,use_domain_checking);
 	}
 
-	return make_pair<GTS,DisproveData>(reach,globalFalsInfo);
+	return std::pair<HybridGridTreeSet,EpsilonLowerBounds>(reach,bounds);
 }
 
 
@@ -942,27 +946,28 @@ _filter_enclosures(
 	}
 }
 
-std::pair<HybridReachabilityAnalyser::SetApproximationType,DisproveData>
+std::pair<HybridGridTreeSet,EpsilonLowerBounds>
 HybridReachabilityAnalyser::
-lower_chain_reach(
+lower_reach_and_bounds(
 		SystemType& system,
 		const HybridImageSet& initial_set,
 		const HybridGridTreeSet& reachability_restriction) const
 {
 	HybridConstraintSet constraint_set;
-	return lower_chain_reach(system,initial_set,constraint_set,reachability_restriction);
+	return lower_reach_and_bounds(system,initial_set,constraint_set,reachability_restriction);
 }
 
-std::pair<HybridReachabilityAnalyser::SetApproximationType,DisproveData>
+std::pair<HybridGridTreeSet,EpsilonLowerBounds>
 HybridReachabilityAnalyser::
-lower_chain_reach(
+lower_reach_and_bounds(
 		SystemType& system,
 		const HybridImageSet& initial_set,
 		const HybridConstraintSet& constraint_set,
 		const HybridGridTreeSet& reachability_restriction) const
 {
-	HybridGridTreeSet reach(*_settings->grid);
-	DisproveData disproveData(system.state_space());
+	HybridGrid grid = grid_for(system,*_settings);
+	HybridGridTreeSet reach(grid);
+	EpsilonLowerBounds bounds(system.state_space());
 
 	RealConstantSet original_constants = system.nonsingleton_accessible_constants();
 
@@ -980,13 +985,15 @@ lower_chain_reach(
 
 			system.substitute(*set_it);
 
-			std::pair<HybridGridTreeSet,DisproveData> reachAndDisproveData =
-					_lower_chain_reach(system,initial_set,constraint_set,reachability_restriction);
+			HybridGridTreeSet local_reach(grid);
+			EpsilonLowerBounds local_bounds(system.state_space());
+			make_lpair<HybridGridTreeSet,EpsilonLowerBounds>(local_reach,local_bounds) =
+					_lower_reach_and_bounds(system,initial_set,constraint_set,reachability_restriction);
 
-			reach.adjoin(reachAndDisproveData.first);
-			disproveData.updateWith(reachAndDisproveData.second);
+			reach.adjoin(local_reach);
+			bounds.updateWith(local_bounds);
 
-			ARIADNE_LOG(3,"Disprove data: " << reachAndDisproveData.second << "\n");
+			ARIADNE_LOG(3,"Epsilon lower bounds: " << local_bounds << "\n");
 		}
 
 	} catch (ReachUnsatisfiesConstraintException ex) {
@@ -994,7 +1001,7 @@ lower_chain_reach(
 		throw ex;
 	}
 
-	return std::pair<HybridGridTreeSet,DisproveData>(reach,disproveData);
+	return std::pair<HybridGridTreeSet,EpsilonLowerBounds>(reach,bounds);
 }
 
 
@@ -1640,6 +1647,23 @@ cells_to_smallest_enclosures(HybridGridTreeSet cells, int maximum_grid_depth)
     }
 
     return enclosures;
+}
+
+
+std::list<EnclosureType>
+restrict_enclosures(
+		const std::list<EnclosureType> enclosures,
+		const HybridGridTreeSet& restriction)
+{
+	std::list<EnclosureType> result;
+
+	for (std::list<EnclosureType>::const_iterator encl_it = enclosures.begin(); encl_it != enclosures.end(); ++encl_it) {
+		HybridBox hbox(encl_it->first,encl_it->second.bounding_box());
+		if (possibly(restriction.overlaps(hbox)))
+			result.push_back(*encl_it);
+	}
+
+	return result;
 }
 
 

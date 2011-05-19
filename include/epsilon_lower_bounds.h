@@ -1,5 +1,5 @@
 /***************************************************************************
- *            disprove_data.h
+ *            epsilon_lower_bounds.h
  *
  *  Copyright 2010  Luca Geretti
  *
@@ -21,12 +21,12 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-/*! \file disprove_data.h
- *  \brief Data structure for holding and manipulating disprovement results.
+/*! \file epsilon_lower_bounds.h
+ *  \brief Data structure for holding and manipulating epsilon values and bounds related to lower evolution.
  */
 
-#ifndef DISPROVE_DATA_H_
-#define DISPROVE_DATA_H_
+#ifndef EPSILON_LOWER_BOUNDS_H_
+#define EPSILON_LOWER_BOUNDS_H_
 
 #include "discrete_state.h"
 #include "box.h"
@@ -36,47 +36,37 @@
 namespace Ariadne {
 
 /**
- * \brief This is a structure for holding data obtained during lower chain reach analysis, in order to get info for disproving.
+ * \brief This is a structure for holding data obtained during lower evolution.
  */
-struct DisproveData
+struct EpsilonLowerBounds
 {
 private:
 
-	bool _isDisproved;
 	HybridBoxes _reachBounds;
 	HybridFloatVector _epsilon;
 
 public:
 
-	DisproveData(const HybridSpace& space) :
-		_isDisproved(false) {
-			for (HybridSpace::const_iterator space_it = space.begin(); space_it != space.end(); ++space_it) {
-				_reachBounds.insert(std::pair<DiscreteState,Box>(space_it->first,Box::empty_box(space_it->second)));
-				_epsilon.insert(std::pair<DiscreteState,Vector<Float> >(space_it->first,Vector<Float>(space_it->second)));
+	EpsilonLowerBounds(const HybridSpace& space) {
+		for (HybridSpace::const_iterator space_it = space.begin(); space_it != space.end(); ++space_it) {
+			_reachBounds.insert(std::pair<DiscreteState,Box>(space_it->first,Box::empty_box(space_it->second)));
+			_epsilon.insert(std::pair<DiscreteState,Vector<Float> >(space_it->first,Vector<Float>(space_it->second)));
 		}
 	}
 
-	DisproveData(
-			bool isDisproved,
+	EpsilonLowerBounds(
 			HybridBoxes reachBounds,
 			HybridFloatVector epsilon) :
-				_isDisproved(isDisproved),
 				_reachBounds(reachBounds),
 				_epsilon(epsilon) { }
 
-	const bool& getIsDisproved() const { return _isDisproved; }
 	const HybridBoxes& getReachBounds() const { return _reachBounds; }
 	const HybridFloatVector& getEpsilon() const { return _epsilon; }
 
 	/** Updates the content based on another info object */
-	void updateWith(const DisproveData& otherInfo) {
-		_isDisproved = _isDisproved || otherInfo.getIsDisproved();
+	void updateWith(const EpsilonLowerBounds& otherInfo) {
 		_reachBounds = hull(_reachBounds,otherInfo.getReachBounds());
 		_epsilon = max(_epsilon,otherInfo.getEpsilon());
-	}
-
-	void updateIsDisproved(const bool& isDisproved) {
-		_isDisproved = _isDisproved || isDisproved;
 	}
 
 	void updateReachBounds(
@@ -94,18 +84,18 @@ public:
 	}
 
 	virtual std::ostream& write(std::ostream& os) const {
-		os << "Disproved: " << _isDisproved << "; Reach bounds: " << _reachBounds << "; Epsilon: " << _epsilon;
+		os << "Reach bounds: " << _reachBounds << "; Epsilon: " << _epsilon;
 		return os;
 	}
 };
 
 inline std::ostream& operator<<(
 		std::ostream& os,
-		const DisproveData& dData)
+		const EpsilonLowerBounds& eps_lower_bounds)
 {
-    return dData.write(os);
+    return eps_lower_bounds.write(os);
 }
 
 }
 
-#endif /* DISPROVE_DATA_H_ */
+#endif /* EPSILON_LOWER_BOUNDS_H_ */

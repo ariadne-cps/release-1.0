@@ -292,6 +292,14 @@ class VerificationSettings {
 	//! If quick proving is allowed, then the refinement is actually
 	//! performed only once, i.e. when a reachability restriction is obtained for the first time.
  	bool enable_fb_refinement_for_proving;
+
+ 	/*! \brief Enable domain enforcing.
+ 	 *  \details If enforcing is disabled, the domain is only used to terminate reachability as soon as the domain is
+ 	 *  not respected. If enforcing is enabled, then reachability is strictly restricted inside the domain. In this case,
+ 	 *  there is an implicit assumption that the reachability is guaranteed to be inside the domain (the user must provide
+ 	 *  such guarantee by properly choosing the domain, otherwise the results are valid only on the domain itself).
+ 	 */
+ 	bool enable_domain_enforcing;
 };
 
 inline
@@ -329,7 +337,8 @@ VerificationSettings::VerificationSettings() :
     	maximum_parameter_depth(3),
     	use_param_midpoints_for_proving(false),
     	use_param_midpoints_for_disproving(true),
-    	enable_fb_refinement_for_proving(true)
+    	enable_fb_refinement_for_proving(true),
+		enable_domain_enforcing(false)
 { }
 
 
@@ -422,6 +431,7 @@ operator<<(std::ostream& os, const VerificationSettings& p)
        << ",\n  use_param_midpoints_for_proving=" << p.use_param_midpoints_for_proving
        << ",\n  use_param_midpoints_for_disproving=" << p.use_param_midpoints_for_disproving
        << ",\n  enable_fb_refinement_for_safety_proving=" << p.enable_fb_refinement_for_proving
+       << ",\n  enable_domain_enforcing=" << p.enable_domain_enforcing
        << "\n)\n";
     return os;
 }

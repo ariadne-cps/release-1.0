@@ -65,20 +65,9 @@ public:
 
     std::pair<HGTS,HGTS> get_result() 
     {
-    	if (_concurrency == 1) {
-			for (HGTS::const_iterator cells_it = _initial_set.begin(); cells_it != _initial_set.end(); ++cells_it) {
-				EnclosureType enclosure=_discretiser->enclosure(*_cells_it);
-				HGTS partial_reach, partial_evolve;
-				make_lpair<HGTS,HGTS>(partial_reach,partial_evolve) = _discretiser->evolution(_sys,enclosure,_time,_grid,_accuracy,UPPER_SEMANTICS);
-				_reach.adjoin(partial_reach);
-				_evolve.adjoin(partial_evolve);
-			}
-    	} else {
-    		_start();
-    		_wait_completion();
-    	}
+    	_start();
+    	_wait_completion();
 
-		// Get the result
 		return make_pair<HGTS,HGTS>(_reach,_evolve);
     }
  
@@ -192,21 +181,11 @@ public:
     	EvolutionDirection saved_direction = _discretiser->evolver()->settings().direction;
     	_discretiser->evolver()->settings().direction = _direction;
 
-    	if (_concurrency == 1) {
-			for (list<EnclosureType>::const_iterator encl_it = _initial_enclosures.begin(); encl_it != _initial_enclosures.end(); ++encl_it) {
-				HGTS partial_reach, partial_evolve;
-				make_lpair<HGTS,HGTS>(partial_reach,partial_evolve) = _discretiser->upper_evolution_continuous(_sys,*encl_it,_time,_grid,_accuracy);
-				_reach.adjoin(partial_reach);
-				_evolve.adjoin(partial_evolve);
-			}
-    	} else {
-    		_start();
-    		_wait_completion();
-    	}
+    	_start();
+    	_wait_completion();
 
     	_discretiser->evolver()->settings().direction = saved_direction;
 
-		// Get the result
 		return make_pair<HGTS,HGTS>(_reach,_evolve);
     }
  
@@ -308,7 +287,7 @@ public:
 	  _grid(grid),
 	  _accuracy(accuracy),
 	  _concurrency(concurrency),
-	  _falsInfo(DisproveData(sys.state_space()))
+	  _eps_lower_bounds(EpsilonLowerBounds(sys.state_space()))
     {
     	_reach = HGTS(grid);
 		_evolve_global = HGTS(grid);
@@ -319,46 +298,16 @@ public:
     }
 
     // Create the threads and produce the required results
-    tuple<std::pair<HUM,HUM>,EL,HGTS,DisproveData> get_result()
+    tuple<std::pair<HUM,HUM>,EL,HGTS,EpsilonLowerBounds> get_result()
     {
-    	if (_concurrency == 1) {
-    		for (EL::const_iterator encl_it = _initial_enclosures.begin(); encl_it != _initial_enclosures.end(); ++encl_it) {
-
-				HybridBasicSet<CE> current_initial_enclosure = *encl_it;
-				DisproveData current_falsInfo(_sys.state_space());
-				HGTS current_reach, current_evolve;
-				ELS current_reach_enclosures, current_evolve_enclosures;
-
-				// Get the enclosures from the initial enclosure, in a lock_time flight
-				make_ltuple<ELS,ELS,DisproveData>(current_reach_enclosures,current_evolve_enclosures,current_falsInfo) =
-										_discretiser->evolver()->lower_chain_reach_evolve_disprove(_sys,current_initial_enclosure,_time);
-
-				current_reach = _discretiser->_discretise(current_reach_enclosures,_grid,_accuracy);
-				current_evolve = _discretiser->_discretise(current_evolve_enclosures,_grid,_accuracy);
-
-				_reach.adjoin(current_reach);
-				_evolve_global.adjoin(current_evolve);
-				_falsInfo.updateWith(current_falsInfo);
-
-				// Add the number of cells of the current evolve to the superposed total at the end of the step, for each location
-				for (HGTS::locations_const_iterator evolve_it = current_evolve.locations_begin(); evolve_it != current_evolve.locations_end(); evolve_it++)
-					_superposed_evolve_sizes[evolve_it->first] += current_evolve[evolve_it->first].size();
-				// Add the current_enclosures to the final enclosures
-				for (ELS::locations_const_iterator loc_it = current_evolve_enclosures.locations_begin(); loc_it != current_evolve_enclosures.locations_end(); loc_it++)
-					for (ListSet<CE>::const_iterator list_it = loc_it->second.begin(); list_it != loc_it->second.end(); list_it++)
-						_final_enclosures.push_back(EnclosureType(loc_it->first,*list_it));
-    		}
-    	} else {
-    		_start();
-    		_wait_completion();
-    	}
+    	_start();
+    	_wait_completion();
 
 		// Calculate the adjoined evolve sizes
 		for (HGTS::locations_const_iterator evolve_global_it = _evolve_global.locations_begin(); evolve_global_it != _evolve_global.locations_end(); evolve_global_it++)
 			_adjoined_evolve_sizes[evolve_global_it->first] = evolve_global_it->second.size();
 
-		// Get the result
-		return make_tuple<std::pair<HUM,HUM>,EL,HGTS,DisproveData>(make_pair<HUM,HUM>(_adjoined_evolve_sizes,_superposed_evolve_sizes),_final_enclosures,_reach,_falsInfo);
+		return make_tuple<std::pair<HUM,HUM>,EL,HGTS,EpsilonLowerBounds>(make_pair<HUM,HUM>(_adjoined_evolve_sizes,_superposed_evolve_sizes),_final_enclosures,_reach,_eps_lower_bounds);
     }
  
 private:
@@ -379,8 +328,8 @@ private:
 	EL _final_enclosures;
 	// The reached region
 	HGTS _reach;
-	// The falsification info
-	DisproveData _falsInfo;
+	// The epsilon bounds
+	EpsilonLowerBounds _eps_lower_bounds;
 
 	// The various threads
     std::list<boost::shared_ptr<boost::thread> > _m_threads;
@@ -414,24 +363,28 @@ private:
 				_initial_enclosures.pop_front();
 				_inp_mutex.unlock();
 
-				// The current falsification info
-				DisproveData current_falsInfo(_sys.state_space());
-
 				HGTS current_reach, current_evolve;
 				ELS current_reach_enclosures, current_evolve_enclosures;
 
 				// Get the enclosures from the initial enclosure, in a lock_time flight
-				make_ltuple<ELS,ELS,DisproveData>(current_reach_enclosures,current_evolve_enclosures,current_falsInfo) =
-										_discretiser->evolver()->lower_chain_reach_evolve_disprove(_sys,current_initial_enclosure,_time);
+				make_ltuple<ELS,ELS>(current_reach_enclosures,current_evolve_enclosures) =
+										_discretiser->evolver()->reach_evolve(_sys,current_initial_enclosure,_time,LOWER_SEMANTICS);
 
 				// Get the discretisation
 				current_reach = _discretiser->_discretise(current_reach_enclosures,_grid,_accuracy);
 				current_evolve = _discretiser->_discretise(current_evolve_enclosures,_grid,_accuracy);
 
 				_out_mutex.lock();
+
 				_reach.adjoin(current_reach);
 				_evolve_global.adjoin(current_evolve);
-			    _falsInfo.updateWith(current_falsInfo);
+
+			    // Update the epsilon lower bounds
+				for (ELS::const_iterator encl_it = current_reach_enclosures.begin(); encl_it != current_reach_enclosures.end(); ++encl_it) {
+					Box encl_bounds = encl_it->second.bounding_box();
+					_eps_lower_bounds.updateEpsilon(encl_it->first,encl_bounds.widths());
+					_eps_lower_bounds.updateReachBounds(encl_it->first,encl_bounds);
+				}
 
 				// Add the number of cells of the current evolve to the superposed total at the end of the step, for each location
 				for (HGTS::locations_const_iterator evolve_it = current_evolve.locations_begin(); evolve_it != current_evolve.locations_end(); evolve_it++)

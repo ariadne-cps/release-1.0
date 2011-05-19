@@ -171,13 +171,6 @@ class Verifier
 			const HybridConstraintSet& safety_constraint,
 			const RealConstantSet& constants) const;
 
-	/*! brief Check whether the refinement of the \a reachability ends up satisfying the \a constraint_set. */
-	bool _forward_backward_refinement_check(
-			HybridAutomaton& system,
-			const HybridImageSet& initial_set,
-			const HybridConstraintSet& constraint_set,
-			const HybridGridTreeSet& reachability) const;
-
     /*! \brief Returns the new initial grid tree set for a chain reach. */
     HybridGridTreeSet _reachability_refinement_starting_set(
     		HybridAutomaton& system,
@@ -316,7 +309,6 @@ class Verifier
 	void _tuneIterativeStepSettings(
 			const HybridAutomaton& system,
 			const HybridGridTreeSet& hgts_domain,
-			const HybridGridTreeSet& reachability_restriction,
 			Semantics semantics) const;
 
 	/*! \brief Checks whether a grid depth value is allowed for use in iterative verification, based on the \a semantics. */

@@ -184,22 +184,18 @@ class HybridReachabilityAnalyser
     		EvolutionDirection direction,
     		const HybridGridTreeSet& reachability_restriction) const;
 
-    /*! \brief Compute an outer-approximation to the chain-reachable set of \a system starting in \a initial_set, with
-     * lower semantics.
-     * \details The resulting set is a subset of the outer-approximation of the whole evolution set.
-     * \return The reach set and the falsification information (namely, only the reach bounds and the epsilon). */
-    virtual std::pair<SetApproximationType,DisproveData> lower_chain_reach(
+    /*! \brief Compute the epsilon lower bounds of \a system starting in \a initial_set.
+     * \return The reach and the epsilon lower bounds (namely, the reach bounds and the epsilon). */
+    virtual std::pair<HybridGridTreeSet,EpsilonLowerBounds> lower_reach_and_bounds(
     		SystemType& system,
 			const HybridImageSet& initial_set,
 			const HybridGridTreeSet& reachability_restriction) const;
 
-    /*! \brief Compute an outer-approximation to the chain-reachable set of \a system starting in \a initial_set, with
-     * lower semantics, checking for inclusion into a \a safe_region.
-     * \details the method performs periodical discretisations and checks the new reached region for inclusion
-     * The resulting set is a subset of the outer-approximation of the whole evolution set.
-     * If \a constraint_set is not empty, it checks online whether the reachable area does not satisfy the constraint.
-     * \return The reach set and the falsification information. */
-    virtual std::pair<SetApproximationType,DisproveData> lower_chain_reach(
+    /*! \brief Compute the epsilon lower bounds of \a system starting in \a initial_set.
+     * \details If \a constraint_set is not empty, it checks whether the reachable area does not satisfy the constraint,
+     * raising an exception if this is the case.
+     * \return The reach and the epsilon lower bounds (namely, the reach bounds and the epsilon). */
+    virtual std::pair<HybridGridTreeSet,EpsilonLowerBounds> lower_reach_and_bounds(
     		SystemType& system,
 			const HybridImageSet& initial_set,
 			const HybridConstraintSet& constraint_set,
@@ -334,10 +330,10 @@ class HybridReachabilityAnalyser
     		std::list<EnclosureType>& result_enclosures,
     		bool use_domain_checking) const;
 
-    /*! \brief Performs the lower chain reachability of \a system.
+    /*! \brief Gets the epsilon lower bounds of the \a system.
      * \details The \a constraint_set is checked: if not empty and its epsilon relaxation is not satisfied
      * for the current lower reach, an exception is raised. */
-    std::pair<SetApproximationType,DisproveData> _lower_chain_reach(
+    std::pair<HybridGridTreeSet,EpsilonLowerBounds> _lower_reach_and_bounds(
     		const SystemType& system,
     		const HybridImageSet& initial_set,
 			const HybridConstraintSet& constraint_set,
@@ -514,6 +510,12 @@ bool new_reachability_restriction_equals(
 std::list<EnclosureType> cells_to_smallest_enclosures(
 		HybridGridTreeSet cells,
 		int maximum_grid_depth);
+
+/*! \brief Restricts the \a enclosures to those possibly overlapping \a restriction */
+std::list<EnclosureType> restrict_enclosures(
+		const std::list<EnclosureType> enclosures,
+		const HybridGridTreeSet& restriction);
+
 
 } // namespace Ariadne
 

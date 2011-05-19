@@ -61,6 +61,7 @@ Verifier::~Verifier()
 }
 
 
+
 tribool
 Verifier::
 safety(SafetyVerificationInput& verInput) const
@@ -183,135 +184,99 @@ _safety_proving_once(
 		return false;
 	}
 
+	int& maximum_grid_depth = _outer_analyser->settings().maximum_grid_depth;
+
 	RealConstantSet original_constants = system.accessible_constants();
 
 	system.substitute(constants,_settings->use_param_midpoints_for_proving);
 
 	ARIADNE_LOG(4,"Setting parameters for this proving iteration...\n");
 
-	_tuneIterativeStepSettings(system,_safety_coarse_outer_approximation->get(),_safety_reachability_restriction,UPPER_SEMANTICS);
+	_tuneIterativeStepSettings(system,_safety_coarse_outer_approximation->get(),UPPER_SEMANTICS);
+
+	ARIADNE_LOG(5, "Using reachability restriction: " << pretty_print(!_safety_reachability_restriction.empty()) << "\n");
 
 	ARIADNE_LOG(4,"Performing outer reachability analysis...\n");
 
 	try {
 
-		HybridGridTreeSet reach = _outer_analyser->outer_chain_reach(
-				system,initial_set,DIRECTION_FORWARD,_safety_reachability_restriction);
+		/* Given the initial set I, forward reachability F, and unsafe region U:
 
-		_update_safety_cached_reachability_with(reach);
+		1. Evaluate the final unsafe set H = F ∩ U ; if H = ∅, return TRUE;
+		2. If the accuracy is over the maximum, return FALSE;
+		3. Obtain the backward reachability B under the constraint set F;
+		4. If B = F, return FALSE;
+		5. Evaluate the new initial set I = B ∩ I; if I = ∅, return TRUE;
+		6. If the accuracy is over the maximum, return FALSE;
+		7. Starting from I, obtain the forward reachability F under the constraint set B;
+		8. If F = B, return FALSE;
 
-		result = definitely(covers(safety_constraint,reach));
+		*/
 
-		ARIADNE_LOG(5, "The reachable set " << (!result ? "does not satisfy":"satisfies") << " the safety constraint.\n");
+		if (!_safety_reachability_restriction.empty() && _settings->enable_fb_refinement_for_proving) {
 
-		if (_settings->plot_results)
-			_plot_reach(reach,"outer",_outer_analyser->settings().maximum_grid_depth);
+			HybridGridTreeSet backward_initial = _reachability_refinement_starting_set(system,initial_set,
+					safety_constraint,_safety_reachability_restriction,DIRECTION_BACKWARD);
 
-		// We refine only if we have no result from the initial reach set and we have a restriction on the reachability
-		if (!result && !_safety_reachability_restriction.empty() && _settings->enable_fb_refinement_for_proving)
-			result = _forward_backward_refinement_check(system,initial_set,safety_constraint,_safety_reachability_restriction);
+			if (backward_initial.empty()) {
+				ARIADNE_LOG(4, "The initial set for backward reachability is empty.\n");
+				system.substitute(original_constants);
+				return true;
+			}
 
-	} catch (ReachOutOfDomainException ex) {
-		ARIADNE_LOG(5, "The outer reached region is partially out of the domain (skipped).\n");
-		result = false;
-	} catch (ReachUnsatisfiesConstraintException ex) {
-		ARIADNE_LOG(5, "The outer reached region is not inside the safe region (skipped).\n");
-		result = false;
-	}
+			ARIADNE_LOG(5,"Retrieving backward reachability...\n");
 
-	system.substitute(original_constants);
+			HybridGridTreeSet backward_reach = _outer_analyser->outer_chain_reach(system,backward_initial,
+					DIRECTION_BACKWARD,_safety_reachability_restriction);
 
-	ARIADNE_LOG(4, (result ? "Proved.\n" : "Not proved.\n") );
+			_safety_reachability_restriction = backward_reach;
 
-	return result;
-}
+			ARIADNE_LOG(6,"Reachability size: " << backward_reach.size() << "\n");
 
+			if (_settings->plot_results)
+				_plot_reach(backward_reach,"backward",maximum_grid_depth);
 
-bool
-Verifier::
-_forward_backward_refinement_check(
-		SystemType& system,
-		const HybridImageSet& initial_set,
-		const HybridConstraintSet& constraint_set,
-		const HybridGridTreeSet& reachability) const
-{
-	bool result = false;
-
-	ARIADNE_LOG(5, "Performing forward-backward refinement...\n");
-
-	HybridGridTreeSet residual_reachability = reachability;
-
-	int& maximum_grid_depth = _outer_analyser->settings().maximum_grid_depth;
-
-	/* Given the initial set I, forward reachability F, and unsafe region U:
-
-	(if the settings can be refined)
-	1. Refine the accuracy settings;
-	2. Evaluate the final unsafe set H = F ∩ U ; if H = ∅, return TRUE;
-	3. If the accuracy is over the maximum, return FALSE;
-	4. Obtain the backward reachability B under the constraint set F;
-	5. If B = F, return FALSE;
-	(if the settings can be refined)
-	6. Refine the accuracy settings;
-	7. Evaluate the new initial set I = B ∩ I; if I = ∅, return TRUE;
-	8. If the accuracy is over the maximum, return FALSE;
-	9. Starting from I, obtain the forward reachability F under the constraint set B;
-	10. If F = B, return FALSE;
-
-	11. Restart from 1.
-
-	*/
-
-	while (true) {
-
-		if (maximum_grid_depth >= _outer_analyser->settings().highest_maximum_grid_depth) {
-			result = false;
-			break;
 		}
 
-		++maximum_grid_depth;
-		_outer_analyser->forward_backward_refine_evolution_settings();
-
-		HybridGridTreeSet backward_initial = _reachability_refinement_starting_set(system,initial_set,constraint_set,
-				residual_reachability,DIRECTION_BACKWARD);
-
-		if (backward_initial.empty()) {
-			result = true;
-			break;
+		HybridGridTreeSet forward_initial;
+		if (!_safety_reachability_restriction.empty()) {
+			forward_initial = _reachability_refinement_starting_set(system,initial_set,
+				safety_constraint,_safety_reachability_restriction,DIRECTION_FORWARD);
+		} else {
+			forward_initial.adjoin_outer_approximation(initial_set,maximum_grid_depth);
+			forward_initial.mince(maximum_grid_depth);
 		}
-
-		ARIADNE_LOG(5,"Retrieving backward reachability...\n");
-
-		residual_reachability = _outer_analyser->outer_chain_reach(system,backward_initial,
-				DIRECTION_BACKWARD,residual_reachability);
-
-		ARIADNE_LOG(6,"Residual reachability size: " << residual_reachability.size() << "\n");
-
-		if (_settings->plot_results)
-			_plot_reach(residual_reachability,"backward",maximum_grid_depth);
-
-		HybridGridTreeSet forward_initial = _reachability_refinement_starting_set(system,initial_set,constraint_set,
-				residual_reachability,DIRECTION_FORWARD);
 
 		if (forward_initial.empty()) {
-			result = true;
-			break;
+			ARIADNE_LOG(4, "The initial set for forward reachability is empty.\n");
+			system.substitute(original_constants);
+			return true;
 		}
 
 		ARIADNE_LOG(5,"Retrieving forward reachability...\n");
 
-		residual_reachability = _outer_analyser->outer_chain_reach(system,forward_initial,
-				DIRECTION_FORWARD,residual_reachability);
+		HybridGridTreeSet forward_reach = _outer_analyser->outer_chain_reach(system,forward_initial,
+				DIRECTION_FORWARD,_safety_reachability_restriction);
 
-		ARIADNE_LOG(6,"Residual reachability size: " << residual_reachability.size() << "\n");
+		ARIADNE_LOG(6,"Reachability size: " << forward_reach.size() << "\n");
+
+		_update_safety_cached_reachability_with(forward_reach);
+
+		// Additional simplified check, also useful when only forward reachability is available
+		result = definitely(covers(safety_constraint,forward_reach));
 
 		if (_settings->plot_results)
-			_plot_reach(residual_reachability,"forward",maximum_grid_depth);
+			_plot_reach(forward_reach,"forward",maximum_grid_depth);
+
+	} catch (ReachOutOfDomainException ex) {
+		ARIADNE_LOG(4, "The outer reached region is partially out of the domain (skipped).\n");
+		result = false;
+	} catch (ReachUnsatisfiesConstraintException ex) {
+		ARIADNE_LOG(4, "The outer reached region is not inside the safe region (skipped).\n");
+		result = false;
 	}
 
-	_safety_reachability_restriction = residual_reachability;
-
-	ARIADNE_LOG(5, (result ? "Successful.\n" : "Failed.\n"));
+	system.substitute(original_constants);
 
 	return result;
 }
@@ -382,25 +347,20 @@ _safety_disproving_once(
 
 	ARIADNE_LOG(4,"Setting parameters for this disproving iteration...\n");
 
-	_tuneIterativeStepSettings(system,_safety_coarse_outer_approximation->get(),_safety_reachability_restriction,LOWER_SEMANTICS);
+	_tuneIterativeStepSettings(system,_safety_coarse_outer_approximation->get(),LOWER_SEMANTICS);
 
-	ARIADNE_LOG(4,"Performing lower reachability analysis and getting disprove data...\n");
+	ARIADNE_LOG(5, "Using reachability restriction: " << pretty_print(!_safety_reachability_restriction.empty()) << "\n");
+
+	ARIADNE_LOG(4,"Performing lower reachability analysis...\n");
 
 	try {
-		std::pair<HybridGridTreeSet,DisproveData> reachAndDisproveData =
-				_lower_analyser->lower_chain_reach(system,initial_set,safety_constraint,_safety_reachability_restriction);
-		const HybridGridTreeSet& reach = reachAndDisproveData.first;
-		const DisproveData& disproveData = reachAndDisproveData.second;
 
-		ARIADNE_LOG(5,"Epsilon: " << disproveData.getEpsilon() << "\n");
+		HybridGridTreeSet reach;
+		EpsilonLowerBounds bounds(system.state_space());
+		make_lpair<HybridGridTreeSet,EpsilonLowerBounds>(reach,bounds) = _lower_analyser->lower_reach_and_bounds(
+				system,initial_set,safety_constraint,_safety_reachability_restriction);
 
-		HybridGridTreeSet reachability_restriction;
-		reachability_restriction.adjoin_outer_approximation(_lower_analyser->settings().domain_bounds,_lower_analyser->settings().maximum_grid_depth);
-
-		HybridGridTreeSet possibly_safe_cells = _lower_analyser->possibly_feasible_cells(
-				reach,safety_constraint,disproveData.getEpsilon(),reachability_restriction);
-
-		result = (possibly_safe_cells.size() < reach.size());
+		ARIADNE_LOG(5, "Epsilon lower bounds: " << bounds << "\n");
 
 		if (_settings->plot_results)
 			_plot_reach(reach,"lower",_lower_analyser->settings().maximum_grid_depth);
@@ -682,20 +642,18 @@ _dominance_shrinked_lower_bounds(
 	ARIADNE_LOG(4,"Getting the lower reached region of the " << descriptor << " system...\n");
 
 	HybridGridTreeSet reach;
-	DisproveData disproveData(verInfo.getSystem().state_space());
-	make_lpair<HybridGridTreeSet,DisproveData>(reach,disproveData) =
-			_lower_analyser->lower_chain_reach(verInfo.getSystem(),verInfo.getInitialSet(),reachability_restriction);
+	EpsilonLowerBounds bounds(verInfo.getSystem().state_space());
+
+	make_lpair<HybridGridTreeSet,EpsilonLowerBounds>(reach,bounds) = _lower_analyser->lower_reach_and_bounds(
+			verInfo.getSystem(),verInfo.getInitialSet(),reachability_restriction);
 
 	// We must shrink the lower approximation of the system, but underapproximating in terms of rounding
-	HybridBoxes shrinked_bounds = Ariadne::shrink_in(disproveData.getReachBounds(),disproveData.getEpsilon());
+	HybridBoxes shrinked_bounds = Ariadne::shrink_in(bounds.getReachBounds(),bounds.getEpsilon());
 
 	Box projected_shrinked_bounds = Ariadne::project(shrinked_bounds,verInfo.getProjection());
 
-	ARIADNE_LOG(5,"Epsilon: " << disproveData.getEpsilon() << "\n");
+	ARIADNE_LOG(5,"Epsilon: " << bounds.getEpsilon() << "\n");
 	ARIADNE_LOG(5,"Projected shrinked " << descriptor << " bounds: " << projected_shrinked_bounds << "\n");
-
-	if (_settings->plot_results)
-		_plot_dominance(reach,dominanceSystem,LOWER_SEMANTICS);
 
 	return projected_shrinked_bounds;
 }
@@ -754,6 +712,20 @@ _resetAndChooseInitialSafetySettings(
 
 	_chooseInitialSafetySettings(system,domain,locked_constants,UPPER_SEMANTICS);
 	_chooseInitialSafetySettings(system,domain,locked_constants,LOWER_SEMANTICS);
+
+	if (_settings->enable_domain_enforcing) {
+		HybridFloatVector hmad = getHybridMaximumAbsoluteDerivatives(system,HybridGridTreeSet(),domain);
+		HybridGrid coarse_grid = getHybridGrid(hmad,domain);
+
+		HybridGridTreeSet discretized_domain(coarse_grid);
+		discretized_domain.adjoin_outer_approximation(domain,1);
+		_safety_coarse_outer_approximation->set(discretized_domain);
+		hmad = getHybridMaximumAbsoluteDerivatives(system,discretized_domain,domain);
+		HybridGrid fine_grid = getHybridGrid(hmad,domain);
+		HybridGridTreeSet reachability_restriction(fine_grid);
+		reachability_restriction.adjoin_outer_approximation(domain,1);
+		_safety_reachability_restriction = reachability_restriction;
+	}
 }
 
 
@@ -783,7 +755,6 @@ Verifier::
 _tuneIterativeStepSettings(
 		const HybridAutomaton& system,
 		const HybridGridTreeSet& hgts_domain,
-		const HybridGridTreeSet& reachability_restriction,
 		Semantics semantics) const
 {
 	HybridReachabilityAnalyser& analyser = (semantics == UPPER_SEMANTICS ? *_outer_analyser : *_lower_analyser);
@@ -795,8 +766,6 @@ _tuneIterativeStepSettings(
 	analyser.settings().grid = boost::shared_ptr<HybridGrid>(
 			new HybridGrid(getHybridGrid(hmad,analyser.settings().domain_bounds)));
 	ARIADNE_LOG(5, "Grid lengths: " << analyser.settings().grid->lengths() << "\n");
-
-	ARIADNE_LOG(5, "Use reachability restriction: " << pretty_print(!reachability_restriction.empty()) << "\n");
 
 	analyser.tuneEvolverSettings(system,hmad,analyser.settings().maximum_grid_depth,semantics);
 }
@@ -826,7 +795,9 @@ _chooseDominanceSettings(
 	analyser.settings().domain_bounds = verInput.getDomain();
 	ARIADNE_LOG(5, "Domain: " << analyser.settings().domain_bounds << "\n");
 
-	_tuneIterativeStepSettings(verInput.getSystem(),outer_reach,outer_approx_constraint,semantics);
+	_tuneIterativeStepSettings(verInput.getSystem(),outer_reach,semantics);
+
+	ARIADNE_LOG(5, "Use reachability restriction: " << pretty_print(!outer_approx_constraint.empty()) << "\n");
 
 	analyser.settings().lock_to_grid_time = getLockToGridTime(verInput.getSystem(),analyser.settings().domain_bounds);
 	ARIADNE_LOG(5, "Lock to grid time: " << analyser.settings().lock_to_grid_time << "\n");
