@@ -197,16 +197,6 @@ class HybridDiscretiser
               const AccuracyType accuracy,
               const Semantics semantics) const;
 
-    //! \brief Compute approximations to the reachable and evolved sets 
-    //! of \a system starting in \a initial_set over \a time, for upper 
-	//! semantics with continuous evolution only. */
-    virtual std::pair<DenotableSetType,DenotableSetType>
-    upper_evolution_continuous(const SystemType& system, 
-              			 	   const EnclosureType& initial_set, 
-              			 	   const TimeType& time,
-              			 	   const HybridGrid& grid,
-              			 	   const AccuracyType accuracy) const;
-
     //! \brief Compute approximations to the reachable set 
     //! of \a system starting in \a initial_set over \a time. */
     virtual DenotableSetType 

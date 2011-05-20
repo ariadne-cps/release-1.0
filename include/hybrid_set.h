@@ -845,7 +845,7 @@ tribool covers(const HybridConstraintSet& cons_set, const HybridGridTreeSet& gri
 //! \brief Evaluates \a grid_set on \a cons_set in order to obtain (a superset of) the overlapping cells.
 HybridGridTreeSet possibly_overlapping_cells(const HybridGridTreeSet& grid_set, const HybridConstraintSet& cons_set);
 //! \brief Applies \a cons_set to \a grid_set in order to obtain the covered cells.
-HybridGridTreeSet covered_cells(const HybridGridTreeSet& grid_set, const HybridConstraintSet& cons_set);
+HybridGridTreeSet definitely_covered_cells(const HybridGridTreeSet& grid_set, const HybridConstraintSet& cons_set);
 
 //! \brief Evaluates the codomain of the function \a func applied on the cells of \a grid_set, each widened by \a eps.
 HybridBoxes eps_codomain(const HybridGridTreeSet& grid_set, const HybridFloatVector& eps, const HybridVectorFunction& func);

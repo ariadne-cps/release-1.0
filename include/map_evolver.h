@@ -101,12 +101,6 @@ class MapEvolver
     //! \brief Compute an approximation to the orbit set using upper semantics. 
     Orbit<EnclosureType> orbit(const SystemType& system, const EnclosureType& initial_set, const TimeType& time, Semantics semantics=UPPER_SEMANTICS) const;
 
-    //! \name Evolution using abstract sets.
-    //! \brief Compute an approximation to the orbit set using upper semantics, with only the continuous part. 
-    Orbit<EnclosureType> upper_orbit_continuous(const SystemType& system, const EnclosureType& initial_set, const TimeType& time) {
-		ARIADNE_NOT_IMPLEMENTED;
-	}
-
     //! \brief Compute an approximation to the evolution set using upper semantics. 
     EnclosureListType evolve(const SystemType& system, const EnclosureType& initial_set, const TimeType& time) const {
         EnclosureListType final; EnclosureListType reachable; EnclosureListType intermediate; 
@@ -118,12 +112,6 @@ class MapEvolver
         EnclosureListType final; EnclosureListType reachable; EnclosureListType intermediate; 
         this->_evolution(final,reachable,intermediate,system,initial_set,time,UPPER_SEMANTICS);
         return intermediate; }
-
-    //! \brief Compute an approximation to the evolution set under the given semantics, returning the reached and final sets, and the information
-    //! on having disproved.
-    tuple<EnclosureListType,EnclosureListType,EpsilonLowerBounds> lower_chain_reach_evolve_disprove(const SystemType& system, const EnclosureType& initial_set,
-																					  const TimeType& time) const {
-        ARIADNE_NOT_IMPLEMENTED; }
 
   protected:
     virtual void _evolution(EnclosureListType& final, EnclosureListType& reachable, EnclosureListType& intermediate, 

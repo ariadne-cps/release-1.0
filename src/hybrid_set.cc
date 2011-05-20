@@ -244,14 +244,14 @@ HybridGridTreeSet possibly_overlapping_cells(const HybridGridTreeSet& grid_set, 
 }
 
 
-HybridGridTreeSet covered_cells(const HybridGridTreeSet& grid_set, const HybridConstraintSet& cons_set)
+HybridGridTreeSet definitely_covered_cells(const HybridGridTreeSet& grid_set, const HybridConstraintSet& cons_set)
 {
 	HybridGridTreeSet result(grid_set.grid());
 
     for (HybridGridTreeSet::locations_const_iterator gts_it = grid_set.locations_begin(); gts_it != grid_set.locations_end(); ++gts_it) {
     	HybridConstraintSet::locations_const_iterator cs_it = cons_set.find(gts_it->first);
     	if (cs_it != cons_set.locations_end())
-    		result[gts_it->first] = covered_cells(gts_it->second,cs_it->second);
+    		result[gts_it->first] = definitely_covered_cells(gts_it->second,cs_it->second);
     }
 
 	return result;

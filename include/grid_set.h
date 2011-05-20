@@ -2379,9 +2379,13 @@ tribool overlaps(const ConstraintSet& cons_set, const GridTreeSet& grid_set);
 tribool covers(const ConstraintSet& cons_set, const GridTreeSet& grid_set);
 
 //! \brief Evaluates \a grid_set on \a cons_set in order to obtain (a superset of) the overlapping cells.
+//! \details The result is a subset of the cells of \a grid_set. As such, the cells are not manipulated (i.e., by mincing
+//! or recombining) in any way.
 GridTreeSet possibly_overlapping_cells(const GridTreeSet& grid_set, const ConstraintSet& cons_set);
-//! \brief Applies \a cons_set to \a grid_set in order to obtain the covered cells.
-GridTreeSet covered_cells(const GridTreeSet& grid_set, const ConstraintSet& cons_set);
+//! \brief Applies \a cons_set to \a grid_set in order to obtain the definitely covered cells.
+//! \details The result is a subset of the cells of \a grid_set. As such, the cells are not manipulated (i.e., by mincing
+//! or recombining) in any way.
+GridTreeSet definitely_covered_cells(const GridTreeSet& grid_set, const ConstraintSet& cons_set);
 
 //! \brief Evaluates the codomain of \a func applied on the cells of \a grid_set, each widened by \a eps.
 Box eps_codomain(const GridTreeSet& grid_set, const Vector<Float> eps, const VectorFunction& func);

@@ -302,7 +302,7 @@ _reachability_refinement_starting_set(
 	} else {
 		result = reachability_restriction;
 		result.mince(maximum_grid_depth);
-		result.remove(covered_cells(result,constraint_set));
+		result.remove(definitely_covered_cells(result,constraint_set));
 	}
 
 	ARIADNE_LOG(6,"Starting set size: " << result.size() << "\n");

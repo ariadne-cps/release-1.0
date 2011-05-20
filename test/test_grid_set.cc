@@ -3055,7 +3055,7 @@ void test_constraintset_vs_gridtreeset_operations()
 	ARIADNE_PRINT_TEST_COMMENT("Grid tree set size: " << gts1.size() << "\n");
 
 	ARIADNE_TEST_EQUAL(possibly_overlapping_cells(gts1,cons).size(),3);
-	ARIADNE_TEST_EQUAL(covered_cells(gts1,cons).size(),0);
+	ARIADNE_TEST_EQUAL(definitely_covered_cells(gts1,cons).size(),0);
 
 	GridTreeSet gts2(gr);
 	Box bx2(1,1.1,1.8);
@@ -3065,7 +3065,7 @@ void test_constraintset_vs_gridtreeset_operations()
 	ARIADNE_PRINT_TEST_COMMENT("Grid tree set size: " << gts2.size() << "\n");
 
 	ARIADNE_TEST_EQUAL(possibly_overlapping_cells(gts2,cons).size(),1);
-	ARIADNE_TEST_EQUAL(covered_cells(gts2,cons).size(),0);
+	ARIADNE_TEST_EQUAL(definitely_covered_cells(gts2,cons).size(),0);
 
 	GridTreeSet gts3(gr);
 	Box bx3(1,0.6,1.2);
@@ -3075,7 +3075,7 @@ void test_constraintset_vs_gridtreeset_operations()
 	ARIADNE_PRINT_TEST_COMMENT("Grid tree set size: " << gts3.size() << "\n");
 
 	ARIADNE_TEST_EQUAL(possibly_overlapping_cells(gts3,cons).size(),gts3.size());
-	ARIADNE_TEST_EQUAL(covered_cells(gts3,cons).size(),1);
+	ARIADNE_TEST_EQUAL(definitely_covered_cells(gts3,cons).size(),1);
 
 	GridTreeSet gts4(gr);
 	Box bx4(1,0.6,0.8);
@@ -3085,7 +3085,7 @@ void test_constraintset_vs_gridtreeset_operations()
 	ARIADNE_PRINT_TEST_COMMENT("Grid tree set size: " << gts4.size() << "\n");
 
 	ARIADNE_TEST_EQUAL(possibly_overlapping_cells(gts4,cons).size(),3);
-	ARIADNE_TEST_EQUAL(covered_cells(gts4,cons).size(),3);
+	ARIADNE_TEST_EQUAL(definitely_covered_cells(gts4,cons).size(),3);
 }
 
 

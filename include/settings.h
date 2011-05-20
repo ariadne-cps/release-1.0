@@ -83,7 +83,10 @@ class ContinuousEvolutionSettings {
 
     //! \brief Terminate evolution if basic sets became too large (true by default).
 	//! \details In the case of upper semantics, if true and no subdivisions are present, the set is put into the final sets. In the case of lower semantics, the set is discarded.
-    bool enable_premature_termination;
+    bool enable_premature_termination_on_enclosure_size;
+
+    //! \brief Terminate evolution if basic sets can not proceed on continuous evolution due to a definitely active blocking event (false by default).
+    bool enable_premature_termination_on_blocking_event;
 };
 
 
@@ -311,7 +314,8 @@ ContinuousEvolutionSettings::ContinuousEvolutionSettings()
       minimum_enclosure_cell(Vector<RealType>(0)),
       maximum_enclosure_cell(Vector<RealType>(0)),
       enable_subdivisions(false),
-      enable_premature_termination(true)
+      enable_premature_termination_on_enclosure_size(true),
+	  enable_premature_termination_on_blocking_event(false)
 { }
 
 inline
@@ -355,7 +359,8 @@ operator<<(std::ostream& os, const ContinuousEvolutionSettings& p)
        << ",\n  minimum_enclosure_cell=" << p.minimum_enclosure_cell
        << ",\n  maximum_enclosure_cell=" << p.maximum_enclosure_cell
        << ",\n  enable_subdivisions=" << p.enable_subdivisions
-       << ",\n  enable_premature_termination=" << p.enable_premature_termination
+       << ",\n  enable_premature_termination_on_enclosure_size=" << p.enable_premature_termination_on_enclosure_size
+       << ",\n  enable_premature_termination_on_blocking_event=" << p.enable_premature_termination_on_blocking_event
        << "\n)\n";
     return os;
 }
@@ -399,6 +404,9 @@ operator<<(std::ostream& os, const EvolutionSettings& p)
        << ",\n  hybrid_maximum_step_size=" << p.hybrid_maximum_step_size
        << ",\n  minimum_enclosure_cell=" << p.minimum_enclosure_cell
        << ",\n  maximum_enclosure_cell=" << p.maximum_enclosure_cell
+       << ",\n  enable_subdivisions=" << p.enable_subdivisions
+       << ",\n  enable_premature_termination_on_enclosure_size=" << p.enable_premature_termination_on_enclosure_size
+       << ",\n  enable_premature_termination_on_blocking_event=" << p.enable_premature_termination_on_blocking_event
 
        << ",\n\n  lock_to_grid_steps=" << p.lock_to_grid_steps
        << ",\n  lock_to_grid_time=" << p.lock_to_grid_time

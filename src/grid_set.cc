@@ -3144,7 +3144,7 @@ GridTreeSet possibly_overlapping_cells(const GridTreeSet& grid_set, const Constr
 }
 
 
-GridTreeSet covered_cells(const GridTreeSet& grid_set, const ConstraintSet& cons_set)
+GridTreeSet definitely_covered_cells(const GridTreeSet& grid_set, const ConstraintSet& cons_set)
 {
 	GridTreeSet result(grid_set.grid());
 

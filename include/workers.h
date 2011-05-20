@@ -180,11 +180,13 @@ public:
     {
     	EvolutionDirection saved_direction = _discretiser->evolver()->settings().direction;
     	_discretiser->evolver()->settings().direction = _direction;
+    	_discretiser->evolver()->settings().enable_premature_termination_on_blocking_event = true;
 
     	_start();
     	_wait_completion();
 
     	_discretiser->evolver()->settings().direction = saved_direction;
+    	_discretiser->evolver()->settings().enable_premature_termination_on_blocking_event = false;
 
 		return make_pair<HGTS,HGTS>(_reach,_evolve);
     }
@@ -240,7 +242,7 @@ private:
 				_inp_mutex.unlock();		
 
         		HGTS reach, evolve;
-		        make_lpair(reach,evolve)=_discretiser->upper_evolution_continuous(_sys,enclosure,_time,_grid,_accuracy);
+		        make_lpair(reach,evolve)=_discretiser->evolution(_sys,enclosure,_time,_grid,_accuracy,UPPER_SEMANTICS);
 
 				_out_mutex.lock();
 		        _reach.adjoin(reach);
