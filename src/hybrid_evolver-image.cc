@@ -87,7 +87,8 @@ const DiscreteEvent ImageSetHybridEvolver::blocking_event = -3;
 
 ImageSetHybridEvolver::ImageSetHybridEvolver()
     : _settings(new EvolutionSettingsType()),
-      _toolbox(new TaylorCalculus())
+      _upper_toolbox(new TaylorCalculus()),
+      _lower_toolbox(new TaylorCalculus())
 {
 	
 }
@@ -95,20 +96,24 @@ ImageSetHybridEvolver::ImageSetHybridEvolver()
 
 ImageSetHybridEvolver::ImageSetHybridEvolver(const EvolutionSettingsType& p)
     : _settings(new EvolutionSettingsType(p)),
-      _toolbox(new TaylorCalculus())
+      _upper_toolbox(new TaylorCalculus())
 {
 }
 
-ImageSetHybridEvolver::ImageSetHybridEvolver(const TaylorCalculus& tc)
+ImageSetHybridEvolver::ImageSetHybridEvolver(const TaylorCalculus& upper_calculus,
+											 const TaylorCalculus& lower_calculus)
     : _settings(new EvolutionSettingsType()),
-      _toolbox(new TaylorCalculus(tc))
+      _upper_toolbox(new TaylorCalculus(upper_calculus)),
+      _lower_toolbox(new TaylorCalculus(lower_calculus))
 {
 }
 
 ImageSetHybridEvolver::ImageSetHybridEvolver(const EvolutionSettingsType& p,
-											 const TaylorCalculus& tc)
+											 const TaylorCalculus& upper_calculus,
+											 const TaylorCalculus& lower_calculus)
     : _settings(new EvolutionSettingsType(p)),
-      _toolbox(new TaylorCalculus(tc))
+      _upper_toolbox(new TaylorCalculus(upper_calculus)),
+      _lower_toolbox(new TaylorCalculus(lower_calculus))
 {
 }
 
@@ -225,7 +230,7 @@ _evolution(EnclosureListType& final_sets,
 
 	// The working sets, pushed back and popped front
     std::list< HybridTimedSetType > working_sets;
-    _evolution_add_initialSet(working_sets,initial_set);
+    _evolution_add_initialSet(working_sets,initial_set,semantics);
 
 	// While there exists a working set, process it and increment the total
     uint i=0;
@@ -250,19 +255,19 @@ _evolution(EnclosureListType& final_sets,
 		if(initial_time_model.range().lower()>=maximum_hybrid_time.continuous_time() ||
 		   initial_events.size()>=uint(maximum_hybrid_time.discrete_time())) {
             ARIADNE_LOG(3,"Final time reached, adjoining result to final sets.\n");
-            final_sets.adjoin(initial_location,this->_toolbox->enclosure(initial_set_model));
+            final_sets.adjoin(initial_location,this->getCalculusInterface(semantics).enclosure(initial_set_model));
         } else if (subdivideOverTime && this->_settings->enable_subdivisions) {
             ARIADNE_LOG(1,"WARNING: computed time range " << initial_time_model.range() << " width larger than half the maximum step size " << this->_settings->hybrid_maximum_step_size[initial_location] << ", subdividing over time.\n");
-            _add_models_subdivisions_time(working_sets,initial_set_model,initial_time_model,initial_location,initial_events);
+            _add_models_subdivisions_time(working_sets,initial_set_model,initial_time_model,initial_location,initial_events,semantics);
 		} else if (semantics == UPPER_SEMANTICS && this->_settings->enable_subdivisions && isEnclosureTooLarge) {
             ARIADNE_LOG(1,"WARNING: computed set range " << initial_set_model.range() << " widths larger than maximum_enclosure_cell " << this->_settings->maximum_enclosure_cell << ", subdividing.\n");
-            _add_models_subdivisions_autoselect(working_sets,initial_set_model,initial_time_model,initial_location,initial_events);
+            _add_models_subdivisions_autoselect(working_sets,initial_set_model,initial_time_model,initial_location,initial_events,semantics);
         } else if((semantics == LOWER_SEMANTICS || !this->_settings->enable_subdivisions) &&
                   this->_settings->enable_premature_termination_on_enclosure_size && isEnclosureTooLarge) {
             ARIADNE_LOG(1,"\n\nWARNING: Terminating evolution at time " << initial_time_model.value()
                         << " and set " << initial_set_model.centre() << " due to maximum enclosure bounds being exceeded.\n\n");
             if(semantics == UPPER_SEMANTICS)
-                final_sets.adjoin(initial_location,this->_toolbox->enclosure(initial_set_model));
+                final_sets.adjoin(initial_location,this->getCalculusInterface(semantics).enclosure(initial_set_model));
         } else {
             this->_evolution_step(working_sets,reach_sets,intermediate_sets,system,current_set,maximum_hybrid_time,semantics);
         }
@@ -401,7 +406,7 @@ _evolution_step(std::list< HybridTimedSetType >& working_sets,
     FlowSetModelType flow_set_model; BoxType flow_bounds; 
     Float time_step = this->_settings->hybrid_maximum_step_size[location];
     const Float maximum_time=maximum_hybrid_time.continuous_time();
-    compute_flow_model(flow_set_model,flow_bounds,time_step,dynamic,set_model,time_model,maximum_time);
+    compute_flow_model(flow_set_model,flow_bounds,time_step,dynamic,set_model,time_model,maximum_time,semantics);
 
     ARIADNE_LOG(2,"flow_bounds = "<<flow_bounds<<"\n")
     ARIADNE_LOG(2,"time_step = "<<time_step<<"\n")
@@ -412,14 +417,14 @@ _evolution_step(std::list< HybridTimedSetType >& working_sets,
     ARIADNE_LOG(2,"finishing_set_range = "<<finishing_set.range()<<"\n")
 
     // Set special events and times; note that the time step is scaled to [0,1]
-    TimeModelType zero_time_model = this->_toolbox->time_model(0.0,Box(time_model.argument_size()));
-    TimeModelType time_step_model = this->_toolbox->time_model(1.0,Box(time_model.argument_size()));
+    TimeModelType zero_time_model = this->getCalculusInterface(semantics).time_model(0.0,Box(time_model.argument_size()));
+    TimeModelType time_step_model = this->getCalculusInterface(semantics).time_model(1.0,Box(time_model.argument_size()));
 
     std::set<DiscreteEvent> blocking_events;
     TimeModelType blocking_time_model;
     std::set<DiscreteEvent> non_transverse_events;
     _compute_blocking_info(non_transverse_events,blocking_events,blocking_time_model,
-    				  time_step_model,flow_set_model,guards,SMALL_RELATIVE_TIME);
+    				  time_step_model,flow_set_model,guards,SMALL_RELATIVE_TIME,semantics);
 
     ActivationTimesType activation_times;
     if (!_settings->enable_premature_termination_on_blocking_event) {
@@ -428,26 +433,29 @@ _evolution_step(std::list< HybridTimedSetType >& working_sets,
     }
 
     SetModelType reachable_set;
-    _compute_and_adjoin_reachableSet(reach_sets,reachable_set,location,flow_set_model,zero_time_model,blocking_time_model);
+    _compute_and_adjoin_reachableSet(reach_sets,reachable_set,location,flow_set_model,zero_time_model,blocking_time_model,semantics);
 
     if(semantics!=LOWER_SEMANTICS || blocking_events.size()==1)
     	_computeEvolutionForEvents(working_sets,intermediate_sets,system,location,blocking_events,events,
-    								activation_times,flow_set_model,time_model,blocking_time_model,time_step);
+    								activation_times,flow_set_model,time_model,blocking_time_model,time_step,semantics);
 
 }
 
 
 ImageSetHybridEvolver::TimeModelType ImageSetHybridEvolver::
-crossing_time(VectorFunction guard, const FlowSetModelType& flow_set_model) const
+crossing_time(
+		VectorFunction guard,
+		const FlowSetModelType& flow_set_model,
+		Semantics semantics) const
 {
     try {
-        TimeModelType crossing_time_model=this->_toolbox->scaled_crossing_time(guard,flow_set_model);
+        TimeModelType crossing_time_model=this->getCalculusInterface(semantics).scaled_crossing_time(guard,flow_set_model);
         return crossing_time_model;
     }
     catch(DegenerateCrossingException e) {
         BoxType space_domain=project(flow_set_model.domain(),range(0,flow_set_model.argument_size()-1));
-        Interval touching_time_interval=this->_toolbox->scaled_touching_time_interval(guard,flow_set_model);
-        TimeModelType touching_time_model=this->_toolbox->time_model(touching_time_interval,space_domain);
+        Interval touching_time_interval=this->getCalculusInterface(semantics).scaled_touching_time_interval(guard,flow_set_model);
+        TimeModelType touching_time_model=this->getCalculusInterface(semantics).time_model(touching_time_interval,space_domain);
         return touching_time_model;
     } // end non-transverse crossing
 }
@@ -466,14 +474,16 @@ normal_derivative(VectorFunction guard, const FlowSetModelType& flow_set_model, 
 
 
 void ImageSetHybridEvolver::
-compute_initially_active_events(std::map<DiscreteEvent,tribool>& initially_active_events,
-                                const std::map<DiscreteEvent,VectorFunction>& blocking_guards,
-                                const ContinuousEnclosureType& initial_set) const
+compute_initially_active_events(
+		std::map<DiscreteEvent,tribool>& initially_active_events,
+        const std::map<DiscreteEvent,VectorFunction>& blocking_guards,
+        const ContinuousEnclosureType& initial_set,
+        Semantics semantics) const
 {
     tribool blocking_event_initially_active=false;
     for(std::map<DiscreteEvent,VectorFunction>::const_iterator iter=blocking_guards.begin(); iter!=blocking_guards.end(); ++iter) {
         VectorFunction activation=iter->second;
-        tribool initially_active=this->_toolbox->active(activation,initial_set);
+        tribool initially_active=this->getCalculusInterface(semantics).active(activation,initial_set);
         if(possibly(initially_active)) {
             initially_active_events.insert(std::make_pair(iter->first,initially_active));
             blocking_event_initially_active = blocking_event_initially_active || initially_active;
@@ -485,15 +495,17 @@ compute_initially_active_events(std::map<DiscreteEvent,tribool>& initially_activ
 
 bool
 ImageSetHybridEvolver::
-has_nonnegative_crossing(const std::map<DiscreteEvent,VectorFunction>& blocking_guards,
-								 const VectorFunction dynamic,
-								 const Box& set_bounds) const
+has_nonnegative_crossing(
+		const std::map<DiscreteEvent,VectorFunction>& blocking_guards,
+		const VectorFunction dynamic,
+		const Box& set_bounds,
+		Semantics semantics) const
 {
 	ARIADNE_LOG(3,"Checking nonnegative crossings...\n");
     for(std::map<DiscreteEvent,VectorFunction>::const_iterator iter=blocking_guards.begin(); iter!=blocking_guards.end(); ++iter) {
         ScalarFunction activation=iter->second[0];
         ARIADNE_LOG(3,"Guard: " << activation << "\n");
-        tribool is_active = this->_toolbox->active(activation,set_bounds);
+        tribool is_active = this->getCalculusInterface(semantics).active(activation,set_bounds);
         ARIADNE_LOG(3,"Active: " << is_active);
         tribool is_positively_crossing = positively_crossing(set_bounds,dynamic,activation);
         ARIADNE_LOG(3,"; positively crossing: " << is_positively_crossing << "\n");
@@ -530,7 +542,7 @@ is_enclosure_to_be_discarded(const ContinuousEnclosureType& enclosure,
 	bool result = false;
 
 	std::map<DiscreteEvent,tribool> initially_active_events;
-	this->compute_initially_active_events(initially_active_events, blocking_guards, enclosure);
+	this->compute_initially_active_events(initially_active_events, blocking_guards, enclosure, semantics);
 	ARIADNE_LOG(2,"initially_active_events = "<<initially_active_events<<"\n\n");
 
 	tribool has_any_initially_active_blocking_event = initially_active_events[blocking_event];
@@ -541,7 +553,7 @@ is_enclosure_to_be_discarded(const ContinuousEnclosureType& enclosure,
 		result = true;
 	} else if(possibly(has_any_initially_active_blocking_event) && semantics==LOWER_SEMANTICS) {
 		ARIADNE_LOG(2,"A blocking event is possibly active: checking whether there is a possibly positive crossing.\n");
-		bool has_nonneg_crossing = has_nonnegative_crossing(blocking_guards,dynamic,enclosure.bounding_box());
+		bool has_nonneg_crossing = has_nonnegative_crossing(blocking_guards,dynamic,enclosure.bounding_box(),semantics);
 		if (has_nonneg_crossing) {
 			ARIADNE_LOG(2,"Terminating lower evolution due to possibly initially active invariant with nonnegative crossing.\n");
 			result = true;
@@ -553,9 +565,14 @@ is_enclosure_to_be_discarded(const ContinuousEnclosureType& enclosure,
 
 // Compute the flow, parameterising space with the set parameters
 void ImageSetHybridEvolver::
-compute_flow_model(FlowSetModelType& flow_set_model, BoxType& flow_bounds, Float& time_step,
-                   VectorFunction dynamic, const SetModelType& starting_set_model, 
-                   const TimeModelType& starting_time_model, Float finishing_time) const
+compute_flow_model(
+		FlowSetModelType& flow_set_model,
+		BoxType& flow_bounds, Float& time_step,
+        VectorFunction dynamic,
+        const SetModelType& starting_set_model,
+        const TimeModelType& starting_time_model,
+        Float finishing_time,
+        Semantics semantics) const
 {
     ARIADNE_LOG(3,"compute_flow_model(....)\n");
     const int MAXIMUM_BOUNDS_DIAMETER_FACTOR = 8;
@@ -565,11 +582,11 @@ compute_flow_model(FlowSetModelType& flow_set_model, BoxType& flow_bounds, Float
 
     BoxType starting_set_bounding_box=starting_set_model.range();
     ARIADNE_LOG(3,"starting_set_bounding_box="<<starting_set_bounding_box<<"\n");
-    make_lpair(time_step,flow_bounds)=this->_toolbox->flow_bounds(dynamic,starting_set_bounding_box,maximum_step_size,maximum_bounds_diameter);
+    make_lpair(time_step,flow_bounds)=this->getCalculusInterface(semantics).flow_bounds(dynamic,starting_set_bounding_box,maximum_step_size,maximum_bounds_diameter);
     // Compute the flow model
     ARIADNE_LOG(3,"time_step="<<time_step<<"\n");
     ARIADNE_LOG(3,"flow_bounds="<<flow_bounds<<"\n");
-    FlowModelType flow_model=this->_toolbox->flow_model(dynamic,starting_set_bounding_box,time_step,flow_bounds);
+    FlowModelType flow_model=this->getCalculusInterface(semantics).flow_model(dynamic,starting_set_bounding_box,time_step,flow_bounds);
     ARIADNE_LOG(3,"flow_model="<<flow_model<<"\n");
     ScalarTaylorFunction identity_time_expression=ScalarTaylorFunction::variable(BoxType(1u,Interval(-time_step,+time_step)),0u);
     flow_set_model=unchecked_apply(flow_model,combine(starting_set_model.models(),identity_time_expression.model()));
@@ -578,10 +595,12 @@ compute_flow_model(FlowSetModelType& flow_set_model, BoxType& flow_bounds, Float
 
 
 void ImageSetHybridEvolver::
-compute_eventBlockingTimes_and_nonTransverseEvents(std::map<DiscreteEvent,TimeModelType>& event_blocking_times,
-                        std::set<DiscreteEvent>& non_transverse_events,
-                        const std::map<DiscreteEvent,VectorFunction>& guards,
-                        const FlowSetModelType& flow_set_model) const
+compute_eventBlockingTimes_and_nonTransverseEvents(
+		std::map<DiscreteEvent,TimeModelType>& event_blocking_times,
+        std::set<DiscreteEvent>& non_transverse_events,
+        const std::map<DiscreteEvent,VectorFunction>& guards,
+        const FlowSetModelType& flow_set_model,
+        Semantics semantics) const
 {
     ARIADNE_LOG(3,"Computing blocking events.\n");
 
@@ -594,13 +613,13 @@ compute_eventBlockingTimes_and_nonTransverseEvents(std::map<DiscreteEvent,TimeMo
     {
         const DiscreteEvent event=guard_iter->first;
         const VectorFunction guard=guard_iter->second;
-        tribool active = this->_toolbox->active(guard,positive_flow_set_model);
+        tribool active = this->getCalculusInterface(semantics).active(guard,positive_flow_set_model);
         if(possibly(active)) {
             ARIADNE_LOG(3,"Event "<<event<<" possibly active.\n");
             TimeModelType crossing_time_model;
             Interval normal_derivative;
             try {
-                crossing_time_model=this->_toolbox->scaled_crossing_time(guard,flow_set_model);
+                crossing_time_model=this->getCalculusInterface(semantics).scaled_crossing_time(guard,flow_set_model);
                 normal_derivative=this->normal_derivative(guard,flow_set_model,crossing_time_model);
                 assert(normal_derivative.lower()>0 || normal_derivative.upper()<0);
                 if(normal_derivative.lower()>0) {
@@ -611,13 +630,13 @@ compute_eventBlockingTimes_and_nonTransverseEvents(std::map<DiscreteEvent,TimeMo
             catch(DegenerateCrossingException e) {
                 ARIADNE_LOG(3,"Degenerate Crossing exception catched.\n");
                 BoxType space_domain=project(flow_set_model.domain(),range(0,flow_set_model.argument_size()-1));
-                Interval touching_time_interval=this->_toolbox->scaled_touching_time_interval(guard,flow_set_model);
-                TimeModelType touching_time_model=this->_toolbox->time_model(touching_time_interval,space_domain);
+                Interval touching_time_interval=this->getCalculusInterface(semantics).scaled_touching_time_interval(guard,flow_set_model);
+                TimeModelType touching_time_model=this->getCalculusInterface(semantics).time_model(touching_time_interval,space_domain);
                 // Use 1.0 as upper bound above since flow set model has time interval normalised to [-1,+1]
                 ARIADNE_LOG(3,"touching_time_interval="<<touching_time_interval<<"\n");
                 if(touching_time_interval.upper()>=0 && touching_time_interval.lower()<=1.0) {
                     SetModelType finishing_set_model=partial_evaluate(flow_set_model.models(),dimension,1.0);
-                    tribool finishing_set_active=this->_toolbox->active(guard,finishing_set_model);
+                    tribool finishing_set_active=this->getCalculusInterface(semantics).active(guard,finishing_set_model);
                     if(definitely(finishing_set_active)) {
                         ARIADNE_LOG(3,"Event is definitely finally active, inserting it into blocking times.\n");
                         event_blocking_times[event]=touching_time_model;
@@ -626,7 +645,7 @@ compute_eventBlockingTimes_and_nonTransverseEvents(std::map<DiscreteEvent,TimeMo
                         if(touching_time_interval.lower()>SMALL_RELATIVE_TIME) {
                             ARIADNE_LOG(3,"lower touching time is greater than zero, inserting event into blocking times.\n");
                             TaylorModel lower_touching_time_model=
-                                this->_toolbox->time_model(touching_time_interval.lower(),space_domain);
+                            		this->getCalculusInterface(semantics).time_model(touching_time_interval.lower(),space_domain);
                             event_blocking_times[finishing_event]=lower_touching_time_model;
                         } else {
                             ARIADNE_LOG(3,"DANGER: we can't determine whether the crossing is completely finished or not..\n");
@@ -710,7 +729,7 @@ compute_activationTimes(std::map<DiscreteEvent,tuple<TimeModelType,TimeModelType
         ARIADNE_LOG(3,"Computing activation time for event "<<event<<"...");
 
         // Compute whether the event might be enabled on the entire time interval
-        tribool active=this->_toolbox->active(activation,flow_set_model);
+        tribool active=this->getCalculusInterface(semantics).active(activation,flow_set_model);
 
         if(definitely(active)) {
             // The event is enabled over the entire time interval
@@ -719,10 +738,10 @@ compute_activationTimes(std::map<DiscreteEvent,tuple<TimeModelType,TimeModelType
         } else if(possibly(active)) {
             ARIADNE_LOG(3,"event is possibly enabled.\n");
             // Compute whether the event is enabled at the beginning and end of the time interval
-            tribool initially_active=this->_toolbox->active(activation,initial_set_model);
-            tribool finally_active=this->_toolbox->active(activation,final_set_model);
+            tribool initially_active=this->getCalculusInterface(semantics).active(activation,initial_set_model);
+            tribool finally_active=this->getCalculusInterface(semantics).active(activation,final_set_model);
 
-            TimeModelType crossing_time_model=this->crossing_time(activation,flow_set_model);
+            TimeModelType crossing_time_model=this->crossing_time(activation,flow_set_model,semantics);
 
             TimeModelType lower_crossing_time_model=crossing_time_model-crossing_time_model.error();
             TimeModelType upper_crossing_time_model=crossing_time_model+crossing_time_model.error();
@@ -841,11 +860,12 @@ _computeEvolutionForEvents(std::list< HybridTimedSetType >& working_sets,
 						   const SetModelType& flow_set_model,
 						   const TimeModelType& time_model,
 						   const TimeModelType& blocking_time_model,
-						   const Float& time_step) const
+						   const Float& time_step,
+						   Semantics semantics) const
 {
     TimeModelType final_time_model=time_model+blocking_time_model*time_step;
     ARIADNE_LOG(2,"final_time_range="<<final_time_model.range()<<"\n");
-    SetModelType evolved_set_model=this->_toolbox->integration_step(flow_set_model,blocking_time_model);
+    SetModelType evolved_set_model=this->getCalculusInterface(semantics).integration_step(flow_set_model,blocking_time_model);
     ARIADNE_LOG(2,"evolved_set_model.argument_size()="<<evolved_set_model.argument_size()<<"\n");
     ARIADNE_LOG(2,"evolved_set_range="<<evolved_set_model.range()<<"\n");
     // Compute evolution for blocking events
@@ -875,12 +895,12 @@ _computeEvolutionForEvents(std::list< HybridTimedSetType >& working_sets,
 			ARIADNE_LOG(3,"Non blocking event "<<event<<":\n");
 			ARIADNE_LOG(3,"  lower_active_time_model="<<lower_active_time_model.range()<<";\n");
 			ARIADNE_LOG(3,"  upper_active_time_model="<<upper_active_time_model.range()<<";\n");
-			SetModelType active_set_model=this->_toolbox->reachability_step(flow_set_model,lower_active_time_model,upper_active_time_model);
+			SetModelType active_set_model=this->_upper_toolbox->reachability_step(flow_set_model,lower_active_time_model,upper_active_time_model);
 			ARIADNE_LOG(3,"  active_set="<<active_set_model.range()<<";\n");
 			const DiscreteTransition& transition=system.transition(event,location);
 			SetModelType jump_set_model=apply(transition.reset(),active_set_model);
 			ARIADNE_LOG(3,"  jump_set_model="<<active_set_model.range()<<";\n");
-			const TimeModelType active_time_model = this->_toolbox->reachability_time(time_model+lower_active_time_model*time_step,time_model+upper_active_time_model*time_step);
+			const TimeModelType active_time_model = this->_upper_toolbox->reachability_time(time_model+lower_active_time_model*time_step,time_model+upper_active_time_model*time_step);
 			ARIADNE_LOG(3,"  active_time_model="<<active_time_model.range()<<".\n");
 
 			DiscreteState jump_location=transition.target();
@@ -891,32 +911,6 @@ _computeEvolutionForEvents(std::list< HybridTimedSetType >& working_sets,
     }
 }
 
-void
-ImageSetHybridEvolver::
-_processInitiallyActiveBlockingEvents_continuous(EnclosureListType& reach_sets,
-												   EnclosureListType& intermediate_sets,
-												   const std::map<DiscreteEvent,VectorFunction>& invariants,
-												   const SetModelType& set_model,
-												   const DiscreteState& location) const
-{
-	bool has_active_invariant = false;
-
-    for(std::map<DiscreteEvent,VectorFunction>::const_iterator inv_it = invariants.begin(); inv_it != invariants.end(); inv_it++) {
-        tribool active=this->_toolbox->active(inv_it->second,set_model);
-        if(definitely(active)) {
-			has_active_invariant = true;
-			break;
-        }
-    }
-
-    if (!has_active_invariant) {
-    	ARIADNE_LOG(2,"A forced transition is initially active: no continuous evolution, adjoining reach set.\n");
-        reach_sets.insert(make_pair(location,set_model));
-        intermediate_sets.insert(make_pair(location,set_model));
-    }
-    else
-    	ARIADNE_LOG(2,"An invariant is initially active: no continuous evolution, discarding the set.\n");
-}
 
 void
 ImageSetHybridEvolver::
@@ -926,13 +920,14 @@ _compute_blocking_info(std::set<DiscreteEvent>& non_transverse_events,
 				  const TimeModelType& time_step_model,
 				  const SetModelType& flow_set_model,
 				  const std::map<DiscreteEvent,VectorFunction>& blocking_guards,
-				  double SMALL_RELATIVE_TIME) const
+				  double SMALL_RELATIVE_TIME,
+				  Semantics semantics) const
 {
     // Compute event blocking times
     std::map<DiscreteEvent, TimeModelType> event_blocking_times;
 
     event_blocking_times[finishing_event]=time_step_model;
-    compute_eventBlockingTimes_and_nonTransverseEvents(event_blocking_times,non_transverse_events,blocking_guards,flow_set_model);
+    compute_eventBlockingTimes_and_nonTransverseEvents(event_blocking_times,non_transverse_events,blocking_guards,flow_set_model,semantics);
     ARIADNE_LOG(2,"event_blocking_times="<<event_blocking_times<<"\n");
 
     std::map<DiscreteEvent,Interval> event_blocking_time_intervals;
@@ -996,12 +991,13 @@ _compute_and_adjoin_reachableSet(EnclosureListType& reach_sets,
 								const DiscreteState& location,
 							    const SetModelType& flow_set_model,
 							    const TimeModelType& zero_time_model,
-		 	 	 	 	 	 	const TimeModelType& blocking_time_model) const
+		 	 	 	 	 	 	const TimeModelType& blocking_time_model,
+		 	 	 	 	 	 	Semantics semantics) const
 {
     ARIADNE_LOG(4,"flow_set_model="<<flow_set_model<<"\n");
     ARIADNE_LOG(4,"zero_time_model="<<zero_time_model<<"\n");
     ARIADNE_LOG(4,"blocking_time_model="<<blocking_time_model<<"\n");
-    reachable_set=this->_toolbox->reachability_step(flow_set_model,zero_time_model,blocking_time_model);
+    reachable_set=this->getCalculusInterface(semantics).reachability_step(flow_set_model,zero_time_model,blocking_time_model);
     reach_sets.adjoin(make_pair(location,reachable_set));
 
 	ARIADNE_LOG(2,"reachable_set="<<reachable_set<<"\n");
@@ -1036,73 +1032,21 @@ _logEvolutionStepInitialState(const EventListType& events,
     ARIADNE_LOG(2,"permissive_guards = "<<permissive_guards<<"\n\n");
 }
 
-void
-ImageSetHybridEvolver::
-_processInitiallyActiveBlockingEvents(std::list< HybridTimedSetType >& working_sets,
-									  EnclosureListType& reach_sets,
-		   	   	   	   	   	   	   	  EnclosureListType& intermediate_sets,
-		   	   	   	   	   	   	   	  const DiscreteState& location,
-		   	   	   	   	   	   	   	  const EventListType& events,
-		   	   	   	   	   	   	   	  const SetModelType& set_model,
-		   	   	   	   	   	   	   	  const TimeModelType& time_model,
-		   	   	   	   	   	   	   	  const std::map<DiscreteEvent,VectorFunction>& invariants,
-		   	   	   	   	   	   	   	  const std::list<DiscreteTransition>& transitions) const
-{
-    // Check if at least one invariant is definitely active in this mode
-	bool has_active_invariant = false;
-    for(std::map<DiscreteEvent,VectorFunction>::const_iterator inv_it = invariants.begin(); inv_it != invariants.end(); inv_it++) {
-        tribool active=this->_toolbox->active(inv_it->second,set_model);
-        if(definitely(active)) {
-			has_active_invariant = true;
-			break;
-        }
-    }
-
-	// The set model is added, and the transitions checked, only if there is no definitely active invariant
-    if (!has_active_invariant) {
-
-        reach_sets.insert(make_pair(location,set_model));
-        intermediate_sets.insert(make_pair(location,set_model));
-
-        ARIADNE_LOG(2,"A blocking event (not an invariant) is initially active: no continuous evolution, just apply discrete events.\n");
-
-        // No continuous evolution; just apply discrete events
-        for(std::list<DiscreteTransition>::const_iterator iter=transitions.begin();
-            iter!=transitions.end(); ++iter)
-        {
-            ARIADNE_LOG(3,"Testing transition "<<iter->event()<<".\n");
-            tribool active=this->_toolbox->active(iter->activation(),set_model);
-            if(definitely(active)) {
-                ARIADNE_LOG(3,"Transition "<<iter->event()<<" should be activated.\n");
-                SetModelType jump_set_model=this->_toolbox->reset_step(iter->reset(),set_model);
-                TimeModelType jump_time_model=time_model;
-                DiscreteState jump_location=iter->target();
-                std::vector<DiscreteEvent> jump_events=events;
-                jump_events.push_back(iter->event());
-                ARIADNE_LOG(2,"Pushing back "<<jump_set_model<<" into working_sets\n");
-                working_sets.push_back(make_tuple(jump_location,jump_events,jump_set_model,jump_time_model));
-            }
-        }
-    }
-    else
-    {
-    	ARIADNE_LOG(2,"An invariant is definitely initially active: discarding the set.\n");
-    }
-
-}
 
 
 void
 ImageSetHybridEvolver::
-_evolution_add_initialSet(std::list< HybridTimedSetType >& working_sets,
-								  const EnclosureType& initial_set) const
+_evolution_add_initialSet(
+		std::list< HybridTimedSetType >& working_sets,
+		const EnclosureType& initial_set,
+		Semantics semantics) const
 {
     ARIADNE_LOG(6,"initial_set = "<<initial_set<<"\n");
     DiscreteState initial_location;
     ContinuousEnclosureType initial_continuous_set;
     make_lpair(initial_location,initial_continuous_set)=initial_set;
     ARIADNE_LOG(6,"initial_location = "<<initial_location<<"\n");
-    SetModelType initial_set_model=this->_toolbox->set_model(initial_continuous_set);
+    SetModelType initial_set_model=this->getCalculusInterface(semantics).set_model(initial_continuous_set);
 
 	// Check for non-zero maximum step size
 	ARIADNE_ASSERT_MSG(this->_settings->hybrid_maximum_step_size[initial_location] > 0, "Error: the maximum step size for location " << initial_location.name() << " is zero.");
@@ -1110,7 +1054,7 @@ _evolution_add_initialSet(std::list< HybridTimedSetType >& working_sets,
 	ARIADNE_ASSERT_MSG(this->_settings->maximum_enclosure_cell.size() == initial_set_model.size(), "Error: mismatch between the maximum_enclosure_cell size and the set size.");
 
     ARIADNE_LOG(6,"initial_set_model = "<<initial_set_model<<"\n");
-    TimeModelType initial_time_model=this->_toolbox->time_model(0.0,Box(initial_set_model.argument_size()));
+    TimeModelType initial_time_model=this->getCalculusInterface(semantics).time_model(0.0,Box(initial_set_model.argument_size()));
     ARIADNE_LOG(6,"initial_time_model = "<<initial_time_model<<"\n");
     TimedSetModelType initial_timed_set_model=join(initial_set_model.models(),initial_time_model);
     ARIADNE_LOG(6,"initial_timed_set_model = "<<initial_timed_set_model<<"\n");
@@ -1157,11 +1101,12 @@ _add_models_subdivisions_autoselect(std::list< HybridTimedSetType >& working_set
 		  	  	  	  	  	  	  	const SetModelType& initial_set_model,
 		  	  	  	  	  	  	  	const TimeModelType& initial_time_model,
 		  	  	  	  	  	  	  	const DiscreteState& initial_location,
-		  	  	  	  	  	  	  	const EventListType& initial_events) const
+		  	  	  	  	  	  	  	const EventListType& initial_events,
+		  	  	  	  	  	  	  	Semantics semantics) const
 {
     uint nd=initial_set_model.dimension();
     SetModelType initial_timed_set_model=join(initial_set_model.models(),initial_time_model);
-    array< TimedSetModelType > subdivisions=this->_toolbox->subdivide(initial_timed_set_model);
+    array< TimedSetModelType > subdivisions=this->getCalculusInterface(semantics).subdivide(initial_timed_set_model);
     _add_subdivisions(working_sets,subdivisions,initial_location,initial_events,nd);
 }
 
@@ -1172,11 +1117,12 @@ _add_models_subdivisions_time(std::list< HybridTimedSetType >& working_sets,
 		  	  	  	  	  	  const SetModelType& initial_set_model,
 		  	  	  	  	  	  const TimeModelType& initial_time_model,
 		  	  	  	  	  	  const DiscreteState& initial_location,
-		  	  	  	  	  	  const EventListType& initial_events) const
+		  	  	  	  	  	  const EventListType& initial_events,
+		  	  	  	  	  	  Semantics semantics) const
 {
     uint nd=initial_set_model.dimension();
     SetModelType initial_timed_set_model=join(initial_set_model.models(),initial_time_model);
-    array< TimedSetModelType > subdivisions=this->_toolbox->subdivide(initial_timed_set_model,nd);
+    array< TimedSetModelType > subdivisions=this->getCalculusInterface(semantics).subdivide(initial_timed_set_model,nd);
     _add_subdivisions(working_sets,subdivisions,initial_location,initial_events,nd);
 }
 

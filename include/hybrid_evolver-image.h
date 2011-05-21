@@ -106,16 +106,20 @@ class ImageSetHybridEvolver
     ImageSetHybridEvolver(const EvolutionSettingsType& parameters);
 
     //! \brief Construct from integrator with default parameters.
-    ImageSetHybridEvolver(const TaylorCalculus& tc);
+    ImageSetHybridEvolver(const TaylorCalculus& upper_calculus,
+    					  const TaylorCalculus& lower_calculus);
 
     //! \brief Construct from parameters and integrator.
     ImageSetHybridEvolver(const EvolutionSettingsType& p,
-   						  const TaylorCalculus& tc);
+    					  const TaylorCalculus& upper_calculus,
+    		    		  const TaylorCalculus& lower_calculus);
 
     /*! \brief Make a dynamically-allocated copy. */
     ImageSetHybridEvolver* clone() const { return new ImageSetHybridEvolver(*this); }
 
-    const CalculusInterface<TaylorModel>& getCalculusInterface() const { return *this->_toolbox; }
+    const CalculusInterface<TaylorModel>& getCalculusInterface(Semantics semantics) const {
+    	if (semantics == UPPER_SEMANTICS) return *this->_upper_toolbox;
+    	else return *this->_lower_toolbox; }
 
     //@{
     //! \name Settings controlling the evolution.
@@ -164,7 +168,7 @@ class ImageSetHybridEvolver
                                   Semantics semantics) const;
 
   protected:
-    TimeModelType crossing_time(VectorFunction guard, const FlowSetModelType& flow_set) const;
+    TimeModelType crossing_time(VectorFunction guard, const FlowSetModelType& flow_set, Semantics semantics) const;
 
     Interval normal_derivative(VectorFunction guard, const FlowSetModelType& flow_set, const TimeModelType& crossing_time) const;
 
@@ -172,37 +176,53 @@ class ImageSetHybridEvolver
      * \details Produces one entry for each possibly initially active event. Adds a convenience summary entry for the generic blocking_event,
      * which has activity FALSE iff no other entry exists, INDETERMINATE if other entries exist but no definitely active event exists, TRUE otherwise.
      */
-    void compute_initially_active_events(std::map<DiscreteEvent,tribool>&,
-                                         const std::map<DiscreteEvent,VectorFunction>&,
-                                         const ContinuousEnclosureType&) const;
+    void compute_initially_active_events(
+    		std::map<DiscreteEvent,tribool>&,
+            const std::map<DiscreteEvent,VectorFunction>&,
+            const ContinuousEnclosureType&,
+            Semantics semantics) const;
 
-    bool has_nonnegative_crossing(const std::map<DiscreteEvent,VectorFunction>& blocking_guards,
-								  const VectorFunction dynamic,
-								  const Box& set_bounds) const;
+    bool has_nonnegative_crossing(
+    		const std::map<DiscreteEvent,VectorFunction>& blocking_guards,
+			const VectorFunction dynamic,
+			const Box& set_bounds,
+			Semantics semantics) const;
 
     bool is_enclosure_to_be_discarded(const ContinuousEnclosureType& enclosure,
             					 	  const std::map<DiscreteEvent,VectorFunction>& blocking_guards,
             					 	  const VectorFunction& dynamic,
             					 	  Semantics semantics) const;
 
-    void compute_flow_model(FlowSetModelType&, BoxType&, Float&, VectorFunction, 
-                            const SetModelType&, const TimeModelType&, Float) const;
+    void compute_flow_model(
+    		FlowSetModelType&,
+    		BoxType&,
+    		Float&,
+    		VectorFunction,
+            const SetModelType&,
+            const TimeModelType&,
+            Float,
+            Semantics) const;
 
     void compute_crossing_time_and_direction(TimeModelType&, Interval&,
                                              VectorFunction guard, const FlowSetModelType& flow_set) const;
 
-    void compute_eventBlockingTimes_and_nonTransverseEvents(std::map<DiscreteEvent,TimeModelType>&, std::set<DiscreteEvent>&,
-                                 const std::map<DiscreteEvent,VectorFunction>& blocking_guards,
-                                 const FlowSetModelType& flow_set_model) const;
+    void compute_eventBlockingTimes_and_nonTransverseEvents(
+    		std::map<DiscreteEvent,TimeModelType>&,
+    		std::set<DiscreteEvent>&,
+            const std::map<DiscreteEvent,VectorFunction>& blocking_guards,
+            const FlowSetModelType& flow_set_model,
+            Semantics semantics) const;
 
-    void compute_blockingTime_and_relatedEvents(std::set<DiscreteEvent>&, TimeModelType&,
-                               const std::map<DiscreteEvent,TimeModelType>&) const;
+    void compute_blockingTime_and_relatedEvents(
+    		std::set<DiscreteEvent>&, TimeModelType&,
+            const std::map<DiscreteEvent,TimeModelType>&) const;
 
-    void compute_activationTimes(std::map<DiscreteEvent,tuple<TimeModelType,TimeModelType> >& activation_times,
-                                  const std::map<DiscreteEvent,VectorFunction>& activations,
-                                  const FlowSetModelType& flow_set_model,
-                                  const TimeModelType& blocking_time_model,
-                                  const Semantics semantics) const;
+    void compute_activationTimes(
+    		std::map<DiscreteEvent,tuple<TimeModelType,TimeModelType> >& activation_times,
+            const std::map<DiscreteEvent,VectorFunction>& activations,
+            const FlowSetModelType& flow_set_model,
+            const TimeModelType& blocking_time_model,
+            const Semantics semantics) const;
 
   private:
 
@@ -213,19 +233,22 @@ class ImageSetHybridEvolver
     bool _isEnclosureTooLarge(const SetModelType& initial_set_model) const;
 
     void _evolution_add_initialSet(std::list< HybridTimedSetType >& working_sets,
-    							   const EnclosureType& initial_set) const;
+    							   const EnclosureType& initial_set,
+    							   Semantics semantics) const;
 
     void _add_models_subdivisions_autoselect(std::list< HybridTimedSetType >& working_sets,
     		  	  	  	  	  	  	  		 const SetModelType& initial_set_model,
     		  	  	  	  	  	  	  		 const TimeModelType& initial_time_model,
     		  	  	  	  	  	  	  		 const DiscreteState& initial_location,
-    		  	  	  	  	  	  	  		 const EventListType& initial_events) const;
+    		  	  	  	  	  	  	  		 const EventListType& initial_events,
+    		  	  	  	  	  	  	  		 Semantics semantics) const;
 
     void _add_models_subdivisions_time(std::list< HybridTimedSetType >& working_sets,
     		  	  	  	  	  	  	   const SetModelType& initial_set_model,
     		  	  	  	  	  	  	   const TimeModelType& initial_time_model,
     		  	  	  	  	  	  	   const DiscreteState& initial_location,
-    		  	  	  	  	  	  	   const EventListType& initial_events) const;
+    		  	  	  	  	  	  	   const EventListType& initial_events,
+    		  	  	  	  	  	  	   Semantics semantics) const;
 
     void _add_subdivisions(std::list< HybridTimedSetType >& working_sets,
     					   const array< TimedSetModelType >& subdivisions,
@@ -250,23 +273,8 @@ class ImageSetHybridEvolver
 			   	   	   	   	   	    const SetModelType& flow_set_model,
 			   	   	   	   	   	    const TimeModelType& time_model,
 			   	   	   	   	   	    const TimeModelType& blocking_time_model,
-			   	   	   	   	   	    const Float& time_step) const;
-
-    void _processInitiallyActiveBlockingEvents_continuous(EnclosureListType& reach_sets,
-    												   	    EnclosureListType& intermediate_sets,
-    												   	    const std::map<DiscreteEvent,VectorFunction>& invariants,
-    												   	    const SetModelType& set_model,
-    												   	    const DiscreteState& location) const;
-
-    void _processInitiallyActiveBlockingEvents(std::list< HybridTimedSetType >& working_sets,
-			  	  	  	  	  	  	  	  	  EnclosureListType& reach_sets,
-        		   	   	   	   	   	   	   	  EnclosureListType& intermediate_sets,
-        		   	   	   	   	   	   	   	  const DiscreteState& location,
-        		   	   	   	   	   	   	   	  const EventListType& events,
-        		   	   	   	   	   	   	   	  const SetModelType& set_model,
-        		   	   	   	   	   	   	   	  const TimeModelType& time_model,
-        		   	   	   	   	   	   	   	  const std::map<DiscreteEvent,VectorFunction>& invariants,
-        		   	   	   	   	   	   	   	  const std::list<DiscreteTransition>& transitions) const;
+			   	   	   	   	   	    const Float& time_step,
+			   	   	   	   	   	    Semantics semantics) const;
 
     void _compute_blocking_info(std::set<DiscreteEvent>& non_transverse_events,
     				  	   std::set<DiscreteEvent>& blocking_events,
@@ -274,7 +282,8 @@ class ImageSetHybridEvolver
     				  	   const TimeModelType& time_step_model,
     				  	   const SetModelType& flow_set_model,
     				  	   const std::map<DiscreteEvent,VectorFunction>& blocking_guards,
-    				  	   double SMALL_RELATIVE_TIME) const;
+    				  	   double SMALL_RELATIVE_TIME,
+    				  	   Semantics semantics) const;
 
     void _compute_activation_info(std::map<DiscreteEvent,VectorFunction>& activations,
     						 	  ActivationTimesType& activation_times,
@@ -289,7 +298,8 @@ class ImageSetHybridEvolver
     									 const DiscreteState& location,
     									 const SetModelType& flow_set_model,
     									 const TimeModelType& zero_time_model,
-    									 const TimeModelType& blocking_time_model) const;
+    									 const TimeModelType& blocking_time_model,
+    									 Semantics semantics) const;
 
     void _logEvolutionStepInitialState(const EventListType& events,
     							  	   const TimeModelType& time_model,
@@ -301,6 +311,8 @@ class ImageSetHybridEvolver
     							  	   const std::map<DiscreteEvent,VectorFunction>& blocking_guards,
     							  	   const std::map<DiscreteEvent,VectorFunction>& permissive_guards) const;
 
+
+
   protected:
     // Special events
     static const DiscreteEvent starting_event;
@@ -309,7 +321,9 @@ class ImageSetHybridEvolver
 
  private:
     boost::shared_ptr< EvolutionSettingsType > _settings;
-    boost::shared_ptr< CalculusInterface<TaylorModel> > _toolbox;
+    boost::shared_ptr< CalculusInterface<TaylorModel> > _upper_toolbox;
+    boost::shared_ptr< CalculusInterface<TaylorModel> > _lower_toolbox;
+
 };
 
 /*! \brief Whether a box \a set_bounds under a given \a dynamic positively crosses an \a activation. */

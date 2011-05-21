@@ -243,7 +243,7 @@ class HybridReachabilityAnalyser
   private:
 
     /*! \brief Gets the calculus interface from the hybrid evolver. */
-    const CalculusInterface<TaylorModel>& _getCalculusInterface() const;
+    const CalculusInterface<TaylorModel>& _getCalculusInterface(Semantics semantics) const;
 
     /*! \brief Plots \a reach in \a plot_dirpath directory, where \a name_prefix as a prefix to the filename */
     void _plot_reach(
@@ -302,7 +302,8 @@ class HybridReachabilityAnalyser
     bool _is_transition_feasible(
     		const DiscreteTransition& trans,
     		const VectorFunction& dynamic,
-    		const ContinuousEnclosureType& source) const;
+    		const ContinuousEnclosureType& source,
+    		Semantics semantics) const;
 
     /*! \brief Pushes the enclosures from the \a source enclosure into the \a destination enclosure list, for all \a transitions.
      */

@@ -81,10 +81,10 @@ HybridReachabilityAnalyser(const HybridDiscretiser<HybridEvolver::ContinuousEncl
 
 const CalculusInterface<TaylorModel>&
 HybridReachabilityAnalyser::
-_getCalculusInterface() const
+_getCalculusInterface(Semantics semantics) const
 {
 	ImageSetHybridEvolver& evolver = dynamic_cast<ImageSetHybridEvolver&>(*this->_discretiser->evolver());
-	return evolver.getCalculusInterface();
+	return evolver.getCalculusInterface(semantics);
 }
 
 void
@@ -578,7 +578,7 @@ _outer_chain_reach_isOutsideInvariants(
 
 	for (std::map<DiscreteEvent,VectorFunction>::const_iterator inv_it = invariants.begin(); inv_it != invariants.end(); ++inv_it) {
 		const VectorFunction& activation = inv_it->second;
-		tribool is_active = _getCalculusInterface().active(activation,bx);
+		tribool is_active = _getCalculusInterface(UPPER_SEMANTICS).active(activation,bx);
 		if (definitely(is_active)) {
 			ARIADNE_LOG(6,"Invariant " << *inv_it << " is definitely active: transitions will not be checked.\n");
 			return true;
@@ -606,9 +606,9 @@ _outer_chain_reach_forward_pushTargetEnclosures(
 	{
 		ARIADNE_LOG(7,"Target: "<<trans_it->target()<<", Forced?: " << trans_it->forced() << "\n");
 
-		if (_is_transition_feasible(*trans_it,dynamic,source)) {
+		if (_is_transition_feasible(*trans_it,dynamic,source,UPPER_SEMANTICS)) {
 			const DiscreteState& target_loc = trans_it->target();
-			const ContinuousEnclosureType target_encl = _getCalculusInterface().reset_step(trans_it->reset(),source);
+			const ContinuousEnclosureType target_encl = _getCalculusInterface(UPPER_SEMANTICS).reset_step(trans_it->reset(),source);
 			const Box& target_bounding = _settings->domain_bounds[target_loc];
 			const Vector<Float> minTargetCellWidths = grid[target_loc].lengths()/numCellDivisions;
 
@@ -637,9 +637,9 @@ _outer_chain_reach_backward_pushSourceEnclosures(
 	{
 		ARIADNE_LOG(7,"Target: "<<trans_it->target()<<", Forced?: " << trans_it->forced() << "\n");
 
-		if (_is_transition_feasible(*trans_it,dynamic,sourceEncl)) {
+		if (_is_transition_feasible(*trans_it,dynamic,sourceEncl,UPPER_SEMANTICS)) {
 			const DiscreteState& target_loc = trans_it->target();
-			const ContinuousEnclosureType target_encl = _getCalculusInterface().reset_step(trans_it->reset(),sourceEncl);
+			const ContinuousEnclosureType target_encl = _getCalculusInterface(UPPER_SEMANTICS).reset_step(trans_it->reset(),sourceEncl);
 			const HybridBox targetHBox(target_loc,target_encl.bounding_box());
 
 			if (possibly(targetCells.overlaps(targetHBox))) {
@@ -656,14 +656,15 @@ HybridReachabilityAnalyser::
 _is_transition_feasible(
 		const DiscreteTransition& trans,
 		const VectorFunction& dynamic,
-		const ContinuousEnclosureType& source) const
+		const ContinuousEnclosureType& source,
+		Semantics semantics) const
 {
 	bool result = false;
 
 	const VectorFunction& activation = trans.activation();
 	const bool is_forced = trans.forced();
 
-	tribool is_guard_active = _getCalculusInterface().active(activation,source);
+	tribool is_guard_active = _getCalculusInterface(semantics).active(activation,source);
 
 	ARIADNE_LOG(8,"Guard activity: " << is_guard_active << "\n");
 

@@ -63,7 +63,7 @@ class Verifier
     };
 
   private:
-    mutable boost::shared_ptr< HybridReachabilityAnalyser > _outer_analyser, _lower_analyser;
+    mutable boost::shared_ptr< HybridReachabilityAnalyser > _analyser;
     boost::shared_ptr< VerificationSettings > _settings;
     mutable std::string _plot_dirpath;
 
@@ -89,15 +89,7 @@ class Verifier
     virtual ~Verifier();
 
     /*! \brief Construct from a method for evolving basic sets.
-     *  \details Explicitly allocates one analyser for outer and lower reachability. */
-    Verifier(
-    		const HybridReachabilityAnalyser& outer_analyser,
-    		const HybridReachabilityAnalyser& lower_analyser
-    		);
-
-    /*! \brief Construct from one generic analyser.
-     *  \details The analyser will be copied to both the outer and lower internal analysers. The outer and lower analysers
-     *  are still independently modifiable afterwards. */
+     *  \details Explicitly allocates one analyser. */
     Verifier(const HybridReachabilityAnalyser& analyser);
 
     //@}
@@ -278,7 +270,6 @@ class Verifier
 	/*! \brief Gets the outer bounds of the \a dominanceSystem type. */
 	Box _dominance_outer_bounds(
 			DominanceVerificationInput& verInput,
-			HybridBoxes& lower_bounds_on_this_space,
 			const RealConstantSet& constants,
 			DominanceSystem dominanceSystem) const;
 
@@ -287,18 +278,17 @@ class Verifier
 	//@{
 	//! \name Other helper methods
 
-	/*! \brief Resets cached information, then chooses the initial evolution settings for safety verification of the proper analyser. */
+	/*! \brief Resets cached information, then chooses the initial evolution settings for safety verification. */
 	void _resetAndChooseInitialSafetySettings(
 			const HybridAutomaton& system,
 			const HybridBoxes& domain,
 			const RealConstantSet& locked_constants) const;
 
-	/*! \brief Chooses the initial evolution settings for safety verification of the proper analyser, given the \a semantics.*/
+	/*! \brief Chooses the initial evolution settings for safety verification of the proper analyser. */
 	void _chooseInitialSafetySettings(
 			const HybridAutomaton& system,
 			const HybridBoxes& domain,
-			const RealConstantSet& locked_constants,
-			Semantics semantics) const;
+			const RealConstantSet& locked_constants) const;
 
 	/*! \brief Resets cached information, then chooses the initial settings for dominance verification.
 	 * \details It is not allowed to tune the analysers, since they are used on different systems on each iteration.
@@ -310,9 +300,6 @@ class Verifier
 			const HybridAutomaton& system,
 			const HybridGridTreeSet& hgts_domain,
 			Semantics semantics) const;
-
-	/*! \brief Checks whether a grid depth value is allowed for use in iterative verification, based on the \a semantics. */
-	bool _grid_depth_is_within_bounds_under(Semantics semantics) const;
 
 	/*! \brief Updates with \a reach the outer approximation or the reachability restriction.
 	 * \details Which field is set depends on the current state of such variables: if no coarse outer

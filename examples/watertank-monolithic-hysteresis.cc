@@ -62,13 +62,10 @@ int main(int argc,char *argv[])
 
 	TaylorCalculus outer_integrator(2,2,1e-4);
 	TaylorCalculus lower_integrator(2,2,1e-4);
-	ImageSetHybridEvolver outer_evolver(outer_integrator);
-	ImageSetHybridEvolver lower_evolver(lower_integrator);
-	HybridReachabilityAnalyser outer_analyser(outer_evolver);
-	HybridReachabilityAnalyser lower_analyser(lower_evolver);
-	outer_analyser.settings().highest_maximum_grid_depth = 6;
-	lower_analyser.settings().highest_maximum_grid_depth = 6;
-	Verifier verifier(outer_analyser,lower_analyser);
+	ImageSetHybridEvolver evolver(outer_integrator,lower_integrator);
+	HybridReachabilityAnalyser analyser(evolver);
+	analyser.settings().highest_maximum_grid_depth = 6;
+	Verifier verifier(analyser);
 	verifier.verbosity = verifierVerbosity;
 	verifier.settings().maximum_parameter_depth = 2;
 	verifier.settings().enable_domain_enforcing = false;
