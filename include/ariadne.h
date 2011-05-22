@@ -74,7 +74,6 @@ using std::ofstream; using std::ifstream;
 #include "hybrid_automaton.h"
 #include "hybrid_io_automaton.h"
 
-#include "vector_field_evolver.h"
 #include "hybrid_evolver.h"
 #include "discretiser.h"
 #include "parametric.h"

@@ -28,12 +28,13 @@
 #ifndef EPSILON_LOWER_BOUNDS_H_
 #define EPSILON_LOWER_BOUNDS_H_
 
-#include "discrete_state.h"
 #include "box.h"
 #include "hybrid_set.h"
 #include "vector.h"
 
 namespace Ariadne {
+
+class DiscreteState;
 
 /**
  * \brief This is a structure for holding data obtained during lower evolution.

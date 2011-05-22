@@ -188,10 +188,11 @@ class ImageSetHybridEvolver
 			const Box& set_bounds,
 			Semantics semantics) const;
 
-    bool is_enclosure_to_be_discarded(const ContinuousEnclosureType& enclosure,
-            					 	  const std::map<DiscreteEvent,VectorFunction>& blocking_guards,
-            					 	  const VectorFunction& dynamic,
-            					 	  Semantics semantics) const;
+    bool is_enclosure_to_be_discarded(
+    		const ContinuousEnclosureType& enclosure,
+            const std::map<DiscreteEvent,VectorFunction>& blocking_guards,
+            const VectorFunction& dynamic,
+            Semantics semantics) const;
 
     void compute_flow_model(
     		FlowSetModelType&,
@@ -203,8 +204,10 @@ class ImageSetHybridEvolver
             Float,
             Semantics) const;
 
-    void compute_crossing_time_and_direction(TimeModelType&, Interval&,
-                                             VectorFunction guard, const FlowSetModelType& flow_set) const;
+    void compute_crossing_time_and_direction(
+    		TimeModelType&, Interval&,
+            VectorFunction guard,
+            const FlowSetModelType& flow_set) const;
 
     void compute_eventBlockingTimes_and_nonTransverseEvents(
     		std::map<DiscreteEvent,TimeModelType>&,
@@ -226,11 +229,7 @@ class ImageSetHybridEvolver
 
   private:
 
-    bool _is_reachableSet_outside_disproveBounds(const uint numDivisions,
-					   const TaylorSet& reachable_set,
-					   const Box& disprove_bounds) const;
-
-    bool _isEnclosureTooLarge(const SetModelType& initial_set_model) const;
+    bool _is_enclosure_too_large(const SetModelType& initial_set_model) const;
 
     void _evolution_add_initialSet(std::list< HybridTimedSetType >& working_sets,
     							   const EnclosureType& initial_set,

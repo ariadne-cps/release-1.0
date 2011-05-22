@@ -44,8 +44,6 @@ SRC = \
 	hybrid_automaton.cc \
 	hybrid_io_automaton.cc \
 	orbit.cc \
-	map_evolver.cc \
-	vector_field_evolver.cc \
 	hybrid_evolver-image.cc \
 	discretiser.cc \
 	reachability_analyser.cc \

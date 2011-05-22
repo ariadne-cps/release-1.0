@@ -55,7 +55,7 @@ int main(int argc,char *argv[])
 	List<RealExpression> consexpr;
 	consexpr.append(expr);
 	VectorFunction cons_f(consexpr,varlist);
-	Box codomain(1,5.25,8.25);
+	Box codomain(1,4.25,8.25);
 	HybridConstraintSet safety_constraint(system.state_space(),ConstraintSet(cons_f,codomain));
 
 	SafetyVerificationInput verInfo(system, initial_set, domain, safety_constraint);
@@ -68,14 +68,17 @@ int main(int argc,char *argv[])
 	HybridReachabilityAnalyser analyser(evolver);
 	analyser.settings().highest_maximum_grid_depth = 7;
 	Verifier verifier(analyser);
+	verifier.settings().enable_backward_refinement_for_testing_inclusion = true;
+	verifier.settings().enable_domain_enforcing = true;
 	verifier.verbosity = verifierVerbosity;
-	verifier.settings().plot_results = false;
+	verifier.settings().plot_results = true;
 
 	/// Analysis parameters
 	RealConstantSet parameters;
 	parameters.insert(RealConstant("ref",Interval(5.25,8.25)));
 	parameters.insert(RealConstant("Kp",Interval(0.2,0.8)));
 
-	std::list<ParametricOutcome> results = verifier.parametric_safety(verInfo, parameters);
-	draw(system.name(),results);
+	cout << verifier.safety(verInfo);
+	//std::list<ParametricOutcome> results = verifier.parametric_safety(verInfo, parameters);
+	//draw(system.name(),results);
 }

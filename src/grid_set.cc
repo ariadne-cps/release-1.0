@@ -3112,6 +3112,8 @@ tribool overlaps(const ConstraintSet& cons_set, const GridTreeSet& grid_set)
 
 tribool covers(const ConstraintSet& cons_set, const GridTreeSet& grid_set)
 {
+	if (grid_set.empty())
+		return true;
 	if (cons_set.covers(grid_set.bounding_box()))
 		return true;
 	if (cons_set.disjoint(grid_set.bounding_box()))

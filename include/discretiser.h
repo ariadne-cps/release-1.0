@@ -236,7 +236,8 @@ class HybridDiscretiser
     /*! \brief Convert a cell of the grid into an enclosure set for computing evolution. */
     EnclosureType enclosure(const BasicSetType& bs) const;
     
-  public:
+  private:
+
     DenotableSetType _discretise(const ListSet<EnclosureType>& ls,
                                 const HybridGrid& grid,
                                 const AccuracyType accuracy) const; 

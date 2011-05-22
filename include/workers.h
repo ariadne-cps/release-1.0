@@ -373,8 +373,8 @@ private:
 										_discretiser->evolver()->reach_evolve(_sys,current_initial_enclosure,_time,LOWER_SEMANTICS);
 
 				// Get the discretisation
-				current_reach = _discretiser->_discretise(current_reach_enclosures,_grid,_accuracy);
-				current_evolve = _discretiser->_discretise(current_evolve_enclosures,_grid,_accuracy);
+				current_reach = outer_approximation(current_reach_enclosures,_grid,_accuracy);
+				current_evolve = outer_approximation(current_evolve_enclosures,_grid,_accuracy);
 
 				_out_mutex.lock();
 

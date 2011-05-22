@@ -112,7 +112,7 @@ int main(int argc,char *argv[])
 	HybridReachabilityAnalyser analyser(evolver);
 	analyser.settings().highest_maximum_grid_depth = 10;
 	Verifier verifier(analyser);
-	verifier.settings().enable_fb_refinement_for_proving = true;
+	verifier.settings().enable_backward_refinement_for_testing_inclusion = true;
 	verifier.settings().maximum_parameter_depth = 2;
 	verifier.settings().enable_domain_enforcing = true;
 	verifier.settings().plot_results = false;

@@ -249,7 +249,7 @@ _evolution(EnclosureListType& final_sets,
 		SetModelType initial_set_model=current_set.third;
 		TimeModelType initial_time_model=current_set.fourth;
 
-		bool isEnclosureTooLarge = _isEnclosureTooLarge(initial_set_model);
+		bool isEnclosureTooLarge = _is_enclosure_too_large(initial_set_model);
 		bool subdivideOverTime = (initial_time_model.range().width() > this->_settings->hybrid_maximum_step_size[initial_location]/2);
 
 		if(initial_time_model.range().lower()>=maximum_hybrid_time.continuous_time() ||
@@ -824,31 +824,6 @@ _logStepAtVerbosity1(const std::list<HybridTimedSetType>& working_sets,
     }
 }
 
-bool ImageSetHybridEvolver::
-_is_reachableSet_outside_disproveBounds(const uint numDivisions,
-			  const TaylorSet& reachable_set,
-			  const Box& disprove_bounds) const
-{
-	if (definitely(reachable_set.inside(disprove_bounds)))
-		return false;
-
-	// Otherwise, if we are allowed to split further
-	if (numDivisions>0) {
-		// Split on the time variable (ASSUMED TO BE THE LAST)
-		std::pair<TaylorSet,TaylorSet> split_sets = reachable_set.split(reachable_set.generators_size()-1);
-
-		if (_is_reachableSet_outside_disproveBounds(numDivisions-1,split_sets.first,disprove_bounds))
-			return true;
-		if (_is_reachableSet_outside_disproveBounds(numDivisions-1,split_sets.second,disprove_bounds))
-			return true;
-
-		return false;
-	}
-
-	// If we cannot split further, we check for the set being outside (possibly not inside and definitely disjoint)
-	return possibly(!reachable_set.inside(disprove_bounds)) && definitely(reachable_set.disjoint(disprove_bounds));
-}
-
 void ImageSetHybridEvolver::
 _computeEvolutionForEvents(std::list< HybridTimedSetType >& working_sets,
 						   EnclosureListType& intermediate_sets,
@@ -1063,7 +1038,7 @@ _evolution_add_initialSet(
 
 bool
 ImageSetHybridEvolver::
-_isEnclosureTooLarge(const SetModelType& initial_set_model) const
+_is_enclosure_too_large(const SetModelType& initial_set_model) const
 {
 	const Vector<Interval> initial_set_model_range = initial_set_model.range();
 

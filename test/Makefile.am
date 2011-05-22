@@ -36,8 +36,6 @@ check_PROGRAMS = \
 	test_function_set \
 	test_grid_set \
 	test_hybrid_set \
-	test_discrete_evolution \
-	test_continuous_evolution \
 	test_hybrid_io_automaton \
 	test_hybrid_evolution \
 	test_discretised_evolution \
@@ -78,8 +76,6 @@ test_function_set_SOURCES=test_function_set.cc
 test_grid_set_SOURCES=test_grid_set.cc
 test_hybrid_io_automaton_SOURCES=test_hybrid_io_automaton.cc
 test_hybrid_set_SOURCES=test_hybrid_set.cc
-test_discrete_evolution_SOURCES=test_discrete_evolution.cc
-test_continuous_evolution_SOURCES=test_continuous_evolution.cc
 test_hybrid_evolution_SOURCES=test_hybrid_evolution.cc
 test_discretised_evolution_SOURCES=test_discretised_evolution.cc
 test_reachability_analysis_SOURCES=test_reachability_analysis.cc

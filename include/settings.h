@@ -35,11 +35,12 @@
 #include "grid_set.h"
 #include "hybrid_set.h"
 #include "variables.h"
-#include "hybrid_automaton.h"
 
 typedef std::map<RealConstant,int,ConstantComparator<Real> > RealConstantIntMap;
 
 namespace Ariadne {
+
+class DiscreteState;
 
 enum EvolutionDirection { DIRECTION_FORWARD, DIRECTION_BACKWARD };
 
@@ -289,12 +290,9 @@ class VerificationSettings {
 	 * due to error radii. */
 	bool use_param_midpoints_for_disproving;
 
-    //! \brief Enable forward/backward refinement for proving.
- 	//! \details The refinement itself is done only after a reachability restriction is available (including the
-	//! depth at which such restriction is first obtained).
-	//! If quick proving is allowed, then the refinement is actually
-	//! performed only once, i.e. when a reachability restriction is obtained for the first time.
- 	bool enable_fb_refinement_for_proving;
+    //! \brief Enable backward refinement of reachability when testing inclusion in a constraint.
+ 	//! \details The refinement itself is done only after a reachability restriction is available.
+ 	bool enable_backward_refinement_for_testing_inclusion;
 
  	/*! \brief Enable domain enforcing.
  	 *  \details If enforcing is disabled, the domain is only used to terminate reachability as soon as the domain is
@@ -341,7 +339,7 @@ VerificationSettings::VerificationSettings() :
     	maximum_parameter_depth(3),
     	use_param_midpoints_for_proving(false),
     	use_param_midpoints_for_disproving(true),
-    	enable_fb_refinement_for_proving(true),
+    	enable_backward_refinement_for_testing_inclusion(true),
 		enable_domain_enforcing(false)
 { }
 
@@ -438,7 +436,7 @@ operator<<(std::ostream& os, const VerificationSettings& p)
        << ",\n  maximum_parameter_depth=" << p.maximum_parameter_depth
        << ",\n  use_param_midpoints_for_proving=" << p.use_param_midpoints_for_proving
        << ",\n  use_param_midpoints_for_disproving=" << p.use_param_midpoints_for_disproving
-       << ",\n  enable_fb_refinement_for_safety_proving=" << p.enable_fb_refinement_for_proving
+       << ",\n  enable_fb_refinement_for_safety_proving=" << p.enable_backward_refinement_for_testing_inclusion
        << ",\n  enable_domain_enforcing=" << p.enable_domain_enforcing
        << "\n)\n";
     return os;

@@ -189,7 +189,7 @@ _safety_proving_once(
 
 		*/
 
-		if (!_safety_reachability_restriction.empty() && _settings->enable_fb_refinement_for_proving) {
+		if (!_safety_reachability_restriction.empty() && _settings->enable_backward_refinement_for_testing_inclusion) {
 
 			HybridGridTreeSet backward_initial = _reachability_refinement_starting_set(system,initial_set,
 					safety_constraint,_safety_reachability_restriction,DIRECTION_BACKWARD);
@@ -236,13 +236,13 @@ _safety_proving_once(
 
 		ARIADNE_LOG(6,"Reachability size: " << forward_reach.size() << "\n");
 
+		if (_settings->plot_results)
+			_plot_reach(forward_reach,"forward",maximum_grid_depth);
+
 		_update_safety_cached_reachability_with(forward_reach);
 
 		// Additional simplified check, also useful when only forward reachability is available
 		result = definitely(covers(safety_constraint,forward_reach));
-
-		if (_settings->plot_results)
-			_plot_reach(forward_reach,"forward",maximum_grid_depth);
 
 	} catch (ReachOutOfDomainException ex) {
 		ARIADNE_LOG(4, "The outer reached region is partially out of the domain (skipped).\n");
