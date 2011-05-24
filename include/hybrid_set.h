@@ -834,6 +834,30 @@ template<class DS> inline FigureInterface& operator<<(FigureInterface& figure, c
     draw(figure,hs); return figure;
 }
 
+template<class X> std::map<DiscreteState,Vector<X> > max_elementwise(
+		const std::map<DiscreteState,Vector<X> >& hv1, const std::map<DiscreteState,Vector<X> >& hv2) {
+	std::map<DiscreteState,Vector<X> > result;
+	for (typename std::map<DiscreteState,Vector<X> >::const_iterator hv1_it = hv1.begin(); hv1_it != hv1.end(); ++hv1_it) {
+		typename std::map<DiscreteState,Vector<X> >::const_iterator hv2_it = hv2.find(hv1_it->first);
+		ARIADNE_ASSERT_MSG(hv2_it != hv2.end(), "The location " << hv1_it->first << " was not found in the second hybrid vector.");
+
+		result.insert(std::pair<DiscreteState,Vector<X> >(hv1_it->first,max_elementwise(hv1_it->second,hv2_it->second)));
+	}
+	return result;
+}
+
+template<class X> std::map<DiscreteState,Vector<X> > min_elementwise(
+		const std::map<DiscreteState,Vector<X> >& hv1, const std::map<DiscreteState,Vector<X> >& hv2) {
+	std::map<DiscreteState,Vector<X> > result;
+	for (typename std::map<DiscreteState,Vector<X> >::const_iterator hv1_it = hv1.begin(); hv1_it != hv1.end(); ++hv1_it) {
+		typename std::map<DiscreteState,Vector<X> >::const_iterator hv2_it = hv2.find(hv1_it->first);
+		ARIADNE_ASSERT_MSG(hv2_it != hv2.end(), "The location " << hv1_it->first << " was not found in the second hybrid vector.");
+
+		result.insert(std::pair<DiscreteState,Vector<X> >(hv1_it->first,min_elementwise(hv1_it->second,hv2_it->second)));
+	}
+	return result;
+}
+
 
 //! \brief Whether \a cons_set is disjoint from \a grid_set.
 //! \details Note that if \a cons_set does not have one location of \a grid_set, then for that location the result is true.

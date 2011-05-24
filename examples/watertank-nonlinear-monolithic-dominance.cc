@@ -59,14 +59,14 @@ int main(int argc,char *argv[])
 	DominanceVerificationInput proportional(system_pr,initial_pr,domain_pr,projection_pr);
 
 	TaylorCalculus outer_integrator(2,2,1e-4);
-	TaylorCalculus lower_integrator(3,4,1e-7);
+	TaylorCalculus lower_integrator(4,6,1e-10);
 	ImageSetHybridEvolver evolver(outer_integrator,lower_integrator);
 	HybridReachabilityAnalyser analyser(evolver);
 	analyser.settings().lowest_maximum_grid_depth = 2;
 	analyser.settings().highest_maximum_grid_depth = 7;
 	Verifier verifier(analyser);
 	verifier.verbosity = verifierVerbosity;
-	verifier.settings().enable_domain_enforcing = true;
+	verifier.settings().enable_domain_enforcing = false;
 	verifier.settings().maximum_parameter_depth = 5;
 
 	// The parametric dominance parameters

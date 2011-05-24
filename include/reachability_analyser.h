@@ -208,17 +208,6 @@ class HybridReachabilityAnalyser
 			uint maximum_grid_depth,
 			Semantics semantics);
 
-    /*! \brief Gets the cells from \a reach (inside \a reachability_restriction) that satisfy \a constraint
-     * under a relaxation of the reachability given by \a eps. */
-    HybridGridTreeSet possibly_feasible_cells(
-    		const HybridGridTreeSet& reach,
-    		const HybridConstraintSet& constraint,
-    		const HybridFloatVector eps,
-    		HybridGridTreeSet reachability_restriction) const;
-
-    /*! \brief Refines the analyser settings in forward/backward reachability refinement. */
-    void forward_backward_refine_evolution_settings();
-
     //@}
 
   public:
@@ -252,13 +241,24 @@ class HybridReachabilityAnalyser
     		string name_prefix) const;
 
     // Helper functions for operators on lists of sets.
-    GTS _upper_reach(const Sys& sys, const GTS& set, const T& time, const int accuracy) const;
-    std::pair<GTS,GTS> _upper_reach_evolve(const Sys& sys, const GTS& set, const T& time, const int accuracy) const;
-    std::pair<GTS,GTS> _upper_reach_evolve_continuous(
+    GTS _upper_reach(
+    		const Sys& sys,
+    		const GTS& set,
+    		const T& time,
+    		const int accuracy) const;
+
+    std::pair<GTS,GTS> _upper_reach_evolve(
+    		const Sys& sys,
+    		const GTS& set,
+    		const T& time,
+    		const int accuracy) const;
+
+    std::pair<GTS,GTS> _upper_reach_evolve(
     		const Sys& sys,
     		const list<EnclosureType>& initial_enclosures,
     		const T& time,
     		EvolutionDirection direction,
+    		bool enable_premature_termination_on_blocking_event,
     		int accuracy) const;
 
     /*! \brief Performs outer chain reach calculation. */
@@ -530,6 +530,15 @@ std::list<EnclosureType> cells_to_smallest_enclosures(
 std::list<EnclosureType> restrict_enclosures(
 		const std::list<EnclosureType> enclosures,
 		const HybridGridTreeSet& restriction);
+
+/*! \brief Gets the cells from \a reach (inside \a reachability_restriction) that satisfy \a constraint
+ * under a relaxation of the reachability given by \a eps. */
+HybridGridTreeSet possibly_feasible_cells(
+		const HybridGridTreeSet& reach,
+		const HybridConstraintSet& constraint,
+		const HybridFloatVector eps,
+		HybridGridTreeSet reachability_restriction,
+		int accuracy);
 
 
 } // namespace Ariadne

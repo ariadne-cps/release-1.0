@@ -287,4 +287,5 @@ Float volume(const Vector<Interval>& v)
 Vector<Interval> intersection(const Vector<Interval>& v1, const Vector<Interval>& v2);
 Vector<Float> midpoint(const Vector<Interval>& v);
 
+
 } // namespace Ariadne

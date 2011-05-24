@@ -125,36 +125,23 @@ std::pair<HybridGridTreeSet,HybridGridTreeSet>
 HybridReachabilityAnalyser::
 _upper_reach_evolve(
 		const HybridAutomaton& sys,
-        const HybridGridTreeSet& set,
+        const HybridGridTreeSet& initial_set,
         const HybridTime& time,
         const int accuracy) const
 {
-    ARIADNE_LOG(4,"HybridReachabilityAnalyser::_upper_reach_evolve(...)\n");
+	std::list<EnclosureType> initial_enclosures = cells_to_smallest_enclosures(initial_set,accuracy);
 
-    HybridGrid grid=grid_for(sys,*_settings);
-	GTS initial_set = set;
-	initial_set.mince(accuracy);
-
-	const uint concurrency = boost::thread::hardware_concurrency() - free_cores;
-
-	ARIADNE_ASSERT_MSG(concurrency>0 && concurrency <= boost::thread::hardware_concurrency(),"Error: concurrency must be positive and less than the maximum allowed.");
-
-	UpperReachEvolveWorker worker(_discretiser,sys,set,time,grid,accuracy,concurrency);
-
-	std::pair<GTS,GTS> result = worker.get_result();
-
-    ARIADNE_LOG(4,"Reach size = "<<result.first.size()<<"\n");
-    ARIADNE_LOG(4,"Final size = "<<result.second.size()<<"\n");
-    return result;
+	return _upper_reach_evolve(sys,initial_enclosures,time,DIRECTION_FORWARD,false,accuracy);
 }
 
 std::pair<HybridGridTreeSet,HybridGridTreeSet>
 HybridReachabilityAnalyser::
-_upper_reach_evolve_continuous(
+_upper_reach_evolve(
 		const HybridAutomaton& sys,
         const list<EnclosureType>& initial_enclosures,
         const HybridTime& time,
         EvolutionDirection direction,
+        bool enable_premature_termination_on_blocking_event,
         int accuracy) const
 {
 	std::pair<GTS,GTS> result;
@@ -168,7 +155,8 @@ _upper_reach_evolve_continuous(
 
 	HybridGrid grid=grid_for(sys,*_settings);
 
-	UpperReachEvolveContinuousWorker worker(_discretiser,sys,initial_enclosures,time,direction,grid,accuracy,concurrency);
+	UpperReachEvolveWorker worker(_discretiser,sys,initial_enclosures,time,
+			direction,enable_premature_termination_on_blocking_event,grid,accuracy,concurrency);
 	result = worker.get_result();
 
     ARIADNE_LOG(4,"Reach size = "<<reach.size()<<"\n");
@@ -477,7 +465,9 @@ _outer_chain_reach_splitted(
 
         ARIADNE_LOG(4,"Initial enclosures size = " << working_enclosures.size() << "\n");
 
-        make_lpair(new_reach,new_final) = _upper_reach_evolve_continuous(system,working_enclosures,hybrid_lock_to_grid_time,direction,maximum_grid_depth);
+        static const bool enable_premature_termination_on_blocking_event = true;
+        make_lpair(new_reach,new_final) = _upper_reach_evolve(system,working_enclosures,
+        		hybrid_lock_to_grid_time,direction,enable_premature_termination_on_blocking_event,maximum_grid_depth);
 
         new_final.remove(final);
 		new_reach.remove(reach);
@@ -722,19 +712,6 @@ _outer_chain_reach_pushLocalFinalCells(
 }
 
 
-void
-HybridReachabilityAnalyser::
-forward_backward_refine_evolution_settings()
-{
-	_discretiser->settings().maximum_enclosure_cell = getMaximumEnclosureCell(*_settings->grid,_settings->maximum_grid_depth);
-	for (std::map<DiscreteState,Float>::iterator step_it = _discretiser->settings().hybrid_maximum_step_size.begin();
-												 step_it != _discretiser->settings().hybrid_maximum_step_size.end();
-												 ++step_it) {
-		step_it->second /= 2;
-	}
-}
-
-
 HybridReachabilityAnalyser::SetApproximationType
 HybridReachabilityAnalyser::
 outer_chain_reach(
@@ -857,7 +834,7 @@ _lower_reach_and_epsilon(
 
 		ARIADNE_LOG(4,"Initial enclosures size = " << initial_enclosures.size() << "\n");
 
-		LowerChainReachWorker worker(_discretiser,initial_enclosures,system,lock_time,grid,
+		LowerReachEpsilonWorker worker(_discretiser,initial_enclosures,system,lock_time,grid,
 				_settings->maximum_grid_depth,concurrency);
 
 		ARIADNE_LOG(4,"Evolving and discretising...\n");
@@ -865,18 +842,15 @@ _lower_reach_and_epsilon(
 		make_ltuple<std::pair<HUM,HUM>,EL,GTS,HybridFloatVector>(evolve_sizes,final_enclosures,
 				local_reach,local_epsilon) = worker.get_result();
 
-		for (HybridFloatVector::const_iterator eps_it = local_epsilon.begin(); eps_it != local_epsilon.end(); ++eps_it) {
-			for (uint i=0; i<eps_it->second.size(); ++i)
-				epsilon[eps_it->first][i] = max(epsilon[eps_it->first][i],eps_it->second[i]);
-		}
+		epsilon = max_elementwise(epsilon,local_epsilon);
 
 		if (!constraint_set.empty()) {
 			HybridGridTreeSet local_reachability_restriction = reachability_restriction;
 			if (local_reachability_restriction.empty())
 				local_reachability_restriction.adjoin_outer_approximation(_settings->domain_bounds,_settings->maximum_grid_depth);
 
-			HybridGridTreeSet possibly_feasible_cells = this->possibly_feasible_cells(
-					local_reach,constraint_set,local_epsilon,local_reachability_restriction);
+			HybridGridTreeSet possibly_feasible_cells = Ariadne::possibly_feasible_cells(local_reach,constraint_set,
+					local_epsilon,local_reachability_restriction,_settings->maximum_grid_depth);
 
 			if (possibly_feasible_cells.size() < local_reach.size()) {
 				throw ReachUnsatisfiesConstraintException("The lower reached region partially does not satisfy the constraint.");
@@ -899,25 +873,6 @@ _lower_reach_and_epsilon(
 	}
 
 	return std::pair<HybridGridTreeSet,HybridFloatVector>(reach,epsilon);
-}
-
-
-HybridGridTreeSet
-HybridReachabilityAnalyser::
-possibly_feasible_cells(
-		const HybridGridTreeSet& reach,
-		const HybridConstraintSet& constraint,
-		const HybridFloatVector eps,
-		HybridGridTreeSet reachability_restriction) const
-{
-	reachability_restriction.mince(_settings->maximum_grid_depth);
-	HybridGridTreeSet feasible_reachability_restriction = possibly_overlapping_cells(reachability_restriction,constraint);
-	HybridVectorFunction constraint_functions = constraint.functions();
-	HybridBoxes eps_constraint_codomain = eps_codomain(feasible_reachability_restriction, eps, constraint_functions);
-
-	HybridConstraintSet eps_constraint(constraint_functions,eps_constraint_codomain);
-
-	return possibly_overlapping_cells(reach,eps_constraint);
 }
 
 
@@ -990,7 +945,6 @@ lower_reach_and_epsilon(
 	try {
 
 		uint i = 0;
-		// Progressively adds the results for each subsystem
 		for (std::list<RealConstantSet>::const_iterator set_it = split_midpoints_set.begin();
 														set_it != split_midpoints_set.end();
 														++set_it) {
@@ -1004,11 +958,7 @@ lower_reach_and_epsilon(
 					_lower_reach_and_epsilon(system,initial_set,constraint_set,reachability_restriction);
 
 			reach.adjoin(local_reach);
-
-			for (HybridFloatVector::const_iterator eps_it = local_epsilon.begin(); eps_it != local_epsilon.end(); ++eps_it) {
-				for (uint i=0; i<eps_it->second.size(); ++i)
-					epsilon[eps_it->first][i] = max(epsilon[eps_it->first][i],eps_it->second[i]);
-			}
+			epsilon = max_elementwise(epsilon,local_epsilon);
 
 			ARIADNE_LOG(3,"Epsilon: " << local_epsilon << "\n");
 		}
@@ -1444,14 +1394,9 @@ getHybridGrid(
 	std::map<DiscreteState,Vector<Float> > hybridgridlengths;
 
 	// Get the minimum domain length for each variable
-	Vector<Float> minDomainLengths(css);
-	for (uint i=0;i<css;i++) {
-		minDomainLengths[i] = std::numeric_limits<double>::infinity();
-	}
+	Vector<Float> minDomainLengths(css,std::numeric_limits<double>::infinity());
 	for (HybridFloatVector::const_iterator hfv_it = hmad.begin(); hfv_it != hmad.end(); hfv_it++) {
-		for (uint i=0;i<css;i++) {
-			minDomainLengths[i] = min(minDomainLengths[i], domain.find(hfv_it->first)->second[i].width());
-		}
+		minDomainLengths = min_elementwise(minDomainLengths,domain.find(hfv_it->first)->second.widths());
 	}
 
 	// Initialize the minimum non-zero length for each variable as the minimum domain lengths
@@ -1507,20 +1452,13 @@ getGrid(
 	// Get the size of the continuous space (NOTE: taken as equal for all locations)
 	const uint css = hmad.begin()->second.size();
 
-	Grid hg;
-
 	// The lengths of the grid cell
 	Vector<Float> gridlengths(css,std::numeric_limits<double>::infinity());
 
 	// Get the minimum domain length for each variable
-	Vector<Float> minDomainLengths(css);
-	for (uint i=0;i<css;i++) {
-		minDomainLengths[i] = std::numeric_limits<double>::infinity();
-	}
+	Vector<Float> minDomainLengths(css,std::numeric_limits<double>::infinity());
 	for (HybridFloatVector::const_iterator hfv_it = hmad.begin(); hfv_it != hmad.end(); hfv_it++) {
-		for (uint i=0;i<css;i++) {
-			minDomainLengths[i] = min(minDomainLengths[i], domain.find(hfv_it->first)->second[i].width());
-		}
+		minDomainLengths = min_elementwise(minDomainLengths,domain.find(hfv_it->first)->second.widths());
 	}
 
 	// Initialize the minimum non-zero length for each variable as the minimum domain lengths
@@ -1577,11 +1515,7 @@ getMaximumEnclosureCell(
 			if (hg_it->second.lengths()[i] > result[i])
 				result[i] = hg_it->second.lengths()[i];
 
-	// Scales the cell in respect to the maximum grid depth
-	for (uint i=0;i<css;i++)
-		result[i] /= (1<<maximum_grid_depth);
-
-	return RATIO*result;
+	return RATIO*result/(1<<maximum_grid_depth);
 }
 
 Float
@@ -1747,6 +1681,25 @@ restrict_enclosures(
 	}
 
 	return result;
+}
+
+
+HybridGridTreeSet
+possibly_feasible_cells(
+		const HybridGridTreeSet& reach,
+		const HybridConstraintSet& constraint,
+		const HybridFloatVector eps,
+		HybridGridTreeSet reachability_restriction,
+		int accuracy)
+{
+	reachability_restriction.mince(accuracy);
+	HybridGridTreeSet feasible_reachability_restriction = possibly_overlapping_cells(reachability_restriction,constraint);
+	HybridVectorFunction constraint_functions = constraint.functions();
+	HybridBoxes eps_constraint_codomain = eps_codomain(feasible_reachability_restriction, eps, constraint_functions);
+
+	HybridConstraintSet eps_constraint(constraint_functions,eps_constraint_codomain);
+
+	return possibly_overlapping_cells(reach,eps_constraint);
 }
 
 

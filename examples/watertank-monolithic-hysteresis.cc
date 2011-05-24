@@ -67,8 +67,7 @@ int main(int argc,char *argv[])
 	analyser.settings().highest_maximum_grid_depth = 6;
 	Verifier verifier(analyser);
 	verifier.verbosity = verifierVerbosity;
-	verifier.settings().maximum_parameter_depth = 4;
-	verifier.settings().enable_domain_enforcing = false;
+	verifier.settings().maximum_parameter_depth = 3;
 	verifier.settings().plot_results = false;
 
 	// The parameters

@@ -393,7 +393,23 @@ Float volume(const Vector<Interval>& z);
 inline Vector<Float> add_approx(const Vector<Float>& v1, const Vector<Float>& v2) { return v1+v2; }
 inline Vector<Float> sub_approx(const Vector<Float>& v1, const Vector<Float>& v2) { return v1-v2; }
 
+template<class X> Vector<X> max_elementwise(const Vector<X>& v1, const Vector<X>& v2) {
+	ARIADNE_ASSERT_MSG(v1.size() == v2.size(),"The element-wise maximum requires the two vectors having the same size.")
 
+	Vector<X> result(v1.size());
+	for (uint i=0;i<v1.size();++i)
+		result[i] = max(v1[i],v2[i]);
+	return result;
+}
+
+template<class X> Vector<X> min_elementwise(const Vector<X>& v1, const Vector<X>& v2) {
+	ARIADNE_ASSERT_MSG(v1.size() == v2.size(),"The element-wise maximum requires the two vectors having the same size.")
+
+	Vector<X> result(v1.size());
+	for (uint i=0;i<v1.size();++i)
+		result[i] = min(v1[i],v2[i]);
+	return result;
+}
 
 template<class X, class XX> inline Vector<X> vector(size_t d, const XX* ptr) {
     return Vector<Float>(d,ptr); }

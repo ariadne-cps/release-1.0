@@ -50,7 +50,7 @@ class ContinuousEvolutionSettings {
     typedef uint UnsignedIntType;
     typedef double RealType;
 
-    //! \brief Default constructer gives reasonable values. 
+    //! \brief Default constructor gives reasonable values.
     ContinuousEvolutionSettings();
 
 	//! \brief The direction of continuous evolution.
