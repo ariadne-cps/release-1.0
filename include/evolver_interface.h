@@ -29,7 +29,6 @@
 #define ARIADNE_EVOLVER_INTERFACE_H
 
 #include "settings.h"
-#include "epsilon_lower_bounds.h"
 
 namespace Ariadne {
 

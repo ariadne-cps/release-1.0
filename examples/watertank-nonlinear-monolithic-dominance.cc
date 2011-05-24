@@ -51,21 +51,22 @@ int main(int argc,char *argv[])
 	HybridBoxes domain_pr = bounding_boxes(system_pr.state_space(),Box(2,1.0,10.0,-0.1,1.1));
 
 	// The projections
-	std::vector<uint> projection_hy(1,0);
-	std::vector<uint> projection_pr(1,0);
+	Vector<uint> projection_hy(1,0);
+	Vector<uint> projection_pr(1,0);
 
 	// Construct the bundles
 	DominanceVerificationInput hysteresis(system_hy,initial_hy,domain_hy,projection_hy);
 	DominanceVerificationInput proportional(system_pr,initial_pr,domain_pr,projection_pr);
 
 	TaylorCalculus outer_integrator(2,2,1e-4);
-	TaylorCalculus lower_integrator(4,6,1e-10);
+	TaylorCalculus lower_integrator(3,4,1e-7);
 	ImageSetHybridEvolver evolver(outer_integrator,lower_integrator);
 	HybridReachabilityAnalyser analyser(evolver);
 	analyser.settings().lowest_maximum_grid_depth = 2;
 	analyser.settings().highest_maximum_grid_depth = 7;
 	Verifier verifier(analyser);
 	verifier.verbosity = verifierVerbosity;
+	verifier.settings().enable_domain_enforcing = true;
 	verifier.settings().maximum_parameter_depth = 5;
 
 	// The parametric dominance parameters

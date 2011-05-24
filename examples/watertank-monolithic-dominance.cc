@@ -51,8 +51,8 @@ int main(int argc,char *argv[])
 	HybridBoxes domain_pr = bounding_boxes(system_pr.state_space(),Box(2,-0.1,10.0,-0.1,1.1));
 
 	// The projections
-	std::vector<uint> projection_hy(1,0);
-	std::vector<uint> projection_pr(1,0);
+	Vector<uint> projection_hy(1,0);
+	Vector<uint> projection_pr(1,0);
 
 	// Construct the bundles
 	DominanceVerificationInput hysteresis(system_hy,initial_hy,domain_hy,projection_hy);
@@ -65,7 +65,7 @@ int main(int argc,char *argv[])
 	analyser.settings().highest_maximum_grid_depth = 5;
 	Verifier verifier(analyser);
 	verifier.verbosity = verifierVerbosity;
-	verifier.settings().maximum_parameter_depth = 4;
+	verifier.settings().maximum_parameter_depth = 5;
 	verifier.settings().plot_results = false;
 
 	// The parametric dominance parameters

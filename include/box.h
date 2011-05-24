@@ -246,7 +246,7 @@ Box unbounded_box(const int& n);
 
 /** \brief Provides a closed box that includes both \a box1 and \a box2.
  * \details The box is not enlarged to include the boxes in its interior. */
-Box hull(const Box& box1, const Box& box2);
+//Box hull(const Box& box1, const Box& box2);
 
 } // namespace Ariadne
 

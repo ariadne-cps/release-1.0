@@ -1200,12 +1200,6 @@ class GridTreeSet : public GridTreeSubset {
     /*! \brief Restrict to cells rooted to the primary cell with the height (at most) \a theHeight. */
     void restrict_to_height( const uint theHeight );
 
-    /*! \brief Restrict to cells being an overapproximation of the preimage of \a image_set in respect to the provided \a transitions. */
-    void restrict_to_preimage_of(
-    		const std::map<DiscreteState,GridTreeSet> image_set,
-    		const std::list<DiscreteTransition>& transitions,
-    		const CalculusInterface<TaylorModel>& calc);
-
     //@}
 
     //@{
@@ -2389,6 +2383,23 @@ GridTreeSet definitely_covered_cells(const GridTreeSet& grid_set, const Constrai
 
 //! \brief Evaluates the codomain of \a func applied on the cells of \a grid_set, each widened by \a eps.
 Box eps_codomain(const GridTreeSet& grid_set, const Vector<Float> eps, const VectorFunction& func);
+
+//! \brief Projects \a cell using the given \a indices and with the \a projected_grid.
+//! \details No check is performed as to the consistency of the arguments.
+GridCell project_down_unchecked(const GridCell& cell, const Grid& projected_grid, const Vector<uint>& indices);
+
+//! \brief Projects \a grid_set using the given \a indices.
+GridTreeSet project_down(const GridTreeSet& grid_set, const Vector<uint>& indices);
+
+//! \brief Check whether \a covering_set covers \a covered_set with a tolerance of \a eps.
+//! \details Since the cell boxes of \a covered_set, enlarged of \a eps, are checked against \a covering_set,
+//! the two sets can feature different grids.
+tribool covers(const GridTreeSet& covering_set, const GridTreeSet& covered_set, const Vector<Float>& eps);
+
+//! \brief Check whether \a covering_set covers \a covered_set with a tolerance of \a eps.
+//! \details Since the cell boxes of \a covered_set are checked against an overapproximation (using \a accuracy) of the
+//! epsilon-enlargement of \a covering_set, the two sets can feature different grids.
+tribool inside(const GridTreeSet& covered_set, const GridTreeSet& covering_set, const Vector<Float>& eps, int accuracy);
 
 } // namespace Ariadne
 

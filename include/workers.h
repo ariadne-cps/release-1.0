@@ -288,11 +288,14 @@ public:
 	  _time(time),
 	  _grid(grid),
 	  _accuracy(accuracy),
-	  _concurrency(concurrency),
-	  _eps_lower_bounds(EpsilonLowerBounds(sys.state_space()))
+	  _concurrency(concurrency)
     {
     	_reach = HGTS(grid);
 		_evolve_global = HGTS(grid);
+
+    	HybridSpace state_space = _sys.state_space();
+    	for (HybridSpace::const_iterator hs_it = state_space.begin(); hs_it != state_space.end(); ++hs_it)
+    		_epsilon.insert(std::pair<DiscreteState,Vector<Float> >(hs_it->first,Vector<Float>(hs_it->second)));
     }
  
     ~LowerChainReachWorker()
@@ -300,7 +303,7 @@ public:
     }
 
     // Create the threads and produce the required results
-    tuple<std::pair<HUM,HUM>,EL,HGTS,EpsilonLowerBounds> get_result()
+    tuple<std::pair<HUM,HUM>,EL,HGTS,HybridFloatVector> get_result()
     {
     	_start();
     	_wait_completion();
@@ -309,7 +312,7 @@ public:
 		for (HGTS::locations_const_iterator evolve_global_it = _evolve_global.locations_begin(); evolve_global_it != _evolve_global.locations_end(); evolve_global_it++)
 			_adjoined_evolve_sizes[evolve_global_it->first] = evolve_global_it->second.size();
 
-		return make_tuple<std::pair<HUM,HUM>,EL,HGTS,EpsilonLowerBounds>(make_pair<HUM,HUM>(_adjoined_evolve_sizes,_superposed_evolve_sizes),_final_enclosures,_reach,_eps_lower_bounds);
+		return make_tuple<std::pair<HUM,HUM>,EL,HGTS,HybridFloatVector>(make_pair<HUM,HUM>(_adjoined_evolve_sizes,_superposed_evolve_sizes),_final_enclosures,_reach,_epsilon);
     }
  
 private:
@@ -330,8 +333,8 @@ private:
 	EL _final_enclosures;
 	// The reached region
 	HGTS _reach;
-	// The epsilon bounds
-	EpsilonLowerBounds _eps_lower_bounds;
+	// The epsilon
+	HybridFloatVector _epsilon;
 
 	// The various threads
     std::list<boost::shared_ptr<boost::thread> > _m_threads;
@@ -381,11 +384,13 @@ private:
 				_reach.adjoin(current_reach);
 				_evolve_global.adjoin(current_evolve);
 
-			    // Update the epsilon lower bounds
+			    // Update the epsilon
 				for (ELS::const_iterator encl_it = current_reach_enclosures.begin(); encl_it != current_reach_enclosures.end(); ++encl_it) {
-					Box encl_bounds = encl_it->second.bounding_box();
-					_eps_lower_bounds.updateEpsilon(encl_it->first,encl_bounds.widths());
-					_eps_lower_bounds.updateReachBounds(encl_it->first,encl_bounds);
+					Vector<Float> encl_widths = encl_it->second.bounding_box().widths();
+					Vector<Float> grid_lengths = _grid[encl_it->first].lengths();
+					for (uint i=0; i<encl_widths.size(); ++i) {
+						_epsilon[encl_it->first][i] = max(_epsilon[encl_it->first][i],encl_widths[i]+grid_lengths[i]/(1<<_accuracy));
+					}
 				}
 
 				// Add the number of cells of the current evolve to the superposed total at the end of the step, for each location

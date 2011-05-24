@@ -261,14 +261,14 @@ class Verifier
 			DominanceVerificationInput& dominated,
 			const RealConstantSet& constants) const;
 
-	/*! \brief Gets the shrinked lower bounds of the \a dominanceSystem type. */
-	Box _dominance_shrinked_lower_bounds(
+	/*! \brief Gets the flattened lower reach and the epsilon of the \a dominanceSystem type. */
+	std::pair<GridTreeSet,Vector<Float> > _dominance_flattened_lower_reach_and_epsilon(
 			DominanceVerificationInput& verInfo,
 			const RealConstantSet& constants,
 			DominanceSystem dominanceSystem) const;
 
-	/*! \brief Gets the outer bounds of the \a dominanceSystem type. */
-	Box _dominance_outer_bounds(
+	/*! \brief Gets the flattened outer reach of the \a dominanceSystem type. */
+	GridTreeSet _dominance_flattened_outer_reach(
 			DominanceVerificationInput& verInput,
 			const RealConstantSet& constants,
 			DominanceSystem dominanceSystem) const;
@@ -293,12 +293,23 @@ class Verifier
 	/*! \brief Resets cached information, then chooses the initial settings for dominance verification.
 	 * \details It is not allowed to tune the analysers, since they are used on different systems on each iteration.
 	 */
-	void _resetAndChooseInitialDominanceSettings() const;
+	void _resetAndChooseInitialDominanceSettings(
+			DominanceVerificationInput& dominating,
+			DominanceVerificationInput& dominated) const;
+
+	/*! \brief Obtains a coarse outer approximation and a reachability restriction of the \a system using
+	 * only the information on the \a domain.
+	 */
+	std::pair<HybridGridTreeSet,HybridGridTreeSet> _getCoarseOuterApproximationAndReachabilityRestriction(
+			const HybridAutomaton& system,
+			const HybridBoxes& domain,
+			bool equal_grid_for_all_locations) const;
 
 	/*! \brief Tune the settings for the next iterative verification step. */
 	void _tuneIterativeStepSettings(
 			const HybridAutomaton& system,
 			const HybridGridTreeSet& hgts_domain,
+			bool equal_grid_for_all_locations,
 			Semantics semantics) const;
 
 	/*! \brief Updates with \a reach the outer approximation or the reachability restriction.

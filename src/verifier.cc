@@ -168,7 +168,9 @@ _safety_proving_once(
 
 	ARIADNE_LOG(4,"Setting parameters for this proving iteration...\n");
 
-	_tuneIterativeStepSettings(system,_safety_coarse_outer_approximation->get(),UPPER_SEMANTICS);
+	bool equal_grid_for_all_locations = false;
+	_tuneIterativeStepSettings(system,_safety_coarse_outer_approximation->get(),
+			equal_grid_for_all_locations,UPPER_SEMANTICS);
 
 	ARIADNE_LOG(5, "Using reachability restriction: " << pretty_print(!_safety_reachability_restriction.empty()) << "\n");
 
@@ -319,7 +321,9 @@ _safety_disproving_once(
 
 	ARIADNE_LOG(4,"Setting parameters for this disproving iteration...\n");
 
-	_tuneIterativeStepSettings(system,_safety_coarse_outer_approximation->get(),LOWER_SEMANTICS);
+	bool equal_grid_for_all_locations = false;
+	_tuneIterativeStepSettings(system,_safety_coarse_outer_approximation->get(),
+			equal_grid_for_all_locations,LOWER_SEMANTICS);
 
 	ARIADNE_LOG(5, "Using reachability restriction: " << pretty_print(!_safety_reachability_restriction.empty()) << "\n");
 
@@ -328,11 +332,11 @@ _safety_disproving_once(
 	try {
 
 		HybridGridTreeSet reach;
-		EpsilonLowerBounds bounds(system.state_space());
-		make_lpair<HybridGridTreeSet,EpsilonLowerBounds>(reach,bounds) = _analyser->lower_reach_and_bounds(
+		HybridFloatVector epsilon;
+		make_lpair<HybridGridTreeSet,HybridFloatVector>(reach,epsilon) = _analyser->lower_reach_and_epsilon(
 				system,initial_set,safety_constraint,_safety_reachability_restriction);
 
-		ARIADNE_LOG(5, "Epsilon lower bounds: " << bounds << "\n");
+		ARIADNE_LOG(5, "Epsilon: " << epsilon << "\n");
 
 		if (_settings->plot_results)
 			_plot_reach(reach,"lower",_analyser->settings().maximum_grid_depth);
@@ -458,7 +462,7 @@ Verifier::_dominance(
 	if (_settings->plot_results)
 		_plot_dirpath_init(dominating.getSystem().name() + "&" + dominated.getSystem().name());
 
-	_resetAndChooseInitialDominanceSettings();
+	_resetAndChooseInitialDominanceSettings(dominating,dominated);
 
     for (int depth = _analyser->settings().lowest_maximum_grid_depth;
     		depth <= _analyser->settings().highest_maximum_grid_depth; ++depth)
@@ -497,25 +501,20 @@ Verifier::_dominance_proving_once(
 	dominating.getSystem().substitute(constants,_settings->use_param_midpoints_for_proving);
 
 	try {
+		GridTreeSet flattened_dominated_lower_reach;
+		Vector<Float> flattened_epsilon;
+		make_lpair<GridTreeSet,Vector<Float> >(flattened_dominated_lower_reach,flattened_epsilon) =
+				_dominance_flattened_lower_reach_and_epsilon(dominated,constants,DOMINATED_SYSTEM);
 
-		Box shrinked_dominated_bounds = _dominance_shrinked_lower_bounds(dominated,constants,DOMINATED_SYSTEM);
+		GridTreeSet flattened_dominating_outer_reach = _dominance_flattened_outer_reach(dominating,constants,DOMINATING_SYSTEM);
 
-		HybridBoxes shrinked_dominated_bounds_on_dominating_space = Ariadne::project(shrinked_dominated_bounds,
-				dominating.getProjection(),dominating.getSystem().state_space());
-
-		Box dominating_bounds = _dominance_outer_bounds(dominating,constants,DOMINATING_SYSTEM);
-
-		result = inside(dominating_bounds,shrinked_dominated_bounds);
+		result = definitely(covers(flattened_dominated_lower_reach,flattened_dominating_outer_reach,flattened_epsilon));
 
 		ARIADNE_LOG(4, "The outer reached region of the dominating system is " << (!result ? "not ": "") <<
 					   "inside the projected shrinked lower reached region of the dominated system.\n");
 
 	} catch (ReachOutOfDomainException ex) {
 		ARIADNE_LOG(4,"The outer reached region of the dominating system is partially out of the domain (skipped).\n");
-		result = false;
-	} catch (ReachUnsatisfiesConstraintException ex) {
-		ARIADNE_LOG(4,"The outer reached region of the dominating system is not inside " +
-				"the projected shrinked lower reached region of the dominated system (skipped).\n");
 		result = false;
 	}
 
@@ -541,23 +540,19 @@ Verifier::_dominance_disproving_once(
 	dominating.getSystem().substitute(constants,_settings->use_param_midpoints_for_disproving);
 
 	try {
+		GridTreeSet flattened_dominating_lower_reach;
+		Vector<Float> flattened_epsilon;
+		make_lpair<GridTreeSet,Vector<Float> >(flattened_dominating_lower_reach,flattened_epsilon) =
+				_dominance_flattened_lower_reach_and_epsilon(dominating,constants,DOMINATING_SYSTEM);
 
-		Box shrinked_dominating_bounds = _dominance_shrinked_lower_bounds(dominating,constants,DOMINATING_SYSTEM);
+		GridTreeSet flattened_dominated_outer_reach = _dominance_flattened_outer_reach(dominated,constants,DOMINATED_SYSTEM);
 
-		HybridBoxes shrinked_dominating_bounds_on_dominated_space = Ariadne::project(shrinked_dominating_bounds,
-				dominated.getProjection(),dominated.getSystem().state_space());
-
-		Box dominated_bounds = _dominance_outer_bounds(dominated,constants,DOMINATED_SYSTEM);
-
-		result = !inside(shrinked_dominating_bounds,dominated_bounds);
+		result = definitely(!inside(flattened_dominating_lower_reach,flattened_dominated_outer_reach,
+				flattened_epsilon,_analyser->settings().maximum_grid_depth));
 
 	} catch (ReachOutOfDomainException ex) {
 		ARIADNE_LOG(4,"The outer reached region of the dominated system is partially out of the domain (skipped).\n");
 		result = false;
-	} catch (ReachEnclosesTargetException ex) {
-		ARIADNE_LOG(4,"The outer reached region of the dominated system encloses " +
-				"the projected shrinked lower reached region of the dominated system (skipped).\n");
-		result = true;
 	}
 
 	ARIADNE_LOG(3, (result ? "Disproved.\n" : "Not disproved.\n") );
@@ -568,9 +563,9 @@ Verifier::_dominance_disproving_once(
 }
 
 
-Box
+std::pair<GridTreeSet,Vector<Float> >
 Verifier::
-_dominance_shrinked_lower_bounds(
+_dominance_flattened_lower_reach_and_epsilon(
 		DominanceVerificationInput& verInfo,
 		const RealConstantSet& constants,
 		DominanceSystem dominanceSystem) const
@@ -588,27 +583,31 @@ _dominance_shrinked_lower_bounds(
 
 	ARIADNE_LOG(4,"Getting the lower reached region of the " << descriptor << " system...\n");
 
-	HybridGridTreeSet reach;
-	EpsilonLowerBounds bounds(verInfo.getSystem().state_space());
+	const Vector<uint>& projection = verInfo.getProjection();
 
-	make_lpair<HybridGridTreeSet,EpsilonLowerBounds>(reach,bounds) = _analyser->lower_reach_and_bounds(
+	HybridGridTreeSet reach;
+	HybridFloatVector epsilon;
+	make_lpair<HybridGridTreeSet,HybridFloatVector>(reach,epsilon) = _analyser->lower_reach_and_epsilon(
 			verInfo.getSystem(),verInfo.getInitialSet(),reachability_restriction);
 
-	// We must shrink the lower approximation of the system, but underapproximating in terms of rounding
-	HybridBoxes shrinked_bounds = Ariadne::shrink_in(bounds.getReachBounds(),bounds.getEpsilon());
+	GridTreeSet flattened_reach = flatten_and_project_down(reach,projection);
 
-	Box projected_shrinked_bounds = Ariadne::project(shrinked_bounds,verInfo.getProjection());
+	HybridFloatVector::const_iterator epsilon_it = epsilon.begin();
+	Vector<Float> flattened_epsilon(projection.size());
+	for (HybridFloatVector::const_iterator epsilon_it = epsilon.begin(); epsilon_it != epsilon.end(); ++epsilon_it) {
+		for (uint i=0; i<projection.size(); ++i)
+			flattened_epsilon[i] = max(flattened_epsilon[i],epsilon_it->second[projection[i]]);
+	}
 
-	ARIADNE_LOG(5,"Epsilon: " << bounds.getEpsilon() << "\n");
-	ARIADNE_LOG(5,"Projected shrinked " << descriptor << " bounds: " << projected_shrinked_bounds << "\n");
+	ARIADNE_LOG(5,"Flattened epsilon: " << flattened_epsilon << "\n");
 
-	return projected_shrinked_bounds;
+	return std::pair<GridTreeSet,Vector<Float> >(flattened_reach,flattened_epsilon);
 }
 
 
-Box
+GridTreeSet
 Verifier::
-_dominance_outer_bounds(
+_dominance_flattened_outer_reach(
 		DominanceVerificationInput& verInput,
 		const RealConstantSet& constants,
 		DominanceSystem dominanceSystem) const
@@ -634,14 +633,10 @@ _dominance_outer_bounds(
 		reachability_restriction = reach;
 	}
 
-	Box projected_bounds = Ariadne::project(reach.bounding_box(),verInput.getProjection());
-
-	ARIADNE_LOG(5,"Projected " << descriptor << " bounds: " << projected_bounds << "\n");
-
 	if (_settings->plot_results)
 		_plot_dominance(reach,dominanceSystem,UPPER_SEMANTICS);
 
-	return projected_bounds;
+	return flatten_and_project_down(reach,verInput.getProjection());
 }
 
 
@@ -652,6 +647,8 @@ _resetAndChooseInitialSafetySettings(
 		const HybridBoxes& domain,
 		const RealConstantSet& locked_constants) const
 {
+	static const bool equal_grid_for_all_locations = false;
+
 	_safety_coarse_outer_approximation->reset();
 
 	_safety_reachability_restriction = HybridGridTreeSet();
@@ -659,18 +656,35 @@ _resetAndChooseInitialSafetySettings(
 	_chooseInitialSafetySettings(system,domain,locked_constants);
 
 	if (_settings->enable_domain_enforcing) {
-		HybridFloatVector hmad = getHybridMaximumAbsoluteDerivatives(system,HybridGridTreeSet(),domain);
-		HybridGrid coarse_grid = getHybridGrid(hmad,domain);
-
-		HybridGridTreeSet discretized_domain(coarse_grid);
-		discretized_domain.adjoin_outer_approximation(domain,1);
-		_safety_coarse_outer_approximation->set(discretized_domain);
-		hmad = getHybridMaximumAbsoluteDerivatives(system,discretized_domain,domain);
-		HybridGrid fine_grid = getHybridGrid(hmad,domain);
-		HybridGridTreeSet reachability_restriction(fine_grid);
-		reachability_restriction.adjoin_outer_approximation(domain,1);
-		_safety_reachability_restriction = reachability_restriction;
+		std::pair<HybridGridTreeSet,HybridGridTreeSet> reach_pair =
+				_getCoarseOuterApproximationAndReachabilityRestriction(system,domain,equal_grid_for_all_locations);
+		_safety_coarse_outer_approximation->set(reach_pair.first);
+		_safety_reachability_restriction = reach_pair.second;
 	}
+}
+
+
+std::pair<HybridGridTreeSet,HybridGridTreeSet>
+Verifier::
+_getCoarseOuterApproximationAndReachabilityRestriction(
+		const HybridAutomaton& system,
+		const HybridBoxes& domain,
+		bool equal_grid_for_all_locations) const
+{
+	static const int accuracy = 2;
+
+	HybridFloatVector hmad = getHybridMaximumAbsoluteDerivatives(system,HybridGridTreeSet(),domain);
+	HybridGrid coarse_grid = getHybridGrid(hmad,domain,equal_grid_for_all_locations);
+
+	HybridGridTreeSet coarse_outer_approximation(coarse_grid);
+	coarse_outer_approximation.adjoin_outer_approximation(domain,accuracy);
+
+	hmad = getHybridMaximumAbsoluteDerivatives(system,coarse_outer_approximation,domain);
+	HybridGrid fine_grid = getHybridGrid(hmad,domain,equal_grid_for_all_locations);
+	HybridGridTreeSet reachability_restriction(fine_grid);
+	reachability_restriction.adjoin_outer_approximation(domain,accuracy);
+
+	return std::pair<HybridGridTreeSet,HybridGridTreeSet>(coarse_outer_approximation,reachability_restriction);
 }
 
 
@@ -698,6 +712,7 @@ Verifier::
 _tuneIterativeStepSettings(
 		const HybridAutomaton& system,
 		const HybridGridTreeSet& hgts_domain,
+		bool equal_grid_for_all_locations,
 		Semantics semantics) const
 {
 	ARIADNE_LOG(5, "Derivatives evaluation source: " << (hgts_domain.empty() ? "Domain box" : "Outer approximation") << "\n");
@@ -705,7 +720,7 @@ _tuneIterativeStepSettings(
 	HybridFloatVector hmad = getHybridMaximumAbsoluteDerivatives(system,hgts_domain,_analyser->settings().domain_bounds);
 	ARIADNE_LOG(5, "Derivatives bounds: " << hmad << "\n");
 	_analyser->settings().grid = boost::shared_ptr<HybridGrid>(
-			new HybridGrid(getHybridGrid(hmad,_analyser->settings().domain_bounds)));
+			new HybridGrid(getHybridGrid(hmad,_analyser->settings().domain_bounds,equal_grid_for_all_locations)));
 	ARIADNE_LOG(5, "Grid lengths: " << _analyser->settings().grid->lengths() << "\n");
 
 	_analyser->tuneEvolverSettings(system,hmad,_analyser->settings().maximum_grid_depth,semantics);
@@ -713,13 +728,31 @@ _tuneIterativeStepSettings(
 
 void
 Verifier::
-_resetAndChooseInitialDominanceSettings() const
+_resetAndChooseInitialDominanceSettings(
+		DominanceVerificationInput& dominating,
+		DominanceVerificationInput& dominated) const
 {
+	static const bool equal_grid_for_all_locations = true;
+
 	_dominating_coarse_outer_approximation->reset();
 	_dominated_coarse_outer_approximation->reset();
 
 	_dominating_reachability_restriction = HybridGridTreeSet();
 	_dominated_reachability_restriction = HybridGridTreeSet();
+
+	if (_settings->enable_domain_enforcing) {
+		std::pair<HybridGridTreeSet,HybridGridTreeSet> dominating_reach_pair =
+				_getCoarseOuterApproximationAndReachabilityRestriction(dominating.getSystem(),
+						dominating.getDomain(),equal_grid_for_all_locations);
+		_dominating_coarse_outer_approximation->set(dominating_reach_pair.first);
+		_dominating_reachability_restriction = dominating_reach_pair.second;
+
+		std::pair<HybridGridTreeSet,HybridGridTreeSet> dominated_reach_pair =
+				_getCoarseOuterApproximationAndReachabilityRestriction(dominated.getSystem(),
+						dominated.getDomain(),equal_grid_for_all_locations);
+		_dominated_coarse_outer_approximation->set(dominated_reach_pair.first);
+		_dominated_reachability_restriction = dominated_reach_pair.second;
+	}
 }
 
 void
@@ -734,7 +767,8 @@ _chooseDominanceSettings(
 	_analyser->settings().domain_bounds = verInput.getDomain();
 	ARIADNE_LOG(5, "Domain: " << _analyser->settings().domain_bounds << "\n");
 
-	_tuneIterativeStepSettings(verInput.getSystem(),outer_reach,semantics);
+	bool equal_grid_for_all_locations = true;
+	_tuneIterativeStepSettings(verInput.getSystem(),outer_reach,equal_grid_for_all_locations,semantics);
 
 	ARIADNE_LOG(5, "Use reachability restriction: " << pretty_print(!outer_approx_constraint.empty()) << "\n");
 

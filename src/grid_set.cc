@@ -242,6 +242,24 @@ Vector<Interval> Grid::box(const array<double>& lower, const array<double>& uppe
     return res;
 }
 
+Grid project_down(const Grid& original_grid, const Vector<uint>& indices)
+{
+	uint original_space_size = original_grid.dimension();
+	ARIADNE_ASSERT_MSG(original_space_size >= indices.size(),"The dimension of the projected grid must not be higher than the original grid dimension.");
+	for (Vector<uint>::const_iterator dim_it = indices.begin(); dim_it != indices.end(); ++dim_it) {
+		ARIADNE_ASSERT_MSG(*dim_it < original_space_size,"Index " << *dim_it << " is outside the original space size (" << original_space_size << ")");
+	}
+
+	Vector<double> original_grid_lengths = original_grid.lengths();
+	Vector<double> projected_grid_lengths(indices.size());
+	for (uint i=0; i < indices.size(); ++i) {
+		projected_grid_lengths[i] = original_grid_lengths[indices[i]];
+	}
+
+	return Grid(projected_grid_lengths);
+}
+
+
 std::ostream& operator<<(std::ostream& os, const Grid& gr) 
 {
     os << "Grid( ";
@@ -2532,17 +2550,6 @@ void GridTreeSet::restrict_to_height( const uint theHeight ) {
 }
 
 
-void GridTreeSet::restrict_to_preimage_of(
-		const std::map<DiscreteState,GridTreeSet> image_set,
-		const std::list<DiscreteTransition>& transitions,
-		const CalculusInterface<TaylorModel>& calc)
-{
-
-
-
-}
-
-
 void GridTreeSet::import_from_file(const char*& filename)
 {
 	// Open the file in read mode
@@ -3170,6 +3177,95 @@ Box eps_codomain(const GridTreeSet& grid_set, const Vector<Float> eps, const Vec
 		Box cell_box = cell_it->box();
 		cell_box.widen(eps);
 		result = hull(result,func.evaluate(cell_box));
+	}
+
+	return result;
+}
+
+GridCell project_down_unchecked(
+		const GridCell& cell,
+		const Grid& projected_grid,
+		const Vector<uint>& indices)
+{
+	uint cell_dimension = cell.dimension();
+
+	const BinaryWord& word = cell.word();
+
+	BinaryWord new_word;
+	for (uint i=0; i < word.size(); ++i) {
+		uint dim = i % cell_dimension;
+		for (uint j=0; j<indices.size(); ++j) {
+			if (indices[j] == dim) {
+				new_word.push_back(word[i]);
+			}
+		}
+	}
+
+	return GridCell(projected_grid,cell.height(),new_word);
+}
+
+GridTreeSet project_down(
+		const GridTreeSet& original_set,
+		const Vector<uint>& indices)
+{
+	Grid projected_grid = project_down(original_set.grid(),indices);
+
+	GridTreeSet result(projected_grid);
+
+	for (GridTreeSet::const_iterator cell_it = original_set.begin(); cell_it != original_set.end(); ++cell_it) {
+		result.adjoin(project_down_unchecked(*cell_it,result.grid(),indices));
+	}
+
+	return result;
+}
+
+tribool covers(const GridTreeSet& covering_set, const GridTreeSet& covered_set, const Vector<Float>& eps)
+{
+	ARIADNE_ASSERT_MSG(covering_set.dimension() == covered_set.dimension(),"The two sets must have the same dimensions.");
+
+	tribool result = true;
+
+	if (covering_set.bounding_box().disjoint(covered_set.bounding_box()))
+		return false;
+
+	for (GridTreeSet::const_iterator cell_it = covered_set.begin(); cell_it != covered_set.end(); ++cell_it) {
+		Box cell_bx = cell_it->box();
+		cell_bx.widen(eps);
+
+		tribool is_superset = covering_set.superset(cell_bx);
+
+		if (indeterminate(is_superset))
+			result = indeterminate;
+		else if (!possibly(is_superset))
+			return false;
+	}
+
+	return result;
+}
+
+tribool inside(const GridTreeSet& covered_set, const GridTreeSet& covering_set, const Vector<Float>& eps, int accuracy)
+{
+	ARIADNE_ASSERT_MSG(covering_set.dimension() == covered_set.dimension(),"The two sets must have the same dimensions.");
+
+	tribool result = true;
+
+	if (covering_set.bounding_box().disjoint(covered_set.bounding_box()))
+		return false;
+
+	GridTreeSet enlarged_covering_set = covering_set;
+	for (GridTreeSet::const_iterator cell_it = covering_set.begin(); cell_it != covering_set.end(); ++cell_it) {
+		Box cell_bx = cell_it->box();
+		cell_bx.widen(eps);
+		enlarged_covering_set.adjoin_outer_approximation(cell_bx,accuracy);
+	}
+
+	for (GridTreeSet::const_iterator cell_it = covered_set.begin(); cell_it != covered_set.end(); ++cell_it) {
+		tribool is_superset = covering_set.superset(cell_it->box());
+
+		if (indeterminate(is_superset))
+			result = indeterminate;
+		else if (!possibly(is_superset))
+			return false;
 	}
 
 	return result;

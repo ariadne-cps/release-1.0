@@ -99,16 +99,16 @@ inline std::ostream& operator<<(
 class DominanceVerificationInput : public VerificationInput
 {
   private:
-	std::vector<uint> _projection;
+	Vector<uint> _projection;
 
   public:
-	const std::vector<uint>& getProjection() const { return _projection; }
+	const Vector<uint>& getProjection() const { return _projection; }
 
 	DominanceVerificationInput(
 			HybridAutomaton& system,
 			HybridImageSet& initial_set,
 			HybridBoxes& domain,
-			std::vector<uint>& projection);
+			Vector<uint>& projection);
 
 	virtual std::ostream& write(std::ostream&) const;
 

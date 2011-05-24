@@ -807,9 +807,9 @@ _outer_chain_reach(
 }
 
 
-std::pair<HybridGridTreeSet,EpsilonLowerBounds>
+std::pair<HybridGridTreeSet,HybridFloatVector>
 HybridReachabilityAnalyser::
-_lower_reach_and_bounds(
+_lower_reach_and_epsilon(
 		const SystemType& system,
 		const HybridImageSet& initial_set,
 		const HybridConstraintSet& constraint_set,
@@ -828,7 +828,11 @@ _lower_reach_and_bounds(
 	bool use_domain_checking = reachability_restriction.empty();
 
     HybridGridTreeSet reach(grid);
-    EpsilonLowerBounds bounds(system.state_space());
+	HybridSpace state_space = system.state_space();
+
+	HybridFloatVector epsilon;
+	for (HybridSpace::const_iterator hs_it = state_space.begin(); hs_it != state_space.end(); ++hs_it)
+		epsilon.insert(std::pair<DiscreteState,Vector<Float> >(hs_it->first,Vector<Float>(hs_it->second)));
 
     EL initial_enclosures = enclosures_from_split_domain_midpoints(initial_set,
     		min_cell_widths(grid,_settings->maximum_grid_depth));
@@ -848,7 +852,8 @@ _lower_reach_and_bounds(
 		HUM& superposed_evolve_sizes = evolve_sizes.second;
 
 		GTS local_reach;
-		EpsilonLowerBounds local_bounds(system.state_space());
+		HybridFloatVector local_epsilon;
+
 
 		ARIADNE_LOG(4,"Initial enclosures size = " << initial_enclosures.size() << "\n");
 
@@ -857,10 +862,13 @@ _lower_reach_and_bounds(
 
 		ARIADNE_LOG(4,"Evolving and discretising...\n");
 
-		make_ltuple<std::pair<HUM,HUM>,EL,GTS,EpsilonLowerBounds>(evolve_sizes,final_enclosures,
-				local_reach,local_bounds) = worker.get_result();
+		make_ltuple<std::pair<HUM,HUM>,EL,GTS,HybridFloatVector>(evolve_sizes,final_enclosures,
+				local_reach,local_epsilon) = worker.get_result();
 
-		bounds.updateWith(local_bounds);
+		for (HybridFloatVector::const_iterator eps_it = local_epsilon.begin(); eps_it != local_epsilon.end(); ++eps_it) {
+			for (uint i=0; i<eps_it->second.size(); ++i)
+				epsilon[eps_it->first][i] = max(epsilon[eps_it->first][i],eps_it->second[i]);
+		}
 
 		if (!constraint_set.empty()) {
 			HybridGridTreeSet local_reachability_restriction = reachability_restriction;
@@ -868,7 +876,7 @@ _lower_reach_and_bounds(
 				local_reachability_restriction.adjoin_outer_approximation(_settings->domain_bounds,_settings->maximum_grid_depth);
 
 			HybridGridTreeSet possibly_feasible_cells = this->possibly_feasible_cells(
-					local_reach,constraint_set,local_bounds.getEpsilon(),local_reachability_restriction);
+					local_reach,constraint_set,local_epsilon,local_reachability_restriction);
 
 			if (possibly_feasible_cells.size() < local_reach.size()) {
 				throw ReachUnsatisfiesConstraintException("The lower reached region partially does not satisfy the constraint.");
@@ -890,7 +898,7 @@ _lower_reach_and_bounds(
 				adjoined_evolve_sizes,superposed_evolve_sizes,use_domain_checking);
 	}
 
-	return std::pair<HybridGridTreeSet,EpsilonLowerBounds>(reach,bounds);
+	return std::pair<HybridGridTreeSet,HybridFloatVector>(reach,epsilon);
 }
 
 
@@ -947,20 +955,20 @@ _filter_enclosures(
 	}
 }
 
-std::pair<HybridGridTreeSet,EpsilonLowerBounds>
+std::pair<HybridGridTreeSet,HybridFloatVector>
 HybridReachabilityAnalyser::
-lower_reach_and_bounds(
+lower_reach_and_epsilon(
 		SystemType& system,
 		const HybridImageSet& initial_set,
 		const HybridGridTreeSet& reachability_restriction) const
 {
 	HybridConstraintSet constraint_set;
-	return lower_reach_and_bounds(system,initial_set,constraint_set,reachability_restriction);
+	return lower_reach_and_epsilon(system,initial_set,constraint_set,reachability_restriction);
 }
 
-std::pair<HybridGridTreeSet,EpsilonLowerBounds>
+std::pair<HybridGridTreeSet,HybridFloatVector>
 HybridReachabilityAnalyser::
-lower_reach_and_bounds(
+lower_reach_and_epsilon(
 		SystemType& system,
 		const HybridImageSet& initial_set,
 		const HybridConstraintSet& constraint_set,
@@ -968,7 +976,11 @@ lower_reach_and_bounds(
 {
 	HybridGrid grid = grid_for(system,*_settings);
 	HybridGridTreeSet reach(grid);
-	EpsilonLowerBounds bounds(system.state_space());
+	HybridSpace state_space = system.state_space();
+
+	HybridFloatVector epsilon;
+	for (HybridSpace::const_iterator hs_it = state_space.begin(); hs_it != state_space.end(); ++hs_it)
+		epsilon.insert(std::pair<DiscreteState,Vector<Float> >(hs_it->first,Vector<Float>(hs_it->second)));
 
 	RealConstantSet original_constants = system.nonsingleton_accessible_constants();
 
@@ -987,14 +999,18 @@ lower_reach_and_bounds(
 			system.substitute(*set_it);
 
 			HybridGridTreeSet local_reach(grid);
-			EpsilonLowerBounds local_bounds(system.state_space());
-			make_lpair<HybridGridTreeSet,EpsilonLowerBounds>(local_reach,local_bounds) =
-					_lower_reach_and_bounds(system,initial_set,constraint_set,reachability_restriction);
+			HybridFloatVector local_epsilon;
+			make_lpair<HybridGridTreeSet,HybridFloatVector>(local_reach,local_epsilon) =
+					_lower_reach_and_epsilon(system,initial_set,constraint_set,reachability_restriction);
 
 			reach.adjoin(local_reach);
-			bounds.updateWith(local_bounds);
 
-			ARIADNE_LOG(3,"Epsilon lower bounds: " << local_bounds << "\n");
+			for (HybridFloatVector::const_iterator eps_it = local_epsilon.begin(); eps_it != local_epsilon.end(); ++eps_it) {
+				for (uint i=0; i<eps_it->second.size(); ++i)
+					epsilon[eps_it->first][i] = max(epsilon[eps_it->first][i],eps_it->second[i]);
+			}
+
+			ARIADNE_LOG(3,"Epsilon: " << local_epsilon << "\n");
 		}
 
 	} catch (ReachUnsatisfiesConstraintException ex) {
@@ -1002,7 +1018,7 @@ lower_reach_and_bounds(
 		throw ex;
 	}
 
-	return std::pair<HybridGridTreeSet,EpsilonLowerBounds>(reach,bounds);
+	return std::pair<HybridGridTreeSet,HybridFloatVector>(reach,epsilon);
 }
 
 
@@ -1403,6 +1419,16 @@ getSplitConstantsMidpointsSet(const std::list<RealConstantSet>& intervals_set)
 	return result;
 }
 
+HybridGrid
+getHybridGrid(
+		const HybridFloatVector& hmad,
+		const HybridBoxes& domain,
+		bool equal_for_all_locations)
+{
+	return (equal_for_all_locations ? HybridGrid(HybridSpace(domain),getGrid(hmad,domain)) :
+			getHybridGrid(hmad,domain));
+}
+
 
 HybridGrid
 getHybridGrid(
@@ -1470,6 +1496,62 @@ getHybridGrid(
 	}
 
 	return hg;
+}
+
+
+Grid
+getGrid(
+		const HybridFloatVector& hmad,
+		const HybridBoxes& domain)
+{
+	// Get the size of the continuous space (NOTE: taken as equal for all locations)
+	const uint css = hmad.begin()->second.size();
+
+	Grid hg;
+
+	// The lengths of the grid cell
+	Vector<Float> gridlengths(css,std::numeric_limits<double>::infinity());
+
+	// Get the minimum domain length for each variable
+	Vector<Float> minDomainLengths(css);
+	for (uint i=0;i<css;i++) {
+		minDomainLengths[i] = std::numeric_limits<double>::infinity();
+	}
+	for (HybridFloatVector::const_iterator hfv_it = hmad.begin(); hfv_it != hmad.end(); hfv_it++) {
+		for (uint i=0;i<css;i++) {
+			minDomainLengths[i] = min(minDomainLengths[i], domain.find(hfv_it->first)->second[i].width());
+		}
+	}
+
+	// Initialize the minimum non-zero length for each variable as the minimum domain lengths
+	Vector<Float> minNonZeroLengths = minDomainLengths;
+
+	// Get the maximum derivative/domainlength ratio among variables and locations
+	Float maxratio = 0.0;
+	for (HybridFloatVector::const_iterator hfv_it = hmad.begin(); hfv_it != hmad.end(); hfv_it++) {
+		for (uint i=0;i<css;i++) {
+			maxratio = max(maxratio,hfv_it->second[i]/minDomainLengths[i]);
+		}
+	}
+
+	// Update the minimum non zero lengths
+	for (HybridFloatVector::const_iterator hfv_it = hmad.begin(); hfv_it != hmad.end(); hfv_it++) {
+		for (uint i=0;i<css;i++) {
+			if (hfv_it->second[i] > 0) {
+				minNonZeroLengths[i] = min(minNonZeroLengths[i],hfv_it->second[i]/maxratio);
+			}
+		}
+	}
+
+	// Get the grid lengths from the derivatives
+	for (HybridFloatVector::const_iterator hfv_it = hmad.begin(); hfv_it != hmad.end(); hfv_it++) {
+		// Assign the lengths
+		for (uint i=0;i<css;i++) {
+			gridlengths[i] = min(gridlengths[i],(hfv_it->second[i] > 0) ? hfv_it->second[i]/maxratio : minNonZeroLengths[i]);
+		}
+	}
+
+	return Grid(gridlengths);
 }
 
 

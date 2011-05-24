@@ -175,6 +175,7 @@ Box unbounded_box(const int& n)
 	return Box(vec);
 }
 
+/*
 Box hull(const Box& box1, const Box& box2)
 {
 	ARIADNE_ASSERT(box1.dimension() == box2.dimension());
@@ -186,5 +187,6 @@ Box hull(const Box& box1, const Box& box2)
 
 	return Box(vec);
 }
+*/
 
 } //namespace Ariadne

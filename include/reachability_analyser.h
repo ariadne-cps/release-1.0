@@ -185,8 +185,8 @@ class HybridReachabilityAnalyser
     		const HybridGridTreeSet& reachability_restriction) const;
 
     /*! \brief Compute the epsilon lower bounds of \a system starting in \a initial_set.
-     * \return The reach and the epsilon lower bounds (namely, the reach bounds and the epsilon). */
-    virtual std::pair<HybridGridTreeSet,EpsilonLowerBounds> lower_reach_and_bounds(
+     * \return The reach and the epsilon values. */
+    virtual std::pair<HybridGridTreeSet,HybridFloatVector> lower_reach_and_epsilon(
     		SystemType& system,
 			const HybridImageSet& initial_set,
 			const HybridGridTreeSet& reachability_restriction) const;
@@ -194,8 +194,8 @@ class HybridReachabilityAnalyser
     /*! \brief Compute the epsilon lower bounds of \a system starting in \a initial_set.
      * \details If \a constraint_set is not empty, it checks whether the reachable area does not satisfy the constraint,
      * raising an exception if this is the case.
-     * \return The reach and the epsilon lower bounds (namely, the reach bounds and the epsilon). */
-    virtual std::pair<HybridGridTreeSet,EpsilonLowerBounds> lower_reach_and_bounds(
+     * \return The reach and the epsilon values. */
+    virtual std::pair<HybridGridTreeSet,HybridFloatVector> lower_reach_and_epsilon(
     		SystemType& system,
 			const HybridImageSet& initial_set,
 			const HybridConstraintSet& constraint_set,
@@ -331,10 +331,10 @@ class HybridReachabilityAnalyser
     		std::list<EnclosureType>& result_enclosures,
     		bool use_domain_checking) const;
 
-    /*! \brief Gets the epsilon lower bounds of the \a system.
+    /*! \brief Gets the lower reach and the epsilon for the \a system.
      * \details The \a constraint_set is checked: if not empty and its epsilon relaxation is not satisfied
      * for the current lower reach, an exception is raised. */
-    std::pair<HybridGridTreeSet,EpsilonLowerBounds> _lower_reach_and_bounds(
+    std::pair<HybridGridTreeSet,HybridFloatVector> _lower_reach_and_epsilon(
     		const SystemType& system,
     		const HybridImageSet& initial_set,
 			const HybridConstraintSet& constraint_set,
@@ -462,9 +462,23 @@ void pushSplitTargetEnclosures(
 		const Box& target_domain_constraint,
 		bool use_domain_checking);
 
-/*! \brief Get the hybrid grid given the maximum derivative \a hmad and the \a bounding_domain parameter, where the grid is chosen differently for each location.
+/*! \brief Get the hybrid grid given the maximum derivative \a hmad and the \a domain parameter, where the grid is chosen differently for each location.
+ * \details The grid is chosen so that each cell is included into the domains for all locations. The \a equal_for_all_locations flag decides whether the
+ * grid is the same for all locations. */
+HybridGrid getHybridGrid(
+		const HybridFloatVector& hmad,
+		const HybridBoxes& domain,
+		bool equal_for_all_locations);
+
+/*! \brief Get the hybrid grid given the maximum derivative \a hmad and the \a domain parameter, where the grid is chosen differently for each location.
  * \details The grid is chosen so that each cell is included into the domains for all locations. */
 HybridGrid getHybridGrid(
+		const HybridFloatVector& hmad,
+		const HybridBoxes& domain);
+
+/*! \brief Get the grid given the maximum derivative \a hmad and the \a domain parameter, where the grid is chosen differently for each location.
+ * \details The grid is chosen so that each cell is included into the domains for all locations. */
+Grid getGrid(
 		const HybridFloatVector& hmad,
 		const HybridBoxes& domain);
 

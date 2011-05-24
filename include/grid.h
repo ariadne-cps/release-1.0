@@ -129,6 +129,9 @@ class Grid {
 };
 
 
+//! \brief Projects a grid \a original_grid by taking the dimensions corresponding to \a indices.
+Grid project_down(const Grid& original_grid, const Vector<uint>& indices);
+
 } // namespace Ariadne
 
 #endif /* ARIADNE_GRID_H */

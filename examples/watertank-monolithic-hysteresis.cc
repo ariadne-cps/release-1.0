@@ -67,9 +67,9 @@ int main(int argc,char *argv[])
 	analyser.settings().highest_maximum_grid_depth = 6;
 	Verifier verifier(analyser);
 	verifier.verbosity = verifierVerbosity;
-	verifier.settings().maximum_parameter_depth = 2;
+	verifier.settings().maximum_parameter_depth = 4;
 	verifier.settings().enable_domain_enforcing = false;
-	verifier.settings().plot_results = true;
+	verifier.settings().plot_results = false;
 
 	// The parameters
 	RealConstantSet parameters;
@@ -77,7 +77,6 @@ int main(int argc,char *argv[])
 	parameters.insert(RealConstant("hmax",Interval(7.5,8.5)));
 
 	SafetyVerificationInput verInfo(system, initial_set, domain, safety_constraint);
-	cout << verifier.safety(verInfo);
-//	std::list<ParametricOutcome> results = verifier.parametric_safety(verInfo, parameters);
-//	draw(system.name(),results);
+	std::list<ParametricOutcome> results = verifier.parametric_safety(verInfo, parameters);
+	draw(system.name(),results);
 }

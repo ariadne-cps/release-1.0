@@ -135,6 +135,9 @@ project(const HybridBoxes& box, const std::vector<uint>& dimensions);
 HybridBoxes
 project(const Box& box, const std::vector<uint>& dimensions, const HybridSpace& target_space);
 
+HybridGridTreeSet
+merge_and_project(const HybridGridTreeSet& grid_set, const HybridSpace& target_space);
+
 inline
 HybridBoxes
 bounding_boxes(const std::map<DiscreteState,uint> space, Interval bound)
@@ -849,6 +852,10 @@ HybridGridTreeSet definitely_covered_cells(const HybridGridTreeSet& grid_set, co
 
 //! \brief Evaluates the codomain of the function \a func applied on the cells of \a grid_set, each widened by \a eps.
 HybridBoxes eps_codomain(const HybridGridTreeSet& grid_set, const HybridFloatVector& eps, const HybridVectorFunction& func);
+
+//! \brief Projects \a grid_set using the given \a indices, also flattening the set in respect to the hybrid space.
+//! \details The \a grid_set must have the same grid for all locations.
+GridTreeSet flatten_and_project_down(const HybridGridTreeSet& grid_set, const Vector<uint>& indices);
 
 } // namespace Ariadne
 

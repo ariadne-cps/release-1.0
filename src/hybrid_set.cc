@@ -186,6 +186,12 @@ project(const Box& box, const std::vector<uint>& dimensions, const HybridSpace& 
 	return result;
 }
 
+HybridGridTreeSet
+merge_and_project(const HybridGridTreeSet& grid_set, const Vector<uint>& indices)
+{
+	return HybridGridTreeSet();
+}
+
 
 tribool disjoint(const HybridConstraintSet& cons_set, const HybridGridTreeSet& grid_set)
 {
@@ -272,6 +278,29 @@ HybridBoxes eps_codomain(
 		ARIADNE_ASSERT(eps_it != eps.end());
 		if (func_it != func.end())
 			result.insert(std::pair<DiscreteState,Box>(loc,eps_codomain(loc_it->second,eps_it->second,func_it->second)));
+	}
+
+	return result;
+}
+
+
+GridTreeSet flatten_and_project_down(const HybridGridTreeSet& grid_set, const Vector<uint>& indices)
+{
+	const HybridGrid hgrid = grid_set.grid();
+
+	HybridGrid::const_iterator hg_it = hgrid.begin();
+	const Grid& grid = hg_it->second;
+	++hg_it;
+	for (; hg_it != hgrid.end(); ++hg_it) {
+		ARIADNE_ASSERT_MSG(hg_it->second == grid,"The grid must be the same for all locations.");
+	}
+
+	Grid projected_grid = project_down(grid,indices);
+	GridTreeSet result(projected_grid);
+
+	for (HybridGridTreeSet::locations_const_iterator gts_it = grid_set.locations_begin();
+			gts_it != grid_set.locations_end(); ++gts_it) {
+		result.adjoin(project_down(gts_it->second,indices));
 	}
 
 	return result;
