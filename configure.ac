@@ -164,7 +164,7 @@ AC_MSG_NOTICE([EXEC_LDFLAGS=$EXEC_LDFLAGS])
 AC_SUBST(EXEC_LDFLAGS)
 
 # Declare which Makefiles need to be built
-AC_CONFIG_FILES([Makefile include/Makefile src/Makefile test/Makefile examples/Makefile cifparser/Makefile src/ariadne.pc])
+AC_CONFIG_FILES([Makefile include/Makefile src/Makefile test/Makefile examples/Makefile src/ariadne.pc])
 
 # Output results of autoconf tests
 AC_OUTPUT

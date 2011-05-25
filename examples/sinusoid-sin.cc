@@ -76,7 +76,7 @@ int main()
     HybridAutomaton sinusoid;
 
     /// Create the discrete state
-    DiscreteState l1(1);
+    DiscreteLocation l1(1);
 
     /// Create the discrete event
     DiscreteEvent e1(1);

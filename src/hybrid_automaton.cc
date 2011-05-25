@@ -50,7 +50,7 @@ dimension() const
 
 
 DiscreteMode::
-DiscreteMode(DiscreteState location,
+DiscreteMode(DiscreteLocation location,
              const VectorFunction& dynamic)
     :  _location(location), _dynamic(dynamic), _invariants(), _grid(new Grid(dynamic.argument_size()))
 {
@@ -59,7 +59,7 @@ DiscreteMode(DiscreteState location,
 
 /*
 DiscreteMode::
-DiscreteMode(DiscreteState location,
+DiscreteMode(DiscreteLocation location,
              const boost::shared_ptr< const VectorFunction > dynamic,
              const std::map< DiscreteEvent, boost::shared_ptr< const VectorFunction > >& invariants)
     :  _location(location), _dynamic(dynamic), _invariants(invariants), _grid(new Grid(dynamic->argument_size()))
@@ -139,7 +139,7 @@ HybridAutomaton::HybridAutomaton(const std::string& name)
 
 
 const DiscreteMode&
-HybridAutomaton::new_mode(DiscreteState location,
+HybridAutomaton::new_mode(DiscreteLocation location,
                           const VectorFunction& dynamic)
 {
     if(this->has_mode(location)) {
@@ -156,7 +156,7 @@ HybridAutomaton::new_mode(DiscreteState location,
 
 
 const DiscreteMode&
-HybridAutomaton::new_invariant(DiscreteState location,
+HybridAutomaton::new_invariant(DiscreteLocation location,
                                const ScalarFunction& invariant)
 {
     return this->new_invariant(location, VectorFunction(1u,invariant));
@@ -164,7 +164,7 @@ HybridAutomaton::new_invariant(DiscreteState location,
 
 
 const DiscreteMode&
-HybridAutomaton::new_invariant(DiscreteState location,
+HybridAutomaton::new_invariant(DiscreteLocation location,
                                const VectorFunction& invariant)
 {
     if(!this->has_mode(location)) {
@@ -188,8 +188,8 @@ HybridAutomaton::new_invariant(DiscreteState location,
 
 const DiscreteTransition&
 HybridAutomaton::new_transition(DiscreteEvent event,
-                                DiscreteState source,
-                                DiscreteState target,
+                                DiscreteLocation source,
+                                DiscreteLocation target,
                                 const VectorFunction &reset,
                                 const VectorFunction &activation,
                                 bool forced)
@@ -216,8 +216,8 @@ HybridAutomaton::new_transition(DiscreteEvent event,
 const DiscreteTransition&
 HybridAutomaton::
 new_transition(DiscreteEvent event,
-               DiscreteState source,
-               DiscreteState target,
+               DiscreteLocation source,
+               DiscreteLocation target,
                const VectorFunction &reset,
                const ScalarFunction &activation,
                bool forced)
@@ -234,8 +234,8 @@ new_transition(DiscreteEvent event,
                const VectorFunction &activation,
                bool forced)
 {
-    DiscreteState source_id=source.location();
-    DiscreteState target_id=target.location();
+    DiscreteLocation source_id=source.location();
+    DiscreteLocation target_id=target.location();
     return this->new_transition(event,source_id,target_id,reset,activation,forced);
 }
 
@@ -248,16 +248,16 @@ new_transition(DiscreteEvent event,
                const ScalarFunction &activation,
                bool forced)
 {
-    DiscreteState source_id=source.location();
-    DiscreteState target_id=target.location();
+    DiscreteLocation source_id=source.location();
+    DiscreteLocation target_id=target.location();
     return this->new_transition(event,source_id,target_id,reset,VectorFunction(1u,activation),forced);
 }
 
 const DiscreteTransition&
 HybridAutomaton::
 new_forced_transition(DiscreteEvent event,
-                      DiscreteState source,
-                      DiscreteState target,
+                      DiscreteLocation source,
+                      DiscreteLocation target,
                       const VectorFunction &reset,
                       const ScalarFunction &activation)
 {
@@ -267,8 +267,8 @@ new_forced_transition(DiscreteEvent event,
 const DiscreteTransition&
 HybridAutomaton::
 new_forced_transition(DiscreteEvent event,
-                      DiscreteState source,
-                      DiscreteState target,
+                      DiscreteLocation source,
+                      DiscreteLocation target,
                       const VectorFunction &reset,
                       const VectorFunction &activation)
 {
@@ -283,8 +283,8 @@ new_forced_transition(DiscreteEvent event,
                       const VectorFunction &reset,
                       const VectorFunction &activation)
 {
-    DiscreteState source_id=source.location();
-    DiscreteState target_id=target.location();
+    DiscreteLocation source_id=source.location();
+    DiscreteLocation target_id=target.location();
     return this->new_transition(event,source_id,target_id,reset,activation,true);
 }
 
@@ -296,8 +296,8 @@ new_forced_transition(DiscreteEvent event,
                       const VectorFunction &reset,
                       const ScalarFunction &activation)
 {
-    DiscreteState source_id=source.location();
-    DiscreteState target_id=target.location();
+    DiscreteLocation source_id=source.location();
+    DiscreteLocation target_id=target.location();
     return this->new_transition(event,source_id,target_id,reset,VectorFunction(1u,activation),true);
 }
 
@@ -305,8 +305,8 @@ new_forced_transition(DiscreteEvent event,
 const DiscreteTransition&
 HybridAutomaton::
 new_unforced_transition(DiscreteEvent event,
-                        DiscreteState source,
-                        DiscreteState target,
+                        DiscreteLocation source,
+                        DiscreteLocation target,
                         const VectorFunction &reset,
                         const ScalarFunction &activation)
 {
@@ -316,8 +316,8 @@ new_unforced_transition(DiscreteEvent event,
 const DiscreteTransition&
 HybridAutomaton::
 new_unforced_transition(DiscreteEvent event,
-                        DiscreteState source,
-                        DiscreteState target,
+                        DiscreteLocation source,
+                        DiscreteLocation target,
                         const VectorFunction &reset,
                         const VectorFunction &activation)
 {
@@ -333,8 +333,8 @@ new_unforced_transition(DiscreteEvent event,
                         const VectorFunction &reset,
                         const VectorFunction &activation)
 {
-    DiscreteState source_id=source.location();
-    DiscreteState target_id=target.location();
+    DiscreteLocation source_id=source.location();
+    DiscreteLocation target_id=target.location();
     return this->new_transition(event,source_id,target_id,reset,activation,false);
 }
 
@@ -346,15 +346,15 @@ new_unforced_transition(DiscreteEvent event,
                         const VectorFunction &reset,
                         const ScalarFunction &activation)
 {
-    DiscreteState source_id=source.location();
-    DiscreteState target_id=target.location();
+    DiscreteLocation source_id=source.location();
+    DiscreteLocation target_id=target.location();
     return this->new_transition(event,source_id,target_id,reset,VectorFunction(1u,activation),false);
 }
 
 
 
 bool
-HybridAutomaton::has_mode(DiscreteState state) const
+HybridAutomaton::has_mode(DiscreteLocation state) const
 {
     // FIXME: This is a hack since we use std::list which cannot be searched by id.
     for(discrete_mode_const_iterator mode_iter=this->_modes.begin();
@@ -369,7 +369,7 @@ HybridAutomaton::has_mode(DiscreteState state) const
 
 
 bool
-HybridAutomaton::has_transition(DiscreteEvent event, DiscreteState source) const
+HybridAutomaton::has_transition(DiscreteEvent event, DiscreteLocation source) const
 {
     for(discrete_transition_const_iterator transition_iter=this->_transitions.begin();
         transition_iter!=this->_transitions.end(); ++transition_iter)
@@ -419,7 +419,7 @@ HybridAutomaton::modes() const
 
 
 const DiscreteMode&
-HybridAutomaton::mode(DiscreteState state) const
+HybridAutomaton::mode(DiscreteLocation state) const
 {
     // FIXME: This is a hack; we should use a logarithmic time real search to find a mode with the given discrete state.
     for(discrete_mode_const_iterator mode_iter=this->_modes.begin();
@@ -455,7 +455,7 @@ HybridAutomaton::accessible_constants() const
 
 
 std::list< DiscreteTransition >
-HybridAutomaton::transitions(DiscreteState source) const
+HybridAutomaton::transitions(DiscreteLocation source) const
 {
     std::list< DiscreteTransition > result;
     for(discrete_transition_const_iterator transition_iter=this->_transitions.begin();
@@ -470,7 +470,7 @@ HybridAutomaton::transitions(DiscreteState source) const
 
 
 std::map<DiscreteEvent,VectorFunction>
-HybridAutomaton::blocking_guards(DiscreteState source) const
+HybridAutomaton::blocking_guards(DiscreteLocation source) const
 {
     std::map<DiscreteEvent,VectorFunction> result;
     const DiscreteMode& mode=this->mode(source);
@@ -496,7 +496,7 @@ HybridAutomaton::blocking_guards(DiscreteState source) const
 
 
 std::map<DiscreteEvent,VectorFunction>
-HybridAutomaton::permissive_guards(DiscreteState source) const
+HybridAutomaton::permissive_guards(DiscreteLocation source) const
 {
     std::map<DiscreteEvent,VectorFunction> result;
 
@@ -515,7 +515,7 @@ HybridAutomaton::permissive_guards(DiscreteState source) const
 
 
 const DiscreteTransition&
-HybridAutomaton::transition(DiscreteEvent event, DiscreteState source) const
+HybridAutomaton::transition(DiscreteEvent event, DiscreteLocation source) const
 {
     for(discrete_transition_const_iterator transition_iter=this->_transitions.begin();
         transition_iter!=this->_transitions.end(); ++transition_iter)

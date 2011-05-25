@@ -54,7 +54,7 @@ class GridCell;
 class GridTreeSubset;
 template<class BS> class ListSet;
 template<class BS> class HybridBasicSet;
-class DiscreteState;
+class DiscreteLocation;
 
     
 //! \brief Class for plotting sets as a list of points.
@@ -76,7 +76,7 @@ class TextPlot
     void draw(const GridTreeSubset&);
     template<class BS> void draw(const ListSet<BS>&);    
     template<class BS> void draw(const HybridBasicSet<BS>&);
-    template<class BS> void draw(const std::map< DiscreteState,BS >&);    
+    template<class BS> void draw(const std::map< DiscreteLocation,BS >&);    
     void close();
   private:
     std::ofstream _fstream;
@@ -95,8 +95,8 @@ void TextPlot::draw(const HybridBasicSet<BS>& hbs) {
 }
 
 template<class DS> inline
-void TextPlot::draw(const std::map<DiscreteState,DS>& hds) {
-    for(typename std::map<DiscreteState,DS>::const_iterator loc_iter=hds.begin();
+void TextPlot::draw(const std::map<DiscreteLocation,DS>& hds) {
+    for(typename std::map<DiscreteLocation,DS>::const_iterator loc_iter=hds.begin();
         loc_iter!=hds.end(); ++loc_iter) {
         this->draw(loc_iter->second);
     }

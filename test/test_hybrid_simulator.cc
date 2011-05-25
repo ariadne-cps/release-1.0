@@ -64,8 +64,8 @@ int main()
 HybridAutomaton
 TestHybridSimulator::system()
 {
-    const DiscreteState location1(1);
-    const DiscreteState location2(2);
+    const DiscreteLocation location1(1);
+    const DiscreteLocation location2(2);
     const DiscreteEvent event3(3);
     const DiscreteEvent event4(4);
 
@@ -101,8 +101,8 @@ void TestHybridSimulator::test() const
 {
     cout << __PRETTY_FUNCTION__ << endl;
 
-    const DiscreteState location1(1);
-    const DiscreteState location2(2);
+    const DiscreteLocation location1(1);
+    const DiscreteLocation location2(2);
     const DiscreteEvent event3(3);
     const DiscreteEvent event4(4);
 

@@ -48,10 +48,10 @@ HybridAutomaton getWatertankMonolithicHysteresis()
     system.register_accessible_constant(hmax);
 
     /// Create four discrete states
-    DiscreteState opened("opened");
-    DiscreteState closed("closed");
-    DiscreteState opening("opening");
-    DiscreteState closing("closing");
+    DiscreteLocation opened("opened");
+    DiscreteLocation closed("closed");
+    DiscreteLocation opening("opening");
+    DiscreteLocation closing("closing");
 
     /// Create the discrete events
     DiscreteEvent b_opening("b_opening");

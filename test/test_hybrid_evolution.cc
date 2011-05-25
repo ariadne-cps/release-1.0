@@ -70,8 +70,8 @@ class TestHybridEvolution
 HybridAutomaton
 TestHybridEvolution::system()
 {
-    const DiscreteState location1(1);
-    const DiscreteState location2(2);
+    const DiscreteLocation location1(1);
+    const DiscreteLocation location2(2);
     const DiscreteEvent event3(3);
     const DiscreteEvent event4(4);
 
@@ -108,7 +108,7 @@ void TestHybridEvolution::test_constant_derivative_system() const
     // Test the system (d(x),d(y))=(1,0) with reset (x',y')=(x-2,y) when x+y>0
     // Starting in a small box near the origin, the system should return to
     // the initial condition after time 2
-    DiscreteState q1(1); DiscreteState q2(2); DiscreteEvent e(1);
+    DiscreteLocation q1(1); DiscreteLocation q2(2); DiscreteEvent e(1);
     VectorAffineFunction d(FMatrix(2,2, 0.,0.,0.,0.),FVector(2, 1.0,0.));
     VectorAffineFunction r(FMatrix(2,2, 1.,0.,0.,1.),FVector(2, -2.,0.));
     VectorAffineFunction g(FMatrix(1,2, 1.,0.,0.,0.),FVector(1, -1.25));
@@ -168,8 +168,8 @@ void TestHybridEvolution::test_bouncing_ball() const
     double r0 = 1.0/16; // Initial box radius
 
     /// Create the system functions
-    DiscreteState q1(1);
-    DiscreteState q2(2);
+    DiscreteLocation q1(1);
+    DiscreteLocation q2(2);
     DiscreteEvent e12(12);
     //VectorAffineFunction dynamic(FMatrix(3,3, 0.,1.,0., 0.,0.,0., 0.,0.,0.), FVector(3, 0.0, -g, 1.0));
     //VectorAffineFunction reset(FMatrix(3,3, 1.0,0.0 ,0.0,-a,0.0, 0.0,0.0,1.0), FVector(3, 0.0,0.0,0.0));
@@ -216,8 +216,8 @@ void TestHybridEvolution::test_affine_system() const
 {
     cout << __PRETTY_FUNCTION__ << endl;
 
-    const DiscreteState location1(1);
-    const DiscreteState location2(2);
+    const DiscreteLocation location1(1);
+    const DiscreteLocation location2(2);
     const DiscreteEvent event3(3);
     const DiscreteEvent event4(4);
 
@@ -302,7 +302,7 @@ void TestHybridEvolution::test() const
 class TestHybridEvolver
 {
   private:
-    DiscreteState q1,q2;
+    DiscreteLocation q1,q2;
     DiscreteEvent e;
     HybridEvolver evolver;
     ScalarFunction z,o,x,y;
@@ -322,8 +322,8 @@ TestHybridEvolver::TestHybridEvolver()
     : evolver()
 {
     // Set up convenience variables
-    q1=DiscreteState(1);
-    q2=DiscreteState(2);
+    q1=DiscreteLocation(1);
+    q2=DiscreteLocation(2);
     e=DiscreteEvent(3);
 
     z=ScalarFunction::constant(2,0.0);

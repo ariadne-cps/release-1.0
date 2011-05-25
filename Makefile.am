@@ -1,4 +1,4 @@
-SUBDIRS = include src test examples cifparser
+SUBDIRS = include src test examples
 
 EXTRA_DIST = Doxyfile
 
@@ -44,9 +44,6 @@ docs/refman.pdf: docs
 	cp docs/latex/refman.pdf docs/refman.pdf 
 lib:
 	(cd src; make lib)
-
-cifparser: lib
-	(cd cifparser; make)
 
 tests: lib
 	(cd test; make tests)

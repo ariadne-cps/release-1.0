@@ -38,9 +38,9 @@ int main(int argc,char *argv[])
 
 	// The initial values
 	HybridImageSet initial_set;
-	initial_set[DiscreteState(1)] = Box(2, 6.75,6.75, 0.0,1.0);
-	initial_set[DiscreteState(2)] = Box(2, 6.75,6.75, 0.0,1.0);
-	initial_set[DiscreteState(3)] = Box(2, 6.75,6.75, 0.0,1.0);
+	initial_set[DiscreteLocation(1)] = Box(2, 6.75,6.75, 0.0,1.0);
+	initial_set[DiscreteLocation(2)] = Box(2, 6.75,6.75, 0.0,1.0);
+	initial_set[DiscreteLocation(3)] = Box(2, 6.75,6.75, 0.0,1.0);
 
 	// The domain
 	HybridBoxes domain = bounding_boxes(system.state_space(),Box(2,-0.1,10.0,-0.1,1.1));

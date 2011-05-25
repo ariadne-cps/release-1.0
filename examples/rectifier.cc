@@ -141,10 +141,10 @@ int main()
     HybridAutomaton rectifier;
 
     /// Create the discrete states
-    DiscreteState offoff(1);
-    DiscreteState onoff(2);
-    DiscreteState offon(3);
-    DiscreteState onon(4);
+    DiscreteLocation offoff(1);
+    DiscreteLocation onoff(2);
+    DiscreteLocation offon(3);
+    DiscreteLocation onon(4);
 
     /// Create the discrete events
     DiscreteEvent resettime(1);

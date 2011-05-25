@@ -53,7 +53,7 @@ int main(int argc,char *argv[])
 	    HybridIOAutomaton tank("tank");
 
 		// States
-		DiscreteState flow("flow");  
+		DiscreteLocation flow("flow");  
 
 		// Add the input/output variables
     	tank.add_input_var(y);
@@ -69,9 +69,9 @@ int main(int argc,char *argv[])
 		HybridIOAutomaton valve("valve");
 
 		// States
-		DiscreteState idle("idle");
-		DiscreteState opening("opening");
-		DiscreteState closing("closing");
+		DiscreteLocation idle("idle");
+		DiscreteLocation opening("opening");
+		DiscreteLocation closing("closing");
 		
 		// The valve has one output var (the valve aperture)
 		valve.add_output_var(y);
@@ -134,8 +134,8 @@ int main(int argc,char *argv[])
 		    HybridIOAutomaton evaluator("evaluator");
 
 			// States
-			DiscreteState deep("deep");
-			DiscreteState shallow("shallow");
+			DiscreteLocation deep("deep");
+			DiscreteLocation shallow("shallow");
 
 			// The evaluator has two output events
 			DiscreteEvent e_high("HIGH");
@@ -162,9 +162,9 @@ int main(int argc,char *argv[])
 	    HybridIOAutomaton controller("controller");
 
 		// States
-		DiscreteState increase("increase");
-		DiscreteState decrease("decrease");
-		DiscreteState nothing("nothing");
+		DiscreteLocation increase("increase");
+		DiscreteLocation decrease("decrease");
+		DiscreteLocation nothing("nothing");
 
 		// Involved variables
 		controller.add_internal_var(t_out);
@@ -206,8 +206,8 @@ int main(int argc,char *argv[])
 
 	/// Compose the automata
 	HybridIOAutomaton tank_valve = compose("tank,valve",tank,valve,flow,idle);
-	HybridIOAutomaton tank_valve_evaluator = compose("tank,valve,evaluator",tank_valve,evaluator,DiscreteState("flow,idle"),shallow);
-	HybridIOAutomaton system_io = compose("watertank-aasap",tank_valve_evaluator,controller,DiscreteState("flow,idle,shallow"),nothing);
+	HybridIOAutomaton tank_valve_evaluator = compose("tank,valve,evaluator",tank_valve,evaluator,DiscreteLocation("flow,idle"),shallow);
+	HybridIOAutomaton system_io = compose("watertank-aasap",tank_valve_evaluator,controller,DiscreteLocation("flow,idle,shallow"),nothing);
 
 	/// Create the monolithic automaton
 	HybridAutomaton system;
@@ -221,7 +221,7 @@ int main(int argc,char *argv[])
 
 	// The initial values
 	HybridImageSet initial_set;
-	initial_set[DiscreteState("flow,idle,shallow,nothing")] = Box(3, 0.0,0.0, 6.0,6.0, 1.0,1.0);
+	initial_set[DiscreteLocation("flow,idle,shallow,nothing")] = Box(3, 0.0,0.0, 6.0,6.0, 1.0,1.0);
 
 	// The safety constraint
 	List<RealVariable> varlist;

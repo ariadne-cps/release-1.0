@@ -63,10 +63,10 @@ HybridAutomaton getWatertankMonolithicProportional()
 	/// Build the Hybrid System
 
 	/// Create four discrete states
-	DiscreteState l1(1);      // Zero saturated
-	DiscreteState l2(2);      // Stabilized
-	DiscreteState l3(3);      // One saturated
-	DiscreteState l4(4);	  // Overflow
+	DiscreteLocation l1(1);      // Zero saturated
+	DiscreteLocation l2(2);      // Stabilized
+	DiscreteLocation l3(3);      // One saturated
+	DiscreteLocation l4(4);	  // Overflow
 
 	/// Create the discrete events
 	DiscreteEvent e12(12);

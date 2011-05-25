@@ -1,5 +1,5 @@
 /***************************************************************************
- *            discrete_state.h
+ *            discrete_location.h
  *
  *  Copyright  2004-9  Alberto Casagrande, Pieter Collins
  *
@@ -21,42 +21,42 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-/*! \file discrete_state.h
- *  \brief Class representing a discrete state.
+/*! \file discrete_location.h
+ *  \brief Class representing a discrete location.
  */
 
-#ifndef ARIADNE_DISCRETE_STATE_H
-#define ARIADNE_DISCRETE_STATE_H
+#ifndef ARIADNE_DISCRETE_LOCATION_H
+#define ARIADNE_DISCRETE_LOCATION_H
 
 #include "container.h"
 
 namespace Ariadne {
 
-class DiscreteState {
+class DiscreteLocation {
   public:
-    DiscreteState() : _id("q?") { }
-    DiscreteState(int n) : _id(std::string("q"+to_str(n))) { }
-    DiscreteState(const std::string& s) : _id(s) { }
+    DiscreteLocation() : _id("q?") { }
+    DiscreteLocation(int n) : _id(std::string("q"+to_str(n))) { }
+    DiscreteLocation(const std::string& s) : _id(s) { }
     std::string name() const { return this->_id; }
-    bool operator==(const DiscreteState& q) const { return this->_id==q._id; }
-    bool operator!=(const DiscreteState& q) const { return this->_id!=q._id; }
-    bool operator<=(const DiscreteState& q) const { return this->_id<=q._id; }
-    bool operator>=(const DiscreteState& q) const { return this->_id>=q._id; }
-    bool operator< (const DiscreteState& q) const { return this->_id< q._id; }
-    bool operator> (const DiscreteState& q) const { return this->_id> q._id; }
-    friend std::ostream& operator<<(std::ostream& os, const DiscreteState& q);
+    bool operator==(const DiscreteLocation& q) const { return this->_id==q._id; }
+    bool operator!=(const DiscreteLocation& q) const { return this->_id!=q._id; }
+    bool operator<=(const DiscreteLocation& q) const { return this->_id<=q._id; }
+    bool operator>=(const DiscreteLocation& q) const { return this->_id>=q._id; }
+    bool operator< (const DiscreteLocation& q) const { return this->_id< q._id; }
+    bool operator> (const DiscreteLocation& q) const { return this->_id> q._id; }
+    friend std::ostream& operator<<(std::ostream& os, const DiscreteLocation& q);
   private:
     std::string _id;
 };
 
-inline std::ostream& operator<<(std::ostream& os, const DiscreteState& q) {
+inline std::ostream& operator<<(std::ostream& os, const DiscreteLocation& q) {
     return os << q._id; }
 
-template<class A> inline void serialize(A& archive, DiscreteState& state, const uint version) {
+template<class A> inline void serialize(A& archive, DiscreteLocation& state, const uint version) {
     std::string& id=reinterpret_cast<std::string&>(state);
     archive & id;
 }
 
 } //namespace Ariadne
 
-#endif /* ARIADNE_DISCRETE_STATE_H */
+#endif /* ARIADNE_DISCRETE_LOCATION_H */

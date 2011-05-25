@@ -26,7 +26,7 @@
 
 #include "numeric.h"
 #include "space.h"
-#include "discrete_state.h"
+#include "discrete_location.h"
 #include "expression.h"
 #include "assignment.h"
 #include "hybrid_io_automaton.h"
@@ -79,7 +79,7 @@ void TestHybridIOAutomaton::test_tank_definition()
     Float a = 0.02;
     Float b = 0.3;
     RealExpression dyn = - a * x + b * y;
-    DiscreteState flow("flow");
+    DiscreteLocation flow("flow");
     tank.new_mode(flow);
     ARIADNE_TEST_ASSERT(tank.has_mode(flow));
     tank.set_dynamics(flow, x, dyn);
@@ -114,7 +114,7 @@ void TestHybridIOAutomaton::test_valve_definition()
     // Idle (valve either fully close or fully open)
     Float T = 4.0;
     RealExpression dynidle = 0.0;
-    DiscreteState idle("idle");
+    DiscreteLocation idle("idle");
     valve.new_mode(idle);
     ARIADNE_TEST_ASSERT(valve.has_mode(idle));
     valve.set_dynamics(idle, y, dynidle);
@@ -122,14 +122,14 @@ void TestHybridIOAutomaton::test_valve_definition()
     ARIADNE_TEST_FAIL(valve.set_dynamics(idle, x, dynidle));
  
     // Opening (valve is opening)
-    DiscreteState opening("opening");
+    DiscreteLocation opening("opening");
     valve.new_mode(opening);
     ARIADNE_TEST_ASSERT(valve.has_mode(opening));
     RealExpression dynopening = 1.0/T;
     valve.set_dynamics(opening, y, dynopening);
 
     // Closing (valve is closing)
-    DiscreteState closing("closing");
+    DiscreteLocation closing("closing");
     valve.new_mode(closing);
     ARIADNE_TEST_ASSERT(valve.has_mode(closing));
     RealExpression dynclosing = -1.0/T;
@@ -192,14 +192,14 @@ void TestHybridIOAutomaton::test_controller_definition()
     
     // Two states:
     // Rising (water level is increasing)
-    DiscreteState rising("rising");
+    DiscreteLocation rising("rising");
     controller.new_mode(rising);
     ARIADNE_TEST_ASSERT(controller.has_mode(rising));
     // setting the dynamic of an input variable cause an exception
     ARIADNE_TEST_FAIL(controller.set_dynamics(rising, x, RealExpression(2.0*x)));
  
      // Falling (water level is decreasing)
-    DiscreteState falling("falling");
+    DiscreteLocation falling("falling");
     controller.new_mode(falling);
     ARIADNE_TEST_ASSERT(controller.has_mode(falling));
 
@@ -231,10 +231,10 @@ void TestHybridIOAutomaton::test_composition()
 {
     HybridIOAutomaton valvetank;
     ARIADNE_TEST_TRY(valvetank = compose("valvecontr", valve, tank, 
-                                         DiscreteState("idle"), DiscreteState("flow")));
+                                         DiscreteLocation("idle"), DiscreteLocation("flow")));
     ARIADNE_TEST_PRINT(valvetank);
     ARIADNE_TEST_TRY(system = compose("system", valvetank, controller,
-                                      DiscreteState("idle,flow"), DiscreteState("rising")));
+                                      DiscreteLocation("idle,flow"), DiscreteLocation("rising")));
     ARIADNE_TEST_PRINT(system);
                      
 }

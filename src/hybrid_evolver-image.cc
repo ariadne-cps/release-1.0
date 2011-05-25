@@ -244,7 +244,7 @@ _evolution(EnclosureListType& final_sets,
 		working_sets.pop_front();
 
 		// Get the members of the current set
-        DiscreteState initial_location=current_set.first;
+        DiscreteLocation initial_location=current_set.first;
         EventListType initial_events=current_set.second;
 		SetModelType initial_set_model=current_set.third;
 		TimeModelType initial_time_model=current_set.fourth;
@@ -376,7 +376,7 @@ _evolution_step(std::list< HybridTimedSetType >& working_sets,
     const double SMALL_RELATIVE_TIME=1./16;
 
     // Extract information about the working set
-    DiscreteState location(0);
+    DiscreteLocation location(0);
     IntegerType steps;
     EventListType events;
     SetModelType set_model;
@@ -809,7 +809,7 @@ _logStepAtVerbosity1(const std::list<HybridTimedSetType>& working_sets,
 					 const EventListType& initial_events,
 					 const TimeModelType& initial_time_model,
 					 const SetModelType& initial_set_model,
-					 const DiscreteState& initial_location) const
+					 const DiscreteLocation& initial_location) const
 {
     if(verbosity==1) {
         ARIADNE_LOG(1,"#w="<<std::setw(4)<<working_sets.size()
@@ -828,7 +828,7 @@ void ImageSetHybridEvolver::
 _computeEvolutionForEvents(std::list< HybridTimedSetType >& working_sets,
 						   EnclosureListType& intermediate_sets,
 						   const SystemType& system,
-						   const DiscreteState& location,
+						   const DiscreteLocation& location,
 						   const std::set<DiscreteEvent>& blocking_events,
 						   const EventListType& events,
 						   const ActivationTimesType& activation_times,
@@ -854,7 +854,7 @@ _computeEvolutionForEvents(std::list< HybridTimedSetType >& working_sets,
             intermediate_sets.adjoin(make_pair(location,evolved_set_model));
             const DiscreteTransition& transition=system.transition(event,location);
             SetModelType jump_set_model=apply(transition.reset(),evolved_set_model);
-            DiscreteState jump_location=transition.target();
+            DiscreteLocation jump_location=transition.target();
             std::vector<DiscreteEvent> jump_events=events;
             jump_events.push_back(event);
             working_sets.push_back(make_tuple(jump_location,jump_events,jump_set_model,final_time_model));
@@ -878,7 +878,7 @@ _computeEvolutionForEvents(std::list< HybridTimedSetType >& working_sets,
 			const TimeModelType active_time_model = this->_upper_toolbox->reachability_time(time_model+lower_active_time_model*time_step,time_model+upper_active_time_model*time_step);
 			ARIADNE_LOG(3,"  active_time_model="<<active_time_model.range()<<".\n");
 
-			DiscreteState jump_location=transition.target();
+			DiscreteLocation jump_location=transition.target();
 			std::vector<DiscreteEvent> jump_events=events;
 			jump_events.push_back(event);
 			working_sets.push_back(make_tuple(jump_location,jump_events,jump_set_model,active_time_model));
@@ -963,7 +963,7 @@ void
 ImageSetHybridEvolver::
 _compute_and_adjoin_reachableSet(EnclosureListType& reach_sets,
 								SetModelType& reachable_set,
-								const DiscreteState& location,
+								const DiscreteLocation& location,
 							    const SetModelType& flow_set_model,
 							    const TimeModelType& zero_time_model,
 		 	 	 	 	 	 	const TimeModelType& blocking_time_model,
@@ -984,7 +984,7 @@ void
 ImageSetHybridEvolver::
 _logEvolutionStepInitialState(const EventListType& events,
 							  const TimeModelType& time_model,
-							  const DiscreteState& location,
+							  const DiscreteLocation& location,
 							  const SetModelType& set_model,
 							  const VectorFunction& dynamic,
 							  const std::map<DiscreteEvent,VectorFunction>& invariants,
@@ -1017,7 +1017,7 @@ _evolution_add_initialSet(
 		Semantics semantics) const
 {
     ARIADNE_LOG(6,"initial_set = "<<initial_set<<"\n");
-    DiscreteState initial_location;
+    DiscreteLocation initial_location;
     ContinuousEnclosureType initial_continuous_set;
     make_lpair(initial_location,initial_continuous_set)=initial_set;
     ARIADNE_LOG(6,"initial_location = "<<initial_location<<"\n");
@@ -1053,7 +1053,7 @@ void
 ImageSetHybridEvolver::
 _add_subdivisions(std::list< HybridTimedSetType >& working_sets,
 				  const array< TimedSetModelType >& subdivisions,
-				  const DiscreteState& initial_location,
+				  const DiscreteLocation& initial_location,
 				  const EventListType& initial_events,
 				  const uint dimension) const
 {
@@ -1075,7 +1075,7 @@ ImageSetHybridEvolver::
 _add_models_subdivisions_autoselect(std::list< HybridTimedSetType >& working_sets,
 		  	  	  	  	  	  	  	const SetModelType& initial_set_model,
 		  	  	  	  	  	  	  	const TimeModelType& initial_time_model,
-		  	  	  	  	  	  	  	const DiscreteState& initial_location,
+		  	  	  	  	  	  	  	const DiscreteLocation& initial_location,
 		  	  	  	  	  	  	  	const EventListType& initial_events,
 		  	  	  	  	  	  	  	Semantics semantics) const
 {
@@ -1091,7 +1091,7 @@ ImageSetHybridEvolver::
 _add_models_subdivisions_time(std::list< HybridTimedSetType >& working_sets,
 		  	  	  	  	  	  const SetModelType& initial_set_model,
 		  	  	  	  	  	  const TimeModelType& initial_time_model,
-		  	  	  	  	  	  const DiscreteState& initial_location,
+		  	  	  	  	  	  const DiscreteLocation& initial_location,
 		  	  	  	  	  	  const EventListType& initial_events,
 		  	  	  	  	  	  Semantics semantics) const
 {

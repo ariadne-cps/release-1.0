@@ -25,14 +25,14 @@
 
 namespace Ariadne {
 
-std::map<DiscreteState,Vector<Float> >
+std::map<DiscreteLocation,Vector<Float> >
 HybridGrid::
 lengths() const
 {
-	std::map<DiscreteState,Vector<Float> > result;
+	std::map<DiscreteLocation,Vector<Float> > result;
 
 	for (HybridGrid::const_iterator it = this->begin(); it != this->end(); ++it)
-		result.insert(std::pair<DiscreteState,Vector<Float> >(it->first,it->second.lengths()));
+		result.insert(std::pair<DiscreteLocation,Vector<Float> >(it->first,it->second.lengths()));
 
 	return result;
 }
@@ -45,7 +45,7 @@ HybridConstraintSet(const HybridVectorFunction& func,const HybridBoxes& codomain
 	for (HybridBoxes::const_iterator cod_it = codomain.begin(); cod_it != codomain.end(); ++cod_it) {
 		HybridVectorFunction::const_iterator func_it = func.find(cod_it->first);
 		ARIADNE_ASSERT_MSG(func_it != func.end(), "No function for location " << cod_it->first.name() << " is present.");
-		this->insert(std::pair<DiscreteState,ConstraintSet>(
+		this->insert(std::pair<DiscreteLocation,ConstraintSet>(
 				cod_it->first,ConstraintSet(func_it->second,cod_it->second)));
 	}
 }
@@ -56,7 +56,7 @@ HybridConstraintSet(const HybridSpace& hspace, ConstraintSet constraint)
 	for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
 		ARIADNE_ASSERT_MSG(hs_it->second == constraint.function().argument_size(),
 				"The continuous space would not match the constraint function.");
-		this->insert(std::pair<DiscreteState,ConstraintSet>(hs_it->first,constraint));
+		this->insert(std::pair<DiscreteLocation,ConstraintSet>(hs_it->first,constraint));
 	}
 }
 
@@ -70,7 +70,7 @@ hull(const HybridBoxes& box1, const HybridBoxes& box2)
 	for (HybridBoxes::const_iterator box1_it = box1.begin(); box1_it != box1.end(); ++box1_it) {
 		HybridBoxes::const_iterator box2_it = box2.find(box1_it->first);
 		ARIADNE_ASSERT_MSG(box2_it != box2.end(),"The location " << box1_it->first.name() << " is not present in both hybrid boxes.");
-		result.insert(std::pair<DiscreteState,Box>(box1_it->first,hull(box1_it->second,box2_it->second)));
+		result.insert(std::pair<DiscreteLocation,Box>(box1_it->first,hull(box1_it->second,box2_it->second)));
 	}
 
 	return result;
@@ -110,7 +110,7 @@ shrink_in(const HybridBoxes& box, const HybridFloatVector& epsilon)
 	for (HybridBoxes::const_iterator loc_it = box.begin(); loc_it != box.end(); ++loc_it) {
 		HybridFloatVector::const_iterator epsilon_it = epsilon.find(loc_it->first);
 		ARIADNE_ASSERT_MSG(epsilon_it != epsilon.end(),"The location " << loc_it->first.name() << " is not present in the epsilon map.");
-		result.insert(std::pair<DiscreteState,Box>(loc_it->first,loc_it->second.shrink_in(epsilon_it->second)));
+		result.insert(std::pair<DiscreteLocation,Box>(loc_it->first,loc_it->second.shrink_in(epsilon_it->second)));
 	}
 
 	return result;
@@ -125,7 +125,7 @@ shrink_out(const HybridBoxes& box, const HybridFloatVector& epsilon)
 	for (HybridBoxes::const_iterator loc_it = box.begin(); loc_it != box.end(); ++loc_it) {
 		HybridFloatVector::const_iterator epsilon_it = epsilon.find(loc_it->first);
 		ARIADNE_ASSERT_MSG(epsilon_it != epsilon.end(),"The location " << loc_it->first.name() << " is not present in the epsilon map.");
-		result.insert(std::pair<DiscreteState,Box>(loc_it->first,loc_it->second.shrink_out(epsilon_it->second)));
+		result.insert(std::pair<DiscreteLocation,Box>(loc_it->first,loc_it->second.shrink_out(epsilon_it->second)));
 	}
 
 	return result;
@@ -139,7 +139,7 @@ widen(const HybridBoxes& box)
 	for (HybridBoxes::const_iterator loc_it = box.begin(); loc_it != box.end(); loc_it++) {
 		Box bx = loc_it->second;
 		bx.widen();
-		result.insert(make_pair<DiscreteState,Box>(loc_it->first,bx));
+		result.insert(make_pair<DiscreteLocation,Box>(loc_it->first,bx));
 	}
 
 	return result;
@@ -152,7 +152,7 @@ unbounded_hybrid_boxes(const HybridSpace& hspace)
 	HybridBoxes result;
 
 	for (HybridSpace::const_iterator space_it = hspace.begin(); space_it != hspace.end(); ++space_it)
-		result.insert(std::pair<DiscreteState,Box>(space_it->first,unbounded_box(space_it->second)));
+		result.insert(std::pair<DiscreteLocation,Box>(space_it->first,unbounded_box(space_it->second)));
 
 	return result;
 }
@@ -272,12 +272,12 @@ HybridBoxes eps_codomain(
 	HybridBoxes result;
 
 	for (HybridGridTreeSet::locations_const_iterator loc_it = grid_set.locations_begin(); loc_it != grid_set.locations_end(); ++loc_it) {
-		const DiscreteState& loc = loc_it->first;
+		const DiscreteLocation& loc = loc_it->first;
 		HybridFloatVector::const_iterator eps_it = eps.find(loc);
 		HybridVectorFunction::const_iterator func_it = func.find(loc);
 		ARIADNE_ASSERT(eps_it != eps.end());
 		if (func_it != func.end())
-			result.insert(std::pair<DiscreteState,Box>(loc,eps_codomain(loc_it->second,eps_it->second,func_it->second)));
+			result.insert(std::pair<DiscreteLocation,Box>(loc,eps_codomain(loc_it->second,eps_it->second,func_it->second)));
 	}
 
 	return result;

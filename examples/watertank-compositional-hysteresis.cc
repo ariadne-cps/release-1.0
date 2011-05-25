@@ -48,7 +48,7 @@ int main(int argc,char *argv[])
 	    HybridIOAutomaton tank("tank");
 
 		// States
-		DiscreteState flow("flow");  
+		DiscreteLocation flow("flow");  
 
 		// Add the input/output variables
     	tank.add_input_var(y);
@@ -64,9 +64,9 @@ int main(int argc,char *argv[])
 		HybridIOAutomaton valve("valve");
 
 		// States
-		DiscreteState idle("idle");
-		DiscreteState opening("opening");
-		DiscreteState closing("closing");
+		DiscreteLocation idle("idle");
+		DiscreteLocation opening("opening");
+		DiscreteLocation closing("closing");
 		
 		// The valve has one output var (the valve aperture)
 		valve.add_output_var(y);
@@ -129,8 +129,8 @@ int main(int argc,char *argv[])
 	    HybridIOAutomaton controller("controller");
 
 		// States
-		DiscreteState rising("rising");
-		DiscreteState falling("falling");
+		DiscreteLocation rising("rising");
+		DiscreteLocation falling("falling");
  
 		// The valve has one input var (the water level)
 		controller.add_input_var(x);
@@ -166,7 +166,7 @@ int main(int argc,char *argv[])
 
 	/// Compose the automata
 	HybridIOAutomaton tank_valve = compose("tank,valve",tank,valve,flow,idle);
-	HybridIOAutomaton system_io = compose("watertank-io",tank_valve,controller,DiscreteState("flow,idle"),rising);
+	HybridIOAutomaton system_io = compose("watertank-io",tank_valve,controller,DiscreteLocation("flow,idle"),rising);
 
 	cout << system_io << "\n\n";
 
@@ -181,13 +181,13 @@ int main(int argc,char *argv[])
 
 	// The initial values
 	HybridImageSet initial_set;
-	initial_set[DiscreteState("flow,idle,rising")] = Box(2, 6.0,6.0, 1.0,1.0);
+	initial_set[DiscreteLocation("flow,idle,rising")] = Box(2, 6.0,6.0, 1.0,1.0);
 
 	HybridBoxes domain;
-	domain[DiscreteState("flow,opening,rising")] = Box(2,4.5,6.5,-0.1,1.1);
-	domain[DiscreteState("flow,closing,falling")] = Box(2,7.0,9.0,-0.1,1.1);
-	domain[DiscreteState("flow,idle,falling")] = Box(2,5.0,9.0,-0.1,0.1);
-	domain[DiscreteState("flow,idle,rising")] = Box(2,5.0,9.0,0.9,1.1);
+	domain[DiscreteLocation("flow,opening,rising")] = Box(2,4.5,6.5,-0.1,1.1);
+	domain[DiscreteLocation("flow,closing,falling")] = Box(2,7.0,9.0,-0.1,1.1);
+	domain[DiscreteLocation("flow,idle,falling")] = Box(2,5.0,9.0,-0.1,0.1);
+	domain[DiscreteLocation("flow,idle,rising")] = Box(2,5.0,9.0,0.9,1.1);
 
 	// The safety constraint
 	List<RealVariable> varlist;

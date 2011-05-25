@@ -48,7 +48,7 @@ outer_approximation(const ListSet<HybridBasicSet<ES> >& hls,
     for(typename HybridListSet<ES>::const_iterator 
             iter=hls.begin(); iter!=hls.end(); ++iter)
         {
-            DiscreteState loc=iter->first;
+            DiscreteLocation loc=iter->first;
             const ES& es=iter->second;
             if(result.find(loc)==result.locations_end()) {
                 result.insert(make_pair(loc,GridTreeSet(hgr[loc])));
@@ -68,7 +68,7 @@ outer_approximation(const HybridBasicSet<ES>& hs,
                     const int accuracy)
 {
     HybridGridTreeSet result(hgr);
-    DiscreteState loc=hs.location();
+    DiscreteLocation loc=hs.location();
     const ES& es=hs.continuous_state_set();
     if(result.find(loc)==result.locations_end()) {
         result.insert(make_pair(loc,GridTreeSet(hgr[loc])));

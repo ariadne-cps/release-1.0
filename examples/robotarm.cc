@@ -234,7 +234,7 @@ int main(int argc, char** argv)
     robotarm.add_internal_event(x2l);   robotarm.add_internal_event(x2u);
     
     // One mode: free run
-    DiscreteState free("free");
+    DiscreteLocation free("free");
     robotarm.new_mode(free);
     robotarm.set_dynamics(free, x1, dx1);
     robotarm.set_dynamics(free, v1, dv1);
@@ -278,14 +278,14 @@ int main(int argc, char** argv)
     controller.add_internal_event(lreset);     // local clock
     
     // Two modes: uc1 and uc2 increase
-    DiscreteState incr("incr");
+    DiscreteLocation incr("incr");
     controller.new_mode(incr);
     controller.set_dynamics(incr, uc1, duc1);
     controller.set_dynamics(incr, uc2, duc2);
     controller.set_dynamics(incr, t, dt);
     controller.set_dynamics(incr, l, dt);
 
-//     DiscreteState decr("decr");
+//     DiscreteLocation decr("decr");
 //     controller.new_mode(decr);
 //     controller.set_dynamics(decr, uc1, -5e-7);
 //     controller.set_dynamics(decr, uc2, -2.5e-6);
@@ -325,7 +325,7 @@ int main(int argc, char** argv)
 //     network.add_internal_event(sample_e);
 //     
 //     // One mode: sample uc1 and uc2
-//     DiscreteState sample("sample");
+//     DiscreteLocation sample("sample");
 //     network.new_mode(sample);
 //     network.set_dynamics(sample, u1, 0.0);
 //     network.set_dynamics(sample, u2, 0.0);
@@ -348,7 +348,7 @@ int main(int argc, char** argv)
     // COMPOSE THE SYSTEM
     //
 //    HybridIOAutomaton contrnet = compose("contrnet", controller, network, incr, sample);
-//    HybridIOAutomaton ncs = compose("NCS", contrnet, robotarm, DiscreteState("incr,sample"), free);
+//    HybridIOAutomaton ncs = compose("NCS", contrnet, robotarm, DiscreteLocation("incr,sample"), free);
     HybridIOAutomaton ncs = compose("NCS", controller, robotarm, incr, free);
     RealSpace spc;
     HybridAutomaton system;
@@ -428,8 +428,8 @@ int main(int argc, char** argv)
 
 
     // Over-approximate the initial set by a grid cell
-//    HybridEnclosureType initial_set(DiscreteState("incr,sample,free"), initial_box);
-    HybridEnclosureType initial_set(DiscreteState("incr,free"), initial_box);
+//    HybridEnclosureType initial_set(DiscreteLocation("incr,sample,free"), initial_box);
+    HybridEnclosureType initial_set(DiscreteLocation("incr,free"), initial_box);
     cout << "initial_set=" << initial_set << endl << endl;
 
     Semantics semantics=UPPER_SEMANTICS;

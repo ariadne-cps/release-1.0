@@ -86,8 +86,8 @@ int main()
     HybridAutomaton springs;
   
     /// Create the discrete states
-    DiscreteState free(1);
-    DiscreteState stuck(2);
+    DiscreteLocation free(1);
+    DiscreteLocation stuck(2);
 
     /// Create the discrete events
     DiscreteEvent sticking(1);

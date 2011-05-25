@@ -118,12 +118,12 @@ int main()
     HybridAutomaton balls;
   
     /// Creates discrete states
-    DiscreteState all_on_pre12collision(1);
-    DiscreteState all_on_pre23collision(2);
-    DiscreteState all_on_postcollisions(3);
-    DiscreteState firstsecond_on_third_off(4);
-    DiscreteState first_on_secondthird_off(5);
-    DiscreteState all_off(6);   
+    DiscreteLocation all_on_pre12collision(1);
+    DiscreteLocation all_on_pre23collision(2);
+    DiscreteLocation all_on_postcollisions(3);
+    DiscreteLocation firstsecond_on_third_off(4);
+    DiscreteLocation first_on_secondthird_off(5);
+    DiscreteLocation all_off(6);   
 
     /// Creates the discrete events
     DiscreteEvent collide12_e(1);

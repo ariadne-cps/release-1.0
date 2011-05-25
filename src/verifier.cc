@@ -117,7 +117,6 @@ _safety_nosplitting(
 			return result;
     }
 
-	// Return indeterminate
 	return indeterminate;
 }
 

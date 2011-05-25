@@ -39,12 +39,12 @@ int main(int argc,char *argv[])
 
 	// The initial values
 	HybridImageSet initial_hy;
-	initial_hy[DiscreteState("opened")] = Box(2, 6.0,7.5, 1.0,1.0);
-	initial_hy[DiscreteState("closed")] = Box(2, 6.0,7.5, 0.0,0.0);
+	initial_hy[DiscreteLocation("opened")] = Box(2, 6.0,7.5, 1.0,1.0);
+	initial_hy[DiscreteLocation("closed")] = Box(2, 6.0,7.5, 0.0,0.0);
 	HybridImageSet initial_pr;
-	initial_pr[DiscreteState(1)] = Box(2, 6.75,6.75, 0.0,1.0);
-	initial_pr[DiscreteState(2)] = Box(2, 6.75,6.75, 0.0,1.0);
-	initial_pr[DiscreteState(3)] = Box(2, 6.75,6.75, 0.0,1.0);
+	initial_pr[DiscreteLocation(1)] = Box(2, 6.75,6.75, 0.0,1.0);
+	initial_pr[DiscreteLocation(2)] = Box(2, 6.75,6.75, 0.0,1.0);
+	initial_pr[DiscreteLocation(3)] = Box(2, 6.75,6.75, 0.0,1.0);
 
 	// The domains
 	HybridBoxes domain_hy = bounding_boxes(system_hy.state_space(),Box(2,1.0,10.0,-0.1,1.1));

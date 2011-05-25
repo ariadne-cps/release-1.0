@@ -36,7 +36,7 @@
 
 #include "expression.h"
 #include "function.h"
-#include "discrete_state.h"
+#include "discrete_location.h"
 #include "discrete_event.h"
 #include "variables.h"
 
@@ -59,7 +59,7 @@ class DiscreteIOMode {
   private:
 
     // The discrete mode's discrete state.
-    DiscreteState _location;
+    DiscreteLocation _location;
 
     // The discrete mode's vector field, described by a RealExpression for each variable.
     std::map< RealVariable, RealExpression > _dynamics;
@@ -69,7 +69,7 @@ class DiscreteIOMode {
 
   public:
     //! \brief The mode's discrete state.
-    DiscreteState location() const {
+    DiscreteLocation location() const {
         return this->_location; }
 
     //! \brief Returns true if the dynamic for a given variable is defined in the mode.
@@ -100,12 +100,12 @@ class DiscreteIOMode {
     // \param id is the identifier of the mode.
     // \param dynamic is the mode's dynamic.
     // \param invariants is the mode's invariants.
-    DiscreteIOMode(DiscreteState location);
+    DiscreteIOMode(DiscreteLocation location);
 
-    DiscreteIOMode(DiscreteState location,
+    DiscreteIOMode(DiscreteLocation location,
                  const std::map< RealVariable, RealExpression >& dynamic);
 
-    DiscreteIOMode(DiscreteState location,
+    DiscreteIOMode(DiscreteLocation location,
                  const std::map< RealVariable, RealExpression >& dynamic,
                  const std::list< RealExpression >& invariants);
 
@@ -141,10 +141,10 @@ class DiscreteIOTransition
     DiscreteEvent _event;
 
     // \brief The source of the discrete transition.
-    DiscreteState _source;
+    DiscreteLocation _source;
 
     // \brief The target of the discrete transition.
-    DiscreteState _target;
+    DiscreteLocation _target;
 
     // \brief The activation region of the discrete transition.
     RealExpression _activation;
@@ -164,11 +164,11 @@ class DiscreteIOTransition
         return this->_event; }
 
     //! \brief The source mode of the discrete transition.
-    DiscreteState source() const {
+    DiscreteLocation source() const {
         return this->_source; }
 
     //! \brief The target of the discrete transition.
-    DiscreteState target() const {
+    DiscreteLocation target() const {
         return this->_target; }
 
 	//! \brief Substitute the constant \a c into the corresponding Constant \a con, if present, on the reset and activation functions.
@@ -199,34 +199,34 @@ class DiscreteIOTransition
 
     // Construct a new transition (for internal use).    
     DiscreteIOTransition(DiscreteEvent event,
-                         DiscreteState source,
-                         DiscreteState target,
+                         DiscreteLocation source,
+                         DiscreteLocation target,
                          bool forced=false);
 
     DiscreteIOTransition(DiscreteEvent event,
-                         DiscreteState source,
-                         DiscreteState target,
+                         DiscreteLocation source,
+                         DiscreteLocation target,
                          const RealExpression& activation,
                          bool forced=false);
 
     DiscreteIOTransition(DiscreteEvent event,
-                         DiscreteState source,
-                         DiscreteState target,
+                         DiscreteLocation source,
+                         DiscreteLocation target,
                          const std::map< RealVariable, RealExpression >& reset,
                          bool forced=false);
 
     DiscreteIOTransition(DiscreteEvent event,
-                         DiscreteState source,
-                         DiscreteState target,
+                         DiscreteLocation source,
+                         DiscreteLocation target,
                          const std::map< RealVariable, RealExpression >& reset,
                          const RealExpression& activation,
                          bool forced=false);
                          
     void set_event(DiscreteEvent event);
     
-    void set_source(DiscreteState source);
+    void set_source(DiscreteLocation source);
     
-    void set_target(DiscreteState target);
+    void set_target(DiscreteLocation target);
 
     // Set the reset map for a given variable
     void set_reset(const RealVariable& var,
@@ -306,10 +306,10 @@ class HybridIOAutomaton
     RealConstantSet _accessible_constants;
     
     //! \brief Access to a discrete mode (for internal use only)
-    DiscreteIOMode& _mode(DiscreteState state);
+    DiscreteIOMode& _mode(DiscreteLocation state);
 
     //! \brief Access to a discrete transition (for internal use only)   
-    DiscreteIOTransition& _transition(DiscreteEvent event, DiscreteState state);
+    DiscreteIOTransition& _transition(DiscreteEvent event, DiscreteLocation state);
 
   public:
     //@{
@@ -371,9 +371,9 @@ class HybridIOAutomaton
     //!
     //!   \param state is the mode's discrete state.
     //!   \param dynamic is the mode's vector field.
-    const DiscreteIOMode& new_mode(DiscreteState state);
+    const DiscreteIOMode& new_mode(DiscreteLocation state);
     
-    const DiscreteIOMode& new_mode(DiscreteState state,
+    const DiscreteIOMode& new_mode(DiscreteLocation state,
                                    const std::map< RealVariable, RealExpression >& dynamic);
 
     const DiscreteIOMode& new_mode(const DiscreteIOMode& mode);
@@ -383,7 +383,7 @@ class HybridIOAutomaton
     //!   \param state is the mode's discrete state.
     //|   \param var is the automaton's controlled variable.
     //!   \param dynamic is the dynamics for var.
-    const DiscreteIOMode& set_dynamics(DiscreteState state,
+    const DiscreteIOMode& set_dynamics(DiscreteLocation state,
                                       const RealVariable& var,
                                       const RealExpression& dynamics);
 
@@ -391,7 +391,7 @@ class HybridIOAutomaton
     //!
     //!   \param state is the mode's discrete state.
     //!   \param invariant is the new invariant condition, in the form \f$g(x)<0\f$.
-    const DiscreteIOMode& new_invariant(DiscreteState state,
+    const DiscreteIOMode& new_invariant(DiscreteLocation state,
                                         const RealExpression& invariant);
 
     //! \brief Adds a discrete transition to the automaton.
@@ -403,27 +403,27 @@ class HybridIOAutomaton
     //!    \param activation is the transition's activation region.
     //!    \param forced determines whether the transision is forced (urgent) or unforced (permissive).
     const DiscreteIOTransition& new_transition(DiscreteEvent event,
-                                               DiscreteState source,
-                                               DiscreteState target,
+                                               DiscreteLocation source,
+                                               DiscreteLocation target,
                                                const std::map< RealVariable, RealExpression >& reset,
                                                const RealExpression& activation,
                                                bool forced);
 
     const DiscreteIOTransition& new_transition(DiscreteEvent event,
-                                               DiscreteState source,
-                                               DiscreteState target,
+                                               DiscreteLocation source,
+                                               DiscreteLocation target,
                                                const std::map< RealVariable, RealExpression >& reset,
                                                bool forced);
 
     const DiscreteIOTransition& new_transition(DiscreteEvent event,
-                                               DiscreteState source,
-                                               DiscreteState target,
+                                               DiscreteLocation source,
+                                               DiscreteLocation target,
                                                const RealExpression& activation,
                                                bool forced);
 
     const DiscreteIOTransition& new_transition(DiscreteEvent event,
-                                               DiscreteState source,
-                                               DiscreteState target,
+                                               DiscreteLocation source,
+                                               DiscreteLocation target,
                                                bool forced);
 
     const DiscreteIOTransition& new_transition(const DiscreteIOTransition& trans);
@@ -436,8 +436,8 @@ class HybridIOAutomaton
     //!    \param reset is the transition's reset.
     //!    \param activation is the transition's activation region.
     const DiscreteIOTransition& new_forced_transition(DiscreteEvent event,
-                                                      DiscreteState source,
-                                                      DiscreteState target,
+                                                      DiscreteLocation source,
+                                                      DiscreteLocation target,
                                                       const std::map< RealVariable, RealExpression >& reset,
                                                       const RealExpression& activation) 
     {
@@ -445,24 +445,24 @@ class HybridIOAutomaton
     }
  
     const DiscreteIOTransition& new_forced_transition(DiscreteEvent event,
-                                                      DiscreteState source,
-                                                      DiscreteState target,
+                                                      DiscreteLocation source,
+                                                      DiscreteLocation target,
                                                       const std::map< RealVariable, RealExpression >& reset) 
     {
         return this->new_transition(event, source, target, reset, true);
     }
  
     const DiscreteIOTransition& new_forced_transition(DiscreteEvent event,
-                                                      DiscreteState source,
-                                                      DiscreteState target,
+                                                      DiscreteLocation source,
+                                                      DiscreteLocation target,
                                                       const RealExpression& activation)
     {
         return this->new_transition(event, source, target, activation, true);
     }
 
     const DiscreteIOTransition& new_forced_transition(DiscreteEvent event,
-                                                      DiscreteState source,
-                                                      DiscreteState target)
+                                                      DiscreteLocation source,
+                                                      DiscreteLocation target)
     {
         return this->new_transition(event, source, target, true);
     }
@@ -475,8 +475,8 @@ class HybridIOAutomaton
     //!    \param reset is the transition's reset.
     //!    \param activation is the transition's activation region.
     const DiscreteIOTransition& new_unforced_transition(DiscreteEvent event,
-                                                        DiscreteState source,
-                                                        DiscreteState target,
+                                                        DiscreteLocation source,
+                                                        DiscreteLocation target,
                                                         const std::map< RealVariable, RealExpression >& reset,
                                                         const RealExpression& activation)
     {
@@ -484,24 +484,24 @@ class HybridIOAutomaton
     }
 
     const DiscreteIOTransition& new_unforced_transition(DiscreteEvent event,
-                                                        DiscreteState source,
-                                                        DiscreteState target,
+                                                        DiscreteLocation source,
+                                                        DiscreteLocation target,
                                                         const std::map< RealVariable, RealExpression >& reset)
     {
         return this->new_transition(event, source, target, reset, false);
     }
 
     const DiscreteIOTransition& new_unforced_transition(DiscreteEvent event,
-                                                        DiscreteState source,
-                                                        DiscreteState target,
+                                                        DiscreteLocation source,
+                                                        DiscreteLocation target,
                                                         const RealExpression& activation)
     {
         return this->new_transition(event, source, target, activation, false);
     }
 
     const DiscreteIOTransition& new_unforced_transition(DiscreteEvent event,
-                                                        DiscreteState source,
-                                                        DiscreteState target)
+                                                        DiscreteLocation source,
+                                                        DiscreteLocation target)
     {
         return this->new_transition(event, source, target, false);
     }
@@ -513,7 +513,7 @@ class HybridIOAutomaton
     //!    \param reset is a map that gives the reset function for each variable.
     //!    
     const DiscreteIOTransition& set_reset(DiscreteEvent event,
-                                          DiscreteState source,
+                                          DiscreteLocation source,
                                           const std::map< RealVariable, RealExpression >& reset);
 
     //! \brief Set the reset function for a variable in a discrete transition of the automaton.
@@ -524,7 +524,7 @@ class HybridIOAutomaton
     //!    \param reset is the reset function for the given variable.
     //!    
     const DiscreteIOTransition& set_reset(DiscreteEvent event,
-                                          DiscreteState source,
+                                          DiscreteLocation source,
                                           const RealVariable& var,
                                           const RealExpression& reset);
                                           
@@ -535,7 +535,7 @@ class HybridIOAutomaton
     //!    \param activation is the activation region of the transition.
     //!    
     const DiscreteIOTransition& set_activation(DiscreteEvent event,
-                                               DiscreteState source,
+                                               DiscreteLocation source,
                                                const RealExpression& activation);                                              
 
 	//! \brief Substitute the constant \a c into the corresponding Constant \a con, if present, on all the functions of modes and transitions.
@@ -593,10 +593,10 @@ class HybridIOAutomaton
     bool has_internal_event(const DiscreteEvent& e) const;
     
     //! \brief Test if the hybrid automaton has a discrete mode with discrete state \a state.
-    bool has_mode(DiscreteState state) const;
+    bool has_mode(DiscreteLocation state) const;
 
     //! \brief Test if the hybrid automaton has a discrete transition with \a event_id and \a source_id.
-    bool has_transition(DiscreteEvent event, DiscreteState source) const;
+    bool has_transition(DiscreteEvent event, DiscreteLocation source) const;
 
     //! \brief Test if the hybrid automaton has a constant with the same label.
     bool has_accessible_constant(const RealConstant& con) const;
@@ -605,10 +605,10 @@ class HybridIOAutomaton
     const Real& accessible_constant_value(const String& name) const;
 
     //! \brief The discrete mode with given discrete state.
-    const DiscreteIOMode& mode(DiscreteState state) const;
+    const DiscreteIOMode& mode(DiscreteLocation state) const;
 
     //! \brief The discrete transition with given \a event and \a source location.
-    const DiscreteIOTransition& transition(DiscreteEvent event, DiscreteState source) const;
+    const DiscreteIOTransition& transition(DiscreteEvent event, DiscreteLocation source) const;
 
     //! \brief The set of discrete modes. 
     const std::list< DiscreteIOMode >& modes() const;
@@ -623,7 +623,7 @@ class HybridIOAutomaton
     RealConstantSet nonsingleton_accessible_constants() const;
 
     //! \brief The discrete transitions from location \a source.
-    std::list< DiscreteIOTransition > transitions(DiscreteState source) const;
+    std::list< DiscreteIOTransition > transitions(DiscreteLocation source) const;
 
     //@}
 
@@ -650,8 +650,8 @@ HybridIOAutomaton aasap_relaxation(const HybridIOAutomaton& hioa);
 HybridIOAutomaton compose(const std::string& name, 
                            const HybridIOAutomaton& ha1, 
                            const HybridIOAutomaton& ha2,
-                           const DiscreteState& init1,
-                           const DiscreteState& init2);
+                           const DiscreteLocation& init1,
+                           const DiscreteLocation& init2);
 
 //! \brief Output an HybridIOAutomaton to a stream.
 std::ostream& operator<<(std::ostream& os, const HybridIOAutomaton& ha);

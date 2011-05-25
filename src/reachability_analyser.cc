@@ -518,7 +518,7 @@ _outer_chain_reach_forward_pushTargetCells(
 {
 	for (HybridGridTreeSet::const_iterator cell_it = reachCells.begin(); cell_it != reachCells.end(); cell_it++)
 	{
-		const DiscreteState& loc = cell_it->first;
+		const DiscreteLocation& loc = cell_it->first;
 		const Box& bx = cell_it->second.box();
 		const Box& domain = _settings->domain_bounds[loc];
 
@@ -547,7 +547,7 @@ _outer_chain_reach_backward_pushSourceCells(
 	sourceCellsOverapprox.mince(_settings->maximum_grid_depth);
 
 	for (HybridGridTreeSet::const_iterator cell_it = sourceCellsOverapprox.begin(); cell_it != sourceCellsOverapprox.end(); ++cell_it) {
-		const DiscreteState& loc = cell_it->first;
+		const DiscreteLocation& loc = cell_it->first;
 		const Box& bx = cell_it->second.box();
 
 		ARIADNE_LOG(5,"Checking box "<< bx <<" in location " << loc.name() << "\n");
@@ -597,7 +597,7 @@ _outer_chain_reach_forward_pushTargetEnclosures(
 		ARIADNE_LOG(7,"Target: "<<trans_it->target()<<", Forced?: " << trans_it->forced() << "\n");
 
 		if (_is_transition_feasible(*trans_it,dynamic,source,UPPER_SEMANTICS)) {
-			const DiscreteState& target_loc = trans_it->target();
+			const DiscreteLocation& target_loc = trans_it->target();
 			const ContinuousEnclosureType target_encl = _getCalculusInterface(UPPER_SEMANTICS).reset_step(trans_it->reset(),source);
 			const Box& target_bounding = _settings->domain_bounds[target_loc];
 			const Vector<Float> minTargetCellWidths = grid[target_loc].lengths()/numCellDivisions;
@@ -611,7 +611,7 @@ void
 HybridReachabilityAnalyser::
 _outer_chain_reach_backward_pushSourceEnclosures(
 		const std::list<DiscreteTransition>& transitions,
-		const DiscreteState& sourceLocation,
+		const DiscreteLocation& sourceLocation,
 		const Box& sourceBox,
 		const HybridGridTreeSet& targetCells,
 		const VectorFunction& dynamic,
@@ -628,7 +628,7 @@ _outer_chain_reach_backward_pushSourceEnclosures(
 		ARIADNE_LOG(7,"Target: "<<trans_it->target()<<", Forced?: " << trans_it->forced() << "\n");
 
 		if (_is_transition_feasible(*trans_it,dynamic,sourceEncl,UPPER_SEMANTICS)) {
-			const DiscreteState& target_loc = trans_it->target();
+			const DiscreteLocation& target_loc = trans_it->target();
 			const ContinuousEnclosureType target_encl = _getCalculusInterface(UPPER_SEMANTICS).reset_step(trans_it->reset(),sourceEncl);
 			const HybridBox targetHBox(target_loc,target_encl.bounding_box());
 
@@ -698,7 +698,7 @@ _outer_chain_reach_pushLocalFinalCells(
 		bool use_domain_checking) const
 {
 	for (GTS::const_iterator cell_it = finalCells.begin(); cell_it != finalCells.end(); ++cell_it) {
-		const DiscreteState& loc = cell_it->first;
+		const DiscreteLocation& loc = cell_it->first;
 		const Box& domain = _settings->domain_bounds[loc];
 		const Box& bx = cell_it->second.box();
 
@@ -793,7 +793,7 @@ _lower_reach_and_epsilon(
 		const HybridGridTreeSet& reachability_restriction) const
 {
 	typedef std::list<EnclosureType> EL;
-	typedef std::map<DiscreteState,uint> HUM;
+	typedef std::map<DiscreteLocation,uint> HUM;
 
 	const uint concurrency = boost::thread::hardware_concurrency() - free_cores;
 	ARIADNE_ASSERT_MSG(concurrency>0 && concurrency <= boost::thread::hardware_concurrency(),"Error: concurrency must be positive and less than the maximum allowed.");
@@ -809,7 +809,7 @@ _lower_reach_and_epsilon(
 
 	HybridFloatVector epsilon;
 	for (HybridSpace::const_iterator hs_it = state_space.begin(); hs_it != state_space.end(); ++hs_it)
-		epsilon.insert(std::pair<DiscreteState,Vector<Float> >(hs_it->first,Vector<Float>(hs_it->second)));
+		epsilon.insert(std::pair<DiscreteLocation,Vector<Float> >(hs_it->first,Vector<Float>(hs_it->second)));
 
     EL initial_enclosures = enclosures_from_split_domain_midpoints(initial_set,
     		min_cell_widths(grid,_settings->maximum_grid_depth));
@@ -881,15 +881,15 @@ HybridReachabilityAnalyser::
 _filter_enclosures(
 		std::list<EnclosureType>& final_enclosures,
 		std::list<EnclosureType>& initial_enclosures,
-		const std::map<DiscreteState,uint>& adjoined_evolve_sizes,
-		const std::map<DiscreteState,uint>& superposed_evolve_sizes,
+		const std::map<DiscreteLocation,uint>& adjoined_evolve_sizes,
+		const std::map<DiscreteLocation,uint>& superposed_evolve_sizes,
 		bool use_domain_checking) const
 {
 	while (!final_enclosures.empty()) {
 		EnclosureType encl = final_enclosures.front();
 		final_enclosures.pop_front();
 
-		const DiscreteState& loc = encl.location();
+		const DiscreteLocation& loc = encl.location();
 		const Box& encl_box = encl.continuous_state_set().bounding_box();
 
 		if (use_domain_checking && encl_box.disjoint(_settings->domain_bounds[loc])) {
@@ -935,7 +935,7 @@ lower_reach_and_epsilon(
 
 	HybridFloatVector epsilon;
 	for (HybridSpace::const_iterator hs_it = state_space.begin(); hs_it != state_space.end(); ++hs_it)
-		epsilon.insert(std::pair<DiscreteState,Vector<Float> >(hs_it->first,Vector<Float>(hs_it->second)));
+		epsilon.insert(std::pair<DiscreteLocation,Vector<Float> >(hs_it->first,Vector<Float>(hs_it->second)));
 
 	RealConstantSet original_constants = system.nonsingleton_accessible_constants();
 
@@ -1034,7 +1034,7 @@ HybridFloatVector min_cell_widths(
 	HybridFloatVector result;
 
 	for (HybridGrid::const_iterator grid_it = grid.begin(); grid_it != grid.end(); ++grid_it)
-		result.insert(std::pair<DiscreteState,Vector<Float> >(grid_it->first,grid_it->second.lengths()/(1 << maximum_grid_depth)));
+		result.insert(std::pair<DiscreteLocation,Vector<Float> >(grid_it->first,grid_it->second.lengths()/(1 << maximum_grid_depth)));
 
 	return result;
 }
@@ -1049,7 +1049,7 @@ enclosures_from_split_domain_midpoints(
 
 	for(HybridImageSet::locations_const_iterator loc_iter=initial_set.locations_begin();
 		 loc_iter!=initial_set.locations_end(); ++loc_iter) {
-		const DiscreteState& loc = loc_iter->first;
+		const DiscreteLocation& loc = loc_iter->first;
 		const ImageSet& img_set = loc_iter->second;
 		const VectorFunction& img_func = img_set.function();
 		Vector<Float> local_max_cell_widths = max_cell_widths.find(loc)->second;
@@ -1093,7 +1093,7 @@ list<EnclosureType> enclosures_of_domains_midpoints(
 	list<EnclosureType> result;
 
 	for (list<HybridBox>::const_iterator box_it = domains.begin(); box_it != domains.end(); ++box_it) {
-		const DiscreteState& loc = box_it->first;
+		const DiscreteLocation& loc = box_it->first;
 		const Box& domain = box_it->second;
 		const VectorFunction& func = img_set.find(loc)->second.function();
 		Vector<Interval> domain_centre_box(domain.centre());
@@ -1216,7 +1216,7 @@ getBestConstantToSplit(
 void
 pushSplitTargetEnclosures(
 		std::list<EnclosureType>& initial_enclosures,
-		const DiscreteState& target_loc,
+		const DiscreteLocation& target_loc,
 		const ContinuousEnclosureType& target_encl,
 		const Vector<Float>& minTargetCellWidths,
 		const Box& target_domain_constraint,
@@ -1259,7 +1259,7 @@ getDerivativeWidths(
 	const uint css = system.state_space().locations_begin()->second;
 
 	for (list<DiscreteMode>::const_iterator modes_it = system.modes().begin(); modes_it != system.modes().end(); modes_it++) {
-		const DiscreteState& loc = modes_it->location();
+		const DiscreteLocation& loc = modes_it->location();
 
 		// Gets the first order derivatives in respect to the dynamic of the mode, applied to the domain of the corresponding location
 		Vector<Interval> der = modes_it->dynamic()(bounding_domain.find(loc)->second);
@@ -1268,7 +1268,7 @@ getDerivativeWidths(
 		for (uint i=0;i<css;i++)
 			der_widths[i] = der[i].width();
 
-		result.insert(pair<DiscreteState,Vector<Float> >(loc,der_widths));
+		result.insert(pair<DiscreteLocation,Vector<Float> >(loc,der_widths));
 	}
 
 	return result;
@@ -1289,7 +1289,7 @@ getMaxDerivativeWidthRatio(
 
 	// For each location and dimension, updates the result with the (w - wm)/wm derivative width ratio, excluding the undefined wm = 0 case
 	for (list<DiscreteMode>::const_iterator modes_it = system.modes().begin(); modes_it != system.modes().end(); modes_it++) {
-		const DiscreteState& loc = modes_it->location();
+		const DiscreteLocation& loc = modes_it->location();
 
 		Vector<Interval> der = modes_it->dynamic()(bounding_domain.find(loc)->second);
 
@@ -1391,7 +1391,7 @@ getHybridGrid(
 	HybridGrid hg;
 
 	// The lengths of the grid cell
-	std::map<DiscreteState,Vector<Float> > hybridgridlengths;
+	std::map<DiscreteLocation,Vector<Float> > hybridgridlengths;
 
 	// Get the minimum domain length for each variable
 	Vector<Float> minDomainLengths(css,std::numeric_limits<double>::infinity());
@@ -1431,12 +1431,12 @@ getHybridGrid(
 		}
 
 		// Add the pair to the hybrid lengths
-		hybridgridlengths.insert(make_pair<DiscreteState,Vector<Float> >(hfv_it->first,gridlengths));
+		hybridgridlengths.insert(make_pair<DiscreteLocation,Vector<Float> >(hfv_it->first,gridlengths));
 	}
 
 	// Populate the grid, centered on the centre of the domain
 	for (HybridFloatVector::const_iterator hfv_it = hmad.begin(); hfv_it != hmad.end(); hfv_it++) {
-		const DiscreteState& loc = hfv_it->first;
+		const DiscreteLocation& loc = hfv_it->first;
 		hg[loc] = Grid(domain.find(loc)->second.centre(),hybridgridlengths[loc]);
 	}
 
@@ -1535,7 +1535,7 @@ getLockToGridTime(
 	for (list<DiscreteMode>::const_iterator modes_it = system.modes().begin(); modes_it != system.modes().end(); modes_it++)
 	{
 		// Gets the location
-		const DiscreteState& loc = modes_it->location();
+		const DiscreteLocation& loc = modes_it->location();
 
 		// Gets the domain for this mode
 		const Box& loc_domain = domain.find(loc)->second;
@@ -1572,10 +1572,10 @@ getHybridMaximumAbsoluteDerivatives(
 	// For each mode
 	for (list<DiscreteMode>::const_iterator modes_it = system.modes().begin(); modes_it != system.modes().end(); modes_it++) {
 
-		const DiscreteState& loc = modes_it->location();
+		const DiscreteLocation& loc = modes_it->location();
 
 		// Insert the corresponding hmad pair, initialized with zero maximum absolute derivatives
-		result.insert(pair<DiscreteState,Vector<Float> >(loc,Vector<Float>(css)));
+		result.insert(pair<DiscreteLocation,Vector<Float> >(loc,Vector<Float>(css)));
 
 		// If the reached region for the location exists and is not empty, check its cells, otherwise use the whole domain
 		if (outer_approx_constraint.has_location(loc) && !outer_approx_constraint[loc].empty()) {
@@ -1605,7 +1605,7 @@ getHybridMaximumAbsoluteDerivatives(
 }
 
 
-std::map<DiscreteState,Float>
+std::map<DiscreteLocation,Float>
 getHybridMaximumStepSize(
 		const HybridFloatVector& hmad,
 		const HybridGrid& hgrid,
@@ -1620,9 +1620,9 @@ getHybridMaximumStepSize(
 	const uint css = hmad.begin()->second.size();
 
 	// Initialize the hybrid maximum step size
-	std::map<DiscreteState,Float> hmss;
+	std::map<DiscreteLocation,Float> hmss;
 
-	// For each couple DiscreteState,Vector<Float>
+	// For each couple DiscreteLocation,Vector<Float>
 	for (HybridFloatVector::const_iterator hfv_it = hmad.begin(); hfv_it != hmad.end(); hfv_it++)
 	{
 		// Initializes the maximum step size
@@ -1634,7 +1634,7 @@ getHybridMaximumStepSize(
 				mss = max(mss,hgrid[hfv_it->first].lengths()[i]/(1 << maximum_grid_depth)/hfv_it->second[i]);
 
 		// Inserts the value (twice the value since the maximum enclosure is set as ~2 the grid cell)
-		hmss.insert(std::pair<DiscreteState,Float>(hfv_it->first,coefficient*mss));
+		hmss.insert(std::pair<DiscreteLocation,Float>(hfv_it->first,coefficient*mss));
 	}
 
 	return hmss;

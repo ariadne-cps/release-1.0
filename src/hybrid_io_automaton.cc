@@ -78,20 +78,20 @@ DiscreteIOMode::dynamics(const RealVariable& var)
 }
 
 DiscreteIOMode::
-DiscreteIOMode(DiscreteState location)
+DiscreteIOMode(DiscreteLocation location)
     :  _location(location), _dynamics(), _invariants()
 {
 }
 
 DiscreteIOMode::
-DiscreteIOMode(DiscreteState location,
+DiscreteIOMode(DiscreteLocation location,
                const std::map< RealVariable, RealExpression >& dynamics)
     :  _location(location), _dynamics(dynamics), _invariants()
 {
 }
 
 DiscreteIOMode::
-DiscreteIOMode(DiscreteState location,
+DiscreteIOMode(DiscreteLocation location,
                const std::map< RealVariable, RealExpression >& dynamics,
                const std::list< RealExpression >& invariants)
     :  _location(location), _dynamics(dynamics), _invariants(invariants)
@@ -157,8 +157,8 @@ DiscreteIOTransition()
 
 DiscreteIOTransition::
 DiscreteIOTransition(DiscreteEvent event,
-                     DiscreteState source,
-                     DiscreteState target,
+                     DiscreteLocation source,
+                     DiscreteLocation target,
                      bool forced)
     : _event(event), _source(source), _target(target),
       _activation(RealExpression(1.0)),     // We assume the transition to be always active
@@ -168,8 +168,8 @@ DiscreteIOTransition(DiscreteEvent event,
 
 DiscreteIOTransition::
 DiscreteIOTransition(DiscreteEvent event,
-                     DiscreteState source,
-                     DiscreteState target,
+                     DiscreteLocation source,
+                     DiscreteLocation target,
                      const RealExpression& activation,
                      bool forced)
     : _event(event), _source(source), _target(target),
@@ -179,8 +179,8 @@ DiscreteIOTransition(DiscreteEvent event,
 
 DiscreteIOTransition::
 DiscreteIOTransition(DiscreteEvent event,
-                     DiscreteState source,
-                     DiscreteState target,
+                     DiscreteLocation source,
+                     DiscreteLocation target,
                      const std::map< RealVariable, RealExpression >& reset,
                      bool forced)
     : _event(event), _source(source), _target(target),
@@ -191,8 +191,8 @@ DiscreteIOTransition(DiscreteEvent event,
 
 DiscreteIOTransition::
 DiscreteIOTransition(DiscreteEvent event,
-                     DiscreteState source,
-                     DiscreteState target,
+                     DiscreteLocation source,
+                     DiscreteLocation target,
                      const std::map< RealVariable, RealExpression >& reset,
                      const RealExpression& activation,
                      bool forced)
@@ -208,13 +208,13 @@ DiscreteIOTransition::set_event(DiscreteEvent event)
 }
 
 void
-DiscreteIOTransition::set_source(DiscreteState source)
+DiscreteIOTransition::set_source(DiscreteLocation source)
 {
     this->_source = source;
 }
 
 void
-DiscreteIOTransition::set_target(DiscreteState target)
+DiscreteIOTransition::set_target(DiscreteLocation target)
 {
     this->_target = target;
 }
@@ -404,7 +404,7 @@ HybridIOAutomaton::add_internal_event(const DiscreteEvent& e)
 }
 
 const DiscreteIOMode&
-HybridIOAutomaton::new_mode(DiscreteState location)
+HybridIOAutomaton::new_mode(DiscreteLocation location)
 {
     if(this->has_mode(location)) {
         ARIADNE_FAIL_MSG("The hybrid automaton " << this->_name << " already has a mode with id " << location << ".");
@@ -424,7 +424,7 @@ HybridIOAutomaton::new_mode(const DiscreteIOMode& mode)
 }
 
 const DiscreteIOMode&
-HybridIOAutomaton::new_mode(DiscreteState location,
+HybridIOAutomaton::new_mode(DiscreteLocation location,
                             const std::map< RealVariable, RealExpression >& dynamics)
 {
     if(this->has_mode(location)) {
@@ -439,7 +439,7 @@ HybridIOAutomaton::new_mode(DiscreteState location,
 }
 
 const DiscreteIOMode&
-HybridIOAutomaton::set_dynamics(DiscreteState location,
+HybridIOAutomaton::set_dynamics(DiscreteLocation location,
                                const RealVariable& var,
                                const RealExpression& dyn)
 {
@@ -458,7 +458,7 @@ HybridIOAutomaton::set_dynamics(DiscreteState location,
 }
 
 const DiscreteIOMode&
-HybridIOAutomaton::new_invariant(DiscreteState location,
+HybridIOAutomaton::new_invariant(DiscreteLocation location,
                                  const RealExpression& inv)
 {
     if(!this->has_mode(location)) {
@@ -471,8 +471,8 @@ HybridIOAutomaton::new_invariant(DiscreteState location,
 
 const DiscreteIOTransition&
 HybridIOAutomaton::new_transition(DiscreteEvent event,
-                                  DiscreteState source,
-                                  DiscreteState target,
+                                  DiscreteLocation source,
+                                  DiscreteLocation target,
                                   const std::map< RealVariable, RealExpression >& reset,
                                   const RealExpression& activation,
                                   bool forced)
@@ -488,8 +488,8 @@ HybridIOAutomaton::new_transition(DiscreteEvent event,
 
 const DiscreteIOTransition&
 HybridIOAutomaton::new_transition(DiscreteEvent event,
-                                  DiscreteState source,
-                                  DiscreteState target,
+                                  DiscreteLocation source,
+                                  DiscreteLocation target,
                                   const std::map< RealVariable, RealExpression >& reset,
                                   bool forced)
 {
@@ -501,8 +501,8 @@ HybridIOAutomaton::new_transition(DiscreteEvent event,
 
 const DiscreteIOTransition&
 HybridIOAutomaton::new_transition(DiscreteEvent event,
-                                  DiscreteState source,
-                                  DiscreteState target,
+                                  DiscreteLocation source,
+                                  DiscreteLocation target,
                                   const RealExpression& activation,
                                   bool forced)
 {
@@ -517,8 +517,8 @@ HybridIOAutomaton::new_transition(DiscreteEvent event,
 
 const DiscreteIOTransition&
 HybridIOAutomaton::new_transition(DiscreteEvent event,
-                                  DiscreteState source,
-                                  DiscreteState target,
+                                  DiscreteLocation source,
+                                  DiscreteLocation target,
                                   bool forced)
 {
     if(!event.is_transition()) {
@@ -567,7 +567,7 @@ HybridIOAutomaton::new_transition(const DiscreteIOTransition& trans)
 
 const DiscreteIOTransition&
 HybridIOAutomaton::set_reset(DiscreteEvent event,
-                             DiscreteState source,
+                             DiscreteLocation source,
                              const std::map< RealVariable, RealExpression >& reset)
 {
     if(!this->has_transition(event,source)) {
@@ -586,7 +586,7 @@ HybridIOAutomaton::set_reset(DiscreteEvent event,
 
 const DiscreteIOTransition&
 HybridIOAutomaton::set_reset(DiscreteEvent event,
-                             DiscreteState source,
+                             DiscreteLocation source,
                              const RealVariable& var,
                              const RealExpression& reset)
 {
@@ -606,7 +606,7 @@ HybridIOAutomaton::set_reset(DiscreteEvent event,
 
 const DiscreteIOTransition&
 HybridIOAutomaton::set_activation(DiscreteEvent event,
-                                  DiscreteState source,
+                                  DiscreteLocation source,
                                   const RealExpression& activation)
 {
     if(!this->has_transition(event,source)) {
@@ -665,7 +665,7 @@ HybridIOAutomaton::has_internal_event(const DiscreteEvent& e) const
 
 
 bool
-HybridIOAutomaton::has_mode(DiscreteState state) const
+HybridIOAutomaton::has_mode(DiscreteLocation state) const
 {
     // FIXME: This is a hack since we use std::list which cannot be searched by id.
     for(discrete_mode_const_iterator mode_iter=this->_modes.begin();
@@ -680,7 +680,7 @@ HybridIOAutomaton::has_mode(DiscreteState state) const
 
 
 bool
-HybridIOAutomaton::has_transition(DiscreteEvent event, DiscreteState source) const
+HybridIOAutomaton::has_transition(DiscreteEvent event, DiscreteLocation source) const
 {
     for(discrete_transition_const_iterator transition_iter=this->_transitions.begin();
         transition_iter!=this->_transitions.end(); ++transition_iter)
@@ -700,7 +700,7 @@ HybridIOAutomaton::modes() const
 }
 
 DiscreteIOMode&
-HybridIOAutomaton::_mode(DiscreteState state)
+HybridIOAutomaton::_mode(DiscreteLocation state)
 {
     // FIXME: This is a hack; we should use a logarithmic time real search to find a mode with the given discrete state.
     for(std::list< DiscreteIOMode >::iterator mode_iter=this->_modes.begin();
@@ -716,7 +716,7 @@ HybridIOAutomaton::_mode(DiscreteState state)
 
 
 const DiscreteIOMode&
-HybridIOAutomaton::mode(DiscreteState state) const
+HybridIOAutomaton::mode(DiscreteLocation state) const
 {
     // FIXME: This is a hack; we should use a logarithmic time real search to find a mode with the given discrete state.
     for(discrete_mode_const_iterator mode_iter=this->_modes.begin();
@@ -737,7 +737,7 @@ HybridIOAutomaton::transitions() const
 }
 
 std::list< DiscreteIOTransition >
-HybridIOAutomaton::transitions(DiscreteState source) const
+HybridIOAutomaton::transitions(DiscreteLocation source) const
 {
     std::list< DiscreteIOTransition > result;
     for(discrete_transition_const_iterator transition_iter=this->_transitions.begin();
@@ -752,7 +752,7 @@ HybridIOAutomaton::transitions(DiscreteState source) const
 
 
 const DiscreteIOTransition&
-HybridIOAutomaton::transition(DiscreteEvent event, DiscreteState source) const
+HybridIOAutomaton::transition(DiscreteEvent event, DiscreteLocation source) const
 {
     for(discrete_transition_const_iterator transition_iter=this->_transitions.begin();
         transition_iter!=this->_transitions.end(); ++transition_iter)
@@ -766,7 +766,7 @@ HybridIOAutomaton::transition(DiscreteEvent event, DiscreteState source) const
 }
 
 DiscreteIOTransition&
-HybridIOAutomaton::_transition(DiscreteEvent event, DiscreteState source)
+HybridIOAutomaton::_transition(DiscreteEvent event, DiscreteLocation source)
 {
     for(std::list< DiscreteIOTransition >::iterator transition_iter=this->_transitions.begin();
         transition_iter!=this->_transitions.end(); ++transition_iter)
@@ -887,7 +887,7 @@ std::pair< HybridAutomaton, RealSpace > make_monolithic_automaton(const HybridIO
         }
         // Create a VectorFunction for the dynamics
         VectorFunction dyn(exprlist,spc);
-        DiscreteState loc = modeiter->location();
+        DiscreteLocation loc = modeiter->location();
         ha.new_mode(loc,dyn);
         // List all invariants
         std::list< RealExpression > invlist = modeiter->invariants();
@@ -931,14 +931,14 @@ std::pair< HybridAutomaton, RealSpace > make_monolithic_automaton(const HybridIO
 //
 // Auxiliary function that recursively compose ha1 and ha2.
 //
-DiscreteState _recursive_composition(HybridIOAutomaton& ha, 
+DiscreteLocation _recursive_composition(HybridIOAutomaton& ha, 
                                      const HybridIOAutomaton& ha1, 
                                      const HybridIOAutomaton& ha2,
-                                     const DiscreteState& init1,
-                                     const DiscreteState& init2)
+                                     const DiscreteLocation& init1,
+                                     const DiscreteLocation& init2)
 {
     // The composed location is named init1,init2
-    DiscreteState newloc(init1.name() + "," + init2.name());
+    DiscreteLocation newloc(init1.name() + "," + init2.name());
 
     if(ha.has_mode(newloc))  // The composed location init1,init2 already exists, return.
         return newloc;    
@@ -979,7 +979,7 @@ DiscreteState _recursive_composition(HybridIOAutomaton& ha,
     for(std::list< DiscreteIOTransition >::const_iterator iter = transitions.begin();
         iter != transitions.end() ; iter++)
     {
-        DiscreteState target2 = init2;
+        DiscreteLocation target2 = init2;
         RealExpression act = iter->activation();
         std::map< RealVariable, RealExpression > res = iter->reset();
         bool forced=iter->forced();
@@ -1037,7 +1037,7 @@ DiscreteState _recursive_composition(HybridIOAutomaton& ha,
             }
         }
         // recursively create the target mode (if it does not exists)
-        DiscreteState newtarget = _recursive_composition(ha, ha1, ha2, iter->target(), target2);
+        DiscreteLocation newtarget = _recursive_composition(ha, ha1, ha2, iter->target(), target2);
         // add the new transition to the automaton
         ha.new_transition(iter->event(), newloc, newtarget, res, act, forced);
         
@@ -1070,7 +1070,7 @@ DiscreteState _recursive_composition(HybridIOAutomaton& ha,
         }
         bool forced=iter->forced();
         // recursively create the target mode (if it does not exists)
-        DiscreteState newtarget = _recursive_composition(ha, ha1, ha2, init1, iter->target());
+        DiscreteLocation newtarget = _recursive_composition(ha, ha1, ha2, init1, iter->target());
         // add the new transition to the automaton
         ha.new_transition(iter->event(), newloc, newtarget, res, act, forced);
     }   // end scanning transitions from loc2    
@@ -1081,8 +1081,8 @@ DiscreteState _recursive_composition(HybridIOAutomaton& ha,
 HybridIOAutomaton compose(const std::string& name, 
                           const HybridIOAutomaton& ha1, 
                           const HybridIOAutomaton& ha2,
-                          const DiscreteState& init1,
-                          const DiscreteState& init2)
+                          const DiscreteLocation& init1,
+                          const DiscreteLocation& init2)
 {
     // 
     // FIRST STEP: check if the two HIOAs are compatible
@@ -1210,7 +1210,7 @@ HybridIOAutomaton compose(const std::string& name,
 HybridIOAutomaton aasap_relaxation(const HybridIOAutomaton& hioa)
 {
 	typedef std::map<DiscreteEvent,bool> ReceivedEventsMap;
-	typedef std::list<std::pair<DiscreteState,ReceivedEventsMap> > LocationsWithReceivedEvents;
+	typedef std::list<std::pair<DiscreteLocation,ReceivedEventsMap> > LocationsWithReceivedEvents;
 
 	// Create the Delta constant with arbitrary value 0
 	RealConstant Delta("Delta",0.0);
@@ -1284,10 +1284,10 @@ HybridIOAutomaton aasap_relaxation(const HybridIOAutomaton& hioa)
 				}
 
 				// Add the corresponding mode to the AASAP automaton, along with the original dynamics
-				aasap.new_mode(DiscreteState(statename),mode_it->dynamics());
+				aasap.new_mode(DiscreteLocation(statename),mode_it->dynamics());
 
 				// Add the original location with received events
-				lwre.push_back(make_pair<DiscreteState,ReceivedEventsMap>(mode_it->location(),rem));
+				lwre.push_back(make_pair<DiscreteLocation,ReceivedEventsMap>(mode_it->location(),rem));
 			}
 		}
 
@@ -1305,7 +1305,7 @@ HybridIOAutomaton aasap_relaxation(const HybridIOAutomaton& hioa)
 
 		// Hold the aasap location
 
-			DiscreteState aasap_location(location_aasap_name);
+			DiscreteLocation aasap_location(location_aasap_name);
 
 		// Hold the received events map
 
@@ -1368,7 +1368,7 @@ HybridIOAutomaton aasap_relaxation(const HybridIOAutomaton& hioa)
 							target_location_name += "_" + rem_it->first.name();
 
 					// Create the transition
-					aasap.new_unforced_transition(*input_event_it,aasap_location,DiscreteState(target_location_name),reset);					
+					aasap.new_unforced_transition(*input_event_it,aasap_location,DiscreteLocation(target_location_name),reset);					
 				}
 			}
 
@@ -1431,9 +1431,9 @@ HybridIOAutomaton aasap_relaxation(const HybridIOAutomaton& hioa)
 
 							// If the activation is always true, do not explicitate it, otherwise enlarge it by Delta
 							if (identical(trans_it->activation(),RealExpression(1.0)))							
-								aasap.new_unforced_transition(*event_it,aasap_location,DiscreteState(target_location_name),reset);
+								aasap.new_unforced_transition(*event_it,aasap_location,DiscreteLocation(target_location_name),reset);
 							else
-								aasap.new_unforced_transition(*event_it,aasap_location,DiscreteState(target_location_name),reset,trans_it->activation()+Delta);
+								aasap.new_unforced_transition(*event_it,aasap_location,DiscreteLocation(target_location_name),reset,trans_it->activation()+Delta);
 						}
 					}
 				}

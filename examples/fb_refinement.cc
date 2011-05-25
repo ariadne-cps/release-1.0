@@ -36,8 +36,8 @@ int main(int argc,char *argv[])
 
 	HybridAutomaton system("fb");
 
-	DiscreteState first("first");
-	DiscreteState second("second");
+	DiscreteLocation first("first");
+	DiscreteLocation second("second");
 
 	DiscreteEvent first2second("f2s");
 	DiscreteEvent second2first("s2f");
@@ -88,7 +88,7 @@ int main(int argc,char *argv[])
 
 	// The initial values
 	HybridImageSet initial_set;
-	initial_set[DiscreteState("first")] = Box(2, -0.4,0.4, -0.4,0.4);
+	initial_set[DiscreteLocation("first")] = Box(2, -0.4,0.4, -0.4,0.4);
 
 	// The domain
 	HybridBoxes domain = bounding_boxes(system.state_space(),Box(2,-1.0,11.0,-1.0,11.0));

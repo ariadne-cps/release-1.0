@@ -95,7 +95,7 @@ class ImageSetHybridEvolver
     typedef Orbit<EnclosureType> OrbitType;
     typedef ListSet<EnclosureType> EnclosureListType;
     typedef Float ContinuousTimeType;
-    typedef tuple<DiscreteState, EventListType, SetModelType, TimeModelType> HybridTimedSetType;
+    typedef tuple<DiscreteLocation, EventListType, SetModelType, TimeModelType> HybridTimedSetType;
     typedef std::map< DiscreteEvent,tuple<TaylorModel,TaylorModel> > ActivationTimesType;
   public:
 
@@ -238,20 +238,20 @@ class ImageSetHybridEvolver
     void _add_models_subdivisions_autoselect(std::list< HybridTimedSetType >& working_sets,
     		  	  	  	  	  	  	  		 const SetModelType& initial_set_model,
     		  	  	  	  	  	  	  		 const TimeModelType& initial_time_model,
-    		  	  	  	  	  	  	  		 const DiscreteState& initial_location,
+    		  	  	  	  	  	  	  		 const DiscreteLocation& initial_location,
     		  	  	  	  	  	  	  		 const EventListType& initial_events,
     		  	  	  	  	  	  	  		 Semantics semantics) const;
 
     void _add_models_subdivisions_time(std::list< HybridTimedSetType >& working_sets,
     		  	  	  	  	  	  	   const SetModelType& initial_set_model,
     		  	  	  	  	  	  	   const TimeModelType& initial_time_model,
-    		  	  	  	  	  	  	   const DiscreteState& initial_location,
+    		  	  	  	  	  	  	   const DiscreteLocation& initial_location,
     		  	  	  	  	  	  	   const EventListType& initial_events,
     		  	  	  	  	  	  	   Semantics semantics) const;
 
     void _add_subdivisions(std::list< HybridTimedSetType >& working_sets,
     					   const array< TimedSetModelType >& subdivisions,
-    					   const DiscreteState& initial_location,
+    					   const DiscreteLocation& initial_location,
     					   const EventListType& initial_events,
     					   const uint dimension) const;
 
@@ -260,12 +260,12 @@ class ImageSetHybridEvolver
     					 const EventListType& initial_events,
     					 const TimeModelType& initial_time_model,
     					 const SetModelType& initial_set_model,
-    					 const DiscreteState& initial_location) const;
+    					 const DiscreteLocation& initial_location) const;
 
     void _computeEvolutionForEvents(std::list< HybridTimedSetType >& working_sets,
 			   	   	   	   	   	    EnclosureListType& intermediate_sets,
 			   	   	   	   	   	    const SystemType& system,
-			   	   	   	   	   	    const DiscreteState& location,
+			   	   	   	   	   	    const DiscreteLocation& location,
 			   	   	   	   	   	    const std::set<DiscreteEvent>& blocking_events,
 			   	   	   	   	   	    const EventListType& events,
 			   	   	   	   	   	    const ActivationTimesType& activation_times,
@@ -294,7 +294,7 @@ class ImageSetHybridEvolver
 
     void _compute_and_adjoin_reachableSet(EnclosureListType& reach_sets,
     									 SetModelType& reachable_set,
-    									 const DiscreteState& location,
+    									 const DiscreteLocation& location,
     									 const SetModelType& flow_set_model,
     									 const TimeModelType& zero_time_model,
     									 const TimeModelType& blocking_time_model,
@@ -302,7 +302,7 @@ class ImageSetHybridEvolver
 
     void _logEvolutionStepInitialState(const EventListType& events,
     							  	   const TimeModelType& time_model,
-    							  	   const DiscreteState& location,
+    							  	   const DiscreteLocation& location,
     							  	   const SetModelType& set_model,
     							  	   const VectorFunction& dynamic,
     							  	   const std::map<DiscreteEvent,VectorFunction>& invariants,

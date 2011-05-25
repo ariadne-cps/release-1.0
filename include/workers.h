@@ -153,7 +153,7 @@ public:
 	typedef HybridEvolver::ContinuousEnclosureType CE;
 	typedef std::list<EnclosureType> EL;
 	typedef ListSet<EnclosureType> ELS;
-	typedef std::map<DiscreteState,uint> HUM;
+	typedef std::map<DiscreteLocation,uint> HUM;
 
 	friend class HybridDiscretiser<CE>;
 
@@ -179,7 +179,7 @@ public:
 
     	HybridSpace state_space = _sys.state_space();
     	for (HybridSpace::const_iterator hs_it = state_space.begin(); hs_it != state_space.end(); ++hs_it)
-    		_epsilon.insert(std::pair<DiscreteState,Vector<Float> >(hs_it->first,Vector<Float>(hs_it->second)));
+    		_epsilon.insert(std::pair<DiscreteLocation,Vector<Float> >(hs_it->first,Vector<Float>(hs_it->second)));
     }
  
     ~LowerReachEpsilonWorker()

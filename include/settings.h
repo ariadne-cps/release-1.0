@@ -40,7 +40,7 @@ typedef std::map<RealConstant,int,ConstantComparator<Real> > RealConstantIntMap;
 
 namespace Ariadne {
 
-class DiscreteState;
+class DiscreteLocation;
 
 enum EvolutionDirection { DIRECTION_FORWARD, DIRECTION_BACKWARD };
 
@@ -70,7 +70,7 @@ class ContinuousEvolutionSettings {
 
     //! \brief The maximum allowable step size for integration, different for each location.
     //! Decreasing the values increases the accuracy of the computation.
-    std::map<DiscreteState,RealType> hybrid_maximum_step_size;
+    std::map<DiscreteLocation,RealType> hybrid_maximum_step_size;
 
     //! \brief A suggested minimum cell of a basic set after a subdivision (not a strict bound). 
     Vector<RealType> minimum_enclosure_cell;

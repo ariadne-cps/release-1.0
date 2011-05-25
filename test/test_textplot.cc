@@ -132,9 +132,9 @@ int main(int argc, char **argv)
     g.close();
     
     std::cout << "Testing hybrid basic sets.." << std::endl;
-    DiscreteState q1(1);
-    DiscreteState q2(2);
-    DiscreteState q3(3);
+    DiscreteLocation q1(1);
+    DiscreteLocation q2(2);
+    DiscreteLocation q3(3);
     HybridBasicSet<Box> hbx1(q1,bx1);
     HybridBasicSet<Box> hbx2(q2,bx2);
     HybridBasicSet<Box> hbx3(q3,bx3);

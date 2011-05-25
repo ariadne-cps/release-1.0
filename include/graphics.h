@@ -35,7 +35,7 @@
 #include <vector>
 
 #include "graphics_interface.h"
-#include "discrete_state.h"
+#include "discrete_location.h"
 #include "box.h"
 
 typedef unsigned int uint;
@@ -205,7 +205,7 @@ void plot(const string& foldername, const string& filename, const SET& set)
 	if (set.size()>0)
 	{
 		// Gets the bounds of the set
-		std::map<DiscreteState,Box> set_bounds = set.bounding_box();
+		std::map<DiscreteLocation,Box> set_bounds = set.bounding_box();
 
 		// Gets the number of variables (NOTE: assumed equal for each mode)
 		uint numvar = set_bounds.begin()->second.dimension();	
@@ -217,7 +217,7 @@ void plot(const string& foldername, const string& filename, const SET& set)
 			for (uint y=x+1;y<numvar;y++)
 			{
 				// Initializes the iterator
-				std::map<DiscreteState,Box>::const_iterator it = set_bounds.begin();
+				std::map<DiscreteLocation,Box>::const_iterator it = set_bounds.begin();
 
 				// Sets the initial value for the graphics box	
 				Box graphics_box(2);
@@ -267,7 +267,7 @@ void plot(const string& foldername, const string& filename, const SET& set)
 				fig.write((foldername+"/"+filename+num_char).c_str()); 
 
 				// Plot the result for each location, using the global bounds
-				for (std::map<DiscreteState,Box>::const_iterator loc_it = set_bounds.begin(); loc_it != set_bounds.end(); loc_it++) {
+				for (std::map<DiscreteLocation,Box>::const_iterator loc_it = set_bounds.begin(); loc_it != set_bounds.end(); loc_it++) {
 					// If the set is non-empty
 					if (set[loc_it->first].size() > 0)
 					{

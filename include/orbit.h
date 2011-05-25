@@ -73,7 +73,7 @@ class HybridGridCell;
 class HybridGridTreeSet;
 class HybridTime;
 
-class DiscreteState;
+class DiscreteLocation;
 template<class BS> class HybridBasicSet;
 
 typedef HybridBasicSet<Point> HybridPoint;

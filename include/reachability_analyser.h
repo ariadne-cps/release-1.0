@@ -52,11 +52,11 @@ namespace Ariadne {
  
 template<class ES> class Orbit;
 
-class DiscreteState;
+class DiscreteLocation;
 
 template<class BS> class HybridBasicSet;
 typedef HybridBasicSet<Box> HybridBox;
-typedef std::map<DiscreteState,Vector<Float> > HybridFloatVector;
+typedef std::map<DiscreteLocation,Vector<Float> > HybridFloatVector;
 typedef std::map<RealConstant,int,ConstantComparator<Real> > RealConstantIntMap;
 typedef HybridAutomaton SystemType;
 typedef HybridEvolver::EnclosureType EnclosureType;
@@ -317,7 +317,7 @@ class HybridReachabilityAnalyser
 
     void _outer_chain_reach_backward_pushSourceEnclosures(
     		const std::list<DiscreteTransition>& transitions,
-    		const DiscreteState& sourceLocation,
+    		const DiscreteLocation& sourceLocation,
 			const Box& sourceBox,
 			const HybridGridTreeSet& targetCells,
 			const VectorFunction& dynamic,
@@ -345,8 +345,8 @@ class HybridReachabilityAnalyser
     void _filter_enclosures(
     		std::list<EnclosureType>& final_enclosures,
     		std::list<EnclosureType>& initial_enclosures,
-    		const std::map<DiscreteState,uint>& adjoined_evolve_sizes,
-    		const std::map<DiscreteState,uint>& superposed_evolve_sizes,
+    		const std::map<DiscreteLocation,uint>& adjoined_evolve_sizes,
+    		const std::map<DiscreteLocation,uint>& superposed_evolve_sizes,
     		bool use_domain_checking) const;
 
     /*! \brief Gets the set of all the split intervals from the \a system with a given \a tolerance.
@@ -456,7 +456,7 @@ void fillSplitSet(
  */
 void pushSplitTargetEnclosures(
 		std::list<EnclosureType>& initial_enclosures,
-		const DiscreteState& target_loc,
+		const DiscreteLocation& target_loc,
 		const ContinuousEnclosureType& target_encl,
 	    const Vector<Float>& minTargetCellWidths,
 		const Box& target_domain_constraint,
@@ -490,7 +490,7 @@ Vector<Float> getMaximumEnclosureCell(
 /*! \brief Get the hybrid maximum integration step size, under the assumption that given the maximum derivatives \a hmad,
 	all variables in a step must cover a length greater than a length determined by the \a hgrid with a given \a maximum_grid_depth.
 	\details The actual result is scaled based on the \a semantics. */
-std::map<DiscreteState,Float> getHybridMaximumStepSize(
+std::map<DiscreteLocation,Float> getHybridMaximumStepSize(
 		const HybridFloatVector& hmad,
 		const HybridGrid& hgrid,
 		int maximum_grid_depth,

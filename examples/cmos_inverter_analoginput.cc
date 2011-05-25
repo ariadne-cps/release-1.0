@@ -193,17 +193,17 @@ int main()
     HybridAutomaton inverter;
 
     /// Create the discrete states
-    DiscreteState nt_pl(1);
-    DiscreteState nt_ps(2);
-    DiscreteState nl_pt(3);
-    DiscreteState ns_pt(4);
-    DiscreteState nl_ps(5);
-    DiscreteState ns_pl(6);
-    DiscreteState ns_ps(7);
-    DiscreteState falling_nt(8);
-    DiscreteState falling_pt(9);
-    DiscreteState rising_ns(10);
-    DiscreteState rising_ps(11);
+    DiscreteLocation nt_pl(1);
+    DiscreteLocation nt_ps(2);
+    DiscreteLocation nl_pt(3);
+    DiscreteLocation ns_pt(4);
+    DiscreteLocation nl_ps(5);
+    DiscreteLocation ns_pl(6);
+    DiscreteLocation ns_ps(7);
+    DiscreteLocation falling_nt(8);
+    DiscreteLocation falling_pt(9);
+    DiscreteLocation rising_ns(10);
+    DiscreteLocation rising_ps(11);
 
     /// Create the discrete events
     DiscreteEvent to_nt_pl(1);
