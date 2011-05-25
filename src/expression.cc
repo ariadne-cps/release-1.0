@@ -785,6 +785,38 @@ template<class X, class Y> Expression<X> substitute(const Expression<X>& e, cons
     ARIADNE_FAIL_MSG("Cannot substitute for a named constant in an unknown expression.");
 }
 
+RealParameterSet parameters(const Expression<Real>& e) {
+    const ExpressionInterface<Real>* eptr=e._raw_pointer();
+    const BinaryExpression<Real,Operator,Real,Real>* aptr=dynamic_cast<const BinaryExpression<Real,Operator,Real,Real>*>(eptr);
+    if(aptr) {
+    	RealParameterSet result1 = parameters(aptr->_arg1);
+    	RealParameterSet result2 = parameters(aptr->_arg2);
+    	result1.insert(result2.begin(),result2.end());
+    	return result1;
+    }
+    const BinaryExpression<Real>* bptr=dynamic_cast<const BinaryExpression<Real>*>(eptr);
+    if(bptr) {
+    	RealParameterSet result1 = parameters(aptr->_arg1);
+    	RealParameterSet result2 = parameters(aptr->_arg2);
+    	result1.insert(result2.begin(),result2.end());
+    	return result1;
+    }
+    const UnaryExpression<Real>* uptr=dynamic_cast<const UnaryExpression<Real>*>(eptr);
+    if(uptr) {
+    	return parameters(uptr->_arg);
+    }
+    const ConstantExpression<Real>* cptr=dynamic_cast<const ConstantExpression<Real>*>(eptr);
+    if(cptr) {
+    	RealParameterSet result;
+    	if (isalpha(cptr->name()[0]))
+    		result.insert(Constant<Real>(cptr->name(),cptr->value()));
+    	return result;
+    }
+    const VariableExpression<Real>* vptr=dynamic_cast<const VariableExpression<Real>*>(eptr);
+    if(vptr) { return RealParameterSet(); }
+    ARIADNE_FAIL_MSG("Cannot look for parameters in an unknown expression.");
+}
+
 template Expression<Tribool> substitute(const Expression<Tribool>& e, const Variable<Tribool>& v, const Expression<Tribool>& c);
 template Expression<Tribool> substitute(const Expression<Tribool>& e, const Variable<Real>& v, const Expression<Real>& c);
 template Expression<Real> substitute(const Expression<Real>& e, const Variable<Real>& v, const Expression<Real>& c);

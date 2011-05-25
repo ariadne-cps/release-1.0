@@ -53,6 +53,8 @@ class Real;
 class EnumeratedValue;
 
 typedef String Identifier;
+typedef std::set<Constant<Real> > RealParameter;
+typedef std::set<Constant<Real>,ConstantComparator<Real> > RealParameterSet;
 
 class UntypedVariable;
 template<class T> class Variable;
@@ -85,6 +87,8 @@ template<class R> std::ostream& operator<<(std::ostream&, const Expression<R>&);
 
 template<class X, class Y> Expression<X> substitute(const Expression<X>& e, const Variable<Y>& v, const Expression<Y>& c);
 template<class X, class Y> Expression<X> substitute(const Expression<X>& e, const Constant<Y>& con, const Y& c);
+RealParameterSet parameters(const Expression<Real>& e);
+
 template<class X> Expression<X> simplify(const Expression<X>& e);
 
 /*! \brief A simple expression in named variables.
@@ -159,7 +163,10 @@ class Expression<Real> {
         return Ariadne::substitute(*this,v,c); }
 	//! \brief Substitute the constant \a c into the Constant \a con.
     template<class X> Expression<R> substitute(const Constant<X>& con, const X& c) const {
-        return Ariadne::substitute(*this,con,c); };
+        return Ariadne::substitute(*this,con,c); }
+    //! \brief Extract the parameters (i.e.,Constant<R> whose name begins with an alphabetic symbol).
+    RealParameterSet parameters() const {
+    	return Ariadne::parameters(*this); }
     //! \brief Simplify the expression (e.g. by evaluating constants).
     Expression<R> simplify() const {
         return Ariadne::simplify(*this); }

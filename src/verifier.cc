@@ -66,7 +66,7 @@ _safety(
 {
 	HybridAutomaton& system = verInput.getSystem();
 
-	Real originalParameterValue = system.accessible_constant_value(constant.name());
+	Real originalParameterValue = system.parameter_value(constant.name());
 
 	system.substitute(constant);
 	tribool result = safety(verInput);
@@ -164,7 +164,7 @@ _safety_proving_once(
 
 	system.substitute(constants,_settings->use_param_midpoints_for_proving);
 
-	ARIADNE_LOG(4,"Setting parameters for this proving iteration...\n");
+	ARIADNE_LOG(4,"Tuning settings for this proving iteration...\n");
 
 	static const bool EQUAL_GRID_FOR_ALL_LOCATIONS = false;
 	_tuneIterativeStepSettings(system,_safety_coarse_outer_approximation->get(),
@@ -175,6 +175,8 @@ _safety_proving_once(
 	ARIADNE_LOG(4,"Performing outer reachability analysis...\n");
 
 	try {
+
+		ARIADNE_LOG(5, "Parameters: " << system.parameters() << "\n");
 
 		/* Given the initial set I, forward reachability F, and unsafe region U:
 
@@ -317,7 +319,7 @@ _safety_disproving_once(
 
 	system.substitute(constants,_settings->use_param_midpoints_for_disproving);
 
-	ARIADNE_LOG(4,"Setting parameters for this disproving iteration...\n");
+	ARIADNE_LOG(4,"Tuning settings for this disproving iteration...\n");
 
 	static const bool EQUAL_GRID_FOR_ALL_LOCATIONS = false;
 	_tuneIterativeStepSettings(system,_safety_coarse_outer_approximation->get(),
@@ -328,7 +330,6 @@ _safety_disproving_once(
 	ARIADNE_LOG(4,"Performing lower reachability analysis...\n");
 
 	try {
-
 		HybridGridTreeSet reach;
 		HybridFloatVector epsilon;
 		make_lpair<HybridGridTreeSet,HybridFloatVector>(reach,epsilon) = _analyser->lower_reach_and_epsilon(
@@ -398,7 +399,7 @@ _dominance(
 {
 	HybridAutomaton& system = dominating.getSystem();
 
-	Real original_value = system.accessible_constant_value(constant.name());
+	Real original_value = system.parameter_value(constant.name());
 
 	system.substitute(constant);
 	tribool result = dominance(dominating,dominated);

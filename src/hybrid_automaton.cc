@@ -382,13 +382,6 @@ HybridAutomaton::has_transition(DiscreteEvent event, DiscreteLocation source) co
 }
 
 
-bool
-HybridAutomaton::has_accessible_constant(const RealConstant& con) const
-{
-    return _accessible_constants.find(con) != _accessible_constants.end();
-}
-
-
 HybridSet
 HybridAutomaton::invariant() const
 {
@@ -437,20 +430,6 @@ const std::list< DiscreteTransition >&
 HybridAutomaton::transitions() const
 {
     return this->_transitions;
-}
-
-
-RealConstantSet
-HybridAutomaton::accessible_constants() const
-{
-	RealConstantSet result;
-
-	for (RealConstantSet::const_iterator constant_it = _accessible_constants.begin();
-										 constant_it != _accessible_constants.end();
-									   ++constant_it)
-			result.insert(*constant_it);
-
-	return result;
 }
 
 
@@ -561,13 +540,12 @@ operator<<(std::ostream& os, const HybridAutomaton& ha)
 void 
 HybridAutomaton::substitute(Constant<Real> con, const Real& c)
 {
-	RealConstantSet::iterator constant_it = _accessible_constants.find(con);
-	if (constant_it != _accessible_constants.end()) {
-		_accessible_constants.erase(*constant_it);
-		_accessible_constants.insert(RealConstant(con.name(),c));
-	}
-	else {
-		ARIADNE_FAIL_MSG("The constant to substitute is not registered as accessible.");
+	RealConstantSet parameters = this->accessible_constants();
+
+	RealConstantSet::const_iterator param_it = parameters.find(con);
+
+	if (param_it == parameters.end()) {
+		ARIADNE_FAIL_MSG("The parameter to substitute is not present in the system.");
 	}
 
 	// Substitutes on the modes and transitions
@@ -597,22 +575,52 @@ HybridAutomaton::substitute(const RealConstantSet& cons, bool use_midpoint)
 	}
 }
 
-void
-HybridAutomaton::register_accessible_constant(RealConstant con)
+Real
+HybridAutomaton::parameter_value(String name) const
 {
-	// Silently accepts duplicated constant registrations
-	if (!this->has_accessible_constant(con))
-		this->_accessible_constants.insert(con);
+	RealParameterSet parameters = this->parameters();
+
+	for (RealParameterSet::const_iterator parameter_it = parameters.begin();
+												 parameter_it != parameters.end();
+												 ++parameter_it) {
+		if (parameter_it->name() == name)
+			return parameter_it->value();
+	}
+
+	ARIADNE_FAIL_MSG("The constant is not used in the system.");
 }
 
-const Real&
-HybridAutomaton::accessible_constant_value(const String& name) const
-{
-	for (RealConstantSet::const_iterator constants_it=this->_accessible_constants.begin(); constants_it!=this->_accessible_constants.end(); constants_it++)
-		if (constants_it->name() == name)
-			return constants_it->value();
 
-	ARIADNE_FAIL_MSG("The constant is not registered as accessible.");
+RealParameterSet
+HybridAutomaton::parameters() const
+{
+	RealParameterSet result;
+
+	for (std::list<DiscreteMode>::const_iterator modes_it=this->_modes.begin();modes_it!=this->_modes.end();modes_it++) {
+		RealParameterSet mode_result = modes_it->parameters();
+		result.insert(mode_result.begin(),mode_result.end());
+	}
+	for (std::list<DiscreteTransition>::const_iterator trans_it=this->_transitions.begin();trans_it!=this->_transitions.end();trans_it++) {
+		RealParameterSet trans_result = trans_it->parameters();
+		result.insert(trans_result.begin(),trans_result.end());
+	}
+	return result;
+}
+
+RealConstantSet
+HybridAutomaton::accessible_constants() const
+{
+	RealParameterSet parameters = this->parameters();
+
+	RealConstantSet result;
+
+	for (RealParameterSet::const_iterator parameter_it = parameters.begin();
+												 parameter_it != parameters.end();
+												 ++parameter_it) {
+			result.insert(*parameter_it);
+	}
+
+	return result;
 }
 
 RealConstantSet
@@ -620,13 +628,12 @@ HybridAutomaton::nonsingleton_accessible_constants() const
 {
 	RealConstantSet result;
 
-	const RealConstantSet& constants = _accessible_constants;
-
-	for (RealConstantSet::const_iterator constant_it = constants.begin();
-												 constant_it != constants.end();
-												 ++constant_it) {
-		if (!constant_it->value().singleton())
-			result.insert(*constant_it);
+	RealParameterSet parameters = this->parameters();
+	for (RealParameterSet::const_iterator parameter_it = parameters.begin();
+												 parameter_it != parameters.end();
+												 ++parameter_it) {
+		if (!parameter_it->value().singleton())
+			result.insert(*parameter_it);
 	}
 
 	return result;

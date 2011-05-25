@@ -138,11 +138,6 @@ int main(int argc,char *argv[])
 		controller.add_output_event(e_open); 
 		controller.add_output_event(e_close);
 		
-		// Accessible constants
-		controller.register_accessible_constant(delta);
-		controller.register_accessible_constant(hmin);
-		controller.register_accessible_constant(hmax);
-
 		// Two states:
 		// Rising (water level is increasing)
 		controller.new_mode(rising);

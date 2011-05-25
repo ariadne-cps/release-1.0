@@ -40,13 +40,6 @@ HybridAutomaton getWatertankNonlinearMonolithicHysteresis()
 	RealConstant hmin("hmin",5.75);
 	RealConstant hmax("hmax",7.75);
 	RealConstant Delta("Delta",0.1);
-  
-    // Accessible constants
-    system.register_accessible_constant(Delta);
-    system.register_accessible_constant(T);
-    system.register_accessible_constant(b);
-    system.register_accessible_constant(hmin);
-    system.register_accessible_constant(hmax);
 
     /// Create four discrete states
     DiscreteLocation opened("opened");

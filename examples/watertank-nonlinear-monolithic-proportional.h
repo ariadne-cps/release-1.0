@@ -49,14 +49,6 @@ HybridAutomaton getWatertankNonlinearMonolithicProportional()
 	varlist.append(x);
 	varlist.append(y);
 
-	// Accessible constants
-	system.register_accessible_constant(delta);
-	system.register_accessible_constant(a);
-	system.register_accessible_constant(bfp);
-	system.register_accessible_constant(tau);
-	system.register_accessible_constant(ref);
-	system.register_accessible_constant(Kp);
-
 	// Constants
 	ScalarFunction one=ScalarFunction::constant(2,1.0);
 	ScalarFunction zero=ScalarFunction::constant(2,0.0);

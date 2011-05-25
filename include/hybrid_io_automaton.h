@@ -92,6 +92,20 @@ class DiscreteIOMode {
 	//! \brief Substitute the constant \a c into the corresponding Constant \a con, if present, on the invariants and dynamic functions.
 	void substitute(const Constant<Real>& con, const Real& c);
 
+	/*! \brief Get the parameters (i.e., the RealConstant whose name start with a letter) from the dynamics and invariants */
+	RealParameterSet parameters() const {
+		RealParameterSet result;
+		for (std::map<RealVariable,RealExpression>::const_iterator dyn_it=this->_dynamics.begin();dyn_it!=this->_dynamics.end();++dyn_it) {
+			RealParameterSet new_parameters = dyn_it->second.parameters();
+			result.insert(new_parameters.begin(),new_parameters.end());
+		}
+		for (std::list<RealExpression>::const_iterator inv_it=this->_invariants.begin();inv_it!=this->_invariants.end();++inv_it) {
+			RealParameterSet new_parameters = inv_it->parameters();
+			result.insert(new_parameters.begin(),new_parameters.end());
+		}
+		return result;
+	}
+
     //! \brief Write to an output stream.
     std::ostream& write(std::ostream& os) const;
 
@@ -173,6 +187,16 @@ class DiscreteIOTransition
 
 	//! \brief Substitute the constant \a c into the corresponding Constant \a con, if present, on the reset and activation functions.
 	void substitute(const Constant<Real>& con, const Real& c);
+
+	/*! \brief Get the parameters (i.e., the RealConstant whose name starts with a letter) from the transition and reset dynamics. */
+	RealParameterSet parameters() const {
+		RealParameterSet result = this->_activation.parameters();
+		for (std::map<RealVariable,RealExpression>::const_iterator reset_it=_reset.begin();reset_it!=_reset.end();++reset_it) {
+			RealParameterSet reset_parameters = reset_it->second.parameters();
+			result.insert(reset_parameters.begin(),reset_parameters.end());
+		}
+		return result;
+	}
 
     //! \brief The activation region of the discrete transition.
     const RealExpression& activation() const {
@@ -362,10 +386,6 @@ class HybridIOAutomaton
 
     //! \brief Adds an internal event \param e to the automaton.
     const std::set< DiscreteEvent >& add_internal_event(const DiscreteEvent& e);
-    
-    //! \brief Registers a constant into the list of accessible constants.
-    //! \details If the constant is already registered, no action is performed.
-    void register_accessible_constant(RealConstant c);
 
     //! \brief Adds a discrete mode to the automaton.
     //!
@@ -598,12 +618,6 @@ class HybridIOAutomaton
     //! \brief Test if the hybrid automaton has a discrete transition with \a event_id and \a source_id.
     bool has_transition(DiscreteEvent event, DiscreteLocation source) const;
 
-    //! \brief Test if the hybrid automaton has a constant with the same label.
-    bool has_accessible_constant(const RealConstant& con) const;
-
-    //! \brief Get the value of an accessible constant.
-    const Real& accessible_constant_value(const String& name) const;
-
     //! \brief The discrete mode with given discrete state.
     const DiscreteIOMode& mode(DiscreteLocation state) const;
 
@@ -615,6 +629,12 @@ class HybridIOAutomaton
 
     //! \brief The set of discrete transitions. 
     const std::list< DiscreteIOTransition >& transitions() const;
+
+    //! \brief Get the value of an accessible constant.
+    Real parameter_value(String name) const;
+
+	/*! \brief Get the parameters (i.e., the RealConstant whose name start with a letter) from the dynamics and invariants */
+	RealParameterSet parameters() const;
 
     //! \brief A copy of the set of accessible constants.
     RealConstantSet accessible_constants() const;

@@ -918,13 +918,6 @@ std::pair< HybridAutomaton, RealSpace > make_monolithic_automaton(const HybridIO
                           res, ScalarFunction(triter->activation(), spc), triter->forced());
     }
     
-    // Add the accessible variables
-    const RealConstantSet& accessible_constants = hioa.accessible_constants();
-    for (RealConstantSet::const_iterator constant_it = accessible_constants.begin();
-    											 constant_it != accessible_constants.end();
-    											 ++constant_it)
-    	ha.register_accessible_constant(*constant_it);
-    
     return make_pair(ha, spc);
 }
 
@@ -1189,16 +1182,6 @@ HybridIOAutomaton compose(const std::string& name,
     HybridIOAutomaton ha(name, 
                          input_vars, output_vars, internal_vars,
                          input_events, output_events, internal_events);
-    
-    // Add the accessible constants from the first automaton
-    const RealConstantSet constants1 = ha1.accessible_constants();
-    for (RealConstantSet::const_iterator constant_it = constants1.begin(); constant_it != constants1.end(); ++constant_it)
-    	ha.register_accessible_constant(*constant_it);
-    // Add the remaining constants from the second automaton
-    const RealConstantSet constants2 = ha2.accessible_constants();
-    for (RealConstantSet::const_iterator constant_it = constants2.begin(); constant_it != constants2.end(); ++constant_it)
-    	if (!ha.has_accessible_constant(*constant_it))
-    		ha.register_accessible_constant(*constant_it);
     
     // Start the recursive composition from the initial states init1 and init2.
     _recursive_composition(ha, ha1, ha2, init1, init2);
@@ -1512,13 +1495,12 @@ operator<<(std::ostream& os, const HybridIOAutomaton& ha)
 void 
 HybridIOAutomaton::substitute(Constant<Real> con, const Real& c)
 {
-	RealConstantSet::iterator constant_it = _accessible_constants.find(con);
-	if (constant_it != _accessible_constants.end()) {
-		_accessible_constants.erase(*constant_it);
-		_accessible_constants.insert(RealConstant(con.name(),c));
-	}
-	else {
-		ARIADNE_FAIL_MSG("The constant to substitute is not registered as accessible.");
+	RealConstantSet parameters = this->accessible_constants();
+
+	RealConstantSet::const_iterator param_it = parameters.find(con);
+
+	if (param_it == parameters.end()) {
+		ARIADNE_FAIL_MSG("The parameter to substitute is not present in the system.");
 	}
 
 	// Substitutes on the modes and transitions
@@ -1536,6 +1518,7 @@ HybridIOAutomaton::substitute(const RealConstantSet& cons)
 		substitute(*const_it);
 }
 
+
 void
 HybridIOAutomaton::substitute(const RealConstantSet& cons, bool use_midpoint)
 {
@@ -1547,40 +1530,50 @@ HybridIOAutomaton::substitute(const RealConstantSet& cons, bool use_midpoint)
 	}
 }
 
-bool
-HybridIOAutomaton::has_accessible_constant(const RealConstant& con) const
+
+Real
+HybridIOAutomaton::parameter_value(String name) const
 {
-	return _accessible_constants.find(con) != _accessible_constants.end();
+	RealParameterSet parameters = this->parameters();
+
+	for (RealParameterSet::const_iterator parameter_it = parameters.begin();
+												 parameter_it != parameters.end();
+												 ++parameter_it) {
+		if (parameter_it->name() == name)
+			return parameter_it->value();
+	}
+
+	ARIADNE_FAIL_MSG("The constant is not used in the system.");
 }
 
-
-void
-HybridIOAutomaton::register_accessible_constant(RealConstant con)
+RealParameterSet
+HybridIOAutomaton::parameters() const
 {
-	// Silently accepts duplicated constant registrations
-	if (!this->has_accessible_constant(con))
-		this->_accessible_constants.insert(con);
-}
+	RealParameterSet result;
 
-const Real&
-HybridIOAutomaton::accessible_constant_value(const String& name) const
-{
-	for (RealConstantSet::const_iterator constants_it=this->_accessible_constants.begin(); constants_it!=this->_accessible_constants.end(); constants_it++)
-		if (constants_it->name() == name)
-			return constants_it->value();
-
-	ARIADNE_FAIL_MSG("The constant is not registered as accessible.");
+	for (std::list<DiscreteIOMode>::const_iterator modes_it=this->_modes.begin();modes_it!=this->_modes.end();modes_it++) {
+		RealParameterSet mode_result = modes_it->parameters();
+		result.insert(mode_result.begin(),mode_result.end());
+	}
+	for (std::list<DiscreteIOTransition>::const_iterator trans_it=this->_transitions.begin();trans_it!=this->_transitions.end();trans_it++) {
+		RealParameterSet trans_result = trans_it->parameters();
+		result.insert(trans_result.begin(),trans_result.end());
+	}
+	return result;
 }
 
 RealConstantSet
 HybridIOAutomaton::accessible_constants() const
 {
+	RealParameterSet parameters = this->parameters();
+
 	RealConstantSet result;
 
-	for (RealConstantSet::const_iterator constant_it = _accessible_constants.begin();
-										 constant_it != _accessible_constants.end();
-									   ++constant_it)
-		result.insert(*constant_it);
+	for (RealParameterSet::const_iterator parameter_it = parameters.begin();
+												 parameter_it != parameters.end();
+												 ++parameter_it) {
+			result.insert(*parameter_it);
+	}
 
 	return result;
 }
@@ -1590,11 +1583,12 @@ HybridIOAutomaton::nonsingleton_accessible_constants() const
 {
 	RealConstantSet result;
 
-	for (RealConstantSet::const_iterator constant_it = _accessible_constants.begin();
-										 constant_it != _accessible_constants.end();
-									   ++constant_it) {
-		if (!constant_it->value().singleton())
-			result.insert(*constant_it);
+	RealParameterSet parameters = this->parameters();
+	for (RealParameterSet::const_iterator parameter_it = parameters.begin();
+												 parameter_it != parameters.end();
+												 ++parameter_it) {
+		if (!parameter_it->value().singleton())
+			result.insert(*parameter_it);
 	}
 
 	return result;

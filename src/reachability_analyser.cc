@@ -996,7 +996,7 @@ _getSplitConstantsIntervalsSet(
 	const RealConstantSet& locked_constants = _settings->locked_constants;
 	const HybridBoxes& domain = _settings->domain_bounds;
 
-	const RealConstantSet original_constants = system.accessible_constants();
+	const RealConstantSet original_constants = system.nonsingleton_accessible_constants();
 
 	const RealConstantIntMap split_factors = getSplitFactorsOfConstants(system,locked_constants,tolerance,domain);
 
@@ -1194,7 +1194,8 @@ getBestConstantToSplit(
 												 constant_it != working_constants.end();
 												 ++constant_it) {
 		// Modifies the system in order to have the range of the original given constant halved
-		Real originalValue = system.accessible_constant_value(constant_it->name());
+		Real originalValue = system.parameter_value(constant_it->name());
+
 		Float quarterIntervalWidth = originalValue.width()/4;
 		Interval halvedInterval = Interval(constant_it->value().midpoint()-quarterIntervalWidth,
 										   constant_it->value().midpoint()+quarterIntervalWidth);

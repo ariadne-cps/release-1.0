@@ -59,6 +59,7 @@ template<class T> class DottedVariable;
 template<class T> class PrimedVariable;
 template<class T> class Expression;
 template<class T> class Space;
+template<class T> class ConstantComparator;
 
 typedef ExtendedVariable<Real> ExtendedRealVariable;
 typedef Variable<Real> RealVariable;
@@ -72,6 +73,7 @@ typedef Assignment<RealVariable,RealExpression> RealAssignment;
 typedef Assignment<ExtendedRealVariable,RealExpression> ExtendedRealAssignment;
 typedef Assignment<DottedRealVariable,RealExpression> DottedRealAssignment;
 typedef Assignment<PrimedRealVariable,RealExpression> PrimedRealAssignment;
+typedef std::set<Constant<Real>,ConstantComparator<Real> > RealParameterSet;
 
 class ScalarFunction;
 class VectorFunction;
@@ -109,6 +111,8 @@ class ScalarFunction
 
 	/*! \brief Substitute the constant \a c into the corresponding Constant \a con, if present, on all expressions. */
 	void substitute(const Constant<Real>& con, const Real& c);
+	/*! \brief Get the parameters (i.e. the Constant<Real> whose name starts with a letter) from the function. */
+	RealParameterSet parameters() const;
 
     Differential<Float> evaluate(const Vector< Differential<Float> >& x) const { return this->_ptr->evaluate(x); }
     Differential<Interval> evaluate(const Vector< Differential<Interval> >& x) const { return this->_ptr->evaluate(x); }
@@ -225,6 +229,9 @@ class VectorFunction
 
 	/*! \brief Substitute the constant \a c into the corresponding Constant \a con, if present, on all expressions. */
 	void substitute(const RealConstant& con, const Real& c);
+
+	/*! \brief Get the parameters (i.e. Constant<Real> whose name starts with a letter) from the function. */
+	RealParameterSet parameters() const;
 
     Vector<Float> evaluate(const Vector<Float>& x) const { return this->_ptr->evaluate(x); }
     Vector<Interval> evaluate(const Vector<Interval>& x) const { return this->_ptr->evaluate(x); }

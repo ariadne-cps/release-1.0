@@ -125,6 +125,10 @@ struct ScalarExpressionFunctionBody
 		this->_expression = this->_expression.substitute(con,c);
 	}
 
+	RealParameterSet parameters() const {
+		return this->_expression.parameters();
+	}
+
     template<class X> void _compute(X& r, const Vector<X>& x) const {
         Map<ExtendedRealVariable,X> valuation;
         for(uint i=0; i!=x.size(); ++i) { valuation[_space.variable(i)]=x[i]; }
@@ -165,6 +169,16 @@ struct VectorExpressionFunctionBody
 	void substitute(const RealConstant& con, const Real& c) {
 		for (List< Assignment<ExtendedRealVariable,RealExpression> >::iterator it=this->_assignments.begin();it!=this->_assignments.end();it++)
 			it->rhs = it->rhs.substitute(con,c);
+	}
+
+	/*! \brief Get the parameters (i.e. Constant<Real> whose name starts with a letter) from the function. */
+	RealParameterSet parameters() {
+		RealParameterSet result;
+		for (List< Assignment<ExtendedRealVariable,RealExpression> >::iterator it=this->_assignments.begin();it!=this->_assignments.end();it++) {
+			RealParameterSet new_parameters = it->rhs.parameters();
+			result.insert(new_parameters.begin(),new_parameters.end());
+		}
+		return result;
 	}
 
     virtual ScalarFunction operator[](uint i) const {
@@ -398,6 +412,15 @@ struct VectorOfScalarFunctionBody
 	void substitute(const RealConstant& con, const Real& c) {
 		for (Vector<ScalarFunction>::iterator it=this->_vec.begin();it!=this->_vec.end();it++)
 			(*it).substitute(con,c);
+	}
+
+	RealParameterSet parameters() {
+		RealParameterSet result;
+		for (Vector<ScalarFunction>::iterator it=this->_vec.begin();it!=this->_vec.end();it++) {
+			RealParameterSet new_parameters = (*it).parameters();
+			result.insert(new_parameters.begin(),new_parameters.end());
+		}
+		return result;
 	}
 
     virtual uint result_size() const {
@@ -800,6 +823,13 @@ void ScalarFunction::substitute(const Constant<Real>& con, const Real& c)
 		if (sefb_ptr) sefb_ptr->substitute(con,c); 
 }
 
+RealParameterSet ScalarFunction::parameters() const
+{
+	ScalarExpressionFunctionBody* sefb_ptr=dynamic_cast<ScalarExpressionFunctionBody*>(this->_ptr.operator->());
+	if (sefb_ptr) return sefb_ptr->parameters();
+	return RealParameterSet();
+}
+
 
 template<class Op> inline
 ScalarFunction make_unary_function(Op op, const ScalarFunction& f) {
@@ -1165,6 +1195,14 @@ void VectorFunction::substitute(const RealConstant& con, const Real& c)
 	else if (s_ptr) s_ptr->substitute(con,c);	
 }
 
+RealParameterSet VectorFunction::parameters() const
+{
+	VectorExpressionFunctionBody* e_ptr=dynamic_cast<VectorExpressionFunctionBody*>(this->_ptr.operator->());
+	VectorOfScalarFunctionBody* s_ptr=dynamic_cast<VectorOfScalarFunctionBody*>(this->_ptr.operator->());
+	if (e_ptr) return e_ptr->parameters();
+	else if (s_ptr) return s_ptr->parameters();
+	return RealParameterSet();
+}
 
 ScalarFunction VectorFunction::operator[](Nat i) const
 {

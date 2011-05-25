@@ -113,6 +113,16 @@ class DiscreteMode {
 			it->second.substitute(con,c);
 	}
 
+	/*! \brief Get the parameters (i.e., the RealConstant whose name start with a letter) from the dynamics and invariants */
+	RealParameterSet parameters() const {
+		RealParameterSet result = this->_dynamic.parameters();
+		for (std::map<DiscreteEvent,VectorFunction>::const_iterator it=this->_invariants.begin();it!=this->_invariants.end();it++) {
+			RealParameterSet new_parameters = it->second.parameters();
+			result.insert(new_parameters.begin(),new_parameters.end());
+		}
+		return result;
+	}
+
     //! \brief The discrete mode's default spacial grid.
     const Grid& grid() const {
         return *this->_grid; }
@@ -198,6 +208,14 @@ class DiscreteTransition
 	void substitute(const Constant<Real>& con, const Real& c) {
 		this->_activation.substitute(con,c);
 		this->_reset.substitute(con,c);
+	}
+
+	/*! \brief Get the parameters (i.e., the RealConstant whose name starts with a letter) from the transition and reset dynamics. */
+	RealParameterSet parameters() const {
+		RealParameterSet result = this->_activation.parameters();
+		RealParameterSet reset_parameters = this->_reset.parameters();
+		result.insert(reset_parameters.begin(),reset_parameters.end());
+		return result;
 	}
 
     //! \brief The activation region of the discrete transition.
@@ -302,10 +320,6 @@ class HybridAutomaton
 
     //! \brief The hybrid automaton's transitions.
     std::list< DiscreteTransition > _transitions;
-
-    //! \brief The accessible constants.
-    //! \details This set does not necessarily reflect the whole set of constants in all functions.
-    RealConstantSet _accessible_constants;
 
   public:
     //@{
@@ -531,9 +545,17 @@ class HybridAutomaton
                                                       const VectorFunction& reset,
                                                       const VectorFunction& activation);
 
-    //! \brief Registers a constant into the list of accessible constants.
-    //! \details If the constant is already registered, no action is performed.
-    void register_accessible_constant(RealConstant c);
+    //! \brief Gets the parameters (i.e., any RealConstant whose name starts from a letter) from the modes and transitions. */
+    RealParameterSet parameters() const;
+
+    //! \brief A copy of the set of parameters.
+    RealConstantSet accessible_constants() const;
+
+    //! \brief A copy of the set of non-singleton parameters.
+    RealConstantSet nonsingleton_accessible_constants() const;
+
+    //! \brief Get the value of a parameter.
+    Real parameter_value(String name) const;
 
 	/*! \brief Substitute the constant \a c into the corresponding Constant \a con, if present, on all the functions of modes and transitions. */
 	void substitute(Constant<Real> con, const Real& c);
@@ -562,9 +584,6 @@ class HybridAutomaton
     //! \brief Test if the hybrid automaton has a discrete transition with \a event_id and \a source_id.
     bool has_transition(DiscreteEvent event, DiscreteLocation source) const;
 
-    //! \brief Test if the hybrid automaton has a constant with the same label.
-    bool has_accessible_constant(const RealConstant& con) const;
-
     //! \brief The discrete mode with given discrete state.
     const DiscreteMode& mode(DiscreteLocation state) const;
 
@@ -588,15 +607,6 @@ class HybridAutomaton
 
     //! \brief The state space of the system.
     HybridSpace state_space() const;
-
-    //! \brief A copy of the set of accessible constants.
-    RealConstantSet accessible_constants() const;
-
-    //! \brief A copy of the set of non-singleton accessible constants.
-    RealConstantSet nonsingleton_accessible_constants() const;
-
-    //! \brief Get the value of an accessible constant.
-    const Real& accessible_constant_value(const String& name) const;
 
     //! \brief The hybrid set giving the invariants for each discrete location.
     HybridSet invariant() const;
