@@ -27,18 +27,18 @@ namespace Ariadne {
 
 
 
-ParametricOutcome::ParametricOutcome(const RealConstantSet params, const tribool value)
+ParametricOutcome::ParametricOutcome(const RealParameterSet& params, tribool value)
 {
-	for (RealConstantSet::const_iterator const_it = params.begin(); const_it != params.end(); ++const_it)
-		_params.insert(*const_it);
+	for (RealParameterSet::const_iterator param_it = params.begin(); param_it != params.end(); ++param_it)
+		_params.insert(*param_it);
 
 	_value = value;
 }
 
 ParametricOutcome::ParametricOutcome(const ParametricOutcome& other)
 {
-	for (RealConstantSet::const_iterator const_it = other.getParams().begin(); const_it != other.getParams().end(); ++const_it)
-		_params.insert(*const_it);
+	for (RealParameterSet::const_iterator param_it = other.getParams().begin(); param_it != other.getParams().end(); ++param_it)
+		_params.insert(*param_it);
 
 	_value = other.getOutcome();
 }
@@ -46,15 +46,15 @@ ParametricOutcome::ParametricOutcome(const ParametricOutcome& other)
 ParametricOutcome&
 ParametricOutcome::operator=(const ParametricOutcome& other)
 {
-	for (RealConstantSet::const_iterator const_it = other.getParams().begin(); const_it != other.getParams().end(); ++const_it)
-		_params.insert(*const_it);
+	for (RealParameterSet::const_iterator param_it = other.getParams().begin(); param_it != other.getParams().end(); ++param_it)
+		_params.insert(*param_it);
 
 	_value = other.getOutcome();
 
 	return *this;
 }
 
-const RealConstantSet&
+const RealParameterSet&
 ParametricOutcome::getParams() const
 {
 	return _params;
@@ -77,15 +77,15 @@ ParametricOutcome::write(std::ostream& os) const
 void
 draw(std::string basename, const std::list<ParametricOutcome>& outcomes)
 {
-	RealConstantSet _params = outcomes.back().getParams();
+	RealParameterSet _params = outcomes.back().getParams();
 
 	ARIADNE_ASSERT_MSG(outcomes.size() > 0, "The outcomes list is empty.");
 	ARIADNE_ASSERT_MSG(_params.size() > 1, "At least two parameters are required for drawing.");
 
 	// Plots for each couple of parameters
-	for (RealConstantSet::const_iterator xparam_it = _params.begin(); xparam_it != _params.end(); ++xparam_it) {
+	for (RealParameterSet::const_iterator xparam_it = _params.begin(); xparam_it != _params.end(); ++xparam_it) {
 
-		RealConstantSet::const_iterator yparam_it = xparam_it;
+		RealParameterSet::const_iterator yparam_it = xparam_it;
 		for (++yparam_it; yparam_it != _params.end(); ++yparam_it)
 		{
 			std::string currentname = basename + "[" + xparam_it->name() + ","
@@ -98,8 +98,13 @@ draw(std::string basename, const std::list<ParametricOutcome>& outcomes)
 			// Sets up the figure
 			Figure fig;
 			Box graphics_box(2);
-			graphics_box[0] = outcomes.begin()->getParams().find(*xparam_it)->value();
-			graphics_box[1] = outcomes.begin()->getParams().find(*yparam_it)->value();
+			const RealParameterSet& params = outcomes.begin()->getParams();
+			for (RealParameterSet::const_iterator param_it = params.begin(); param_it != params.end(); ++param_it) {
+				if (param_it->name() == xparam_it->name())
+					graphics_box[0] = param_it->value();
+				if (param_it->name() == yparam_it->name())
+					graphics_box[1] = param_it->value();
+			}
 			array<uint> xy(2,0,1);
 			fig.set_projection_map(ProjectionFunction(xy,2));
 
@@ -108,8 +113,13 @@ draw(std::string basename, const std::list<ParametricOutcome>& outcomes)
 																		  outcome_it != outcomes.end();
 																		  ++outcome_it) {
 				Box outcome_box(2);
-				outcome_box[0] = outcome_it->getParams().find(*xparam_it)->value();
-				outcome_box[1] = outcome_it->getParams().find(*yparam_it)->value();
+				const RealParameterSet& params = outcome_it->getParams();
+				for (RealParameterSet::const_iterator param_it = params.begin(); param_it != params.end(); ++param_it) {
+					if (param_it->name() == xparam_it->name())
+						outcome_box[0] = param_it->value();
+					if (param_it->name() == yparam_it->name())
+						outcome_box[1] = param_it->value();
+				}
 
 				graphics_box[0].set_lower(min(graphics_box[0].lower(),outcome_box[0].lower()));
 				graphics_box[0].set_upper(max(graphics_box[0].upper(),outcome_box[0].upper()));

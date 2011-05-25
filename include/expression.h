@@ -53,8 +53,8 @@ class Real;
 class EnumeratedValue;
 
 typedef String Identifier;
-typedef std::set<Constant<Real> > RealParameter;
-typedef std::set<Constant<Real>,ConstantComparator<Real> > RealParameterSet;
+typedef Constant<Real> RealParameter;
+typedef std::set<Constant<Real>,ConstantSetComparator<Real> > RealParameterSet;
 
 class UntypedVariable;
 template<class T> class Variable;
@@ -121,9 +121,9 @@ class Expression {
     //! \brief Substitute the constant \a c for the variable \a v.
     template<class X> Expression<R> substitute(const Variable<X>& v, const Expression<X>& c) const {
         return Ariadne::substitute(*this,v,c); };
-	//! \brief Substitute the constant \a c into the Constant \a con.
-    template<class X> Expression<R> substitute(const Constant<X>& con, const X& c) const {
-        return Ariadne::substitute(*this,con,c); };
+	//! \brief Substitute the constant \a con.
+    template<class X> Expression<R> substitute(const Constant<X>& con) const {
+        return Ariadne::substitute(*this,con,con.value()); };
     //! \brief Simplify the expression (e.g. by evaluating constants).
     Expression<R> simplify() const {
         return Ariadne::simplify(*this); }
@@ -161,9 +161,9 @@ class Expression<Real> {
     //! \brief Substitute the constant \a c for the expression \a v.
     template<class X> Expression<R> substitute(const Variable<X>& v, const Expression<X>& c) const {
         return Ariadne::substitute(*this,v,c); }
-	//! \brief Substitute the constant \a c into the Constant \a con.
-    template<class X> Expression<R> substitute(const Constant<X>& con, const X& c) const {
-        return Ariadne::substitute(*this,con,c); }
+	//! \brief Substitute the constant \a con.
+    template<class X> Expression<R> substitute(const Constant<X>& con) const {
+        return Ariadne::substitute(*this,con,con.value()); }
     //! \brief Extract the parameters (i.e.,Constant<R> whose name begins with an alphabetic symbol).
     RealParameterSet parameters() const {
     	return Ariadne::parameters(*this); }

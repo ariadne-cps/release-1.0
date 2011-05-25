@@ -52,9 +52,9 @@ tribool
 Verifier::
 safety(SafetyVerificationInput& verInput) const
 {
-	RealConstantSet constants;
+	RealParameterSet params;
 
-	return _safety_nosplitting(verInput,constants);
+	return _safety_nosplitting(verInput,params);
 }
 
 
@@ -62,15 +62,15 @@ tribool
 Verifier::
 _safety(
 		SafetyVerificationInput& verInput,
-		const RealConstant& constant) const
+		const RealParameter& param) const
 {
 	HybridAutomaton& system = verInput.getSystem();
 
-	Real originalParameterValue = system.parameter_value(constant.name());
+	Real originalParameterValue = system.parameter_value(param.name());
 
-	system.substitute(constant);
+	system.substitute(param);
 	tribool result = safety(verInput);
-	system.substitute(constant,originalParameterValue);
+	system.substitute(RealParameter(param.name(),originalParameterValue));
 
 	return result;
 }
@@ -79,10 +79,10 @@ tribool
 Verifier::
 _safety(
 		SafetyVerificationInput& verInput,
-		const RealConstant& constant,
+		const RealParameter& param,
 		const Float& value) const
 {
-	const RealConstant modifiedParameter(constant.name(),Interval(value));
+	const RealParameter modifiedParameter(param.name(),Interval(value));
 
 	return _safety(verInput, modifiedParameter);
 }
@@ -92,7 +92,7 @@ tribool
 Verifier::
 _safety_nosplitting(
 		SafetyVerificationInput& verInput,
-		const RealConstantSet& constants) const
+		const RealParameterSet& params) const
 {
 	ARIADNE_LOG(2,"\n");
 	ARIADNE_LOG(2,"Iterative verification...\n");
@@ -102,7 +102,7 @@ _safety_nosplitting(
 	if (_settings->plot_results)
 		_plot_dirpath_init(system.name());
 
-	_resetAndChooseInitialSafetySettings(system,verInput.getDomain(),constants);
+	_resetAndChooseInitialSafetySettings(system,verInput.getDomain(),parameters_ids(params));
 
 	int& depth = _analyser->settings().maximum_grid_depth;
 	for (depth = _analyser->settings().lowest_maximum_grid_depth;
@@ -111,7 +111,7 @@ _safety_nosplitting(
 
 		ARIADNE_LOG(2, "Depth " << depth << "\n");
 
-		tribool result = _safety_once(system,verInput.getInitialSet(),verInput.getSafetyConstraint(),constants);
+		tribool result = _safety_once(system,verInput.getInitialSet(),verInput.getSafetyConstraint(),params);
 
 		if (!indeterminate(result))
 			return result;
@@ -127,16 +127,16 @@ _safety_once(
 		SystemType& system,
 		const HybridImageSet& initial_set,
 		const HybridConstraintSet& safety_constraint,
-		const RealConstantSet& constants) const
+		const RealParameterSet& params) const
 {
 		ARIADNE_LOG(3, "Verification...\n");
 
-		if (_safety_proving_once(system,initial_set,safety_constraint,constants)) {
+		if (_safety_proving_once(system,initial_set,safety_constraint,params)) {
 			ARIADNE_LOG(3, "Safe.\n");
 			return true;
 		}
 
-		if (_safety_disproving_once(system,initial_set,safety_constraint,constants)) {
+		if (_safety_disproving_once(system,initial_set,safety_constraint,params)) {
 			ARIADNE_LOG(3, "Unsafe.\n");
 			return false;
 		}
@@ -152,7 +152,7 @@ _safety_proving_once(
 		SystemType& system,
 		const HybridImageSet& initial_set,
 		const HybridConstraintSet& safety_constraint,
-		const RealConstantSet& constants) const
+		const RealParameterSet& params) const
 {
 	bool result;
 
@@ -160,9 +160,9 @@ _safety_proving_once(
 
 	int& maximum_grid_depth = _analyser->settings().maximum_grid_depth;
 
-	RealConstantSet original_constants = system.accessible_constants();
+	RealParameterSet original_params = system.parameters();
 
-	system.substitute(constants,_settings->use_param_midpoints_for_proving);
+	system.substitute(params,_settings->use_param_midpoints_for_proving);
 
 	ARIADNE_LOG(4,"Tuning settings for this proving iteration...\n");
 
@@ -198,7 +198,7 @@ _safety_proving_once(
 
 			if (backward_initial.empty()) {
 				ARIADNE_LOG(4, "The initial set for backward reachability is empty.\n");
-				system.substitute(original_constants);
+				system.substitute(original_params);
 				return true;
 			}
 
@@ -227,7 +227,7 @@ _safety_proving_once(
 
 		if (forward_initial.empty()) {
 			ARIADNE_LOG(4, "The initial set for forward reachability is empty.\n");
-			system.substitute(original_constants);
+			system.substitute(original_params);
 			return true;
 		}
 
@@ -254,7 +254,7 @@ _safety_proving_once(
 		result = false;
 	}
 
-	system.substitute(original_constants);
+	system.substitute(original_params);
 
 	return result;
 }
@@ -309,15 +309,15 @@ _safety_disproving_once(
 		HybridAutomaton& system,
 		const HybridImageSet& initial_set,
 		const HybridConstraintSet& safety_constraint,
-		const RealConstantSet& constants) const
+		const RealParameterSet& params) const
 {
 	ARIADNE_LOG(4,"Disproving...\n");
 
 	bool result = false;
 
-	RealConstantSet original_constants = system.accessible_constants();
+	RealParameterSet original_params = system.parameters();
 
-	system.substitute(constants,_settings->use_param_midpoints_for_disproving);
+	system.substitute(params,_settings->use_param_midpoints_for_disproving);
 
 	ARIADNE_LOG(4,"Tuning settings for this disproving iteration...\n");
 
@@ -345,7 +345,7 @@ _safety_disproving_once(
 		result = true;
 	}
 
-	system.substitute(original_constants);
+	system.substitute(original_params);
 
 	ARIADNE_LOG(4, (result ? "Disproved.\n" : "Not disproved.\n") );
 
@@ -357,20 +357,20 @@ std::list<ParametricOutcome>
 Verifier::
 parametric_safety(
 		SafetyVerificationInput& verInput,
-		const RealConstantSet& params) const
+		const RealParameterSet& params) const
 {
 	ARIADNE_ASSERT_MSG(params.size() > 0, "Provide at least one parameter.");
 
 	std::list<ParametricOutcome> result;
 
-	std::list<RealConstantSet> splittings = maximally_split_parameters(params,_settings->maximum_parameter_depth);
+	std::list<RealParameterSet> splittings = maximally_split_parameters(params,_settings->maximum_parameter_depth);
 	uint i=0;
-	for (std::list<RealConstantSet>::const_iterator splitting_it = splittings.begin();
+	for (std::list<RealParameterSet>::const_iterator splitting_it = splittings.begin();
 													 splitting_it != splittings.end();
 													 ++splitting_it)
 	{
 		ARIADNE_LOG(1,"<Split parameters set #" << ++i << "/" << splittings.size() << ">\n");
-		RealConstantSet current_params = *splitting_it;
+		RealParameterSet current_params = *splitting_it;
 		ARIADNE_LOG(1,"Parameter values: " << current_params << " ");
 		tribool outcome = _safety_nosplitting(verInput,current_params);
 		ARIADNE_LOG(1,"Outcome: " << pretty_print(outcome) << "\n");
@@ -386,7 +386,7 @@ dominance(
 		DominanceVerificationInput& dominating,
 		DominanceVerificationInput& dominated) const
 {
-	const RealConstantSet dominatingConstants;
+	const RealParameterSet dominatingConstants;
 	return _dominance(dominating,dominated,dominatingConstants);
 }
 
@@ -395,15 +395,15 @@ Verifier::
 _dominance(
 		DominanceVerificationInput& dominating,
 		DominanceVerificationInput& dominated,
-		const RealConstant& constant) const
+		const RealParameter& param) const
 {
 	HybridAutomaton& system = dominating.getSystem();
 
-	Real original_value = system.parameter_value(constant.name());
+	Real original_value = system.parameter_value(param.name());
 
-	system.substitute(constant);
+	system.substitute(param);
 	tribool result = dominance(dominating,dominated);
-	system.substitute(constant,original_value);
+	system.substitute(RealParameter(param.name(),original_value));
 
 	return result;
 }
@@ -413,10 +413,10 @@ Verifier::
 _dominance(
 		DominanceVerificationInput& dominating,
 		DominanceVerificationInput& dominated,
-		const RealConstant& constant,
+		const RealParameter& param,
 		const Float& value) const
 {
-	const RealConstant modifiedConstant(constant.name(),Interval(value));
+	const RealParameter modifiedConstant(param.name(),Interval(value));
 
 	return _dominance(dominating,dominated,modifiedConstant);
 }
@@ -427,17 +427,17 @@ Verifier::
 parametric_dominance(
 		DominanceVerificationInput& dominating,
 		DominanceVerificationInput& dominated,
-		const RealConstantSet& dominating_params) const
+		const RealParameterSet& dominating_params) const
 {
 	ARIADNE_ASSERT_MSG(dominating_params.size() > 0, "Provide at least one parameter.");
 
 	std::list<ParametricOutcome> result;
 
-	std::list<RealConstantSet> splittings = maximally_split_parameters(dominating_params,_settings->maximum_parameter_depth);
+	std::list<RealParameterSet> splittings = maximally_split_parameters(dominating_params,_settings->maximum_parameter_depth);
 	uint i=0;
-	for (std::list<RealConstantSet>::const_iterator splitting_it = splittings.begin(); splitting_it != splittings.end(); ++splitting_it) {
+	for (std::list<RealParameterSet>::const_iterator splitting_it = splittings.begin(); splitting_it != splittings.end(); ++splitting_it) {
 		ARIADNE_LOG(1,"<Split parameters set #" << ++i << "/" << splittings.size() << ">\n");
-		RealConstantSet current_params = *splitting_it;
+		RealParameterSet current_params = *splitting_it;
 		ARIADNE_LOG(1,"Parameter values: " << current_params << " ");
 		tribool outcome = _dominance(dominating,dominated,current_params);
 		ARIADNE_LOG(1,"Outcome: " << pretty_print(outcome) << "\n");
@@ -452,7 +452,7 @@ tribool
 Verifier::_dominance(
 		DominanceVerificationInput& dominating,
 		DominanceVerificationInput& dominated,
-		const RealConstantSet& constants) const
+		const RealParameterSet& params) const
 {
 	ARIADNE_ASSERT(dominating.getProjection().size() == dominated.getProjection().size());
 
@@ -470,12 +470,12 @@ Verifier::_dominance(
 	{
 		ARIADNE_LOG(2, "Depth " << depth << "\n");
 
-		if (_dominance_proving_once(dominating, dominated, constants)) {
+		if (_dominance_proving_once(dominating, dominated, params)) {
 			ARIADNE_LOG(3, "Dominates.\n");
 			return true;
 		}
 
-		if (_dominance_disproving_once(dominating, dominated, constants)) {
+		if (_dominance_disproving_once(dominating, dominated, params)) {
 			ARIADNE_LOG(3, "Does not dominate.\n");
 			return false;
 		}
@@ -489,23 +489,23 @@ bool
 Verifier::_dominance_proving_once(
 		DominanceVerificationInput& dominating,
 		DominanceVerificationInput& dominated,
-		const RealConstantSet& constants) const
+		const RealParameterSet& params) const
 {
 	ARIADNE_LOG(3,"Proving...\n");
 
 	bool result;
 
-	const RealConstantSet& original_constants = dominating.getSystem().accessible_constants();
+	const RealParameterSet& original_constants = dominating.getSystem().parameters();
 
-	dominating.getSystem().substitute(constants,_settings->use_param_midpoints_for_proving);
+	dominating.getSystem().substitute(params,_settings->use_param_midpoints_for_proving);
 
 	try {
 		GridTreeSet flattened_dominated_lower_reach;
 		Vector<Float> flattened_epsilon;
 		make_lpair<GridTreeSet,Vector<Float> >(flattened_dominated_lower_reach,flattened_epsilon) =
-				_dominance_flattened_lower_reach_and_epsilon(dominated,constants,DOMINATED_SYSTEM);
+				_dominance_flattened_lower_reach_and_epsilon(dominated,params,DOMINATED_SYSTEM);
 
-		GridTreeSet flattened_dominating_outer_reach = _dominance_flattened_outer_reach(dominating,constants,DOMINATING_SYSTEM);
+		GridTreeSet flattened_dominating_outer_reach = _dominance_flattened_outer_reach(dominating,params,DOMINATING_SYSTEM);
 
 		result = definitely(covers(flattened_dominated_lower_reach,flattened_dominating_outer_reach,flattened_epsilon));
 
@@ -528,23 +528,23 @@ bool
 Verifier::_dominance_disproving_once(
 		DominanceVerificationInput& dominating,
 		DominanceVerificationInput& dominated,
-	  	const RealConstantSet& constants) const
+	  	const RealParameterSet& params) const
 {
 	ARIADNE_LOG(3,"Disproving...\n");
 
 	bool result;
 
-	const RealConstantSet& original_constants = dominating.getSystem().accessible_constants();
+	const RealParameterSet& original_params = dominating.getSystem().parameters();
 
-	dominating.getSystem().substitute(constants,_settings->use_param_midpoints_for_disproving);
+	dominating.getSystem().substitute(params,_settings->use_param_midpoints_for_disproving);
 
 	try {
 		GridTreeSet flattened_dominating_lower_reach;
 		Vector<Float> flattened_epsilon;
 		make_lpair<GridTreeSet,Vector<Float> >(flattened_dominating_lower_reach,flattened_epsilon) =
-				_dominance_flattened_lower_reach_and_epsilon(dominating,constants,DOMINATING_SYSTEM);
+				_dominance_flattened_lower_reach_and_epsilon(dominating,params,DOMINATING_SYSTEM);
 
-		GridTreeSet flattened_dominated_outer_reach = _dominance_flattened_outer_reach(dominated,constants,DOMINATED_SYSTEM);
+		GridTreeSet flattened_dominated_outer_reach = _dominance_flattened_outer_reach(dominated,params,DOMINATED_SYSTEM);
 
 		result = definitely(!inside(flattened_dominating_lower_reach,flattened_dominated_outer_reach,
 				flattened_epsilon,_analyser->settings().maximum_grid_depth));
@@ -556,7 +556,7 @@ Verifier::_dominance_disproving_once(
 
 	ARIADNE_LOG(3, (result ? "Disproved.\n" : "Not disproved.\n") );
 
-	dominating.getSystem().substitute(original_constants);
+	dominating.getSystem().substitute(original_params);
 
 	return result;
 }
@@ -566,7 +566,7 @@ std::pair<GridTreeSet,Vector<Float> >
 Verifier::
 _dominance_flattened_lower_reach_and_epsilon(
 		DominanceVerificationInput& verInfo,
-		const RealConstantSet& constants,
+		const RealParameterSet& params,
 		DominanceSystem dominanceSystem) const
 {
 	string descriptor = (dominanceSystem == DOMINATING_SYSTEM ? "dominating" : "dominated");
@@ -574,11 +574,11 @@ _dominance_flattened_lower_reach_and_epsilon(
 			_dominating_coarse_outer_approximation->get() : _dominated_coarse_outer_approximation->get());
 	HybridGridTreeSet reachability_restriction = (dominanceSystem == DOMINATING_SYSTEM ?
 			_dominating_reachability_restriction : _dominated_reachability_restriction);
+	Set<Identifier> locked_params_ids = (dominanceSystem == DOMINATING_SYSTEM ? parameters_ids(params) : Set<Identifier>());
 
 	ARIADNE_LOG(4,"Choosing the settings for the lower reached region of the " << descriptor << " system...\n");
 
-	RealConstantSet emptyLockedConstants;
-	_chooseDominanceSettings(verInfo,emptyLockedConstants,outer_approximation,reachability_restriction,LOWER_SEMANTICS);
+	_chooseDominanceSettings(verInfo,locked_params_ids,outer_approximation,reachability_restriction,LOWER_SEMANTICS);
 
 	ARIADNE_LOG(4,"Getting the lower reached region of the " << descriptor << " system...\n");
 
@@ -608,7 +608,7 @@ GridTreeSet
 Verifier::
 _dominance_flattened_outer_reach(
 		DominanceVerificationInput& verInput,
-		const RealConstantSet& constants,
+		const RealParameterSet& params,
 		DominanceSystem dominanceSystem) const
 {
 	string descriptor = (dominanceSystem == DOMINATING_SYSTEM ? "dominating" : "dominated");
@@ -616,10 +616,11 @@ _dominance_flattened_outer_reach(
 			*_dominating_coarse_outer_approximation : *_dominated_coarse_outer_approximation);
 	HybridGridTreeSet& reachability_restriction = (dominanceSystem == DOMINATING_SYSTEM ?
 			_dominating_reachability_restriction : _dominated_reachability_restriction);
+	Set<Identifier> locked_params_ids = (dominanceSystem == DOMINATING_SYSTEM ? parameters_ids(params) : Set<Identifier>());
 
 	ARIADNE_LOG(4,"Choosing the settings for the outer reached region of the " << descriptor << " system...\n");
 
-	_chooseDominanceSettings(verInput,constants,outer_approximation_cache.get(),reachability_restriction,UPPER_SEMANTICS);
+	_chooseDominanceSettings(verInput,locked_params_ids,outer_approximation_cache.get(),reachability_restriction,UPPER_SEMANTICS);
 
 	ARIADNE_LOG(4,"Getting the outer reached region of the " << descriptor << " system...\n");
 
@@ -644,14 +645,14 @@ Verifier::
 _resetAndChooseInitialSafetySettings(
 		const HybridAutomaton& system,
 		const HybridBoxes& domain,
-		const RealConstantSet& locked_constants) const
+		const Set<Identifier>& locked_params_ids) const
 {
 	static const bool EQUAL_GRID_FOR_ALL_LOCATIONS = false;
 
 	_safety_coarse_outer_approximation->reset();
 	_safety_reachability_restriction = HybridGridTreeSet();
 
-	_chooseInitialSafetySettings(system,domain,locked_constants);
+	_chooseInitialSafetySettings(system,domain,locked_params_ids);
 
 	if (_settings->enable_domain_enforcing) {
 		std::pair<HybridGridTreeSet,HybridGridTreeSet> reach_pair =
@@ -691,7 +692,7 @@ Verifier::
 _chooseInitialSafetySettings(
 		const HybridAutomaton& system,
 		const HybridBoxes& domain,
-		const RealConstantSet& locked_constants) const
+		const Set<Identifier>& locked_params_ids) const
 {
 	ARIADNE_LOG(3,"Choosing the initial settings of the analyser...\n");
 	DiscreteEvolutionSettings& settings = _analyser->settings();
@@ -700,8 +701,8 @@ _chooseInitialSafetySettings(
 	ARIADNE_LOG(4, "Domain: " << domain << "\n");
 	settings.lock_to_grid_time = getLockToGridTime(system,domain);
 	ARIADNE_LOG(4, "Lock to grid time: " << settings.lock_to_grid_time << "\n");
-	settings.locked_constants = locked_constants;
-	ARIADNE_LOG(4, "Locked constants: " << locked_constants << "\n");
+	settings.locked_parameters_ids = locked_params_ids;
+	ARIADNE_LOG(4, "Locked parameters IDs: " << locked_params_ids << "\n");
 }
 
 
@@ -757,7 +758,7 @@ void
 Verifier::
 _chooseDominanceSettings(
 		const DominanceVerificationInput& verInput,
-		const RealConstantSet& locked_constants,
+		const Set<Identifier>& locked_params_ids,
 		const HybridGridTreeSet& outer_reach,
 		const HybridGridTreeSet& outer_approx_constraint,
 		Semantics semantics) const
@@ -772,8 +773,8 @@ _chooseDominanceSettings(
 
 	_analyser->settings().lock_to_grid_time = getLockToGridTime(verInput.getSystem(),_analyser->settings().domain_bounds);
 	ARIADNE_LOG(5, "Lock to grid time: " << _analyser->settings().lock_to_grid_time << "\n");
-	_analyser->settings().locked_constants = locked_constants;
-	ARIADNE_LOG(5, "Locked constants: " << _analyser->settings().locked_constants << "\n");
+	_analyser->settings().locked_parameters_ids = locked_params_ids;
+	ARIADNE_LOG(5, "Locked parameters IDs: " << _analyser->settings().locked_parameters_ids << "\n");
 }
 
 void
@@ -839,36 +840,41 @@ pretty_print(tribool value)
 }
 
 
-std::list<RealConstantSet>
+std::list<RealParameterSet>
 maximally_split_parameters(
-		const RealConstantSet& params,
+		const RealParameterSet& params,
 		const uint& maximum_parameter_depth)
 {
-	std::list<RealConstantSet> source;
-	std::list<RealConstantSet> destination;
+	std::list<RealParameterSet> source;
+	std::list<RealParameterSet> destination;
 	destination.push_back(params);
 
-	for (RealConstantSet::const_iterator param_it = params.begin(); param_it != params.end(); ++param_it)
+	for (RealParameterSet::const_iterator param_it = params.begin(); param_it != params.end(); ++param_it)
 	{
 		for (uint i=0; i<maximum_parameter_depth; i++) {
 			source.clear();
-			source.insert<std::list<RealConstantSet>::const_iterator>(source.begin(),destination.begin(),destination.end());
+			source.insert<std::list<RealParameterSet>::const_iterator>(source.begin(),destination.begin(),destination.end());
 			destination.clear();
 
 			while (!source.empty()) {
-				RealConstantSet currentParams = source.back();
+				RealParameterSet currentParams = source.back();
 				source.pop_back();
 
-				RealConstantSet newConfigurationLeft = currentParams;
-				RealConstantSet newConfigurationRight = currentParams;
-				newConfigurationLeft.erase(*param_it);
-				newConfigurationRight.erase(*param_it);
-
-				const Real& currentInterval = currentParams.find(*param_it)->value();
-				newConfigurationLeft.insert(RealConstant(param_it->name(),
-						Interval(currentInterval.lower(),currentInterval.midpoint())));
-				newConfigurationRight.insert(RealConstant(param_it->name(),
-						Interval(currentInterval.midpoint(),currentInterval.upper())));
+				RealParameterSet newConfigurationLeft;
+				RealParameterSet newConfigurationRight;
+				;
+				for (RealParameterSet::const_iterator current_it = currentParams.begin(); current_it != currentParams.end(); ++current_it) {
+					if (current_it->name() == param_it->name()) {
+						Real currentInterval = current_it->value();
+						newConfigurationLeft.insert(RealParameter(current_it->name(),
+								Interval(currentInterval.lower(),currentInterval.midpoint())));
+						newConfigurationRight.insert(RealParameter(current_it->name(),
+								Interval(currentInterval.midpoint(),currentInterval.upper())));
+					} else {
+						newConfigurationLeft.insert(*current_it);
+						newConfigurationRight.insert(*current_it);
+					}
+				}
 
 				destination.push_back(newConfigurationLeft);
 				destination.push_back(newConfigurationRight);

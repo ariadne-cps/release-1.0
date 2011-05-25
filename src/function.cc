@@ -120,9 +120,9 @@ struct ScalarExpressionFunctionBody
     virtual std::ostream& write(std::ostream& os) const {
         return os << "Function( space="<<this->_space<<", expression="<<this->_expression<<" )"; }
 
-	/*! \brief Substitute the constant \a c into the corresponding Constant \a con, if present */
-	void substitute(const Constant<Real>& con, const Real& c) {
-		this->_expression = this->_expression.substitute(con,c);
+	/*! \brief Substitute the Constant \a con, if present */
+	void substitute(const Constant<Real>& con) {
+		this->_expression = this->_expression.substitute(con);
 	}
 
 	RealParameterSet parameters() const {
@@ -165,10 +165,10 @@ struct VectorExpressionFunctionBody
         }
     }
 
-	/*! \brief Substitute the constant \a c into the corresponding Constant \a con, if present, on all expressions. */
-	void substitute(const RealConstant& con, const Real& c) {
+	/*! \brief Substitute the constant \a c on all constants with the same name, on all expressions. */
+	void substitute(const RealConstant& con) {
 		for (List< Assignment<ExtendedRealVariable,RealExpression> >::iterator it=this->_assignments.begin();it!=this->_assignments.end();it++)
-			it->rhs = it->rhs.substitute(con,c);
+			it->rhs = it->rhs.substitute(con);
 	}
 
 	/*! \brief Get the parameters (i.e. Constant<Real> whose name starts with a letter) from the function. */
@@ -409,9 +409,9 @@ struct VectorOfScalarFunctionBody
         return this->_vec[i]; }
 
 	/*! \brief Substitute the constant \a c into the corresponding Constant \a con, if present, on all expressions. */
-	void substitute(const RealConstant& con, const Real& c) {
+	void substitute(const RealConstant& con) {
 		for (Vector<ScalarFunction>::iterator it=this->_vec.begin();it!=this->_vec.end();it++)
-			(*it).substitute(con,c);
+			(*it).substitute(con);
 	}
 
 	RealParameterSet parameters() {
@@ -817,10 +817,10 @@ Polynomial<Real> ScalarFunction::polynomial() const
     ARIADNE_THROW(std::runtime_error,"ScalarFunction::polynomial()","FunctionBody "<<*this<<" is not a polynomial.");
 }
 
-void ScalarFunction::substitute(const Constant<Real>& con, const Real& c) 
+void ScalarFunction::substitute(const Constant<Real>& con)
 { 
 		ScalarExpressionFunctionBody* sefb_ptr=dynamic_cast<ScalarExpressionFunctionBody*>(this->_ptr.operator->());
-		if (sefb_ptr) sefb_ptr->substitute(con,c); 
+		if (sefb_ptr) sefb_ptr->substitute(con);
 }
 
 RealParameterSet ScalarFunction::parameters() const
@@ -1187,12 +1187,12 @@ void VectorFunction::set(Nat i, ScalarFunction f)
     vptr->_vec[i]=f;
 }
 
-void VectorFunction::substitute(const RealConstant& con, const Real& c)
+void VectorFunction::substitute(const RealConstant& con)
 {
 	VectorExpressionFunctionBody* e_ptr=dynamic_cast<VectorExpressionFunctionBody*>(this->_ptr.operator->());
 	VectorOfScalarFunctionBody* s_ptr=dynamic_cast<VectorOfScalarFunctionBody*>(this->_ptr.operator->());
-	if (e_ptr) e_ptr->substitute(con,c);
-	else if (s_ptr) s_ptr->substitute(con,c);	
+	if (e_ptr) e_ptr->substitute(con);
+	else if (s_ptr) s_ptr->substitute(con);
 }
 
 RealParameterSet VectorFunction::parameters() const

@@ -57,7 +57,7 @@ class DiscreteLocation;
 template<class BS> class HybridBasicSet;
 typedef HybridBasicSet<Box> HybridBox;
 typedef std::map<DiscreteLocation,Vector<Float> > HybridFloatVector;
-typedef std::map<RealConstant,int,ConstantComparator<Real> > RealConstantIntMap;
+typedef std::map<Identifier,int> ParameterIdIntMap;
 typedef HybridAutomaton SystemType;
 typedef HybridEvolver::EnclosureType EnclosureType;
 typedef HybridEvolver::ContinuousEnclosureType ContinuousEnclosureType;
@@ -227,7 +227,6 @@ class HybridReachabilityAnalyser
     typedef HybridOpenSetInterface OpSI;
     typedef HybridOvertSetInterface OvSI;
     typedef HybridCompactSetInterface CoSI;
-    typedef std::map<RealConstant,int,ConstantComparator<Real> > RealConstantMap;
 
   private:
 
@@ -349,13 +348,13 @@ class HybridReachabilityAnalyser
     		const std::map<DiscreteLocation,uint>& superposed_evolve_sizes,
     		bool use_domain_checking) const;
 
-    /*! \brief Gets the set of all the split intervals from the \a system with a given \a tolerance.
+    /*! \brief Gets the set of all the split intervals from the parameters of the \a system with a given \a tolerance.
      *  \details The calculation is performed over the domain with a splitting limit controlled by the \a tolerance, excluding
-     *  those constants present in the locked_constants.
+     *  those parameters present in the locked_parameters.
      *  Orders the list elements by first picking the leftmost subintervals, followed by the rightmost and then
-     *  all the remaining from right to left. If no constants to split are available, returns the original constants.
+     *  all the remaining from right to left. If no parameters to split are available, returns the original parameters.
      */
-    std::list<RealConstantSet> _getSplitConstantsIntervalsSet(
+    std::list<RealParameterSet> _getSplitParametersIntervalsSet(
     		HybridAutomaton system,
     		float tolerance) const;
 };
@@ -397,28 +396,28 @@ list<EnclosureType> enclosures_from_split_domain_midpoints(
 		const HybridImageSet img_set,
 		const HybridFloatVector max_cell_widths);
 
-/*! \brief Gets for each non-singleton constant the factor determining the number of chunks its interval should be split into.
+/*! \brief Gets for each non-singleton parameter the factor determining the number of chunks its interval should be split into.
  *
  * \details Splits until the deviation of the derivatives is reasonably low in respect to the deviation calculated at the midpoint. This
  * limit value is expressed as a percentage using \a targetRatioPerc.
  *
- * @param system The system to get the accessible constants from.
+ * @param system The system to get the parameters from.
  * @param targetRatioPerc The derivative widths ratio percentage to reach before termination.
  *
- * @return A split factor for each non-singleton accessible constant of the \a system.
+ * @return A split factor for each non-singleton parameter name of the \a system.
  */
-RealConstantIntMap getSplitFactorsOfConstants(
+ParameterIdIntMap getSplitFactorsOfParameters(
 		HybridAutomaton& system,
-		const RealConstantSet& locked_constants,
+		const Set<Identifier>& locked_params_ids,
 		const Float& targetRatioPerc,
 		const HybridBoxes& bounding_domain);
 
-/*! \brief Gets the best constant among the \a working_constants of the \a system to split, in terms of
+/*! \brief Gets the best constant among the \a working_parameters of the \a system to split, in terms of
  * relative reduction of derivative widths compared to some \a referenceWidths.
  */
-RealConstant getBestConstantToSplit(
+RealConstant getBestParameterToSplit(
 		SystemType& system,
-		const RealConstantSet& working_constants,
+		const RealParameterSet& working_parameters,
 		const HybridFloatVector& referenceWidths,
 		const HybridBoxes& domain);
 
@@ -436,20 +435,20 @@ HybridFloatVector getDerivativeWidths(
 		const HybridBoxes& domain);
 
 /*! \brief Gets the set of all the midpoints of the split intervals in \a intervals_set. */
-std::list<RealConstantSet> getSplitConstantsMidpointsSet(const std::list<RealConstantSet>& intervals_set);
+std::list<RealParameterSet> getSplitParametersMidpointsSet(const std::list<RealParameterSet>& intervals_set);
 
 /*! \brief Splits the constant \a con into \a numParts parts. */
-std::vector<RealConstant> split(
-		const RealConstant& con,
+std::vector<RealParameter> split(
+		const RealParameter& con,
 		uint numParts);
 
 /*! \brief Creates a set \a dest of all the possible combinations of split values from \a src. */
 void fillSplitSet(
-		const std::vector<std::vector<RealConstant> >& src,
-		std::vector<std::vector<RealConstant> >::iterator col_it,
-		std::vector<RealConstant>::iterator row_it,
-		RealConstantSet s,
-		std::list<RealConstantSet>& dest);
+		const std::vector<std::vector<RealParameter> >& src,
+		std::vector<std::vector<RealParameter> >::iterator col_it,
+		std::vector<RealParameter>::iterator row_it,
+		RealParameterSet s,
+		std::list<RealParameterSet>& dest);
 
 /*! \brief Splits \a target_encl for location \a target_loc, storing the result in \a initial_enclosures.
  * \details The function is recursive.

@@ -44,8 +44,6 @@ namespace Ariadne {
 
 class HybridAutomaton;
 
-typedef std::set<RealConstant,ConstantNameComparator<Real> > RealConstantSet;
-
 /*! \brief A discrete mode of a hybrid I/O automaton, comprising continuous evolution given by a vector field
  * within and invariant constraint set.
  *
@@ -89,8 +87,8 @@ class DiscreteIOMode {
     const std::list< RealExpression >& invariants() const {
         return this->_invariants; }
    
-	//! \brief Substitute the constant \a c into the corresponding Constant \a con, if present, on the invariants and dynamic functions.
-	void substitute(const Constant<Real>& con, const Real& c);
+	//! \brief Substitute the constant \a con, if present, on the invariants and dynamic functions.
+	void substitute(const Constant<Real>& con);
 
 	/*! \brief Get the parameters (i.e., the RealConstant whose name start with a letter) from the dynamics and invariants */
 	RealParameterSet parameters() const {
@@ -185,8 +183,8 @@ class DiscreteIOTransition
     DiscreteLocation target() const {
         return this->_target; }
 
-	//! \brief Substitute the constant \a c into the corresponding Constant \a con, if present, on the reset and activation functions.
-	void substitute(const Constant<Real>& con, const Real& c);
+	//! \brief Substitute the constant \a con, if present, on the reset and activation functions.
+	void substitute(const Constant<Real>& con);
 
 	/*! \brief Get the parameters (i.e., the RealConstant whose name starts with a letter) from the transition and reset dynamics. */
 	RealParameterSet parameters() const {
@@ -324,10 +322,6 @@ class HybridIOAutomaton
 
     //! \brief The hybrid automaton's transitions.
     std::list< DiscreteIOTransition > _transitions;
-    
-    //! \brief The accessible constants.
-    //! \details This set does not necessarily reflect the whole set of constants in all functions.
-    RealConstantSet _accessible_constants;
     
     //! \brief Access to a discrete mode (for internal use only)
     DiscreteIOMode& _mode(DiscreteLocation state);
@@ -558,18 +552,6 @@ class HybridIOAutomaton
                                                DiscreteLocation source,
                                                const RealExpression& activation);                                              
 
-	//! \brief Substitute the constant \a c into the corresponding Constant \a con, if present, on all the functions of modes and transitions.
-	void substitute(Constant<Real> con, const Real& c);
-
-	//! \brief Substitute the value of the Constant \a con into the corresponding Constant on all the functions of modes and transitions.
-	void substitute(Constant<Real> con) { this->substitute(con,con.value()); }
-
-	/*! \brief Substitute constants values from a set \a cons. */
-	void substitute(const RealConstantSet& cons);
-
-	/*! \brief Substitute constants values from a set \a cons, using the midpoint if \a use_midpoint is set. */
-	void substitute(const RealConstantSet& cons, bool use_midpoint);
-
 	//@}
 
     //@{
@@ -630,17 +612,20 @@ class HybridIOAutomaton
     //! \brief The set of discrete transitions. 
     const std::list< DiscreteIOTransition >& transitions() const;
 
-    //! \brief Get the value of an accessible constant.
+    //! \brief Get the value of a parameter.
     Real parameter_value(String name) const;
 
 	/*! \brief Get the parameters (i.e., the RealConstant whose name start with a letter) from the dynamics and invariants */
 	RealParameterSet parameters() const;
 
-    //! \brief A copy of the set of accessible constants.
-    RealConstantSet accessible_constants() const;
+	//! \brief Substitute the parameter \a param, if present, on all the functions of modes and transitions.
+	void substitute(const Constant<Real>& param);
 
-    //! \brief A copy of the set of non-singleton accessible constants.
-    RealConstantSet nonsingleton_accessible_constants() const;
+	/*! \brief Substitute values from a set \a params. */
+	void substitute(const RealParameterSet& params);
+
+	/*! \brief Substitute values from a set \a params, using the midpoint if \a use_midpoint is set. */
+	void substitute(const RealParameterSet& params, bool use_midpoint);
 
     //! \brief The discrete transitions from location \a source.
     std::list< DiscreteIOTransition > transitions(DiscreteLocation source) const;

@@ -531,47 +531,47 @@ std::ostream&
 operator<<(std::ostream& os, const HybridAutomaton& ha)
 {
     return os << "HybridAutomaton( name=" << ha.name() <<
-    							", accessible constants=" << ha.accessible_constants() <<
     							", modes=" << ha.modes() <<
     							", transitions=" << ha.transitions() <<
     							")";
 }
 
 void 
-HybridAutomaton::substitute(Constant<Real> con, const Real& c)
+HybridAutomaton::substitute(RealParameter param)
 {
-	RealConstantSet parameters = this->accessible_constants();
+	RealParameterSet parameters = this->parameters();
 
-	RealConstantSet::const_iterator param_it = parameters.find(con);
+	bool found = false;
+	for (RealParameterSet::const_iterator param_it = parameters.begin(); param_it != parameters.end(); ++param_it)
+		if (param_it->name() == param.name()) {
+			found = true;
+			break;
+		}
 
-	if (param_it == parameters.end()) {
-		ARIADNE_FAIL_MSG("The parameter to substitute is not present in the system.");
-	}
+	ARIADNE_ASSERT_MSG(found, "The parameter to substitute is not present in the system.");
 
-	// Substitutes on the modes and transitions
 	for (std::list<DiscreteMode>::iterator modes_it=this->_modes.begin();modes_it!=this->_modes.end();modes_it++)
-		modes_it->substitute(con,c);
+		modes_it->substitute(param);
 	for (std::list<DiscreteTransition>::iterator trans_it=this->_transitions.begin();trans_it!=this->_transitions.end();trans_it++)
-		trans_it->substitute(con,c);
+		trans_it->substitute(param);
 }
 
 void
-HybridAutomaton::substitute(const RealConstantSet& cons)
+HybridAutomaton::substitute(const RealParameterSet& params)
 {
-	// Restores the system
-	for (RealConstantSet::const_iterator const_it = cons.begin(); const_it != cons.end(); ++const_it)
-		substitute(*const_it);
+	for (RealParameterSet::const_iterator param_it = params.begin(); param_it != params.end(); ++param_it)
+		substitute(*param_it);
 }
 
 
 void
-HybridAutomaton::substitute(const RealConstantSet& cons, bool use_midpoint)
+HybridAutomaton::substitute(const RealParameterSet& params, bool use_midpoint)
 {
-	for (RealConstantSet::const_iterator cons_it = cons.begin(); cons_it != cons.end(); ++cons_it) {
+	for (RealParameterSet::const_iterator param_it = params.begin(); param_it != params.end(); ++param_it) {
 		if (use_midpoint)
-			substitute(*cons_it,cons_it->value().midpoint());
+			substitute(RealConstant(param_it->name(),param_it->value().midpoint()));
 		else
-			substitute(*cons_it);
+			substitute(*param_it);
 	}
 }
 
@@ -587,7 +587,7 @@ HybridAutomaton::parameter_value(String name) const
 			return parameter_it->value();
 	}
 
-	ARIADNE_FAIL_MSG("The constant is not used in the system.");
+	ARIADNE_FAIL_MSG("The parameter is not used anywhere in the system.");
 }
 
 
@@ -607,33 +607,26 @@ HybridAutomaton::parameters() const
 	return result;
 }
 
-RealConstantSet
-HybridAutomaton::accessible_constants() const
+
+RealParameterSet
+nonsingleton_parameters(const RealParameterSet& parameters)
 {
-	RealParameterSet parameters = this->parameters();
-
-	RealConstantSet result;
-
-	for (RealParameterSet::const_iterator parameter_it = parameters.begin();
-												 parameter_it != parameters.end();
-												 ++parameter_it) {
-			result.insert(*parameter_it);
+	RealParameterSet result;
+	for (RealParameterSet::const_iterator param_it = parameters.begin(); param_it != parameters.end(); ++param_it) {
+		if (!param_it->value().singleton())
+			result.insert(*param_it);
 	}
 
 	return result;
 }
 
-RealConstantSet
-HybridAutomaton::nonsingleton_accessible_constants() const
+Set<Identifier>
+parameters_ids(const RealParameterSet& parameters)
 {
-	RealConstantSet result;
+	Set<Identifier> result;
 
-	RealParameterSet parameters = this->parameters();
-	for (RealParameterSet::const_iterator parameter_it = parameters.begin();
-												 parameter_it != parameters.end();
-												 ++parameter_it) {
-		if (!parameter_it->value().singleton())
-			result.insert(*parameter_it);
+	for (RealParameterSet::const_iterator param_it = parameters.begin(); param_it != parameters.end(); ++param_it) {
+		result.insert(param_it->name());
 	}
 
 	return result;

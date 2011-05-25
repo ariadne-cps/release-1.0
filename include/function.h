@@ -59,11 +59,12 @@ template<class T> class DottedVariable;
 template<class T> class PrimedVariable;
 template<class T> class Expression;
 template<class T> class Space;
-template<class T> class ConstantComparator;
+template<class T> class ConstantSetComparator;
 
 typedef ExtendedVariable<Real> ExtendedRealVariable;
 typedef Variable<Real> RealVariable;
 typedef Constant<Real> RealConstant;
+typedef Constant<Real> RealParameter;
 typedef DottedVariable<Real> DottedRealVariable;
 typedef PrimedVariable<Real> PrimedRealVariable;
 typedef Expression<Real> RealExpression;
@@ -73,7 +74,7 @@ typedef Assignment<RealVariable,RealExpression> RealAssignment;
 typedef Assignment<ExtendedRealVariable,RealExpression> ExtendedRealAssignment;
 typedef Assignment<DottedRealVariable,RealExpression> DottedRealAssignment;
 typedef Assignment<PrimedRealVariable,RealExpression> PrimedRealAssignment;
-typedef std::set<Constant<Real>,ConstantComparator<Real> > RealParameterSet;
+typedef std::set<Constant<Real>,ConstantSetComparator<Real> > RealParameterSet;
 
 class ScalarFunction;
 class VectorFunction;
@@ -109,8 +110,8 @@ class ScalarFunction
     Interval evaluate(const Vector<Interval>& x) const { return this->_ptr->evaluate(x); }
     TaylorModel evaluate(const Vector<TaylorModel>& x) const { return this->_ptr->evaluate(x); }
 
-	/*! \brief Substitute the constant \a c into the corresponding Constant \a con, if present, on all expressions. */
-	void substitute(const Constant<Real>& con, const Real& c);
+	/*! \brief Substitute the constant \a con, if present, on all expressions. */
+	void substitute(const Constant<Real>& con);
 	/*! \brief Get the parameters (i.e. the Constant<Real> whose name starts with a letter) from the function. */
 	RealParameterSet parameters() const;
 
@@ -227,8 +228,8 @@ class VectorFunction
     Nat result_size() const { return this->_ptr->result_size(); }
     Nat argument_size() const { return this->_ptr->argument_size(); }
 
-	/*! \brief Substitute the constant \a c into the corresponding Constant \a con, if present, on all expressions. */
-	void substitute(const RealConstant& con, const Real& c);
+	/*! \brief Substitute the constant \a con, if present, on all expressions. */
+	void substitute(const RealConstant& con);
 
 	/*! \brief Get the parameters (i.e. Constant<Real> whose name starts with a letter) from the function. */
 	RealParameterSet parameters() const;

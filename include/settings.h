@@ -36,8 +36,6 @@
 #include "hybrid_set.h"
 #include "variables.h"
 
-typedef std::map<RealConstant,int,ConstantComparator<Real> > RealConstantIntMap;
-
 namespace Ariadne {
 
 class DiscreteLocation;
@@ -221,9 +219,8 @@ class DiscreteEvolutionSettings {
     //! \brief The grid to use.
     boost::shared_ptr<HybridGrid> grid;
 
-    //! \brief The constants that must not be automatically split inside a system.
-    //! \details The actual intervals values of the constants are irrelevant.
-    RealConstantSet locked_constants;
+    //! \brief The parameters that must not be automatically split inside a system.
+    Set<Identifier> locked_parameters_ids;
 
     //! \brief The target ratio of derivatives width to obtain when splitting constants.
     RealType splitting_constants_target_ratio;

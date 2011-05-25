@@ -207,9 +207,9 @@ int main(int argc,char *argv[])
 	analyser.settings().highest_maximum_grid_depth = 6;
 	Verifier verifier(analyser);
 
-	RealConstantSet parameters;
-	parameters.insert(RealConstant("hmin",Interval(5.0,6.0)));
-	parameters.insert(RealConstant("hmax",Interval(7.5,8.5)));
+	RealParameterSet parameters;
+	parameters.insert(RealParameter("hmin",Interval(5.0,6.0)));
+	parameters.insert(RealParameter("hmax",Interval(7.5,8.5)));
 
 	SafetyVerificationInput verInfo(system, initial_set, domain, safety_constraint);
 

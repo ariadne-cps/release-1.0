@@ -79,9 +79,9 @@ int main(int argc,char *argv[])
 	verifier.settings().maximum_parameter_depth = 5;
 	verifier.settings().plot_results = true;
 
-	RealConstantSet parameters;
-	parameters.insert(RealConstant("ref",Interval(5.25,8.25)));
-	parameters.insert(RealConstant("Kp",Interval(0.2,0.8)));
+	RealParameterSet parameters;
+	parameters.insert(RealParameter("ref",Interval(5.25,8.25)));
+	parameters.insert(RealParameter("Kp",Interval(0.2,0.8)));
 
 	cout << verifier.safety(verInfo);
 	//std::list<ParametricOutcome> results = verifier.parametric_safety(verInfo, parameters);

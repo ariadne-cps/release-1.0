@@ -118,7 +118,7 @@ class Verifier
 	 */
 	std::list<ParametricOutcome> parametric_safety(
 			SafetyVerificationInput& verInput,
-			const RealConstantSet& params) const;
+			const RealParameterSet& params) const;
 
 	//@}
 
@@ -145,7 +145,7 @@ class Verifier
 	std::list<ParametricOutcome> parametric_dominance(
 			DominanceVerificationInput& dominating,
 			DominanceVerificationInput& dominated,
-			const RealConstantSet& dominating_params) const;
+			const RealParameterSet& dominating_params) const;
 
 	//@}
 
@@ -161,7 +161,7 @@ class Verifier
 			HybridAutomaton& system,
 			const HybridImageSet& initial_set,
 			const HybridConstraintSet& safety_constraint,
-			const RealConstantSet& constants) const;
+			const RealParameterSet& params) const;
 
     /*! \brief Returns the new initial grid tree set for a chain reach. */
     HybridGridTreeSet _reachability_refinement_starting_set(
@@ -173,40 +173,40 @@ class Verifier
 
 	/*! \brief Prove (once, i.e. for a given grid depth) that the reachable set of \a system starting in \a initial_set
 	 * does definitely DOES NOT respect the \a safety_constraint.
-	 * \details The \a constants are substituted into the system. */
+	 * \details The \a params are substituted into the system. */
 	bool _safety_disproving_once(
 			HybridAutomaton& system,
 			const HybridImageSet& initial_set,
 			const HybridConstraintSet& safety_constraint,
-			const RealConstantSet& constants) const;
+			const RealParameterSet& params) const;
 
     /*! \brief Attempt (once, i.e. for a given grid depth) to verify that the reachable set of \a system starting in \a initial_set
      * respects the \a safety_constraint.
-     * \details The \a constants are substituted into the system. */
+     * \details The \a params are substituted into the system. */
     tribool _safety_once(
     		HybridAutomaton& system,
 			const HybridImageSet& initial_set,
 			const HybridConstraintSet& safety_constraint,
-			const RealConstantSet& constants) const;
+			const RealParameterSet& constants) const;
 
-	/*! \brief Performs iterative safety verification where \a constant is substituted into the system.
+	/*! \brief Performs iterative safety verification where \a parameter is substituted into the system.
 	 */
 	tribool _safety(
 			SafetyVerificationInput& verInput,
-			const RealConstant& constant) const;
+			const RealParameter& parameter) const;
 
 	/*! \brief Performs iterative safety verification where the singleton \a value is substituted into the system for the given \a constant.
 	 */
 	tribool _safety(
 			SafetyVerificationInput& verInput,
-			const RealConstant& constant,
+			const RealParameter& parameter,
 			const Float& value) const;
 
 	/*! \brief Performs iterative safety verification, with \a params_to_substitute substituted into the system.
-	 * \details The \a constants are substituted in the system and are not allowed to be split */
+	 * \details The \a params are substituted in the system and are not allowed to be split */
 	tribool _safety_nosplitting(
 			SafetyVerificationInput& verInput,
-			const RealConstantSet& constants) const;
+			const RealParameterSet& params) const;
 
 	//@}
 
@@ -217,7 +217,7 @@ class Verifier
 	 * that must be ignore when choosing the splitting factors of the system. */
 	void _chooseDominanceSettings(
 			const DominanceVerificationInput& systemBundle,
-			const RealConstantSet& locked_constants,
+			const Set<Identifier>& locked_params,
 			const HybridGridTreeSet& domain_reach,
 			const HybridGridTreeSet& constraint_reach,
 			Semantics semantics) const;
@@ -229,7 +229,7 @@ class Verifier
 	tribool _dominance(
 			DominanceVerificationInput& dominating,
 			DominanceVerificationInput& dominated,
-			const RealConstant& constant) const;
+			const RealParameter& param) const;
 
 	/**
 	 * \brief Performs dominance checking with \a constant substituted into the \a dominating system with a value of \a value.
@@ -238,39 +238,39 @@ class Verifier
 	tribool _dominance(
 			DominanceVerificationInput& dominating,
 			DominanceVerificationInput& dominated,
-			const RealConstant& constant,
+			const RealParameter& param,
 			const Float& value) const;
 
 	/*! \brief Helper function to perform dominance in the more general case when some \a constants are substituted into the dominating system. */
 	tribool _dominance(
 			DominanceVerificationInput& dominating,
 			DominanceVerificationInput& dominated,
-			const RealConstantSet& constants) const;
+			const RealParameterSet& params) const;
 
 	/*! \brief Performs the proving part of dominance checking.
 	 * \details Tries proving only once, in respect to the current grid depth. */
 	bool _dominance_proving_once(
 			DominanceVerificationInput& dominating,
 			DominanceVerificationInput& dominated,
-			const RealConstantSet& constants) const;
+			const RealParameterSet& params) const;
 
 	/*! \brief Performs the disproving part of dominance checking.
 	 * \details Tries disproving only once, in respect to the current grid depth. */
 	bool _dominance_disproving_once(
 			DominanceVerificationInput& dominating,
 			DominanceVerificationInput& dominated,
-			const RealConstantSet& constants) const;
+			const RealParameterSet& params) const;
 
 	/*! \brief Gets the flattened lower reach and the epsilon of the \a dominanceSystem type. */
 	std::pair<GridTreeSet,Vector<Float> > _dominance_flattened_lower_reach_and_epsilon(
 			DominanceVerificationInput& verInfo,
-			const RealConstantSet& constants,
+			const RealParameterSet& params,
 			DominanceSystem dominanceSystem) const;
 
 	/*! \brief Gets the flattened outer reach of the \a dominanceSystem type. */
 	GridTreeSet _dominance_flattened_outer_reach(
 			DominanceVerificationInput& verInput,
-			const RealConstantSet& constants,
+			const RealParameterSet& params,
 			DominanceSystem dominanceSystem) const;
 
 	//@}
@@ -282,13 +282,13 @@ class Verifier
 	void _resetAndChooseInitialSafetySettings(
 			const HybridAutomaton& system,
 			const HybridBoxes& domain,
-			const RealConstantSet& locked_constants) const;
+			const Set<Identifier>& locked_params) const;
 
 	/*! \brief Chooses the initial evolution settings for safety verification of the proper analyser. */
 	void _chooseInitialSafetySettings(
 			const HybridAutomaton& system,
 			const HybridBoxes& domain,
-			const RealConstantSet& locked_constants) const;
+			const Set<Identifier>& locked_params) const;
 
 	/*! \brief Resets cached information, then chooses the initial settings for dominance verification.
 	 * \details It is not allowed to tune the analysers, since they are used on different systems on each iteration.
@@ -340,8 +340,8 @@ std::string pretty_print(tribool value);
  *  \details The \a numIntervalsPerParam is the number of intervals to split for each parameter.
  *  \return The resulting split parameters sets.
  */
-std::list<RealConstantSet> maximally_split_parameters(
-		const RealConstantSet& params,
+std::list<RealParameterSet> maximally_split_parameters(
+		const RealParameterSet& params,
 		const uint& maximum_parameter_depth);
 
 }

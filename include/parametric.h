@@ -32,7 +32,7 @@
 
 namespace Ariadne {
 
-typedef std::set<RealConstant,ConstantNameComparator<Real> > RealConstantSet;
+typedef std::set<RealParameter,ConstantSetComparator<Real> > RealParameterSet;
 
 /**
  * \brief The data structure for the outcome over a configuration of parameters (i.e. constants of a system)
@@ -41,12 +41,12 @@ struct ParametricOutcome
 {
 private:
 
-	RealConstantSet _params;
+	RealParameterSet _params;
 	tribool _value;
 
 public:
 
-	ParametricOutcome(const RealConstantSet params, const tribool value);
+	ParametricOutcome(const RealParameterSet& params, tribool value);
 	ParametricOutcome(const ParametricOutcome& other);
 
 	ParametricOutcome& operator=(const ParametricOutcome& other);
@@ -54,7 +54,7 @@ public:
 	virtual std::ostream& write(std::ostream&) const;
 
 	/** The parameters */
-	const RealConstantSet& getParams() const;
+	const RealParameterSet& getParams() const;
 	/** The outcome of the verification */
 	const tribool& getOutcome() const;
 

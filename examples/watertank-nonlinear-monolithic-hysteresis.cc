@@ -72,9 +72,9 @@ int main(int argc,char *argv[])
 	verifier.settings().maximum_parameter_depth = 5;
 
 	// The parameters
-	RealConstantSet parameters;
-	parameters.insert(RealConstant("hmin",Interval(5.25,6.25)));
-	parameters.insert(RealConstant("hmax",Interval(7.25,8.25)));
+	RealParameterSet parameters;
+	parameters.insert(RealParameter("hmin",Interval(5.25,6.25)));
+	parameters.insert(RealParameter("hmax",Interval(7.25,8.25)));
 
 	//cout << verifier.safety(verInput) << "\n";
 	std::list<ParametricOutcome> results = verifier.parametric_safety(verInput, parameters);

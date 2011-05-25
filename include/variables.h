@@ -82,17 +82,15 @@ template<class T> class Constant
     shared_ptr<T> _value_ptr;
 };
 
-template<class T> struct ConstantComparator
+template<class T> struct ConstantSetComparator
 {
   bool operator()(const Constant<T>& first, const Constant<T>& second) const
-    {  return ((first.name() < second.name()) || ((first.name() == second.name()) && bool(first.value() < second.value())));
-    }
-};
-
-template<class T> struct ConstantNameComparator
-{
-  bool operator()(const Constant<T>& first, const Constant<T>& second) const
-    {  return first.name() < second.name();
+    {
+	  if (first.name() < second.name())
+		  return true;
+	  if (first.name() == second.name())
+		  ARIADNE_ASSERT_MSG(first.value() == second.value(), "Error: two constants with same name but different values cannot be compared.");
+	  return false;
     }
 };
 

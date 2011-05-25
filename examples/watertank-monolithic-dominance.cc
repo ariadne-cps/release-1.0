@@ -69,9 +69,9 @@ int main(int argc,char *argv[])
 	verifier.settings().plot_results = false;
 
 	// The parametric dominance parameters
-	RealConstantSet parameters;
-	parameters.insert(RealConstant("Kp",Interval(0.2,0.8)));
-	parameters.insert(RealConstant("ref",Interval(5.25,8.25)));
+	RealParameterSet parameters;
+	parameters.insert(RealParameter("Kp",Interval(0.2,0.8)));
+	parameters.insert(RealParameter("ref",Interval(5.25,8.25)));
 
 	std::list<ParametricOutcome> results = verifier.parametric_dominance(proportional, hysteresis, parameters);
 	draw("watertank-mono-dominance",results);

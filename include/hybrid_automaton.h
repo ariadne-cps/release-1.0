@@ -56,8 +56,6 @@ class ScalarFunction;
 class VectorFunction;
 class Grid;
 
-typedef std::set<RealConstant,ConstantNameComparator<Real> > RealConstantSet;
-
 
 /*! \brief A discrete mode of a hybrid automaton, comprising continuous evolution given by a vector field
  * within and invariant constraint set.
@@ -107,10 +105,10 @@ class DiscreteMode {
     }
 
 	/*! \brief Substitute the constant \a c into the corresponding Constant \a con, if present, on the invariants and dynamic functions. */
-	void substitute(const Constant<Real>& con, const Real& c) {
-		this->_dynamic.substitute(con,c);
+	void substitute(const Constant<Real>& con) {
+		this->_dynamic.substitute(con);
 		for (std::map<DiscreteEvent,VectorFunction>::iterator it=this->_invariants.begin();it!=this->_invariants.end();it++)
-			it->second.substitute(con,c);
+			it->second.substitute(con);
 	}
 
 	/*! \brief Get the parameters (i.e., the RealConstant whose name start with a letter) from the dynamics and invariants */
@@ -204,10 +202,10 @@ class DiscreteTransition
     DiscreteLocation target() const {
         return this->_target; }
 
-	/*! \brief Substitute the constant \a c into the corresponding Constant \a con, if present, on the reset and activation functions. */
-	void substitute(const Constant<Real>& con, const Real& c) {
-		this->_activation.substitute(con,c);
-		this->_reset.substitute(con,c);
+	/*! \brief Substitute the constant \a con, if present, on the reset and activation functions. */
+	void substitute(const Constant<Real>& con) {
+		this->_activation.substitute(con);
+		this->_reset.substitute(con);
 	}
 
 	/*! \brief Get the parameters (i.e., the RealConstant whose name starts with a letter) from the transition and reset dynamics. */
@@ -545,29 +543,20 @@ class HybridAutomaton
                                                       const VectorFunction& reset,
                                                       const VectorFunction& activation);
 
-    //! \brief Gets the parameters (i.e., any RealConstant whose name starts from a letter) from the modes and transitions. */
+    //! \brief Gets the parameters (i.e., any RealParameter whose name starts from a letter) from the modes and transitions. */
     RealParameterSet parameters() const;
-
-    //! \brief A copy of the set of parameters.
-    RealConstantSet accessible_constants() const;
-
-    //! \brief A copy of the set of non-singleton parameters.
-    RealConstantSet nonsingleton_accessible_constants() const;
 
     //! \brief Get the value of a parameter.
     Real parameter_value(String name) const;
 
-	/*! \brief Substitute the constant \a c into the corresponding Constant \a con, if present, on all the functions of modes and transitions. */
-	void substitute(Constant<Real> con, const Real& c);
+	/*! \brief Substitute the parameter \a param, if present, on all the functions of modes and transitions. */
+	void substitute(RealParameter param);
 
-	/*! \brief Substitute the value of the Constant \a con into the corresponding Constant on all the functions of modes and transitions. */
-	void substitute(Constant<Real> con) { this->substitute(con,con.value()); }
+	/*! \brief Substitute parameters from a set \a params. */
+	void substitute(const RealParameterSet& params);
 
-	/*! \brief Substitute constants values from a set \a cons. */
-	void substitute(const RealConstantSet& cons);
-
-	/*! \brief Substitute constants values from a set \a cons, using the midpoint if \a use_midpoint is set. */
-	void substitute(const RealConstantSet& cons, bool use_midpoint);
+	/*! \brief Substitute parameter values from a set \a params, using the midpoint if \a use_midpoint is set. */
+	void substitute(const RealParameterSet& params, bool use_midpoint);
 
 
 	//@}
@@ -619,6 +608,12 @@ class HybridAutomaton
 };
 
 std::ostream& operator<<(std::ostream& os, const HybridAutomaton& ha);
+
+/*! \brief Returns the subset of the parameters whose values are not singletons. */
+RealParameterSet nonsingleton_parameters(const RealParameterSet& parameters);
+
+/*! \brief Returns the set of identifiers of the \a parameters. */
+Set<Identifier> parameters_ids(const RealParameterSet& parameters);
 
 
 } // namespace Ariadne

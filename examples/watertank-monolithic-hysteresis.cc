@@ -71,9 +71,9 @@ int main(int argc,char *argv[])
 	verifier.settings().plot_results = false;
 
 	// The parameters
-	RealConstantSet parameters;
-	parameters.insert(RealConstant("hmin",Interval(5.0,6.0)));
-	parameters.insert(RealConstant("hmax",Interval(7.5,8.5)));
+	RealParameterSet parameters;
+	parameters.insert(RealParameter("hmin",Interval(5.0,6.0)));
+	parameters.insert(RealParameter("hmax",Interval(7.5,8.5)));
 
 	SafetyVerificationInput verInfo(system, initial_set, domain, safety_constraint);
 	std::list<ParametricOutcome> results = verifier.parametric_safety(verInfo, parameters);

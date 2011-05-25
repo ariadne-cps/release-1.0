@@ -752,14 +752,14 @@ _outer_chain_reach(
 {
 	HybridGridTreeSet reach;
 
-	RealConstantSet original_constants = system.nonsingleton_accessible_constants();
+	RealParameterSet original_parameters = nonsingleton_parameters(system.parameters());
 
-	std::list<RealConstantSet> split_intervals_set = _getSplitConstantsIntervalsSet(system,_settings->splitting_constants_target_ratio);
+	std::list<RealParameterSet> split_intervals_set = _getSplitParametersIntervalsSet(system,_settings->splitting_constants_target_ratio);
 
 	try {
 		uint i = 0;
-		for (std::list<RealConstantSet>::const_iterator set_it = split_intervals_set.begin(); set_it != split_intervals_set.end(); ++set_it) {
-			ARIADNE_LOG(2,"<Split constants set #" << ++i << " : " << *set_it << " >\n");
+		for (std::list<RealParameterSet>::const_iterator set_it = split_intervals_set.begin(); set_it != split_intervals_set.end(); ++set_it) {
+			ARIADNE_LOG(2,"<Split parameters set #" << ++i << " : " << *set_it << " >\n");
 
 			system.substitute(*set_it);
 
@@ -769,14 +769,14 @@ _outer_chain_reach(
 			reach.adjoin(local_reach);
 		}
 	} catch (ReachOutOfDomainException ex) {
-		system.substitute(original_constants);
+		system.substitute(original_parameters);
 		throw ex;
 	} catch (ReachUnsatisfiesConstraintException ex) {
-		system.substitute(original_constants);
+		system.substitute(original_parameters);
 		throw ex;
 	}
 
-	system.substitute(original_constants);
+	system.substitute(original_parameters);
 
 	ARIADNE_ASSERT_MSG(!reach.empty(),"The outer chain reachability of " << system.name() << " is empty: check the initial set.");
 
@@ -937,18 +937,18 @@ lower_reach_and_epsilon(
 	for (HybridSpace::const_iterator hs_it = state_space.begin(); hs_it != state_space.end(); ++hs_it)
 		epsilon.insert(std::pair<DiscreteLocation,Vector<Float> >(hs_it->first,Vector<Float>(hs_it->second)));
 
-	RealConstantSet original_constants = system.nonsingleton_accessible_constants();
+	RealParameterSet original_parameters = nonsingleton_parameters(system.parameters());
 
-	std::list<RealConstantSet> split_intervals_set = _getSplitConstantsIntervalsSet(system,_settings->splitting_constants_target_ratio);
-	std::list<RealConstantSet> split_midpoints_set = getSplitConstantsMidpointsSet(split_intervals_set);
+	std::list<RealParameterSet> split_intervals_set = _getSplitParametersIntervalsSet(system,_settings->splitting_constants_target_ratio);
+	std::list<RealParameterSet> split_midpoints_set = getSplitParametersMidpointsSet(split_intervals_set);
 
 	try {
 
 		uint i = 0;
-		for (std::list<RealConstantSet>::const_iterator set_it = split_midpoints_set.begin();
+		for (std::list<RealParameterSet>::const_iterator set_it = split_midpoints_set.begin();
 														set_it != split_midpoints_set.end();
 														++set_it) {
-			ARIADNE_LOG(2,"<Split constants set #" << ++i << " : " << *set_it << " >\n");
+			ARIADNE_LOG(2,"<Split parameters set #" << ++i << " : " << *set_it << " >\n");
 
 			system.substitute(*set_it);
 
@@ -964,7 +964,7 @@ lower_reach_and_epsilon(
 		}
 
 	} catch (ReachUnsatisfiesConstraintException ex) {
-		system.substitute(original_constants);
+		system.substitute(original_parameters);
 		throw ex;
 	}
 
@@ -987,38 +987,36 @@ tuneEvolverSettings(
 	ARIADNE_LOG(2, "Maximum step size: " << _discretiser->settings().hybrid_maximum_step_size << "\n");
 }
 
-std::list<RealConstantSet>
+std::list<RealParameterSet>
 HybridReachabilityAnalyser::
-_getSplitConstantsIntervalsSet(
+_getSplitParametersIntervalsSet(
 		HybridAutomaton system,
 		float tolerance) const
 {
-	const RealConstantSet& locked_constants = _settings->locked_constants;
+	const Set<Identifier>& locked_params_ids = _settings->locked_parameters_ids;
 	const HybridBoxes& domain = _settings->domain_bounds;
 
-	const RealConstantSet original_constants = system.nonsingleton_accessible_constants();
+	const ParameterIdIntMap split_factors = getSplitFactorsOfParameters(system,locked_params_ids,tolerance,domain);
 
-	const RealConstantIntMap split_factors = getSplitFactorsOfConstants(system,locked_constants,tolerance,domain);
-
-	std::list<RealConstantSet> result;
+	std::list<RealParameterSet> result;
 
 	if (split_factors.empty()) {
-		result.push_back(original_constants);
+		result.push_back(nonsingleton_parameters(system.parameters()));
 		return result;
 	}
 
 	// Creates a vector for all the interval splits (i.e. a jagged matrix)
-	std::vector<std::vector<RealConstant> > split_intervals_set(split_factors.size());
+	std::vector<std::vector<RealParameter> > split_intervals_set(split_factors.size());
 	uint i=0;
-	for (RealConstantIntMap::const_iterator factor_it = split_factors.begin();
+	for (ParameterIdIntMap::const_iterator factor_it = split_factors.begin();
 											factor_it != split_factors.end();
 											++factor_it)
-		split_intervals_set[i++] = split(factor_it->first, factor_it->second);
+		split_intervals_set[i++] = split(RealParameter(factor_it->first,system.parameter_value(factor_it->first)), factor_it->second);
 
 	// Generates all the possible split combinations
-	RealConstantSet initial_combination;
-	std::vector<std::vector<RealConstant> >::iterator initial_col_it = split_intervals_set.begin();
-	std::vector<RealConstant>::iterator initial_row_it = initial_col_it->begin();
+	RealParameterSet initial_combination;
+	std::vector<std::vector<RealParameter> >::iterator initial_col_it = split_intervals_set.begin();
+	std::vector<RealParameter>::iterator initial_row_it = initial_col_it->begin();
 	fillSplitSet(split_intervals_set,initial_col_it,initial_row_it,initial_combination,result);
 
 	ARIADNE_LOG(3,"<Split factors: " << split_factors << ", size: " << result.size() << ">\n");
@@ -1104,10 +1102,10 @@ list<EnclosureType> enclosures_of_domains_midpoints(
 }
 
 
-RealConstantIntMap
-getSplitFactorsOfConstants(
+ParameterIdIntMap
+getSplitFactorsOfParameters(
 		SystemType& system,
-		const RealConstantSet& locked_constants,
+		const Set<Identifier>& locked_params_ids,
 		const Float& targetRatioPerc,
 		const HybridBoxes& bounding_domain)
 {
@@ -1126,35 +1124,39 @@ getSplitFactorsOfConstants(
 	// splitting would have no effect and the procedure would not converge
 	const float& maxRatioThreshold = 1e-8;
 
-	RealConstantIntMap result;
+	ParameterIdIntMap result;
 
-	RealConstantSet working_constants = system.nonsingleton_accessible_constants();
+	RealParameterSet working_parameters = nonsingleton_parameters(system.parameters());
 
 	// Remove the locked constants
-	for (RealConstantSet::const_iterator locked_constant_it = locked_constants.begin();
-										 locked_constant_it != locked_constants.end();
-										 ++locked_constant_it) {
-		RealConstantSet::iterator original_constant_it = working_constants.find(*locked_constant_it);
-
-		if (original_constant_it != working_constants.end())
-			working_constants.erase(*original_constant_it);
+	for (Set<Identifier>::const_iterator locked_parameter_it = locked_params_ids.begin();
+										 locked_parameter_it != locked_params_ids.end();
+										 ++locked_parameter_it) {
+		for (RealParameterSet::iterator working_parameter_it = working_parameters.begin();
+											 working_parameter_it != working_parameters.end();
+											 ++working_parameter_it) {
+			if (*locked_parameter_it == working_parameter_it->name()) {
+				working_parameters.erase(working_parameter_it);
+				break;
+			}
+		}
 	}
 
-	if (working_constants.empty())
+	if (working_parameters.empty())
 		return result;
 
 	// Initializes the result and sets the system with the midpoints of the corresponding intervals
-	for (RealConstantSet::const_iterator constant_it = working_constants.begin();
-												 constant_it != working_constants.end();
-												 ++constant_it) {
-			result.insert(std::pair<RealConstant,int>(*constant_it,1));
-			system.substitute(*constant_it,constant_it->value().midpoint());
+	for (RealParameterSet::const_iterator parameter_it = working_parameters.begin();
+												 parameter_it != working_parameters.end();
+												 ++parameter_it) {
+			result.insert(std::pair<Identifier,int>(parameter_it->name(),1));
+			system.substitute(RealParameter(parameter_it->name(),parameter_it->value().midpoint()));
 	}
 
 	// Gets the derivative widths corresponding to all accessible constants having midpoint value
 	HybridFloatVector mid_der_widths = getDerivativeWidths(system, bounding_domain);
 	// Restores the system to the original values
-	system.substitute(working_constants);
+	system.substitute(working_parameters);
 
 	// While the ratio is sufficiently high, gets the best constant and substitutes half its interval into the system
 	// If the maximum ratio is zero, then no constant affects the derivatives and splitting them would neither be necessary nor correct
@@ -1164,54 +1166,56 @@ getSplitFactorsOfConstants(
 		Float ratio = maxRatio;
 
 		while (ratio > targetRatioPerc*maxRatio) {
-			RealConstant bestConstant = getBestConstantToSplit(system, working_constants, mid_der_widths, bounding_domain);
-			Interval originalInterval = bestConstant.value();
+			RealParameter bestParameter = getBestParameterToSplit(system, working_parameters, mid_der_widths, bounding_domain);
+
+			Interval originalInterval = bestParameter.value();
 			Float quarterIntervalWidth = originalInterval.width()/4;
 			Interval halvedInterval = Interval(originalInterval.midpoint()-quarterIntervalWidth,
 											   originalInterval.midpoint()+quarterIntervalWidth);
-			system.substitute(bestConstant,Real(halvedInterval));
-			result[bestConstant]++;
+
+			system.substitute(RealParameter(bestParameter.name(),Real(halvedInterval)));
+			result[bestParameter.name()]++;
 			ratio = getMaxDerivativeWidthRatio(system, mid_der_widths, bounding_domain);
 		}
 
-		system.substitute(working_constants);
+		system.substitute(working_parameters);
 	}
 
 	return result;
 }
 
-RealConstant
-getBestConstantToSplit(
+RealParameter
+getBestParameterToSplit(
 		SystemType& system,
-		const RealConstantSet& working_constants,
+		const RealParameterSet& working_constants,
 		const HybridFloatVector& referenceWidths,
 		const HybridBoxes& bounding_domain)
 {
-	RealConstant bestConstant = *working_constants.begin();
+	RealParameter result = *working_constants.begin();
 	Float bestLocalRatio = std::numeric_limits<Float>::infinity();
 
-	for (RealConstantSet::const_iterator constant_it = working_constants.begin();
-												 constant_it != working_constants.end();
-												 ++constant_it) {
+	for (RealParameterSet::const_iterator param_it = working_constants.begin();
+												 param_it != working_constants.end();
+												 ++param_it) {
 		// Modifies the system in order to have the range of the original given constant halved
-		Real originalValue = system.parameter_value(constant_it->name());
+		Real originalValue = system.parameter_value(param_it->name());
 
 		Float quarterIntervalWidth = originalValue.width()/4;
-		Interval halvedInterval = Interval(constant_it->value().midpoint()-quarterIntervalWidth,
-										   constant_it->value().midpoint()+quarterIntervalWidth);
-		system.substitute(*constant_it,Real(halvedInterval));
+		Interval halvedInterval = Interval(param_it->value().midpoint()-quarterIntervalWidth,
+										   param_it->value().midpoint()+quarterIntervalWidth);
+		system.substitute(RealParameter(param_it->name(),Real(halvedInterval)));
 
 		Float localRatio = getMaxDerivativeWidthRatio(system,referenceWidths,bounding_domain);
 		if (localRatio < bestLocalRatio) {
 			bestLocalRatio = localRatio;
-			bestConstant = RealConstant(constant_it->name(),originalValue);
+			result = RealParameter(param_it->name(),originalValue);
 		}
 
-		// Restores the related constant to its original value
-		system.substitute(*constant_it,originalValue);
+		// Restores the related parameter to its original value
+		system.substitute(RealParameter(param_it->name(),originalValue));
 	}
 
-	return bestConstant;
+	return result;
 }
 
 void
@@ -1338,8 +1342,8 @@ void fillSplitSet(
 		const std::vector<std::vector<RealConstant> >& src,
 		std::vector<std::vector<RealConstant> >::iterator col_it,
 		std::vector<RealConstant>::iterator row_it,
-		RealConstantSet s,
-		std::list<RealConstantSet>& dest)
+		RealParameterSet s,
+		std::list<RealParameterSet>& dest)
 {
 	if (col_it != src.end() && row_it != col_it->end()) {
 		fillSplitSet(src,col_it,row_it+1,s,dest);
@@ -1354,15 +1358,15 @@ void fillSplitSet(
 	}
 }
 
-std::list<RealConstantSet>
-getSplitConstantsMidpointsSet(const std::list<RealConstantSet>& intervals_set)
+std::list<RealParameterSet>
+getSplitParametersMidpointsSet(const std::list<RealParameterSet>& intervals_set)
 {
-	std::list<RealConstantSet> result;
+	std::list<RealParameterSet> result;
 
-	for (std::list<RealConstantSet>::const_iterator set_it = intervals_set.begin(); set_it != intervals_set.end(); ++set_it) {
-		RealConstantSet midpoints;
-		for (RealConstantSet::const_iterator constant_it = set_it->begin(); constant_it != set_it->end(); ++constant_it) {
-			midpoints.insert(RealConstant(constant_it->name(),constant_it->value().midpoint()));
+	for (std::list<RealParameterSet>::const_iterator set_it = intervals_set.begin(); set_it != intervals_set.end(); ++set_it) {
+		RealParameterSet midpoints;
+		for (RealParameterSet::const_iterator param_it = set_it->begin(); param_it != set_it->end(); ++param_it) {
+			midpoints.insert(RealConstant(param_it->name(),param_it->value().midpoint()));
 		}
 		result.push_back(midpoints);
 	}
