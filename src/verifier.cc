@@ -102,7 +102,7 @@ _safety_nosplitting(
 	if (_settings->plot_results)
 		_plot_dirpath_init(system.name());
 
-	_resetAndChooseInitialSafetySettings(system,verInput.getDomain(),parameters_ids(params));
+	_resetAndChooseInitialSafetySettings(system,verInput.getDomain(),parameters_identifiers(params));
 
 	int& depth = _analyser->settings().maximum_grid_depth;
 	for (depth = _analyser->settings().lowest_maximum_grid_depth;
@@ -574,7 +574,7 @@ _dominance_flattened_lower_reach_and_epsilon(
 			_dominating_coarse_outer_approximation->get() : _dominated_coarse_outer_approximation->get());
 	HybridGridTreeSet reachability_restriction = (dominanceSystem == DOMINATING_SYSTEM ?
 			_dominating_reachability_restriction : _dominated_reachability_restriction);
-	Set<Identifier> locked_params_ids = (dominanceSystem == DOMINATING_SYSTEM ? parameters_ids(params) : Set<Identifier>());
+	Set<Identifier> locked_params_ids = (dominanceSystem == DOMINATING_SYSTEM ? parameters_identifiers(params) : Set<Identifier>());
 
 	ARIADNE_LOG(4,"Choosing the settings for the lower reached region of the " << descriptor << " system...\n");
 
@@ -616,7 +616,7 @@ _dominance_flattened_outer_reach(
 			*_dominating_coarse_outer_approximation : *_dominated_coarse_outer_approximation);
 	HybridGridTreeSet& reachability_restriction = (dominanceSystem == DOMINATING_SYSTEM ?
 			_dominating_reachability_restriction : _dominated_reachability_restriction);
-	Set<Identifier> locked_params_ids = (dominanceSystem == DOMINATING_SYSTEM ? parameters_ids(params) : Set<Identifier>());
+	Set<Identifier> locked_params_ids = (dominanceSystem == DOMINATING_SYSTEM ? parameters_identifiers(params) : Set<Identifier>());
 
 	ARIADNE_LOG(4,"Choosing the settings for the outer reached region of the " << descriptor << " system...\n");
 

@@ -87,8 +87,8 @@ class DiscreteIOMode {
     const std::list< RealExpression >& invariants() const {
         return this->_invariants; }
    
-	//! \brief Substitute the constant \a con, if present, on the invariants and dynamic functions.
-	void substitute(const Constant<Real>& con);
+	//! \brief Substitute the parameter \a param, if present, on the invariants and dynamic functions.
+	void substitute(const RealParameter& param);
 
 	/*! \brief Get the parameters (i.e., the RealConstant whose name start with a letter) from the dynamics and invariants */
 	RealParameterSet parameters() const {
@@ -183,8 +183,8 @@ class DiscreteIOTransition
     DiscreteLocation target() const {
         return this->_target; }
 
-	//! \brief Substitute the constant \a con, if present, on the reset and activation functions.
-	void substitute(const Constant<Real>& con);
+	//! \brief Substitute the parameter \a param, if present, on the reset and activation functions.
+	void substitute(const RealParameter& param);
 
 	/*! \brief Get the parameters (i.e., the RealConstant whose name starts with a letter) from the transition and reset dynamics. */
 	RealParameterSet parameters() const {
@@ -619,7 +619,7 @@ class HybridIOAutomaton
 	RealParameterSet parameters() const;
 
 	//! \brief Substitute the parameter \a param, if present, on all the functions of modes and transitions.
-	void substitute(const Constant<Real>& param);
+	void substitute(const RealParameter& param);
 
 	/*! \brief Substitute values from a set \a params. */
 	void substitute(const RealParameterSet& params);

@@ -55,16 +55,17 @@ template<class LHS, class RHS> class Assignment;
 template<class T> class ExtendedVariable;
 template<class T> class Variable;
 template<class T> class Constant;
+template<class T> class Parameter;
 template<class T> class DottedVariable;
 template<class T> class PrimedVariable;
 template<class T> class Expression;
 template<class T> class Space;
-template<class T> class ConstantSetComparator;
+template<class T> class ParameterSetComparator;
 
 typedef ExtendedVariable<Real> ExtendedRealVariable;
 typedef Variable<Real> RealVariable;
 typedef Constant<Real> RealConstant;
-typedef Constant<Real> RealParameter;
+typedef Parameter<Real> RealParameter;
 typedef DottedVariable<Real> DottedRealVariable;
 typedef PrimedVariable<Real> PrimedRealVariable;
 typedef Expression<Real> RealExpression;
@@ -74,7 +75,7 @@ typedef Assignment<RealVariable,RealExpression> RealAssignment;
 typedef Assignment<ExtendedRealVariable,RealExpression> ExtendedRealAssignment;
 typedef Assignment<DottedRealVariable,RealExpression> DottedRealAssignment;
 typedef Assignment<PrimedRealVariable,RealExpression> PrimedRealAssignment;
-typedef std::set<Constant<Real>,ConstantSetComparator<Real> > RealParameterSet;
+typedef std::set<Parameter<Real>,ParameterSetComparator<Real> > RealParameterSet;
 
 class ScalarFunction;
 class VectorFunction;
@@ -110,8 +111,8 @@ class ScalarFunction
     Interval evaluate(const Vector<Interval>& x) const { return this->_ptr->evaluate(x); }
     TaylorModel evaluate(const Vector<TaylorModel>& x) const { return this->_ptr->evaluate(x); }
 
-	/*! \brief Substitute the constant \a con, if present, on all expressions. */
-	void substitute(const Constant<Real>& con);
+	/*! \brief Substitute the parameter \a param, if present, on all expressions. */
+	void substitute(const RealParameter& param);
 	/*! \brief Get the parameters (i.e. the Constant<Real> whose name starts with a letter) from the function. */
 	RealParameterSet parameters() const;
 
@@ -228,10 +229,10 @@ class VectorFunction
     Nat result_size() const { return this->_ptr->result_size(); }
     Nat argument_size() const { return this->_ptr->argument_size(); }
 
-	/*! \brief Substitute the constant \a con, if present, on all expressions. */
-	void substitute(const RealConstant& con);
+	/*! \brief Substitute the parameter \a param, if present, on all expressions. */
+	void substitute(const RealParameter& param);
 
-	/*! \brief Get the parameters (i.e. Constant<Real> whose name starts with a letter) from the function. */
+	/*! \brief Get the parameters from the function. */
 	RealParameterSet parameters() const;
 
     Vector<Float> evaluate(const Vector<Float>& x) const { return this->_ptr->evaluate(x); }

@@ -82,18 +82,6 @@ template<class T> class Constant
     shared_ptr<T> _value_ptr;
 };
 
-template<class T> struct ConstantSetComparator
-{
-  bool operator()(const Constant<T>& first, const Constant<T>& second) const
-    {
-	  if (first.name() < second.name())
-		  return true;
-	  if (first.name() == second.name())
-		  ARIADNE_ASSERT_MSG(first.value() == second.value(), "Error: two constants with same name but different values cannot be compared.");
-	  return false;
-    }
-};
-
 template<class T> inline std::ostream& Constant<T>::write(std::ostream& os) const {
     os << "{" << this->name() << "@" << this->value() << "}";
     return os;
@@ -101,6 +89,52 @@ template<class T> inline std::ostream& Constant<T>::write(std::ostream& os) cons
 
 template<class T> inline std::ostream& operator<<(std::ostream& os, const Constant<T>& con) {
     return con.write(os); }
+
+template<class T> class Parameter
+{
+  public:
+    template<class X> explicit Parameter(const String& str, const X& value)
+        : _name_ptr(new String(str)), _value_ptr(new T(value)) { }
+    Parameter(const Parameter<T>& other) : _name_ptr(new String(other.name())), _value_ptr(new T(other.value())) { }
+    Parameter<T>& operator=(const Parameter<T>& other) {
+    	_name_ptr = shared_ptr<String>(new String(other.name()));
+    	_value_ptr = shared_ptr<T>(new T(other.value()));
+    	return *this; }
+    const String& name() const { return *_name_ptr; }
+    const T& value() const { return *_value_ptr; }
+	void set_value(const T& c) { *_value_ptr = c; }
+    bool operator==(const Parameter<T>& other) const {
+        if(this->name()==other.name()) { assert(this->value()==other.value()); return true; } else { return false; } }
+    virtual std::ostream& write(std::ostream&) const;
+  private:
+    shared_ptr<String> _name_ptr;
+    shared_ptr<T> _value_ptr;
+};
+
+template<class T> inline std::ostream& Parameter<T>::write(std::ostream& os) const {
+    os << "{" << this->name() << "@" << this->value() << "}";
+    return os;
+}
+
+template<class T> inline std::ostream& operator<<(std::ostream& os, const Parameter<T>& con) {
+    return con.write(os); }
+
+
+template<class T> struct ParameterSetComparator
+{
+  bool operator()(const Parameter<T>& first, const Parameter<T>& second) const
+    {
+	  if (first.name() < second.name())
+		  return true;
+	  if (first.name() == second.name()) {
+		  ARIADNE_ASSERT_MSG(first.value() == second.value(),
+				  "Error: two parameters with name '" << first.name() << "' but different values (" << first.value() << ", " << second.value() << ") found."
+				  << " Possible reasons: (a) you tried to find() one Parameter in a set by using a different Parameter with the same name. "
+				  << "(b) You aggregated expressions where duplicate definitions for a Parameter name are present.");
+	  }
+	  return false;
+    }
+};
 
 
 enum VariableType { type_bool, type_tribool, type_enumerated, type_string, type_integer, type_real };

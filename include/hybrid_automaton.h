@@ -104,14 +104,14 @@ class DiscreteMode {
         return result;
     }
 
-	/*! \brief Substitute the constant \a c into the corresponding Constant \a con, if present, on the invariants and dynamic functions. */
-	void substitute(const Constant<Real>& con) {
-		this->_dynamic.substitute(con);
+	/*! \brief Substitute the parameter \a param, if present, on the invariants and dynamic functions. */
+	void substitute(const RealParameter& param) {
+		this->_dynamic.substitute(param);
 		for (std::map<DiscreteEvent,VectorFunction>::iterator it=this->_invariants.begin();it!=this->_invariants.end();it++)
-			it->second.substitute(con);
+			it->second.substitute(param);
 	}
 
-	/*! \brief Get the parameters (i.e., the RealConstant whose name start with a letter) from the dynamics and invariants */
+	/*! \brief Get the parameters from the dynamics and invariants */
 	RealParameterSet parameters() const {
 		RealParameterSet result = this->_dynamic.parameters();
 		for (std::map<DiscreteEvent,VectorFunction>::const_iterator it=this->_invariants.begin();it!=this->_invariants.end();it++) {
@@ -202,10 +202,10 @@ class DiscreteTransition
     DiscreteLocation target() const {
         return this->_target; }
 
-	/*! \brief Substitute the constant \a con, if present, on the reset and activation functions. */
-	void substitute(const Constant<Real>& con) {
-		this->_activation.substitute(con);
-		this->_reset.substitute(con);
+	/*! \brief Substitute the parameter \a param, if present, on the reset and activation functions. */
+	void substitute(const RealParameter& param) {
+		this->_activation.substitute(param);
+		this->_reset.substitute(param);
 	}
 
 	/*! \brief Get the parameters (i.e., the RealConstant whose name starts with a letter) from the transition and reset dynamics. */
@@ -613,7 +613,7 @@ std::ostream& operator<<(std::ostream& os, const HybridAutomaton& ha);
 RealParameterSet nonsingleton_parameters(const RealParameterSet& parameters);
 
 /*! \brief Returns the set of identifiers of the \a parameters. */
-Set<Identifier> parameters_ids(const RealParameterSet& parameters);
+Set<Identifier> parameters_identifiers(const RealParameterSet& parameters);
 
 
 } // namespace Ariadne

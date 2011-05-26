@@ -53,8 +53,8 @@ class Real;
 class EnumeratedValue;
 
 typedef String Identifier;
-typedef Constant<Real> RealParameter;
-typedef std::set<Constant<Real>,ConstantSetComparator<Real> > RealParameterSet;
+typedef Parameter<Real> RealParameter;
+typedef std::set<Parameter<Real>,ParameterSetComparator<Real> > RealParameterSet;
 
 class UntypedVariable;
 template<class T> class Variable;
@@ -86,7 +86,7 @@ template<class R> class Expression;
 template<class R> std::ostream& operator<<(std::ostream&, const Expression<R>&);
 
 template<class X, class Y> Expression<X> substitute(const Expression<X>& e, const Variable<Y>& v, const Expression<Y>& c);
-template<class X, class Y> Expression<X> substitute(const Expression<X>& e, const Constant<Y>& con, const Y& c);
+template<class X, class Y> Expression<X> substitute(const Expression<X>& e, const Parameter<Y>& con, const Y& c);
 RealParameterSet parameters(const Expression<Real>& e);
 
 template<class X> Expression<X> simplify(const Expression<X>& e);
@@ -111,6 +111,7 @@ class Expression {
     Expression() { R z; *this=Expression(z); }
     Expression(const R& c);
     Expression(const Constant<R>& c);
+    Expression(const Parameter<R>& p);
     Expression(const Variable<R>& v);
     //! \brief The variables used in the formula.
     Set<UntypedVariable> arguments() const { return _ptr->arguments(); }
@@ -121,9 +122,9 @@ class Expression {
     //! \brief Substitute the constant \a c for the variable \a v.
     template<class X> Expression<R> substitute(const Variable<X>& v, const Expression<X>& c) const {
         return Ariadne::substitute(*this,v,c); };
-	//! \brief Substitute the constant \a con.
-    template<class X> Expression<R> substitute(const Constant<X>& con) const {
-        return Ariadne::substitute(*this,con,con.value()); };
+	//! \brief Substitute the parameter \a param.
+    template<class X> Expression<R> substitute(const Parameter<X>& param) const {
+        return Ariadne::substitute(*this,param,param.value()); };
     //! \brief Simplify the expression (e.g. by evaluating constants).
     Expression<R> simplify() const {
         return Ariadne::simplify(*this); }
@@ -149,6 +150,7 @@ class Expression<Real> {
     Expression(const Interval& c);
     Expression(const Real& c);
     Expression(const Constant<R>& c);
+    Expression(const Parameter<R>& p);
     Expression(const Variable<R>& v);
     //! \brief Test if two expressions are identical to each other.
     friend bool identical(const Expression<R>& e1, const Expression<R>& e2);
@@ -161,10 +163,10 @@ class Expression<Real> {
     //! \brief Substitute the constant \a c for the expression \a v.
     template<class X> Expression<R> substitute(const Variable<X>& v, const Expression<X>& c) const {
         return Ariadne::substitute(*this,v,c); }
-	//! \brief Substitute the constant \a con.
-    template<class X> Expression<R> substitute(const Constant<X>& con) const {
-        return Ariadne::substitute(*this,con,con.value()); }
-    //! \brief Extract the parameters (i.e.,Constant<R> whose name begins with an alphabetic symbol).
+	//! \brief Substitute the parameter \a param.
+    Expression<R> substitute(const Parameter<R>& param) const {
+        return Ariadne::substitute(*this,param,param.value()); }
+    //! \brief Extract the parameters.
     RealParameterSet parameters() const {
     	return Ariadne::parameters(*this); }
     //! \brief Simplify the expression (e.g. by evaluating constants).
@@ -197,7 +199,7 @@ template<class X> Tribool evaluate(const Expression<Tribool>& e, const Vector<X>
 template<class X> X evaluate(const Expression<Real>& e, const Vector<X>& x);
 
 template<class X, class Y> Expression<X> substitute(const Expression<X>& e, const Variable<Y>& v, const Expression<Y>& c);
-template<class X, class Y> Expression<X> substitute(const Expression<X>& e, const Constant<Y>& con, const Y& c);
+template<class X, class Y> Expression<X> substitute(const Expression<X>& e, const Parameter<Y>& con, const Y& c);
 template<class X> Expression<X> simplify(const Expression<X>& e);
 
 bool operator==(const Expression<Tribool>&, bool);

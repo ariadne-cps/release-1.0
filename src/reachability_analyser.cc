@@ -1309,39 +1309,39 @@ getMaxDerivativeWidthRatio(
 	return result;
 }
 
-/*! \brief Splits a RealConstant \a con into \a numParts parts.
+/*! \brief Splits a RealParameter \a param into \a numParts parts.
  * \details Orders the subintervals by putting the second leftmost subinterval up to the rightmost, followed by the leftmost. */
-std::vector<RealConstant>
+std::vector<RealParameter>
 split(
-		const RealConstant& con,
+		const RealParameter& param,
 		uint numParts)
 {
 	Interval bounds;
 	Float lower, upper;
 
-	std::vector<RealConstant> result(numParts,con);
+	std::vector<RealParameter> result(numParts,param);
 
-	String name = con.name();
-	Float intervalWidth = con.value().width();
+	String name = param.name();
+	Float intervalWidth = param.value().width();
 
 	// Puts the first element
-	lower = con.value().lower();
-	upper = con.value().lower() + intervalWidth/numParts;
-	result[numParts-1] = RealConstant(name,Interval(lower,upper));
+	lower = param.value().lower();
+	upper = param.value().lower() + intervalWidth/numParts;
+	result[numParts-1] = RealParameter(name,Interval(lower,upper));
 	// Puts the last to the second element, in inverse order
 	for (uint i=numParts;i>1;--i) {
-		lower = con.value().lower() + intervalWidth*(i-1)/numParts;
-		upper = con.value().lower() + intervalWidth*i/numParts;
-		result[i-2] = RealConstant(name,Interval(lower,upper));
+		lower = param.value().lower() + intervalWidth*(i-1)/numParts;
+		upper = param.value().lower() + intervalWidth*i/numParts;
+		result[i-2] = RealParameter(name,Interval(lower,upper));
 	}
 
 	return result;
 }
 
 void fillSplitSet(
-		const std::vector<std::vector<RealConstant> >& src,
-		std::vector<std::vector<RealConstant> >::iterator col_it,
-		std::vector<RealConstant>::iterator row_it,
+		const std::vector<std::vector<RealParameter> >& src,
+		std::vector<std::vector<RealParameter> >::iterator col_it,
+		std::vector<RealParameter>::iterator row_it,
 		RealParameterSet s,
 		std::list<RealParameterSet>& dest)
 {
@@ -1366,7 +1366,7 @@ getSplitParametersMidpointsSet(const std::list<RealParameterSet>& intervals_set)
 	for (std::list<RealParameterSet>::const_iterator set_it = intervals_set.begin(); set_it != intervals_set.end(); ++set_it) {
 		RealParameterSet midpoints;
 		for (RealParameterSet::const_iterator param_it = set_it->begin(); param_it != set_it->end(); ++param_it) {
-			midpoints.insert(RealConstant(param_it->name(),param_it->value().midpoint()));
+			midpoints.insert(RealParameter(param_it->name(),param_it->value().midpoint()));
 		}
 		result.push_back(midpoints);
 	}

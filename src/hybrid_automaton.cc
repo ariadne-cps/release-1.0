@@ -569,7 +569,7 @@ HybridAutomaton::substitute(const RealParameterSet& params, bool use_midpoint)
 {
 	for (RealParameterSet::const_iterator param_it = params.begin(); param_it != params.end(); ++param_it) {
 		if (use_midpoint)
-			substitute(RealConstant(param_it->name(),param_it->value().midpoint()));
+			substitute(RealParameter(param_it->name(),param_it->value().midpoint()));
 		else
 			substitute(*param_it);
 	}
@@ -621,7 +621,7 @@ nonsingleton_parameters(const RealParameterSet& parameters)
 }
 
 Set<Identifier>
-parameters_ids(const RealParameterSet& parameters)
+parameters_identifiers(const RealParameterSet& parameters)
 {
 	Set<Identifier> result;
 

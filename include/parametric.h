@@ -32,7 +32,7 @@
 
 namespace Ariadne {
 
-typedef std::set<RealParameter,ConstantSetComparator<Real> > RealParameterSet;
+typedef std::set<RealParameter,ParameterSetComparator<Real> > RealParameterSet;
 
 /**
  * \brief The data structure for the outcome over a configuration of parameters (i.e. constants of a system)

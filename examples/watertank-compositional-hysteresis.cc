@@ -27,17 +27,17 @@ using namespace Ariadne;
 
 int main(int argc,char *argv[])
 {
-	int analyserVerbosity = 1;
+	int verifierVerbosity = 1;
 	if (argc > 1)
-		analyserVerbosity = atoi(argv[1]);
+		verifierVerbosity = atoi(argv[1]);
 
     /// Set the system parameters
-	RealConstant a("a",0.02);
-	RealConstant b("b",Interval(0.3,0.32863));
-	RealConstant T("T",4.0);
-	RealConstant hmin("hmin",Interval(5.0,6.0)); // 5.5;
-	RealConstant hmax("hmax",Interval(7.5,8.5)); // 8.0;
-	RealConstant delta("Delta",0.1);
+	RealParameter a("a",0.02);
+	RealParameter b("b",Interval(0.3,0.32863));
+	RealParameter T("T",4.0);
+	RealParameter hmin("hmin",Interval(5.0,6.0)); // 5.5;
+	RealParameter hmax("hmax",Interval(7.5,8.5)); // 8.0;
+	RealParameter delta("Delta",0.1);
 
     // System variables
     RealVariable x("x");    // water level
@@ -199,13 +199,12 @@ int main(int argc,char *argv[])
 
 	// Create an evolver and analyser objects, then set their verbosity
 	HybridEvolver evolver;
-	evolver.verbosity = 0;
 	HybridReachabilityAnalyser analyser(evolver);
-	analyser.verbosity = analyserVerbosity;
 	analyser.settings().enable_lower_pruning = true;
 	analyser.settings().lowest_maximum_grid_depth = 0;
 	analyser.settings().highest_maximum_grid_depth = 6;
 	Verifier verifier(analyser);
+	verifier.verbosity = verifierVerbosity;
 
 	RealParameterSet parameters;
 	parameters.insert(RealParameter("hmin",Interval(5.0,6.0)));

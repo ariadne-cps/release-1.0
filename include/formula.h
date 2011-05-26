@@ -243,6 +243,7 @@ struct EnumeratedValue {
 template<class R> class ExpressionInterface;
 template<class R> class VariableExpression;
 template<class R> class ConstantExpression;
+template<class R> class ParameterExpression;
 template<class R, class Op, class A> class UnaryExpression;
 template<class R, class Op, class A1, class A2> class BinaryExpression;
 template<class R> class Expression;

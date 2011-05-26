@@ -90,6 +90,54 @@ class ConstantExpression<Real>
 };
 
 
+//! A parameter, viewed as a function \f$c:\R^n\rightarrow\R\f$.
+template<class R>
+class ParameterExpression
+    : public ExpressionInterface<R>
+{
+  public:
+    ParameterExpression(const std::string& nm, const R& c) : _name(nm), _c(c) { }
+    ParameterExpression(const R& c) : _name(to_string(c)), _c(c) { }
+    ParameterExpression(const Parameter<R>& p) : _name(p.name()), _c(p.value()) { }
+    operator R () const { return _c; }
+    R value() const { return _c; }
+    virtual String name() const { return this->_name; }
+    virtual Operator type() const { return PAR; }
+    virtual Set<UntypedVariable> arguments() const { return Set<UntypedVariable>(); }
+    virtual ParameterExpression<R>* clone() const { return new ParameterExpression<R>(*this); }
+    virtual std::ostream& write(std::ostream& os) const { return os << _name; }
+  protected:
+    virtual ExpressionInterface<R>* simplify() const { return this->clone(); }
+  private:
+    String _name;
+    R _c;
+};
+
+//! A parameter, viewed as a function \f$c:\R^n\rightarrow\R\f$.
+template<>
+class ParameterExpression<Real>
+    : public ExpressionInterface<Real>
+{
+  public:
+	ParameterExpression(const std::string& nm, const Real& c) : _name(nm), _c(c) { }
+	ParameterExpression(const Float& c) : _name(to_string(c)), _c(c) { }
+	ParameterExpression(const Interval& c) :  _name(to_string(c)), _c(c) { }
+    ParameterExpression(const Parameter<Real>& p) : _name(p.name()), _c(p.value()) { }
+    operator Real() const { return _c; }
+    Real value() const { return _c; }
+    virtual String name() const { return this->_name; }
+    virtual String operator_name() const { return "const"; }
+    virtual Operator type() const { return PAR; }
+    virtual Set<UntypedVariable> arguments() const { return Set<UntypedVariable>(); }
+    virtual ParameterExpression<Real>* clone() const { return new ParameterExpression<Real>(*this); }
+    virtual std::ostream& write(std::ostream& os) const { return os << _name; }
+  protected:
+    virtual ExpressionInterface<Real>* simplify() const { return this->clone(); }
+  private:
+    String _name;
+    Real _c;
+};
+
 //! A projection onto a named variable.
 template<class R>
 class VariableExpression
@@ -278,8 +326,9 @@ template<class R, class Op=Operator, class A=R> class MultiaryExpression
 
 
 bool operator==(const Expression<Tribool>& e, bool v) {
-    const ConstantExpression<Tribool>* expr = dynamic_cast<const ConstantExpression<Tribool>*>(e._raw_pointer());
-    return expr && expr->value()==v;
+    const ConstantExpression<Tribool>* cexpr = dynamic_cast<const ConstantExpression<Tribool>*>(e._raw_pointer());
+    const ParameterExpression<Tribool>* pexpr = dynamic_cast<const ParameterExpression<Tribool>*>(e._raw_pointer());
+    return (cexpr && cexpr->value()==v) || (pexpr && pexpr->value()==v);
 }
 
 
@@ -298,10 +347,16 @@ template<class R> Expression<R>::Expression(const Variable<R>& v)
 {
 }
 
+template<class R> Expression<R>::Expression(const Parameter<R>& v)
+    : _ptr(new ParameterExpression<R>(v))
+{
+}
+
 Expression<Real>::Expression(const double& c) : _ptr(new ConstantExpression<Real>(c)) { }
 Expression<Real>::Expression(const Interval& c) : _ptr(new ConstantExpression<Real>(c)) { }
 Expression<Real>::Expression(const Real& c) : _ptr(new ConstantExpression<Real>(c)) { }
 Expression<Real>::Expression(const Constant<Real>& c) : _ptr(new ConstantExpression<Real>(c.name(),c.value())) { }
+Expression<Real>::Expression(const Parameter<Real>& p) : _ptr(new ParameterExpression<Real>(p.name(),p.value())) { }
 Expression<Real>::Expression(const Variable<Real>& v) : _ptr(new VariableExpression<Real>(v)) { }
 
 
@@ -354,6 +409,7 @@ bool identical(const Expression<Real>& e1, const Expression<Real>& e2) {
     if(e1.op()!=e2.op()) { return false; }
     const VariableExpression<Real> *vptr1, *vptr2;
     const ConstantExpression<Real> *cptr1, *cptr2;
+    const ParameterExpression<Real> *pptr1, *pptr2;
     switch(e1.op()) {
         case VAR:
             vptr1 = dynamic_cast<const VariableExpression<Real>*>(e1._raw_pointer());
@@ -365,6 +421,11 @@ bool identical(const Expression<Real>& e1, const Expression<Real>& e2) {
             cptr2 = dynamic_cast<const ConstantExpression<Real>*>(e2._raw_pointer());
             assert(cptr1); assert(cptr2);
             return (cptr1->value()==cptr2->value());
+        case PAR:
+            pptr1 = dynamic_cast<const ParameterExpression<Real>*>(e1._raw_pointer());
+            pptr2 = dynamic_cast<const ParameterExpression<Real>*>(e2._raw_pointer());
+            assert(pptr1); assert(pptr2);
+            return (pptr1->value()==pptr2->value());
         default:
             List< Expression<Real> > sub1=e1.subexpressions();
             List< Expression<Real> > sub2=e2.subexpressions();
@@ -643,6 +704,8 @@ Boolean evaluate(const Expression<Boolean>& e, const DiscreteValuation& x) {
     if(uptr) { return _compute(uptr->_op,evaluate(uptr->_arg,x)); }
     const ConstantExpression<Boolean>* cptr=dynamic_cast<const ConstantExpression<Boolean>*>(eptr);
     if(cptr) { return cptr->value(); }
+    const ParameterExpression<Boolean>* pptr=dynamic_cast<const ParameterExpression<Boolean>*>(eptr);
+    if(pptr) { return pptr->value(); }
     const BinaryExpression<Boolean,Operator,String>* bsptr=dynamic_cast<const BinaryExpression<Boolean,Operator,String>*>(eptr);
     if(bsptr) { return _compare(bsptr->_op,evaluate(bsptr->_arg1,x),evaluate(bsptr->_arg2,x)); }
     const BinaryExpression<Boolean,Operator,Integer>* bzptr=dynamic_cast<const BinaryExpression<Boolean,Operator,Integer>*>(eptr);
@@ -654,6 +717,8 @@ String evaluate(const Expression<String>& e, const DiscreteValuation& x) {
     const ExpressionInterface<String>* eptr=e._raw_pointer();
     const ConstantExpression<String>* cptr=dynamic_cast<const ConstantExpression<String>*>(eptr);
     if(cptr) { return cptr->value(); }
+    const ParameterExpression<String>* pptr=dynamic_cast<const ParameterExpression<String>*>(eptr);
+    if(pptr) { return pptr->value(); }
     const VariableExpression<String>* vptr=dynamic_cast<const VariableExpression<String>*>(eptr);
     if(vptr) { return x[vptr->variable()]; }
     ARIADNE_FAIL_MSG("Cannot evaluate expression "<<e<<" to a String using variables "<<x);
@@ -667,6 +732,8 @@ Integer evaluate(const Expression<Integer>& e, const DiscreteValuation& x) {
     if(uptr) { return _compute(uptr->_op,evaluate(uptr->_arg,x)); }
     const ConstantExpression<Integer>* cptr=dynamic_cast<const ConstantExpression<Integer>*>(eptr);
     if(cptr) { return cptr->value(); }
+    const ParameterExpression<Integer>* pptr=dynamic_cast<const ParameterExpression<Integer>*>(eptr);
+    if(pptr) { return pptr->value(); }
     const VariableExpression<Integer>* vptr=dynamic_cast<const VariableExpression<Integer>*>(eptr);
     if(vptr) { return x[vptr->variable()]; }
     ARIADNE_FAIL_MSG("Cannot evaluate expression "<<e<<" to an Integer using variables "<<x);
@@ -690,6 +757,8 @@ template<class X> X evaluate(const Expression<Real>& e, const ContinuousValuatio
     if(uptr) { return _compute(uptr->_op,evaluate(uptr->_arg,x)); }
     const ConstantExpression<Real>* cptr=dynamic_cast<const ConstantExpression<Real>*>(eptr);
     if(cptr) { X r; _set_constant(r,cptr->value()); return r; }
+    const ParameterExpression<Real>* pptr=dynamic_cast<const ParameterExpression<Real>*>(eptr);
+    if(pptr) { X r; _set_constant(r,pptr->value()); return r; }
     const VariableExpression<Real>* vptr=dynamic_cast<const VariableExpression<Real>*>(eptr);
     if(vptr) { return x[vptr->variable()]; }
     ARIADNE_FAIL_MSG("");
@@ -703,6 +772,8 @@ template<class X> X evaluate(const Expression<Real>& e, const Map<ExtendedRealVa
     if(uptr) { return _compute(uptr->_op,evaluate(uptr->_arg,x)); }
     const ConstantExpression<Real>* cptr=dynamic_cast<const ConstantExpression<Real>*>(eptr);
     if(cptr) { X r=x.begin()->second*0; _set_constant(r,cptr->value()); return r; }
+    const ParameterExpression<Real>* pptr=dynamic_cast<const ParameterExpression<Real>*>(eptr);
+    if(pptr) { X r=x.begin()->second*0; _set_constant(r,pptr->value()); return r; }
     const VariableExpression<Real>* vptr=dynamic_cast<const VariableExpression<Real>*>(eptr);
     if(vptr) { ARIADNE_ASSERT_MSG(x.has_key(vptr->variable()),"Valuation "<<x<<" does not contain variable "<<vptr->variable()<<" used in expression "<<e); return x[vptr->variable()]; }
     ARIADNE_FAIL_MSG("");
@@ -725,6 +796,8 @@ template<class X> X evaluate(const Expression<Real>& e, const Vector<X>& x) {
     if(uptr) { return _compute(uptr->_op,evaluate(uptr->_arg,x)); }
     const ConstantExpression<Real>* cptr=dynamic_cast<const ConstantExpression<Real>*>(eptr);
     if(cptr) { X r=x[0]*0; _set_constant(r,cptr->value()); return r; }
+    const ParameterExpression<Real>* pptr=dynamic_cast<const ParameterExpression<Real>*>(eptr);
+    if(pptr) { X r=x[0]*0; _set_constant(r,pptr->value()); return r; }
     const CoordinateExpression<Real>* iptr=dynamic_cast<const CoordinateExpression<Real>*>(eptr);
     if(iptr) { return x[iptr->index()]; }
     ARIADNE_FAIL_MSG("");
@@ -751,8 +824,8 @@ template<class X, class Y> Expression<X> substitute_variable(const VariableExpre
 template<class X> Expression<X> substitute_variable(const VariableExpression<X>& e, const Variable<X>& v, const Expression<X>& c) {
     if(e.variable()==v) { return Expression<X>(c); } else { return Expression<X>(e.clone()); } }
 
-template<class X> Expression<X> substitute_constant(const ConstantExpression<X>& e, const Constant<X>& con, const X& c) {
-	if (e.name()==con.name()) { return Expression<X>(ConstantExpression<X>(con.name(),c)); } else	{ return Expression<X>(e.clone()); }
+template<class X> Expression<X> substitute_parameter(const ParameterExpression<X>& e, const Parameter<X>& param) {
+	if (e.name()==param.name()) { return Expression<X>(ParameterExpression<X>(param.name(),param.value())); } else	{ return Expression<X>(e.clone()); }
  }
 
 template<class X, class Y> Expression<X> substitute(const Expression<X>& e, const Variable<Y>& v, const Expression<Y>& c) {
@@ -765,21 +838,25 @@ template<class X, class Y> Expression<X> substitute(const Expression<X>& e, cons
     if(uptr) { return make_expression<X>(uptr->_op,substitute(uptr->_arg,v,c)); }
     const ConstantExpression<X>* cptr=dynamic_cast<const ConstantExpression<X>*>(eptr);
     if(cptr) { return e; }
+    const ParameterExpression<X>* pptr=dynamic_cast<const ParameterExpression<X>*>(eptr);
+    if(pptr) { return e; }
     const VariableExpression<X>* vptr=dynamic_cast<const VariableExpression<X>*>(eptr);
     if(vptr) { return substitute_variable(*vptr,v,c); }
     ARIADNE_FAIL_MSG("Cannot substitute for a named variable in an unknown expression.");
 }
 
-template<class X, class Y> Expression<X> substitute(const Expression<X>& e, const Constant<Y>& con, const Y& c) {
+template<class X, class Y> Expression<X> substitute(const Expression<X>& e, const Parameter<Y>& param, const Y& c) {
     const ExpressionInterface<X>* eptr=e._raw_pointer();
     const BinaryExpression<X,Operator,Y,Y>* aptr=dynamic_cast<const BinaryExpression<X,Operator,Y,Y>*>(eptr);
-    if(aptr) { return make_expression<X>(aptr->_op,substitute(aptr->_arg1,con,c),substitute(aptr->_arg2,con,c)); }
+    if(aptr) { return make_expression<X>(aptr->_op,substitute(aptr->_arg1,param,c),substitute(aptr->_arg2,param,c)); }
     const BinaryExpression<X>* bptr=dynamic_cast<const BinaryExpression<X>*>(eptr);
-    if(bptr) { return make_expression<X>(bptr->_op,substitute(bptr->_arg1,con,c),substitute(bptr->_arg2,con,c)); }
+    if(bptr) { return make_expression<X>(bptr->_op,substitute(bptr->_arg1,param,c),substitute(bptr->_arg2,param,c)); }
     const UnaryExpression<X>* uptr=dynamic_cast<const UnaryExpression<X>*>(eptr);
-    if(uptr) { return make_expression<X>(uptr->_op,substitute(uptr->_arg,con,c)); }
+    if(uptr) { return make_expression<X>(uptr->_op,substitute(uptr->_arg,param,c)); }
     const ConstantExpression<X>* cptr=dynamic_cast<const ConstantExpression<X>*>(eptr);
-    if(cptr) { return substitute_constant(*cptr,con,c); }
+    if(cptr) { return e; }
+    const ParameterExpression<X>* pptr=dynamic_cast<const ParameterExpression<X>*>(eptr);
+    if(pptr) { return substitute_parameter(*pptr,param); }
     const VariableExpression<X>* vptr=dynamic_cast<const VariableExpression<X>*>(eptr);
     if(vptr) { return e; }
     ARIADNE_FAIL_MSG("Cannot substitute for a named constant in an unknown expression.");
@@ -805,22 +882,24 @@ RealParameterSet parameters(const Expression<Real>& e) {
     if(uptr) {
     	return parameters(uptr->_arg);
     }
-    const ConstantExpression<Real>* cptr=dynamic_cast<const ConstantExpression<Real>*>(eptr);
-    if(cptr) {
-    	RealParameterSet result;
-    	if (isalpha(cptr->name()[0]))
-    		result.insert(Constant<Real>(cptr->name(),cptr->value()));
-    	return result;
-    }
     const VariableExpression<Real>* vptr=dynamic_cast<const VariableExpression<Real>*>(eptr);
     if(vptr) { return RealParameterSet(); }
+    const ConstantExpression<Real>* cptr=dynamic_cast<const ConstantExpression<Real>*>(eptr);
+    if(cptr) { return RealParameterSet(); }
+    const ParameterExpression<Real>* pptr=dynamic_cast<const ParameterExpression<Real>*>(eptr);
+    if(pptr) {
+        RealParameterSet result;
+        result.insert(Parameter<Real>(pptr->name(),pptr->value()));
+        return result;
+    }
+
     ARIADNE_FAIL_MSG("Cannot look for parameters in an unknown expression.");
 }
 
 template Expression<Tribool> substitute(const Expression<Tribool>& e, const Variable<Tribool>& v, const Expression<Tribool>& c);
 template Expression<Tribool> substitute(const Expression<Tribool>& e, const Variable<Real>& v, const Expression<Real>& c);
 template Expression<Real> substitute(const Expression<Real>& e, const Variable<Real>& v, const Expression<Real>& c);
-template Expression<Real> substitute(const Expression<Real>& e, const Constant<Real>& con, const Real& c);
+template Expression<Real> substitute(const Expression<Real>& e, const Parameter<Real>& con, const Real& c);
 
 namespace {
 
@@ -843,6 +922,14 @@ template<> inline Expression<Real> _simplify(const Expression<Real>& e) {
                 // Operator not supported by _compute, skip
             }                
         }
+        const ParameterExpression<Real>* parg=dynamic_cast<const ParameterExpression<Real>*>(sarg._raw_pointer());
+        if(parg) {  // Argument is a parameter
+            try {
+                return _compute<Real>(uptr->_op,parg->value());
+            } catch (std::runtime_error) {
+                // Operator not supported by _compute, skip
+            }
+        }
         return make_expression<Real>(uptr->_op,sarg);
     }
     const BinaryExpression<Real>* bptr=dynamic_cast<const BinaryExpression<Real>*>(eptr);
@@ -860,6 +947,17 @@ template<> inline Expression<Real> _simplify(const Expression<Real>& e) {
         // std::cout << "Both arguments are constants with value " << carg1->value() << " and " << carg2->value() << std::endl;
         try {
             return _compute<Real>(bptr->_op,carg1->value(),carg2->value());
+        } catch(std::runtime_error) {
+            // Operator not supported by _compute, skip
+        }
+    }
+    // Check which arguments are parameters
+    const ParameterExpression<Real>* parg1=dynamic_cast<const ParameterExpression<Real>*>(sarg1._raw_pointer());
+    const ParameterExpression<Real>* parg2=dynamic_cast<const ParameterExpression<Real>*>(sarg2._raw_pointer());
+    if(parg1 && parg2) {    // If both arguments are constants, return the computed value of the expression
+        // std::cout << "Both arguments are parameters with value " << parg1->value() << " and " << parg2->value() << std::endl;
+        try {
+            return _compute<Real>(bptr->_op,parg1->value(),parg2->value());
         } catch(std::runtime_error) {
             // Operator not supported by _compute, skip
         }
@@ -907,6 +1005,10 @@ template<> inline Expression<Tribool> _simplify(const Expression<Tribool>& e) {
             if(ncptr) {
                 return Expression<Tribool>(!ncptr->value());
             }
+            const ParameterExpression<Tribool>* npptr=dynamic_cast<const ParameterExpression<Tribool>*>(sarg._ptr.operator->());
+             if(npptr) {
+                 return Expression<Tribool>(!npptr->value());
+             }
         }
         return make_expression<Tribool>(uptr->_op,sarg);
     }
@@ -916,6 +1018,8 @@ template<> inline Expression<Tribool> _simplify(const Expression<Tribool>& e) {
         Expression<Tribool> sarg2=simplify(bptr->_arg2);
         const ConstantExpression<Tribool>* carg1ptr=dynamic_cast<const ConstantExpression<Tribool>*>(sarg1._ptr.operator->());
         const ConstantExpression<Tribool>* carg2ptr=dynamic_cast<const ConstantExpression<Tribool>*>(sarg2._ptr.operator->());
+        const ParameterExpression<Tribool>* parg1ptr=dynamic_cast<const ParameterExpression<Tribool>*>(sarg1._ptr.operator->());
+        const ParameterExpression<Tribool>* parg2ptr=dynamic_cast<const ParameterExpression<Tribool>*>(sarg2._ptr.operator->());
         if(carg1ptr && carg2ptr) {
             if(bptr->_op==AND) { return Expression<Tribool>(carg1ptr->value() && carg2ptr->value()); }
             if(bptr->_op==OR) { return Expression<Tribool>(carg1ptr->value() || carg2ptr->value()); }
@@ -929,6 +1033,19 @@ template<> inline Expression<Tribool> _simplify(const Expression<Tribool>& e) {
             if(bptr->_op==AND && carg2ptr->value()==false) { return sarg2; }
             if(bptr->_op==OR && carg2ptr->value()==true) { return sarg2; }
             if(bptr->_op==OR && carg2ptr->value()==false) { return sarg1; }
+        } else if(parg1ptr && parg2ptr) {
+            if(bptr->_op==AND) { return Expression<Tribool>(parg1ptr->value() && parg2ptr->value()); }
+            if(bptr->_op==OR) { return Expression<Tribool>(parg1ptr->value() || parg2ptr->value()); }
+        } else if(parg1ptr) {
+            if(bptr->_op==AND && parg1ptr->value()==true) { return sarg2; }
+            if(bptr->_op==AND && parg1ptr->value()==false) { return sarg1; }
+            if(bptr->_op==OR && parg1ptr->value()==true) { return sarg1; }
+            if(bptr->_op==OR && parg1ptr->value()==false) { return sarg2; }
+        } else if(parg2ptr) {
+            if(bptr->_op==AND && parg2ptr->value()==true) { return sarg1; }
+            if(bptr->_op==AND && parg2ptr->value()==false) { return sarg2; }
+            if(bptr->_op==OR && parg2ptr->value()==true) { return sarg2; }
+            if(bptr->_op==OR && parg2ptr->value()==false) { return sarg1; }
         } else {
             return make_expression<Tribool>(bptr->_op,sarg1,sarg2);
         }
@@ -953,6 +1070,7 @@ Polynomial<X> polynomial(const Expression<Real>& e, const Space<Real>& s)
     const Operator op=eptr->type();
 
     const ConstantExpression<Real>* cptr;
+    const ParameterExpression<Real>* pptr;
     const VariableExpression<Real>* vptr;
     const CoordinateExpression<Real>* iptr;
     const UnaryExpression<Real,Operator>* uptr;
@@ -962,6 +1080,9 @@ Polynomial<X> polynomial(const Expression<Real>& e, const Space<Real>& s)
         case CNST:
             cptr=static_cast<const ConstantExpression<Real>*>(eptr);
             return Polynomial<X>::constant(s.size(),cptr->value()); break;
+        case PAR:
+            pptr=static_cast<const ParameterExpression<Real>*>(eptr);
+            return Polynomial<X>::constant(s.size(),pptr->value()); break;
         case VAR:
             vptr=static_cast<const VariableExpression<Real>*>(eptr);
             return Polynomial<X>::variable(s.size(),s.index(vptr->variable())); break;
@@ -998,17 +1119,23 @@ Affine<X> affine(const Expression<Real>& e, const Space<Real>& s) {
     Operator op=eptr->type();
 
     const ConstantExpression<Real>* cptr;
+    const ParameterExpression<Real>* pptr;
     const VariableExpression<Real>* vptr;
     const CoordinateExpression<Real>* iptr;
     const UnaryExpression<Real,Operator>* uptr;
     const BinaryExpression<Real,Operator>* bptr;
     const ConstantExpression<Real>* cptr1;
     const ConstantExpression<Real>* cptr2;
+    const ParameterExpression<Real>* pptr1;
+    const ParameterExpression<Real>* pptr2;
 
     switch(op) {
         case CNST:
             cptr=dynamic_cast<const ConstantExpression<Real>*>(eptr);
             return Affine<X>::constant(s.size(),cptr->value()); break;
+        case PAR:
+            pptr=dynamic_cast<const ParameterExpression<Real>*>(eptr);
+            return Affine<X>::constant(s.size(),pptr->value()); break;
         case VAR:
             vptr=dynamic_cast<const VariableExpression<Real>*>(eptr);
             return Affine<X>::variable(s.size(),s.index(vptr->variable())); break;
@@ -1027,15 +1154,23 @@ Affine<X> affine(const Expression<Real>& e, const Space<Real>& s) {
         case DIV:
             bptr=dynamic_cast<const BinaryExpression<Real>*>(eptr);
             cptr=dynamic_cast<const ConstantExpression<Real>*>(bptr->_arg2._raw_pointer());
-            ARIADNE_ASSERT_MSG(cptr,"Cannot convert expression "<<e<<" to affine form.");
-            return affine<X>(bptr->_arg1,s)/static_cast<X>(cptr->value()); break;
+            pptr=dynamic_cast<const ParameterExpression<Real>*>(bptr->_arg2._raw_pointer());
+            ARIADNE_ASSERT_MSG(cptr || pptr,"Cannot convert expression "<<e<<" to affine form.");
+            if (cptr)
+            	return affine<X>(bptr->_arg1,s)/static_cast<X>(cptr->value());
+            if (pptr)
+            	return affine<X>(bptr->_arg1,s)/static_cast<X>(pptr->value());
         case MUL:
             bptr=static_cast<const BinaryExpression<Real>*>(eptr);
             cptr1=dynamic_cast<const ConstantExpression<Real>*>(bptr->_arg1._raw_pointer());
             cptr2=dynamic_cast<const ConstantExpression<Real>*>(bptr->_arg2._raw_pointer());
-            ARIADNE_ASSERT_MSG(cptr1 || cptr2,"Cannot convert expression "<<e<<" to affine form.");
+            pptr1=dynamic_cast<const ParameterExpression<Real>*>(bptr->_arg1._raw_pointer());
+            pptr2=dynamic_cast<const ParameterExpression<Real>*>(bptr->_arg2._raw_pointer());
+            ARIADNE_ASSERT_MSG(cptr1 || cptr2 || pptr1 || pptr2,"Cannot convert expression "<<e<<" to affine form.");
             if(cptr1) { return static_cast<X>(cptr1->value()) * affine<X>(bptr->_arg2,s); }
-            else { return affine<X>(bptr->_arg1,s) * static_cast<X>(cptr2->value()); }
+            else if (cptr2) { return affine<X>(bptr->_arg1,s) * static_cast<X>(cptr2->value()); }
+            else if (pptr1) { return static_cast<X>(pptr1->value()) * affine<X>(bptr->_arg2,s); }
+            else if (pptr2) { return affine<X>(bptr->_arg1,s) * static_cast<X>(pptr2->value()); }
             break;
         default:
             ARIADNE_FAIL_MSG("Cannot convert expression "<<e<<" to affine form.");
@@ -1055,6 +1190,8 @@ Expression<Real> function(const Expression<Real>& e,  const Space<Real>& s)
     if(uptr) { return make_expression<Real>(uptr->_op,function(uptr->_arg,s)); }
     const ConstantExpression<Real>* cptr=dynamic_cast<const ConstantExpression<Real>*>(eptr);
     if(cptr) { return Expression<Real>(*cptr); }
+    const ParameterExpression<Real>* pptr=dynamic_cast<const ParameterExpression<Real>*>(eptr);
+    if(pptr) { return Expression<Real>(*pptr); }
     const VariableExpression<Real>* vptr=dynamic_cast<const VariableExpression<Real>*>(eptr);
     if(vptr) { return Expression<Real>(new CoordinateExpression<Real>(s.index(vptr->variable()))); }
     const CoordinateExpression<Real>* iptr=dynamic_cast<const CoordinateExpression<Real>*>(eptr);
@@ -1112,6 +1249,7 @@ Expression<Real> left_delta_restrict(Expression<Real> expr, bool positive)
 
 		// Constant
 		case CNST:
+		case PAR:
 
 			// Return the original expression			
 			return expr;
@@ -1159,6 +1297,7 @@ Expression<Real> derivative(const Expression<Real>& e, const Variable<Real>& v)
     const BinaryExpression<Real>* bptr=static_cast<const BinaryExpression<Real>*>(eptr);
     switch(eptr->type()) {
         case CNST:
+        case PAR:
             return Expression<Real>(0.0);
         case VAR:
             if(vptr->variable()==v) { return Expression<Real>(1.0); }
@@ -1197,6 +1336,7 @@ Expression<Real> derivative(const Expression<Real>& e, const Variable<Real>& v)
 Expression<Real> indicator(Expression<tribool> e, Sign sign) {
     ExpressionInterface<tribool>* eptr=const_cast<ExpressionInterface<tribool>*>(e._ptr.operator->());
     ConstantExpression<Tribool>* cnptr;
+    ParameterExpression<Tribool>* paptr;
     BinaryExpression<Tribool,Operator,Real,Real>* cptr;
     BinaryExpression<Tribool,Operator,Tribool,Tribool>* bptr;
     UnaryExpression<tribool,Operator,Tribool>* nptr;
@@ -1205,6 +1345,12 @@ Expression<Real> indicator(Expression<tribool> e, Sign sign) {
         case CNST:
             cnptr=dynamic_cast<ConstantExpression<Tribool>*>(eptr);
             value=( sign==positive ? cnptr->value() : !cnptr->value() );
+            if(value==true) { return RealExpression(+1.0); }
+            else if(value==false) {  return RealExpression(-1.0); }
+            else { return RealExpression(0.0); }
+        case PAR:
+            paptr=dynamic_cast<ParameterExpression<Tribool>*>(eptr);
+            value=( sign==positive ? paptr->value() : !paptr->value() );
             if(value==true) { return RealExpression(+1.0); }
             else if(value==false) {  return RealExpression(-1.0); }
             else { return RealExpression(0.0); }

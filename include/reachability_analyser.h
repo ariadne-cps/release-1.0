@@ -412,10 +412,10 @@ ParameterIdIntMap getSplitFactorsOfParameters(
 		const Float& targetRatioPerc,
 		const HybridBoxes& bounding_domain);
 
-/*! \brief Gets the best constant among the \a working_parameters of the \a system to split, in terms of
+/*! \brief Gets the best parameter among the \a working_parameters of the \a system to split, in terms of
  * relative reduction of derivative widths compared to some \a referenceWidths.
  */
-RealConstant getBestParameterToSplit(
+RealParameter getBestParameterToSplit(
 		SystemType& system,
 		const RealParameterSet& working_parameters,
 		const HybridFloatVector& referenceWidths,

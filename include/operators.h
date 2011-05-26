@@ -44,6 +44,7 @@ namespace Ariadne {
 
 enum Operator {
     CNST,  // A constant value
+    PAR,   // A parameter
     VAR,   // A named variable
     IND,   // A numbered index
     ADD,   // Addition
@@ -107,6 +108,7 @@ inline const char* symbol(const Operator& op) {
 inline const char* name(const Operator& op) {
     switch(op) {
         case CNST: return "cnst"; break;
+        case PAR:  return "par"; break;
         case VAR:  return "var"; break;
         case IND:  return "ind"; break;
         case POS:  return "pos"; break;
