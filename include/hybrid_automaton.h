@@ -568,8 +568,11 @@ class HybridAutomaton
     //! \brief The kind (permissive, urgent etc) of the event.
     virtual EventKind event_kind(DiscreteLocation location, DiscreteEvent event) const;
 
-    //! \brief Test if the hybrid automaton has a discrete transition with \a event_id and \a source_id.
+    //! \brief Test if the hybrid automaton has a discrete transition with \a event and \a source.
     bool has_transition(DiscreteEvent event, DiscreteLocation source) const;
+
+    //! \brief Test if the hybrid automaton has an invariant with \a event in location \a location.
+    bool has_invariant(DiscreteEvent event, DiscreteLocation location) const;
 
     //! \brief The discrete mode with given discrete location.
     const DiscreteMode& mode(DiscreteLocation location) const;

@@ -93,7 +93,7 @@ DiscreteIOMode(DiscreteLocation location,
 DiscreteIOMode::
 DiscreteIOMode(DiscreteLocation location,
                const std::map< RealVariable, RealExpression >& dynamics,
-               const std::list< RealExpression >& invariants)
+               const std::map< DiscreteEvent, RealExpression >& invariants)
     :  _location(location), _dynamics(dynamics), _invariants(invariants)
 {
 }
@@ -108,7 +108,8 @@ DiscreteIOMode::set_dynamics(const RealVariable& var,
 void
 DiscreteIOMode::add_invariant(const RealExpression& inv)
 {
-    this->_invariants.push_back(inv);
+	String inv_name = this->location().name() + "-inv" + to_str(this->_invariants.size());
+    this->_invariants.insert(std::pair<DiscreteEvent,RealExpression>(DiscreteEvent(inv_name),inv));
 }
 
 void 
@@ -116,8 +117,8 @@ DiscreteIOMode::substitute(const RealParameter& param)
 {
     for(std::map<RealVariable, RealExpression>::iterator it=this->_dynamics.begin();it!=this->_dynamics.end();it++)
         it->second = it->second.substitute(param);
-    for(std::list<RealExpression>::iterator it=this->_invariants.begin();it!=this->_invariants.end();it++)
-        *it = it->substitute(param);
+    for(std::map<DiscreteEvent,RealExpression>::iterator it=this->_invariants.begin();it!=this->_invariants.end();it++)
+        (*it).second = it->second.substitute(param);
 }
 
 
@@ -465,6 +466,12 @@ HybridIOAutomaton::new_invariant(DiscreteLocation location,
         ARIADNE_FAIL_MSG("The hybrid automaton " << this->_name << " has no mode with id " << location << ".");
     }
     DiscreteIOMode& mode=this->_mode(location);
+	DiscreteEvent invariant_event(location.name()+"-inv"+to_str(mode._invariants.size()));
+
+    if(this->has_transition(invariant_event,location)) {
+        throw std::runtime_error("The automaton already has a transition with the would-be id and the given location as source id.");
+    }
+
     mode.add_invariant(inv);
     return mode;
 }
@@ -521,13 +528,14 @@ HybridIOAutomaton::new_transition(DiscreteEvent event,
                                   DiscreteLocation target,
                                   EventKind kind)
 {
-    if(!event.is_transition()) {
-        ARIADNE_FAIL_MSG("Transition event names cannot start with \"invariant\".");    
-    }
-    if(kind != PERMISSIVE && this->has_input_event(event)) {
+	if(kind != PERMISSIVE && this->has_input_event(event)) {
         ARIADNE_FAIL_MSG("Event " << event << " is an input event in automaton " << this->_name << 
             ": transition cannot be urgent.");
-    }    
+    }
+    if(this->has_invariant(event,source)) {
+        ARIADNE_FAIL_MSG("The automaton " << this->_name << " already has an invariant with id "
+            << event << " in location " << source << ".");
+    }
     if(this->has_transition(event,source)) {
         ARIADNE_FAIL_MSG("The automaton " << this->_name << " already has a transition with id "
             << event << " and source " << source << ".");
@@ -546,9 +554,6 @@ HybridIOAutomaton::new_transition(DiscreteEvent event,
 const DiscreteIOTransition&
 HybridIOAutomaton::new_transition(const DiscreteIOTransition& trans)
 {
-    if(!trans.event().is_transition()) {
-        ARIADNE_FAIL_MSG("Transition event names cannot start with \"invariant\".");    
-    }
     if(this->has_transition(trans.event(),trans.source())) {
         ARIADNE_FAIL_MSG("The automaton " << this->_name << " already has a transition with id "
             << trans.event() << " and source " << trans.source() << ".");
@@ -558,6 +563,10 @@ HybridIOAutomaton::new_transition(const DiscreteIOTransition& trans)
     }
     if(!this->has_mode(trans.target())) {
         ARIADNE_FAIL_MSG("The automaton " << this->_name << " does not contain a target mode with id " << trans.target());
+    }
+    if(this->has_invariant(trans.event(),trans.source())) {
+        ARIADNE_FAIL_MSG("The automaton " << this->_name << " already has an invariant with id "
+            << trans.event() << " in location " << trans.source() << ".");
     }
           
     this->_transitions.push_back(trans);
@@ -665,18 +674,29 @@ HybridIOAutomaton::has_internal_event(const DiscreteEvent& e) const
 
 
 bool
-HybridIOAutomaton::has_mode(DiscreteLocation state) const
+HybridIOAutomaton::has_mode(DiscreteLocation location) const
 {
-    // FIXME: This is a hack since we use std::list which cannot be searched by id.
     for(discrete_mode_const_iterator mode_iter=this->_modes.begin();
-        mode_iter!=this->_modes.end(); ++mode_iter)
-        {
-            if(mode_iter->location()==state) {
-                return true;
-            }
-        }
+        mode_iter!=this->_modes.end(); ++mode_iter) {
+        if(mode_iter->location()==location)
+            return true;
+    }
     return false;
 }
+
+
+bool
+HybridIOAutomaton::has_invariant(DiscreteEvent event, DiscreteLocation location) const
+{
+	DiscreteIOMode mode = this->mode(location);
+    for(std::map<DiscreteEvent,RealExpression>::const_iterator inv_it=mode.invariants().begin();
+        inv_it!=mode.invariants().end(); ++inv_it) {
+    	if(inv_it->first==event)
+    		return true;
+    }
+    return false;
+}
+
 
 
 EventKind
@@ -684,20 +704,18 @@ HybridIOAutomaton::event_kind(DiscreteLocation location, DiscreteEvent event) co
 {
 	DiscreteIOMode mode = this->mode(location);
 
-	/*
-	std::list< DiscreteTransition > trans = transitions(location);
+	std::list< DiscreteIOTransition > trans = transitions(location);
 
-	for (std::list<DiscreteTransition>::const_iterator trans_it = trans.begin(); trans_it != trans.end(); ++trans_it) {
+	for (std::list<DiscreteIOTransition>::const_iterator trans_it = trans.begin(); trans_it != trans.end(); ++trans_it) {
 		if (trans_it->event() == event)
 			return trans_it->kind();
 	}
 
-	for (std::map<DiscreteEvent,VectorFunction>::const_iterator inv_it = mode.invariants().begin();
+	for (std::map<DiscreteEvent,RealExpression>::const_iterator inv_it = mode.invariants().begin();
 			inv_it != mode.invariants().end(); ++inv_it) {
 		if (inv_it->first == event)
 			return INVARIANT;
 	}
-	*/
 
 	ARIADNE_FAIL_MSG("The event '" << event.name() << "' for location '" << location.name() << "' is not present.");
 }
@@ -725,32 +743,32 @@ HybridIOAutomaton::modes() const
 
 
 DiscreteIOMode&
-HybridIOAutomaton::_mode(DiscreteLocation state)
+HybridIOAutomaton::_mode(DiscreteLocation location)
 {
-    // FIXME: This is a hack; we should use a logarithmic time real search to find a mode with the given discrete state.
+    // FIXME: This is a hack; we should use a logarithmic time real search to find a mode with the given discrete location.
     for(std::list< DiscreteIOMode >::iterator mode_iter=this->_modes.begin();
         mode_iter!=this->_modes.end(); ++mode_iter)
         {
-            if(mode_iter->location()==state) {
+            if(mode_iter->location()==location) {
                 return *mode_iter;
             }
         }
-    ARIADNE_FAIL_MSG("The automaton " << this->name() << " does not have a mode with id " << state);
+    ARIADNE_FAIL_MSG("The automaton " << this->name() << " does not have a mode with id " << location);
 }
 
 
 const DiscreteIOMode&
-HybridIOAutomaton::mode(DiscreteLocation state) const
+HybridIOAutomaton::mode(DiscreteLocation location) const
 {
-    // FIXME: This is a hack; we should use a logarithmic time real search to find a mode with the given discrete state.
+    // FIXME: This is a hack; we should use a logarithmic time real search to find a mode with the given discrete location.
     for(discrete_mode_const_iterator mode_iter=this->_modes.begin();
         mode_iter!=this->_modes.end(); ++mode_iter)
         {
-            if(mode_iter->location()==state) {
+            if(mode_iter->location()==location) {
                 return *mode_iter;
             }
         }
-    ARIADNE_FAIL_MSG("The automaton " << this->name() << " does not have a mode with id " << state);
+    ARIADNE_FAIL_MSG("The automaton " << this->name() << " does not have a mode with id " << location);
 }
 
 
@@ -914,12 +932,12 @@ std::pair< HybridAutomaton, RealSpace > make_monolithic_automaton(const HybridIO
         DiscreteLocation loc = modeiter->location();
         ha.new_mode(loc,dyn);
         // List all invariants
-        std::list< RealExpression > invlist = modeiter->invariants();
+        std::map<DiscreteEvent, RealExpression > invlist = modeiter->invariants();
         // Add all invariants to the mode in the monolithic automaton
-        for(std::list< RealExpression >::const_iterator inviter=invlist.begin(); 
+        for(std::map< DiscreteEvent,RealExpression >::const_iterator inviter=invlist.begin();
             inviter != invlist.end(); inviter++)
         {
-            ha.new_invariant(loc, ScalarFunction(*inviter, spc));
+            ha.new_invariant(loc, ScalarFunction(inviter->second, spc));
         }
     }
 
@@ -979,16 +997,16 @@ DiscreteLocation _recursive_composition(HybridIOAutomaton& ha,
     }
 
     // Add the invariants of loc1.
-    for(std::list< RealExpression >::const_iterator iter = loc1.invariants().begin();
+    for(std::map<DiscreteEvent, RealExpression >::const_iterator iter = loc1.invariants().begin();
         iter != loc1.invariants().end() ; iter++)
     {
-        ha.new_invariant(newloc, *iter);
+        ha.new_invariant(newloc, iter->second);
     }    
     // Add the invariants of loc2.
-    for(std::list< RealExpression >::const_iterator iter = loc2.invariants().begin();
+    for(std::map<DiscreteEvent, RealExpression >::const_iterator iter = loc2.invariants().begin();
         iter != loc2.invariants().end() ; iter++)
     {
-        ha.new_invariant(newloc, *iter);
+        ha.new_invariant(newloc, iter->second);
     }    
     
     // Scan all transition exiting from loc1
@@ -1015,7 +1033,7 @@ DiscreteLocation _recursive_composition(HybridIOAutomaton& ha,
                 // std::cout << "No transition in ha2 with the same event." << std::endl;                    
                 continue;
             }
-            // the target state in the composed automaton is iter->target(),tr2.target()
+            // the target location in the composed automaton is iter->target(),tr2.target()
             target2 = tr2.target();
             // activation depends on the second component
             act = tr2.activation();
@@ -1036,7 +1054,7 @@ DiscreteLocation _recursive_composition(HybridIOAutomaton& ha,
                 // std::cout << "No transition in ha2 with the same event." << std::endl;                    
                 continue;
             }
-            // the target state in the composed automaton is iter->target(),tr2.target()
+            // the target location in the composed automaton is iter->target(),tr2.target()
             target2 = tr2.target();
             // join the reset functions
             res.insert(tr2.reset().begin(), tr2.reset().end());
@@ -1207,7 +1225,7 @@ HybridIOAutomaton compose(const std::string& name,
                          input_vars, output_vars, internal_vars,
                          input_events, output_events, internal_events);
     
-    // Start the recursive composition from the initial states init1 and init2.
+    // Start the recursive composition from the initial locations init1 and init2.
     _recursive_composition(ha, ha1, ha2, init1, init2);
     
     return ha;
@@ -1262,8 +1280,8 @@ HybridIOAutomaton aasap_relaxation(const HybridIOAutomaton& hioa)
 			// We must construct 2^num_input_events locations
 			for (int i=0;i < (1<<input_events.size());i++)
 			{
-				// Initialize the state name
-				std::string statename = mode_it->location().name();
+				// Initialize the location name
+				std::string locationname = mode_it->location().name();
 
 				// Initialize the received events map
 				ReceivedEventsMap rem;
@@ -1278,9 +1296,9 @@ HybridIOAutomaton aasap_relaxation(const HybridIOAutomaton& hioa)
 					// Stores the information of being received
 					bool is_received = (((1<<j) & i) > 0);
 
-					// If received, adds the input event name to the state name
+					// If received, adds the input event name to the location name
 					if (is_received)
-						statename += "_" + input_event_it->name();
+						locationname += "_" + input_event_it->name();
 
 					// Insert the information about whether the event is considered received
 					rem.insert(make_pair<DiscreteEvent,bool>(*input_event_it,is_received));
@@ -1291,7 +1309,7 @@ HybridIOAutomaton aasap_relaxation(const HybridIOAutomaton& hioa)
 				}
 
 				// Add the corresponding mode to the AASAP automaton, along with the original dynamics
-				aasap.new_mode(DiscreteLocation(statename),mode_it->dynamics());
+				aasap.new_mode(DiscreteLocation(locationname),mode_it->dynamics());
 
 				// Add the original location with received events
 				lwre.push_back(make_pair<DiscreteLocation,ReceivedEventsMap>(mode_it->location(),rem));

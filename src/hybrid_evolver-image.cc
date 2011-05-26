@@ -429,7 +429,7 @@ _evolution_step(std::list< HybridTimedSetType >& working_sets,
     ActivationTimesType activation_times;
     if (!_settings->enable_premature_termination_on_blocking_event) {
     	_compute_activation_info(permissive_guards,activation_times,non_transverse_events,
-    			flow_set_model,blocking_time_model,guards,semantics);
+    			flow_set_model,blocking_time_model,guards,invariants,semantics);
     }
 
     SetModelType reachable_set;
@@ -843,14 +843,16 @@ _computeEvolutionForEvents(std::list< HybridTimedSetType >& working_sets,
     SetModelType evolved_set_model=this->getCalculusInterface(semantics).integration_step(flow_set_model,blocking_time_model);
     ARIADNE_LOG(2,"evolved_set_model.argument_size()="<<evolved_set_model.argument_size()<<"\n");
     ARIADNE_LOG(2,"evolved_set_range="<<evolved_set_model.range()<<"\n");
+    const std::map<DiscreteEvent,VectorFunction>& invariants = system.mode(location).invariants();
     // Compute evolution for blocking events
     for(std::set<DiscreteEvent>::const_iterator iter=blocking_events.begin(); iter!=blocking_events.end(); ++iter) {
         const DiscreteEvent event=*iter;
+        bool is_transition = (invariants.find(event) == invariants.end());
         if(event==finishing_event) {
             // TODO: Better estimate to use smaller blocking time
             intermediate_sets.adjoin(make_pair(location,evolved_set_model));
             working_sets.push_back(make_tuple(location,events,evolved_set_model,final_time_model));
-        } else if(event.is_transition() && !_settings->enable_premature_termination_on_blocking_event) { // not an invariant
+        } else if(is_transition && !_settings->enable_premature_termination_on_blocking_event) { // not an invariant
             intermediate_sets.adjoin(make_pair(location,evolved_set_model));
             const DiscreteTransition& transition=system.transition(event,location);
             SetModelType jump_set_model=apply(transition.reset(),evolved_set_model);
@@ -940,13 +942,15 @@ _compute_activation_info(std::map<DiscreteEvent,VectorFunction>& activations,
 						 const SetModelType& flow_set_model,
 						 const TimeModelType& blocking_time_model,
 						 const std::map<DiscreteEvent,VectorFunction>& blocking_guards,
+						 const std::map<DiscreteEvent,VectorFunction>& invariants,
 						 const Semantics semantics) const
 {
+
     // Treat non-transverse urgent events as non-urgent in upper semantics
     for(std::set<DiscreteEvent>::const_iterator iter=non_transverse_events.begin(); iter!=non_transverse_events.end(); ++iter) {
-        if(iter->is_transition()) {     // If the event is a transition
+    	bool is_transition = (invariants.find(*iter) == invariants.end());
+        if(is_transition)
             activations[*iter]=blocking_guards.find(*iter)->second;
-       }
     }
 
     this->compute_activationTimes(activation_times,activations,flow_set_model,blocking_time_model,semantics);

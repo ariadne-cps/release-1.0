@@ -163,14 +163,14 @@ int main(int argc,char *argv[])
 	HybridIOAutomaton tank_valve = compose("tank,valve",tank,valve,flow,idle);
 	HybridIOAutomaton system_io = compose("watertank-io",tank_valve,controller,DiscreteLocation("flow,idle"),rising);
 
-	cout << system_io << "\n\n";
+	cout << "I/O system: " << system_io << "\n\n";
 
 	/// Create the monolithic automaton
 	HybridAutomaton system("watertank-comp-hy");
 	RealSpace space;
 	make_lpair<HybridAutomaton,RealSpace>(system,space) = make_monolithic_automaton(system_io);
 
-	cout << system << "\n\n";
+	cout << "Monolithic system: " << system << "\n\n";
 
 	// Verification information
 

@@ -290,6 +290,7 @@ class ImageSetHybridEvolver
     						 	  const SetModelType& flow_set_model,
     						 	  const TimeModelType& blocking_time_model,
     						 	  const std::map<DiscreteEvent,VectorFunction>& blocking_guards,
+    						 	  const std::map<DiscreteEvent,VectorFunction>& invariants,
     						 	  const Semantics semantics) const;
 
     void _compute_and_adjoin_reachableSet(EnclosureListType& reach_sets,

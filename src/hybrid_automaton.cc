@@ -170,6 +170,12 @@ HybridAutomaton::new_invariant(DiscreteLocation location,
         throw std::runtime_error("The location of the invariant must be in the automaton.");
     }
     DiscreteMode& mode=const_cast<DiscreteMode&>(this->mode(location));
+	DiscreteEvent invariant_event(location.name()+"-inv"+to_str(mode._invariants.size()));
+
+    if(this->has_transition(invariant_event,location)) {
+        throw std::runtime_error("The automaton already has a transition with the would-be id and the given location as source id.");
+    }
+
     if(invariant.argument_size()!=mode.dimension()) {
         ARIADNE_THROW(std::runtime_error,"HybridAutomaton::new_invariant(location,invariant)",
             "The invariant has argument size " << invariant.argument_size()
@@ -180,7 +186,6 @@ HybridAutomaton::new_invariant(DiscreteLocation location,
             "The invariant has result size " << invariant.result_size()
                 << " but only scalar invariants are currently supported.");
     }
-    DiscreteEvent invariant_event(std::string("invariant_"+to_str(mode._invariants.size())));
     mode._invariants[invariant_event]=invariant;
     return mode;
 }
@@ -193,11 +198,11 @@ HybridAutomaton::new_transition(DiscreteEvent event,
                                 const VectorFunction &activation,
                                 EventKind kind)
 {
-    if(!event.is_transition()) {
-        throw std::runtime_error("Transition event names cannot start with \"invariant\".");    
-    }
     if(this->has_transition(event,source)) {
         throw std::runtime_error("The automaton already has a transition with the given id and source id.");
+    }
+    if(this->has_invariant(event,source)) {
+    	throw std::runtime_error("The automaton already has an invariant with the given id and location id.");
     }
     if(!this->has_mode(source)) {
         throw std::runtime_error("The automaton does not contain a mode with ths given source id");
@@ -397,6 +402,20 @@ HybridAutomaton::has_transition(DiscreteEvent event, DiscreteLocation source) co
             if(transition_iter->event()==event && transition_iter->source()==source) {
                 return true;
             }
+        }
+    return false;
+}
+
+
+bool
+HybridAutomaton::has_invariant(DiscreteEvent event, DiscreteLocation location) const
+{
+	DiscreteMode mode = this->mode(location);
+    for(std::map<DiscreteEvent,VectorFunction>::const_iterator inv_it=mode.invariants().begin();
+        inv_it!=mode.invariants().end(); ++inv_it)
+        {
+            if(inv_it->first==event)
+                return true;
         }
     return false;
 }

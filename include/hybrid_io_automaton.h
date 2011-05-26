@@ -57,17 +57,17 @@ class DiscreteIOMode {
     friend class HybridIOAutomaton;
   private:
 
-    // The discrete mode's discrete state.
+    // The discrete mode's discrete location.
     DiscreteLocation _location;
 
     // The discrete mode's vector field, described by a RealExpression for each variable.
     std::map< RealVariable, RealExpression > _dynamics;
     
     // The discrete mode's invariants.
-    std::list< RealExpression > _invariants;
+    std::map< DiscreteEvent, RealExpression > _invariants;
 
   public:
-    //! \brief The mode's discrete state.
+    //! \brief The mode's discrete location.
     DiscreteLocation location() const {
         return this->_location; }
 
@@ -85,7 +85,7 @@ class DiscreteIOMode {
     }
 
     //! \brief The discrete mode's invariants.
-    const std::list< RealExpression >& invariants() const {
+    const std::map< DiscreteEvent, RealExpression >& invariants() const {
         return this->_invariants; }
    
 	//! \brief Substitute the parameter \a param, if present, on the invariants and dynamic functions.
@@ -98,8 +98,8 @@ class DiscreteIOMode {
 			RealParameterSet new_parameters = dyn_it->second.parameters();
 			result.insert(new_parameters.begin(),new_parameters.end());
 		}
-		for (std::list<RealExpression>::const_iterator inv_it=this->_invariants.begin();inv_it!=this->_invariants.end();++inv_it) {
-			RealParameterSet new_parameters = inv_it->parameters();
+		for (std::map<DiscreteEvent,RealExpression>::const_iterator inv_it=this->_invariants.begin();inv_it!=this->_invariants.end();++inv_it) {
+			RealParameterSet new_parameters = inv_it->second.parameters();
 			result.insert(new_parameters.begin(),new_parameters.end());
 		}
 		return result;
@@ -120,7 +120,7 @@ class DiscreteIOMode {
 
     DiscreteIOMode(DiscreteLocation location,
                  const std::map< RealVariable, RealExpression >& dynamic,
-                 const std::list< RealExpression >& invariants);
+                 const std::map< DiscreteEvent, RealExpression >& invariants);
 
     // Set the dynamic of variable var.
     void set_dynamics(const RealVariable& var,
@@ -325,10 +325,10 @@ class HybridIOAutomaton
     std::list< DiscreteIOTransition > _transitions;
     
     //! \brief Access to a discrete mode (for internal use only)
-    DiscreteIOMode& _mode(DiscreteLocation state);
+    DiscreteIOMode& _mode(DiscreteLocation location);
 
     //! \brief Access to a discrete transition (for internal use only)   
-    DiscreteIOTransition& _transition(DiscreteEvent event, DiscreteLocation state);
+    DiscreteIOTransition& _transition(DiscreteEvent event, DiscreteLocation location);
 
   public:
     //@{
@@ -384,29 +384,29 @@ class HybridIOAutomaton
 
     //! \brief Adds a discrete mode to the automaton.
     //!
-    //!   \param state is the mode's discrete state.
+    //!   \param location is the mode's discrete location.
     //!   \param dynamic is the mode's vector field.
-    const DiscreteIOMode& new_mode(DiscreteLocation state);
+    const DiscreteIOMode& new_mode(DiscreteLocation location);
     
-    const DiscreteIOMode& new_mode(DiscreteLocation state,
+    const DiscreteIOMode& new_mode(DiscreteLocation location,
                                    const std::map< RealVariable, RealExpression >& dynamic);
 
     const DiscreteIOMode& new_mode(const DiscreteIOMode& mode);
     
     //! \brief Sets the dynamic for a variable in a mode of the automaton.
     //!
-    //!   \param state is the mode's discrete state.
+    //!   \param location is the mode's discrete location.
     //|   \param var is the automaton's controlled variable.
     //!   \param dynamic is the dynamics for var.
-    const DiscreteIOMode& set_dynamics(DiscreteLocation state,
+    const DiscreteIOMode& set_dynamics(DiscreteLocation location,
                                       const RealVariable& var,
                                       const RealExpression& dynamics);
 
     //! \brief Adds an invariant to a mode of the automaton.
     //!
-    //!   \param state is the mode's discrete state.
+    //!   \param location is the mode's discrete location.
     //!   \param invariant is the new invariant condition, in the form \f$g(x)<0\f$.
-    const DiscreteIOMode& new_invariant(DiscreteLocation state,
+    const DiscreteIOMode& new_invariant(DiscreteLocation location,
                                         const RealExpression& invariant);
 
     //! \brief Adds a discrete transition to the automaton.
@@ -595,8 +595,11 @@ class HybridIOAutomaton
     //! \brief Test if the hybrid automaton has a internal event named \a e.
     bool has_internal_event(const DiscreteEvent& e) const;
     
-    //! \brief Test if the hybrid automaton has a discrete mode with discrete state \a state.
-    bool has_mode(DiscreteLocation state) const;
+    //! \brief Test if the hybrid automaton has a discrete mode with discrete location \a location.
+    bool has_mode(DiscreteLocation location) const;
+
+    //! \brief Test if the hybrid automaton has an invariant with \a event in location \a location.
+    bool has_invariant(DiscreteEvent event, DiscreteLocation location) const;
 
     //! \brief Get the event kind for an \a event in a \a location.
     virtual EventKind event_kind(DiscreteLocation location, DiscreteEvent event) const;
@@ -604,8 +607,8 @@ class HybridIOAutomaton
     //! \brief Test if the hybrid automaton has a discrete transition with \a event_id and \a source_id.
     bool has_transition(DiscreteEvent event, DiscreteLocation source) const;
 
-    //! \brief The discrete mode with given discrete state.
-    const DiscreteIOMode& mode(DiscreteLocation state) const;
+    //! \brief The discrete mode with given discrete location.
+    const DiscreteIOMode& mode(DiscreteLocation location) const;
 
     //! \brief The discrete transition with given \a event and \a source location.
     const DiscreteIOTransition& transition(DiscreteEvent event, DiscreteLocation source) const;
