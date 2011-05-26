@@ -39,6 +39,7 @@
 #include "discrete_location.h"
 #include "discrete_event.h"
 #include "variables.h"
+#include "hybrid_automaton_interface.h"
 
 namespace Ariadne {
 
@@ -164,8 +165,8 @@ class DiscreteIOTransition
     // \brief The reset of the discrete transition, defined by a RealExpression for each variable.
     std::map< RealVariable, RealExpression > _reset;
 
-    // \brief Whether or not the transition is forced.
-    bool _forced;
+    // \brief The kind (URGENT or PERMISSIVE)
+    EventKind _kind;
 
   public:
     //! \brief The default constructor.
@@ -214,35 +215,35 @@ class DiscreteIOTransition
         return this->_reset;
     }
 
-    //! \brief True if the transition is forced (occurs as soon as it is activated).
-    bool forced() const {
-        return this->_forced;
+    //! \brief The kind of the transition.
+    EventKind kind() const {
+        return this->_kind;
     }
 
     // Construct a new transition (for internal use).    
     DiscreteIOTransition(DiscreteEvent event,
                          DiscreteLocation source,
                          DiscreteLocation target,
-                         bool forced=false);
+                         EventKind kind=PERMISSIVE);
 
     DiscreteIOTransition(DiscreteEvent event,
                          DiscreteLocation source,
                          DiscreteLocation target,
                          const RealExpression& activation,
-                         bool forced=false);
+                         EventKind kind=PERMISSIVE);
 
     DiscreteIOTransition(DiscreteEvent event,
                          DiscreteLocation source,
                          DiscreteLocation target,
                          const std::map< RealVariable, RealExpression >& reset,
-                         bool forced=false);
+                         EventKind kind=PERMISSIVE);
 
     DiscreteIOTransition(DiscreteEvent event,
                          DiscreteLocation source,
                          DiscreteLocation target,
                          const std::map< RealVariable, RealExpression >& reset,
                          const RealExpression& activation,
-                         bool forced=false);
+                         EventKind kind=PERMISSIVE);
                          
     void set_event(DiscreteEvent event);
     
@@ -415,30 +416,30 @@ class HybridIOAutomaton
     //!    \param target is the transition's target location.
     //!    \param reset is the transition's reset.
     //!    \param activation is the transition's activation region.
-    //!    \param forced determines whether the transision is forced (urgent) or unforced (permissive).
+    //!    \param kind determines whether the transition is forced (URGENT) or unforced (PERMISSIVE).
     const DiscreteIOTransition& new_transition(DiscreteEvent event,
                                                DiscreteLocation source,
                                                DiscreteLocation target,
                                                const std::map< RealVariable, RealExpression >& reset,
                                                const RealExpression& activation,
-                                               bool forced);
+                                               EventKind kind);
 
     const DiscreteIOTransition& new_transition(DiscreteEvent event,
                                                DiscreteLocation source,
                                                DiscreteLocation target,
                                                const std::map< RealVariable, RealExpression >& reset,
-                                               bool forced);
+                                               EventKind kind);
 
     const DiscreteIOTransition& new_transition(DiscreteEvent event,
                                                DiscreteLocation source,
                                                DiscreteLocation target,
                                                const RealExpression& activation,
-                                               bool forced);
+                                               EventKind kind);
 
     const DiscreteIOTransition& new_transition(DiscreteEvent event,
                                                DiscreteLocation source,
                                                DiscreteLocation target,
-                                               bool forced);
+                                               EventKind kind);
 
     const DiscreteIOTransition& new_transition(const DiscreteIOTransition& trans);
     
@@ -455,7 +456,7 @@ class HybridIOAutomaton
                                                       const std::map< RealVariable, RealExpression >& reset,
                                                       const RealExpression& activation) 
     {
-        return this->new_transition(event, source, target, reset, activation, true);
+        return this->new_transition(event, source, target, reset, activation, URGENT);
     }
  
     const DiscreteIOTransition& new_forced_transition(DiscreteEvent event,
@@ -463,7 +464,7 @@ class HybridIOAutomaton
                                                       DiscreteLocation target,
                                                       const std::map< RealVariable, RealExpression >& reset) 
     {
-        return this->new_transition(event, source, target, reset, true);
+        return this->new_transition(event, source, target, reset, URGENT);
     }
  
     const DiscreteIOTransition& new_forced_transition(DiscreteEvent event,
@@ -471,14 +472,14 @@ class HybridIOAutomaton
                                                       DiscreteLocation target,
                                                       const RealExpression& activation)
     {
-        return this->new_transition(event, source, target, activation, true);
+        return this->new_transition(event, source, target, activation, URGENT);
     }
 
     const DiscreteIOTransition& new_forced_transition(DiscreteEvent event,
                                                       DiscreteLocation source,
                                                       DiscreteLocation target)
     {
-        return this->new_transition(event, source, target, true);
+        return this->new_transition(event, source, target, URGENT);
     }
 
     //! \brief Adds an unforced (non-urgent) discrete transition to the automaton.
@@ -494,7 +495,7 @@ class HybridIOAutomaton
                                                         const std::map< RealVariable, RealExpression >& reset,
                                                         const RealExpression& activation)
     {
-        return this->new_transition(event, source, target, reset, activation, false);
+        return this->new_transition(event, source, target, reset, activation, PERMISSIVE);
     }
 
     const DiscreteIOTransition& new_unforced_transition(DiscreteEvent event,
@@ -502,7 +503,7 @@ class HybridIOAutomaton
                                                         DiscreteLocation target,
                                                         const std::map< RealVariable, RealExpression >& reset)
     {
-        return this->new_transition(event, source, target, reset, false);
+        return this->new_transition(event, source, target, reset, PERMISSIVE);
     }
 
     const DiscreteIOTransition& new_unforced_transition(DiscreteEvent event,
@@ -510,14 +511,14 @@ class HybridIOAutomaton
                                                         DiscreteLocation target,
                                                         const RealExpression& activation)
     {
-        return this->new_transition(event, source, target, activation, false);
+        return this->new_transition(event, source, target, activation, PERMISSIVE);
     }
 
     const DiscreteIOTransition& new_unforced_transition(DiscreteEvent event,
                                                         DiscreteLocation source,
                                                         DiscreteLocation target)
     {
-        return this->new_transition(event, source, target, false);
+        return this->new_transition(event, source, target, PERMISSIVE);
     }
 
     //! \brief Set the reset function for a discrete transition in the automaton.
@@ -596,6 +597,9 @@ class HybridIOAutomaton
     
     //! \brief Test if the hybrid automaton has a discrete mode with discrete state \a state.
     bool has_mode(DiscreteLocation state) const;
+
+    //! \brief Get the event kind for an \a event in a \a location.
+    virtual EventKind event_kind(DiscreteLocation location, DiscreteEvent event) const;
 
     //! \brief Test if the hybrid automaton has a discrete transition with \a event_id and \a source_id.
     bool has_transition(DiscreteEvent event, DiscreteLocation source) const;

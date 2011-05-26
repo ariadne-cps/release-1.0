@@ -150,7 +150,7 @@ DiscreteIOTransition::
 DiscreteIOTransition()
     : _event(), _source(), _target(),
       _activation(),
-      _reset(), _forced(false)
+      _reset(), _kind(PERMISSIVE)
 {
 }
 
@@ -159,10 +159,10 @@ DiscreteIOTransition::
 DiscreteIOTransition(DiscreteEvent event,
                      DiscreteLocation source,
                      DiscreteLocation target,
-                     bool forced)
+                     EventKind kind)
     : _event(event), _source(source), _target(target),
       _activation(RealExpression(1.0)),     // We assume the transition to be always active
-      _reset(), _forced(forced)
+      _reset(), _kind(kind)
 {
 }
 
@@ -171,9 +171,9 @@ DiscreteIOTransition(DiscreteEvent event,
                      DiscreteLocation source,
                      DiscreteLocation target,
                      const RealExpression& activation,
-                     bool forced)
+                     EventKind kind)
     : _event(event), _source(source), _target(target),
-      _activation(activation), _reset(), _forced(forced)
+      _activation(activation), _reset(), _kind(kind)
 {
 }
 
@@ -182,10 +182,10 @@ DiscreteIOTransition(DiscreteEvent event,
                      DiscreteLocation source,
                      DiscreteLocation target,
                      const std::map< RealVariable, RealExpression >& reset,
-                     bool forced)
+                     EventKind kind)
     : _event(event), _source(source), _target(target),
       _activation(RealExpression(1.0)),     // We assume the transition to be always active
-      _reset(reset), _forced(forced)
+      _reset(reset), _kind(kind)
 {
 }
 
@@ -195,9 +195,9 @@ DiscreteIOTransition(DiscreteEvent event,
                      DiscreteLocation target,
                      const std::map< RealVariable, RealExpression >& reset,
                      const RealExpression& activation,
-                     bool forced)
+                     EventKind kind)
     : _event(event), _source(source), _target(target),
-      _activation(activation), _reset(reset), _forced(forced)
+      _activation(activation), _reset(reset), _kind(kind)
 {
 }
 
@@ -257,7 +257,7 @@ operator<<(std::ostream& os, const DiscreteIOTransition& transition)
               << "target=" << transition.target() << ", "
               << "reset=" << transition.reset() << ", "
               << "activation=" << transition.activation() << ", "
-              << (transition.forced() ? "forced" : "unforced") << " )";
+              << "kind=" << transition.kind() << " )";
 }
 
 
@@ -475,12 +475,12 @@ HybridIOAutomaton::new_transition(DiscreteEvent event,
                                   DiscreteLocation target,
                                   const std::map< RealVariable, RealExpression >& reset,
                                   const RealExpression& activation,
-                                  bool forced)
+                                  EventKind kind)
 {
     ARIADNE_ASSERT_MSG(!this->has_input_event(event) || identical(activation,1.0),
         "Error in transition " << event << " from " << source << " of automaton " << this->name() <<
         ": transitions labelled with input events cannot have an activation different from true.");
-    this->new_transition(event, source, target, forced);
+    this->new_transition(event, source, target, kind);
     this->set_reset(event, source, reset);
     this->set_activation(event, source, activation);
     return this->transition(event,source);
@@ -491,9 +491,9 @@ HybridIOAutomaton::new_transition(DiscreteEvent event,
                                   DiscreteLocation source,
                                   DiscreteLocation target,
                                   const std::map< RealVariable, RealExpression >& reset,
-                                  bool forced)
+                                  EventKind kind)
 {
-    this->new_transition(event, source, target, forced);
+    this->new_transition(event, source, target, kind);
     this->set_reset(event, source, reset);
     return this->transition(event,source);
 }
@@ -504,12 +504,12 @@ HybridIOAutomaton::new_transition(DiscreteEvent event,
                                   DiscreteLocation source,
                                   DiscreteLocation target,
                                   const RealExpression& activation,
-                                  bool forced)
+                                  EventKind kind)
 {
     ARIADNE_ASSERT_MSG(!this->has_input_event(event) || identical(activation,1.0),
         "Error in transition " << event << " from " << source << " of automaton " << this->name() <<
         ": transitions labelled with input events cannot have an activation different from true.");
-    this->new_transition(event, source, target, forced);
+    this->new_transition(event, source, target, kind);
     this->set_activation(event, source, activation);
     return this->transition(event,source);
 }
@@ -519,14 +519,14 @@ const DiscreteIOTransition&
 HybridIOAutomaton::new_transition(DiscreteEvent event,
                                   DiscreteLocation source,
                                   DiscreteLocation target,
-                                  bool forced)
+                                  EventKind kind)
 {
     if(!event.is_transition()) {
         ARIADNE_FAIL_MSG("Transition event names cannot start with \"invariant\".");    
     }
-    if(forced && this->has_input_event(event)) {
+    if(kind != PERMISSIVE && this->has_input_event(event)) {
         ARIADNE_FAIL_MSG("Event " << event << " is an input event in automaton " << this->_name << 
-            ": transition cannot be forced.");
+            ": transition cannot be urgent.");
     }    
     if(this->has_transition(event,source)) {
         ARIADNE_FAIL_MSG("The automaton " << this->_name << " already has a transition with id "
@@ -539,7 +539,7 @@ HybridIOAutomaton::new_transition(DiscreteEvent event,
         ARIADNE_FAIL_MSG("The automaton " << this->_name << " does not contain a target mode with id " << target);
     }
           
-    this->_transitions.push_back(DiscreteIOTransition(event,source,target,forced));
+    this->_transitions.push_back(DiscreteIOTransition(event,source,target,kind));
     return this->transition(event,source);
 }
 
@@ -679,6 +679,30 @@ HybridIOAutomaton::has_mode(DiscreteLocation state) const
 }
 
 
+EventKind
+HybridIOAutomaton::event_kind(DiscreteLocation location, DiscreteEvent event) const
+{
+	DiscreteIOMode mode = this->mode(location);
+
+	/*
+	std::list< DiscreteTransition > trans = transitions(location);
+
+	for (std::list<DiscreteTransition>::const_iterator trans_it = trans.begin(); trans_it != trans.end(); ++trans_it) {
+		if (trans_it->event() == event)
+			return trans_it->kind();
+	}
+
+	for (std::map<DiscreteEvent,VectorFunction>::const_iterator inv_it = mode.invariants().begin();
+			inv_it != mode.invariants().end(); ++inv_it) {
+		if (inv_it->first == event)
+			return INVARIANT;
+	}
+	*/
+
+	ARIADNE_FAIL_MSG("The event '" << event.name() << "' for location '" << location.name() << "' is not present.");
+}
+
+
 bool
 HybridIOAutomaton::has_transition(DiscreteEvent event, DiscreteLocation source) const
 {
@@ -699,6 +723,7 @@ HybridIOAutomaton::modes() const
     return this->_modes;
 }
 
+
 DiscreteIOMode&
 HybridIOAutomaton::_mode(DiscreteLocation state)
 {
@@ -712,7 +737,6 @@ HybridIOAutomaton::_mode(DiscreteLocation state)
         }
     ARIADNE_FAIL_MSG("The automaton " << this->name() << " does not have a mode with id " << state);
 }
-
 
 
 const DiscreteIOMode&
@@ -915,7 +939,7 @@ std::pair< HybridAutomaton, RealSpace > make_monolithic_automaton(const HybridIO
         VectorFunction res(exprlist,spc);
         // Add the transition to the monolithic automaton
         ha.new_transition(triter->event(), triter->source(), triter->target(),
-                          res, ScalarFunction(triter->activation(), spc), triter->forced());
+                          res, ScalarFunction(triter->activation(), spc), triter->kind());
     }
     
     return make_pair(ha, spc);
@@ -975,7 +999,7 @@ DiscreteLocation _recursive_composition(HybridIOAutomaton& ha,
         DiscreteLocation target2 = init2;
         RealExpression act = iter->activation();
         std::map< RealVariable, RealExpression > res = iter->reset();
-        bool forced=iter->forced();
+        EventKind kind=iter->kind();
 
         // std::cout << "Checking transition " << *iter << "..." << std::endl;
         // We should distinguish between different cases
@@ -998,7 +1022,7 @@ DiscreteLocation _recursive_composition(HybridIOAutomaton& ha,
             // join the reset functions
             res.insert(tr2.reset().begin(), tr2.reset().end());
             // the transition is forced only if it is forced in the second component
-            forced = tr2.forced();
+            kind = tr2.kind();
         } 
         else if( ha1.has_output_event(iter->event()) &&     // output event shared with ha2
                  ha2.has_input_event(iter->event())) 
@@ -1032,7 +1056,7 @@ DiscreteLocation _recursive_composition(HybridIOAutomaton& ha,
         // recursively create the target mode (if it does not exists)
         DiscreteLocation newtarget = _recursive_composition(ha, ha1, ha2, iter->target(), target2);
         // add the new transition to the automaton
-        ha.new_transition(iter->event(), newloc, newtarget, res, act, forced);
+        ha.new_transition(iter->event(), newloc, newtarget, res, act, kind);
         
     }   // end scanning transitions from loc1
         
@@ -1061,11 +1085,11 @@ DiscreteLocation _recursive_composition(HybridIOAutomaton& ha,
         {
             res[*viter] = *viter;
         }
-        bool forced=iter->forced();
+        EventKind kind=iter->kind();
         // recursively create the target mode (if it does not exists)
         DiscreteLocation newtarget = _recursive_composition(ha, ha1, ha2, init1, iter->target());
         // add the new transition to the automaton
-        ha.new_transition(iter->event(), newloc, newtarget, res, act, forced);
+        ha.new_transition(iter->event(), newloc, newtarget, res, act, kind);
     }   // end scanning transitions from loc2    
 
     return newloc;
@@ -1477,7 +1501,7 @@ bool is_elastic_controller(const HybridIOAutomaton& hioa)
 	*/
 
 	// If it passed all checks, return true
-	return true;
+	ARIADNE_NOT_IMPLEMENTED;
 }
 
 std::ostream&

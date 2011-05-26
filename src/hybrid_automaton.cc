@@ -52,7 +52,7 @@ dimension() const
 DiscreteMode::
 DiscreteMode(DiscreteLocation location,
              const VectorFunction& dynamic)
-    :  _location(location), _dynamic(dynamic), _invariants(), _grid(new Grid(dynamic.argument_size()))
+    :  _location(location), _dynamic(dynamic), _invariants()
 {
 }
 
@@ -79,8 +79,7 @@ operator<<(std::ostream& os, const DiscreteMode& mode)
     return os << "DiscreteMode( "
               << "location=" << mode.location() << ", "
               << "dynamic=" << mode.dynamic() << ", "
-              << "invariants=" << mode.invariants() << ", "
-              << "grid=" << mode.grid() << " )";
+              << "invariants=" << mode.invariants() << " )";
 }
 
 
@@ -93,9 +92,9 @@ DiscreteTransition(DiscreteEvent event,
                    const DiscreteMode& target,
                    const VectorFunction& reset,
                    const VectorFunction& activation,
-                   bool forced)
+                   EventKind kind)
     : _event(event), _source(source.location()), _target(target.location()),
-      _activation(activation), _reset(reset), _forced(forced)
+      _activation(activation), _reset(reset), _kind(kind)
 {
     ARIADNE_ASSERT(activation.result_size()==1);
     ARIADNE_ASSERT(activation.argument_size()==source.dimension());
@@ -115,7 +114,7 @@ operator<<(std::ostream& os, const DiscreteTransition& transition)
               << "target=" << transition.target() << ", "
               << "reset=" << transition.reset() << ", "
               << "activation=" << transition.activation() << ", "
-              << (transition.forced() ? "forced" : "unforced") << " )";
+              << "kind=" << transition.kind() << " )";
 }
 
 
@@ -192,7 +191,7 @@ HybridAutomaton::new_transition(DiscreteEvent event,
                                 DiscreteLocation target,
                                 const VectorFunction &reset,
                                 const VectorFunction &activation,
-                                bool forced)
+                                EventKind kind)
 {
     if(!event.is_transition()) {
         throw std::runtime_error("Transition event names cannot start with \"invariant\".");    
@@ -209,7 +208,7 @@ HybridAutomaton::new_transition(DiscreteEvent event,
 
     const DiscreteMode& source_mode=this->mode(source);
     const DiscreteMode& target_mode=this->mode(target);
-    this->_transitions.push_back(DiscreteTransition(event,source_mode,target_mode,reset,activation,forced));
+    this->_transitions.push_back(DiscreteTransition(event,source_mode,target_mode,reset,activation,kind));
     return this->transition(event,source);
 }
 
@@ -220,9 +219,9 @@ new_transition(DiscreteEvent event,
                DiscreteLocation target,
                const VectorFunction &reset,
                const ScalarFunction &activation,
-               bool forced)
+               EventKind kind)
 {
-    return this->new_transition(event,source,target,reset,VectorFunction(1u,activation),forced);
+    return this->new_transition(event,source,target,reset,VectorFunction(1u,activation),kind);
 }
 
 const DiscreteTransition&
@@ -232,11 +231,11 @@ new_transition(DiscreteEvent event,
                const DiscreteMode &target,
                const VectorFunction &reset,
                const VectorFunction &activation,
-               bool forced)
+               EventKind kind)
 {
     DiscreteLocation source_id=source.location();
     DiscreteLocation target_id=target.location();
-    return this->new_transition(event,source_id,target_id,reset,activation,forced);
+    return this->new_transition(event,source_id,target_id,reset,activation,kind);
 }
 
 const DiscreteTransition&
@@ -246,11 +245,11 @@ new_transition(DiscreteEvent event,
                const DiscreteMode &target,
                const VectorFunction &reset,
                const ScalarFunction &activation,
-               bool forced)
+               EventKind kind)
 {
     DiscreteLocation source_id=source.location();
     DiscreteLocation target_id=target.location();
-    return this->new_transition(event,source_id,target_id,reset,VectorFunction(1u,activation),forced);
+    return this->new_transition(event,source_id,target_id,reset,VectorFunction(1u,activation),kind);
 }
 
 const DiscreteTransition&
@@ -261,7 +260,7 @@ new_forced_transition(DiscreteEvent event,
                       const VectorFunction &reset,
                       const ScalarFunction &activation)
 {
-    return this->new_transition(event,source,target,reset,VectorFunction(1u,activation),true);
+    return this->new_transition(event,source,target,reset,VectorFunction(1u,activation),URGENT);
 }
 
 const DiscreteTransition&
@@ -272,7 +271,7 @@ new_forced_transition(DiscreteEvent event,
                       const VectorFunction &reset,
                       const VectorFunction &activation)
 {
-    return this->new_transition(event,source,target,reset,activation,true);
+    return this->new_transition(event,source,target,reset,activation,URGENT);
 }
 
 const DiscreteTransition&
@@ -285,7 +284,7 @@ new_forced_transition(DiscreteEvent event,
 {
     DiscreteLocation source_id=source.location();
     DiscreteLocation target_id=target.location();
-    return this->new_transition(event,source_id,target_id,reset,activation,true);
+    return this->new_transition(event,source_id,target_id,reset,activation,URGENT);
 }
 
 const DiscreteTransition&
@@ -298,7 +297,7 @@ new_forced_transition(DiscreteEvent event,
 {
     DiscreteLocation source_id=source.location();
     DiscreteLocation target_id=target.location();
-    return this->new_transition(event,source_id,target_id,reset,VectorFunction(1u,activation),true);
+    return this->new_transition(event,source_id,target_id,reset,VectorFunction(1u,activation),URGENT);
 }
 
 
@@ -310,7 +309,7 @@ new_unforced_transition(DiscreteEvent event,
                         const VectorFunction &reset,
                         const ScalarFunction &activation)
 {
-    return this->new_transition(event,source,target,reset,VectorFunction(1u,activation),false);
+    return this->new_transition(event,source,target,reset,VectorFunction(1u,activation),PERMISSIVE);
 }
 
 const DiscreteTransition&
@@ -321,7 +320,7 @@ new_unforced_transition(DiscreteEvent event,
                         const VectorFunction &reset,
                         const VectorFunction &activation)
 {
-    return this->new_transition(event,source,target,reset,activation,false);
+    return this->new_transition(event,source,target,reset,activation,PERMISSIVE);
 
 }
 
@@ -335,7 +334,7 @@ new_unforced_transition(DiscreteEvent event,
 {
     DiscreteLocation source_id=source.location();
     DiscreteLocation target_id=target.location();
-    return this->new_transition(event,source_id,target_id,reset,activation,false);
+    return this->new_transition(event,source_id,target_id,reset,activation,PERMISSIVE);
 }
 
 const DiscreteTransition&
@@ -348,19 +347,40 @@ new_unforced_transition(DiscreteEvent event,
 {
     DiscreteLocation source_id=source.location();
     DiscreteLocation target_id=target.location();
-    return this->new_transition(event,source_id,target_id,reset,VectorFunction(1u,activation),false);
+    return this->new_transition(event,source_id,target_id,reset,VectorFunction(1u,activation),PERMISSIVE);
 }
 
+
+EventKind
+HybridAutomaton::event_kind(DiscreteLocation location, DiscreteEvent event) const
+{
+	DiscreteMode mode = this->mode(location);
+
+	std::list< DiscreteTransition > trans = transitions(location);
+
+	for (std::list<DiscreteTransition>::const_iterator trans_it = trans.begin(); trans_it != trans.end(); ++trans_it) {
+		if (trans_it->event() == event)
+			return trans_it->kind();
+	}
+
+	for (std::map<DiscreteEvent,VectorFunction>::const_iterator inv_it = mode.invariants().begin();
+			inv_it != mode.invariants().end(); ++inv_it) {
+		if (inv_it->first == event)
+			return INVARIANT;
+	}
+
+	ARIADNE_FAIL_MSG("The event '" << event.name() << "' for location '" << location.name() << "' is not present.");
+}
 
 
 bool
-HybridAutomaton::has_mode(DiscreteLocation state) const
+HybridAutomaton::has_mode(DiscreteLocation location) const
 {
     // FIXME: This is a hack since we use std::list which cannot be searched by id.
     for(discrete_mode_const_iterator mode_iter=this->_modes.begin();
         mode_iter!=this->_modes.end(); ++mode_iter)
         {
-            if(mode_iter->location()==state) {
+            if(mode_iter->location()==location) {
                 return true;
             }
         }
@@ -380,14 +400,6 @@ HybridAutomaton::has_transition(DiscreteEvent event, DiscreteLocation source) co
         }
     return false;
 }
-
-
-HybridSet
-HybridAutomaton::invariant() const
-{
-    ARIADNE_NOT_IMPLEMENTED;
-}
-
 
 
 HybridSpace
@@ -412,13 +424,13 @@ HybridAutomaton::modes() const
 
 
 const DiscreteMode&
-HybridAutomaton::mode(DiscreteLocation state) const
+HybridAutomaton::mode(DiscreteLocation location) const
 {
     // FIXME: This is a hack; we should use a logarithmic time real search to find a mode with the given discrete state.
     for(discrete_mode_const_iterator mode_iter=this->_modes.begin();
         mode_iter!=this->_modes.end(); ++mode_iter)
         {
-            if(mode_iter->location()==state) {
+            if(mode_iter->location()==location) {
                 return *mode_iter;
             }
         }
@@ -464,7 +476,7 @@ HybridAutomaton::blocking_guards(DiscreteLocation source) const
     for(discrete_transition_const_iterator transition_iter=this->_transitions.begin();
         transition_iter!=this->_transitions.end(); ++transition_iter)
     {
-        if(transition_iter->source()==source && transition_iter->forced()) {
+        if(transition_iter->source()==source && transition_iter->kind() == URGENT) {
             const DiscreteEvent event=transition_iter->event();
             const VectorFunction guard=transition_iter->activation();
             result[event]=guard;
@@ -482,7 +494,7 @@ HybridAutomaton::permissive_guards(DiscreteLocation source) const
     for(discrete_transition_const_iterator transition_iter=this->_transitions.begin();
         transition_iter!=this->_transitions.end(); ++transition_iter)
     {
-        if(transition_iter->source()==source && !transition_iter->forced()) {
+        if(transition_iter->source()==source && !transition_iter->kind() == PERMISSIVE) {
             const DiscreteEvent event=transition_iter->event();
             const VectorFunction guard=transition_iter->activation();
             result[event]=guard;
@@ -587,7 +599,7 @@ HybridAutomaton::parameter_value(String name) const
 			return parameter_it->value();
 	}
 
-	ARIADNE_FAIL_MSG("The parameter is not used anywhere in the system.");
+	ARIADNE_FAIL_MSG("The parameter '" << name << "' was not found in the system.");
 }
 
 

@@ -69,7 +69,7 @@ class DiscreteMode {
     friend class HybridAutomaton;
   private:
 
-    // The discrete mode's discrete state.
+    // The discrete mode's discrete location.
     DiscreteLocation _location;
 
     // The discrete mode's vector field.
@@ -77,10 +77,8 @@ class DiscreteMode {
     // The discrete mode's invariants.
     std::map< DiscreteEvent, VectorFunction > _invariants;
 
-    // The discrete mode's grid for reachability analysis.
-    boost::shared_ptr< const Grid > _grid;
   public:
-    //! \brief The mode's discrete state.
+    //! \brief The mode's discrete location.
     DiscreteLocation location() const {
         return this->_location; }
 
@@ -120,10 +118,6 @@ class DiscreteMode {
 		}
 		return result;
 	}
-
-    //! \brief The discrete mode's default spacial grid.
-    const Grid& grid() const {
-        return *this->_grid; }
 
     //! \brief The dimension of the discrete mode.
     uint dimension() const;
@@ -185,6 +179,8 @@ class DiscreteTransition
     // \brief The reset of the discrete transition.
     VectorFunction _reset;
 
+    EventKind _kind;
+
     // \brief Whether or not the transition is forced.
     bool _forced;
 
@@ -232,9 +228,8 @@ class DiscreteTransition
         return this->_reset;
     }
 
-    //! \brief True if the transition is forced (occurs as soon as it is activated).
-    bool forced() const {
-        return this->_forced;
+    EventKind kind() const {
+        return this->_kind;
     }
 
   private:
@@ -246,7 +241,7 @@ class DiscreteTransition
                        const DiscreteMode& target,
                        const VectorFunction& reset,
                        const VectorFunction& activation,
-                       bool forced=false);
+                       EventKind kind);
 
 };
 
@@ -270,9 +265,9 @@ inline bool operator<(const DiscreteTransition& transition1, const DiscreteTrans
  * A hybrid automaton is a dynamic system with evolution in both
  * continuous time and discrete time.
  * The state space is a product \f$X=\bigcup\{q\}\times X_q\f$
- * where \f$q\f$ is the <em>discrete state</em> and \f$X_q\f$
+ * where \f$q\f$ is the <em>discrete location</em> and \f$X_q\f$
  * is the <em>continuous state space</em> of corresponding to
- * each discrete state.
+ * each discrete location.
  *
  * For each %DiscreteMode, the dynamics is given by a
  * %VectorField describing the continuous dynamics,
@@ -341,25 +336,25 @@ class HybridAutomaton
 
     //! \brief Adds a discrete mode to the automaton.
     //!
-    //!   \param state is the mode's discrete state.
+    //!   \param location is the mode's discrete location.
     //!   \param dynamic is the mode's vector field.
-    const DiscreteMode& new_mode(DiscreteLocation state,
+    const DiscreteMode& new_mode(DiscreteLocation location,
                                  const VectorFunction& dynamic);
 
     //! \brief Adds an invariant to a mode of the automaton.
     //!
-    //!   \param state is the mode's discrete state.
+    //!   \param location is the mode's discrete location.
     //!   \param invariant is the new invariant condition, in the form \f$g(x)<0\f$.
 
-    const DiscreteMode& new_invariant(DiscreteLocation state,
+    const DiscreteMode& new_invariant(DiscreteLocation location,
                                       const ScalarFunction& invariant);
 
     //! \brief Adds an invariants to a mode of the automaton.
     //!
-    //!   \param state is the mode's discrete state.
+    //!   \param location is the mode's discrete location.
     //!   \param invariants is the new invariants condition.
 
-    const DiscreteMode& new_invariant(DiscreteLocation state,
+    const DiscreteMode& new_invariant(DiscreteLocation location,
                                       const VectorFunction& invariants);
 
     //! \brief Adds an invariants to a mode of the automaton.
@@ -371,35 +366,35 @@ class HybridAutomaton
                                       const VectorFunction& invariants);
 
 
-    //! \brief Adds a discrete transition to the automaton using the discrete states to specify the source and target modes.
+    //! \brief Adds a discrete transition to the automaton using the discrete locations to specify the source and target modes.
     //!
     //!    \param event is the transition's event.
     //!    \param source is the transition's source location.
     //!    \param target is the transition's target location.
     //!    \param reset is the transition's reset.
     //!    \param activation is the transition's activation region.
-    //!    \param forced determines whether the transision is forced (urgent) or unforced (permissive).
+    //!    \param kind determines whether the transision is forced (URGENT) or unforced (PERMISSIVE).
     const DiscreteTransition& new_transition(DiscreteEvent event,
                                              DiscreteLocation source,
                                              DiscreteLocation target,
                                              const VectorFunction& reset,
                                              const ScalarFunction& activation,
-                                             bool forced);
+                                             EventKind kind);
 
-    //! \brief Adds a discrete transition to the automaton using the discrete states to specify the source and target modes.
+    //! \brief Adds a discrete transition to the automaton using the discrete locations to specify the source and target modes.
     //!
     //!    \param event is the transition's event.
     //!    \param source is the transition's source location.
     //!    \param target is the transition's target location.
     //!    \param reset is the transition's reset.
     //!    \param activation is the transition's activation region.
-    //!    \param forced determines whether the transision is forced (urgent) or unforced (permissive).
+    //!    \param kind determines whether the transision is forced (URGENT) or unforced (PERMISSIVE).
     const DiscreteTransition& new_transition(DiscreteEvent event,
                                              DiscreteLocation source,
                                              DiscreteLocation target,
                                              const VectorFunction& reset,
                                              const VectorFunction& activation,
-                                             bool forced);
+                                             EventKind kind);
 
     //! \brief Adds a discrete transition to the automaton using the discrete modes to specify the source and target.
     //!
@@ -408,13 +403,13 @@ class HybridAutomaton
     //!    \param target is the discrete transition's target mode.
     //!    \param reset is the discrete transition's reset.
     //!    \param activation is the discrete transition's activation region.
-    //!    \param forced determines whether the transition is forced or unforced.
+    //!    \param kind determines whether the transision is forced (URGENT) or unforced (PERMISSIVE).
     const DiscreteTransition& new_transition(DiscreteEvent event,
                                              const DiscreteMode& source,
                                              const DiscreteMode& target,
                                              const VectorFunction& reset,
                                              const ScalarFunction& activation,
-                                             bool forced);
+                                             EventKind kind);
 
     //! \brief Adds a discrete transition to the automaton using the discrete modes to specify the source and target.
     //!
@@ -423,16 +418,16 @@ class HybridAutomaton
     //!    \param target is the discrete transition's target mode.
     //!    \param reset is the discrete transition's reset.
     //!    \param activation is the discrete transition's activation region.
-    //!    \param forced determines whether the transition is forced or unforced.
+    //!    \param kind determines whether the transision is forced (URGENT) or unforced (PERMISSIVE).
     const DiscreteTransition& new_transition(DiscreteEvent event,
                                              const DiscreteMode& source,
                                              const DiscreteMode& target,
                                              const VectorFunction& reset,
                                              const VectorFunction& activation,
-                                             bool forced);
+                                             EventKind kind);
 
     //! \brief Adds a forced (urgent) discrete transition to the automaton
-    //! using the discrete states to specify the source and target modes.
+    //! using the discrete locations to specify the source and target modes.
     //!
     //!    \param event is the transition's event.
     //!    \param source is the transition's source location.
@@ -446,7 +441,7 @@ class HybridAutomaton
                                                     const ScalarFunction& activation);
 
     //! \brief Adds a forced (urgent) discrete transition to the automaton
-    //! using the discrete states to specify the source and target modes.
+    //! using the discrete locations to specify the source and target modes.
     //!
     //!    \param event is the transition's event.
     //!    \param source is the transition's source location.
@@ -488,7 +483,7 @@ class HybridAutomaton
                                                     const VectorFunction& activation);
 
     //! \brief Adds an unforced (non-urgent) discrete transition to the automaton
-    //! using the discrete states to specify the source and target modes.
+    //! using the discrete locations to specify the source and target modes.
     //!
     //!    \param event is the transition's event.
     //!    \param source is the transition's source location.
@@ -502,7 +497,7 @@ class HybridAutomaton
                                                       const ScalarFunction& activation);
 
     //! \brief Adds an unforced (non-urgent) discrete transition to the automaton
-    //! using the discrete states to specify the source and target modes.
+    //! using the discrete locations to specify the source and target modes.
     //!
     //!    \param event is the transition's event.
     //!    \param source is the transition's source location.
@@ -516,7 +511,7 @@ class HybridAutomaton
                                                       const VectorFunction& activation);
 
     //! \brief Adds an unforced (non-urgent) discrete transition to the automaton
-    //! using the discrete states to specify the source and target modes.
+    //! using the discrete locations to specify the source and target modes.
     //!
     //!    \param event is the transition's event.
     //!    \param source is the transition's source location.
@@ -530,7 +525,7 @@ class HybridAutomaton
                                                       const ScalarFunction& activation);
 
     //! \brief Adds an unforced (non-urgent) discrete transition to the automaton
-    //! using the discrete states to specify the source and target modes.
+    //! using the discrete locations to specify the source and target modes.
     //!
     //!    \param event is the transition's event.
     //!    \param source is the transition's source location.
@@ -567,14 +562,17 @@ class HybridAutomaton
     //! \brief Returns the hybrid automaton's name.
     const std::string& name() const;
 
-    //! \brief Test if the hybrid automaton has a discrete mode with discrete state \a state.
-    bool has_mode(DiscreteLocation state) const;
+    //! \brief Test if the hybrid automaton has a discrete mode with discrete location \a location.
+    bool has_mode(DiscreteLocation location) const;
+
+    //! \brief The kind (permissive, urgent etc) of the event.
+    virtual EventKind event_kind(DiscreteLocation location, DiscreteEvent event) const;
 
     //! \brief Test if the hybrid automaton has a discrete transition with \a event_id and \a source_id.
     bool has_transition(DiscreteEvent event, DiscreteLocation source) const;
 
-    //! \brief The discrete mode with given discrete state.
-    const DiscreteMode& mode(DiscreteLocation state) const;
+    //! \brief The discrete mode with given discrete location.
+    const DiscreteMode& mode(DiscreteLocation location) const;
 
     //! \brief The discrete transition with given \a event and \a source location.
     const DiscreteTransition& transition(DiscreteEvent event, DiscreteLocation source) const;
@@ -596,9 +594,6 @@ class HybridAutomaton
 
     //! \brief The state space of the system.
     HybridSpace state_space() const;
-
-    //! \brief The hybrid set giving the invariants for each discrete location.
-    HybridSet invariant() const;
 
     //@}
     

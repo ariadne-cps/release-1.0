@@ -594,7 +594,7 @@ _outer_chain_reach_forward_pushTargetEnclosures(
 
 	for (list<DiscreteTransition>::const_iterator trans_it = transitions.begin(); trans_it != transitions.end(); trans_it++)
 	{
-		ARIADNE_LOG(7,"Target: "<<trans_it->target()<<", Forced?: " << trans_it->forced() << "\n");
+		ARIADNE_LOG(7,"Target: "<<trans_it->target()<<", Kind: " << trans_it->kind() << "\n");
 
 		if (_is_transition_feasible(*trans_it,dynamic,source,UPPER_SEMANTICS)) {
 			const DiscreteLocation& target_loc = trans_it->target();
@@ -625,7 +625,7 @@ _outer_chain_reach_backward_pushSourceEnclosures(
 	// In order to add a source hybrid box, just one possibly overlapping target enclosure suffices
 	for (list<DiscreteTransition>::const_iterator trans_it = transitions.begin(); trans_it != transitions.end(); trans_it++)
 	{
-		ARIADNE_LOG(7,"Target: "<<trans_it->target()<<", Forced?: " << trans_it->forced() << "\n");
+		ARIADNE_LOG(7,"Target: "<<trans_it->target()<<", Kind: " << trans_it->kind() << "\n");
 
 		if (_is_transition_feasible(*trans_it,dynamic,sourceEncl,UPPER_SEMANTICS)) {
 			const DiscreteLocation& target_loc = trans_it->target();
@@ -652,28 +652,28 @@ _is_transition_feasible(
 	bool result = false;
 
 	const VectorFunction& activation = trans.activation();
-	const bool is_forced = trans.forced();
+	const bool is_urgent = (trans.kind() == URGENT);
 
 	tribool is_guard_active = _getCalculusInterface(semantics).active(activation,source);
 
 	ARIADNE_LOG(8,"Guard activity: " << is_guard_active << "\n");
 
 	/*
-	 * a) If the guard is definitely active and the transition is forced, then we are definitely outside the related invariant
-	 * b) If the transition is not forced, it suffices to have a possibly active guard: we then must perform the transition
-	 * c) If the transition is forced and the guard is only possibly active, we check the crossing:
+	 * a) If the guard is definitely active and the transition is urgent, then we are definitely outside the related invariant
+	 * b) If the transition is not urgent, it suffices to have a possibly active guard: we then must perform the transition
+	 * c) If the transition is urgent and the guard is only possibly active, we check the crossing:
 	 *    i) If it is negative, then no transition is possible
 	 *	 ii) If it is possibly positive, then we must take the transition
 	 */
 
-	if (definitely(is_guard_active) && is_forced) {
-		ARIADNE_LOG(8,"Definitely active and forced: the set is outside the implicit invariant of the transition, infeasible.\n");
+	if (definitely(is_guard_active) && is_urgent) {
+		ARIADNE_LOG(8,"Definitely active and urgent: the set is outside the implicit invariant of the transition, infeasible.\n");
 		result = false;
-	} else if (possibly(is_guard_active) && !is_forced) {
+	} else if (possibly(is_guard_active) && !is_urgent) {
 		ARIADNE_LOG(8,"Possibly active and permissive: feasible.\n");
 		result = true;
-	} else if (possibly(is_guard_active) && is_forced) {
-		ARIADNE_LOG(8,"Possibly active and forced: checking whether the crossing is nonnegative...\n");
+	} else if (possibly(is_guard_active) && is_urgent) {
+		ARIADNE_LOG(8,"Possibly active and urgent: checking whether the crossing is nonnegative...\n");
 		tribool positive_crossing = positively_crossing(source.bounding_box(),dynamic,activation[0]);
 		if (possibly(positive_crossing)) {
 			ARIADNE_LOG(8,"Possibly positive: feasible.\n");

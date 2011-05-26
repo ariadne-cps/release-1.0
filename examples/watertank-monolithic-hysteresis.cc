@@ -78,5 +78,4 @@ int main(int argc,char *argv[])
 	SafetyVerificationInput verInfo(system, initial_set, domain, safety_constraint);
 	std::list<ParametricOutcome> results = verifier.parametric_safety(verInfo, parameters);
 	draw(system.name(),results);
-
 }
