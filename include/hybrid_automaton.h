@@ -538,22 +538,6 @@ class HybridAutomaton
                                                       const VectorFunction& reset,
                                                       const VectorFunction& activation);
 
-    //! \brief Gets the parameters (i.e., any RealParameter whose name starts from a letter) from the modes and transitions. */
-    RealParameterSet parameters() const;
-
-    //! \brief Get the value of a parameter.
-    Real parameter_value(String name) const;
-
-	/*! \brief Substitute the parameter \a param, if present, on all the functions of modes and transitions. */
-	void substitute(RealParameter param);
-
-	/*! \brief Substitute parameters from a set \a params. */
-	void substitute(const RealParameterSet& params);
-
-	/*! \brief Substitute parameter values from a set \a params, using the midpoint if \a use_midpoint is set. */
-	void substitute(const RealParameterSet& params, bool use_midpoint);
-
-
 	//@}
 
     //@{
@@ -563,16 +547,25 @@ class HybridAutomaton
     const std::string& name() const;
 
     //! \brief Test if the hybrid automaton has a discrete mode with discrete location \a location.
-    bool has_mode(DiscreteLocation location) const;
+    virtual bool has_mode(DiscreteLocation location) const;
+
+    //! \brief The set of all events possible in the given \a location.
+    virtual Set<DiscreteEvent> events(DiscreteLocation location) const;
 
     //! \brief The kind (permissive, urgent etc) of the event.
     virtual EventKind event_kind(DiscreteLocation location, DiscreteEvent event) const;
 
+    //! \brief Test if the hybrid automaton has an invariant or guard constraint in the \a location labelled by \a event.
+    virtual bool has_guard(DiscreteLocation location, DiscreteEvent event) const;
+
     //! \brief Test if the hybrid automaton has a discrete transition with \a event and \a source.
-    bool has_transition(DiscreteEvent event, DiscreteLocation source) const;
+    virtual bool has_transition(DiscreteLocation source, DiscreteEvent event) const;
 
     //! \brief Test if the hybrid automaton has an invariant with \a event in location \a location.
-    bool has_invariant(DiscreteEvent event, DiscreteLocation location) const;
+    virtual bool has_invariant(DiscreteLocation location, DiscreteEvent event) const;
+
+    //! \brief The target location of \a event starting in the \a source location.
+    virtual DiscreteLocation target(DiscreteLocation source, DiscreteEvent event) const;
 
     //! \brief The discrete mode with given discrete location.
     const DiscreteMode& mode(DiscreteLocation location) const;
@@ -597,6 +590,21 @@ class HybridAutomaton
 
     //! \brief The state space of the system.
     HybridSpace state_space() const;
+
+    //! \brief Gets the parameters (i.e., any RealParameter whose name starts from a letter) from the modes and transitions. */
+    RealParameterSet parameters() const;
+
+    //! \brief Get the value of a parameter.
+    Real parameter_value(String name) const;
+
+	/*! \brief Substitute the parameter \a param, if present, on all the functions of modes and transitions. */
+	void substitute(RealParameter param);
+
+	/*! \brief Substitute parameters from a set \a params. */
+	void substitute(const RealParameterSet& params);
+
+	/*! \brief Substitute parameter values from a set \a params, using the midpoint if \a use_midpoint is set. */
+	void substitute(const RealParameterSet& params, bool use_midpoint);
 
     //@}
     

@@ -172,7 +172,7 @@ HybridAutomaton::new_invariant(DiscreteLocation location,
     DiscreteMode& mode=const_cast<DiscreteMode&>(this->mode(location));
 	DiscreteEvent invariant_event(location.name()+"-inv"+to_str(mode._invariants.size()));
 
-    if(this->has_transition(invariant_event,location)) {
+    if(this->has_transition(location,invariant_event)) {
         throw std::runtime_error("The automaton already has a transition with the would-be id and the given location as source id.");
     }
 
@@ -198,10 +198,10 @@ HybridAutomaton::new_transition(DiscreteEvent event,
                                 const VectorFunction &activation,
                                 EventKind kind)
 {
-    if(this->has_transition(event,source)) {
+    if(this->has_transition(source,event)) {
         throw std::runtime_error("The automaton already has a transition with the given id and source id.");
     }
-    if(this->has_invariant(event,source)) {
+    if(this->has_invariant(source,event)) {
     	throw std::runtime_error("The automaton already has an invariant with the given id and location id.");
     }
     if(!this->has_mode(source)) {
@@ -359,7 +359,7 @@ new_unforced_transition(DiscreteEvent event,
 EventKind
 HybridAutomaton::event_kind(DiscreteLocation location, DiscreteEvent event) const
 {
-	DiscreteMode mode = this->mode(location);
+	const DiscreteMode& mode = this->mode(location);
 
 	std::list< DiscreteTransition > trans = transitions(location);
 
@@ -381,20 +381,47 @@ HybridAutomaton::event_kind(DiscreteLocation location, DiscreteEvent event) cons
 bool
 HybridAutomaton::has_mode(DiscreteLocation location) const
 {
-    // FIXME: This is a hack since we use std::list which cannot be searched by id.
     for(discrete_mode_const_iterator mode_iter=this->_modes.begin();
-        mode_iter!=this->_modes.end(); ++mode_iter)
-        {
-            if(mode_iter->location()==location) {
-                return true;
-            }
-        }
+        mode_iter!=this->_modes.end(); ++mode_iter) {
+        if(mode_iter->location()==location)
+            return true;
+
+    }
     return false;
 }
 
 
+Set<DiscreteEvent>
+HybridAutomaton::events(DiscreteLocation location) const
+{
+	Set<DiscreteEvent> result;
+
+	const DiscreteMode& mode = this->mode(location);
+
+	std::list< DiscreteTransition > trans = this->transitions(location);
+
+	for (std::list<DiscreteTransition>::const_iterator trans_it = trans.begin(); trans_it != trans.end(); ++trans_it) {
+		result.insert(trans_it->event());
+	}
+
+	for (std::map<DiscreteEvent,VectorFunction>::const_iterator inv_it = mode.invariants().begin();
+			inv_it != mode.invariants().end(); ++inv_it) {
+		result.insert(inv_it->first);
+	}
+
+	return result;
+}
+
+
 bool
-HybridAutomaton::has_transition(DiscreteEvent event, DiscreteLocation source) const
+HybridAutomaton::has_guard(DiscreteLocation location, DiscreteEvent event) const
+{
+	return this->has_transition(location,event) || this->has_invariant(location,event);
+}
+
+
+bool
+HybridAutomaton::has_transition(DiscreteLocation source, DiscreteEvent event) const
 {
     for(discrete_transition_const_iterator transition_iter=this->_transitions.begin();
         transition_iter!=this->_transitions.end(); ++transition_iter)
@@ -408,7 +435,7 @@ HybridAutomaton::has_transition(DiscreteEvent event, DiscreteLocation source) co
 
 
 bool
-HybridAutomaton::has_invariant(DiscreteEvent event, DiscreteLocation location) const
+HybridAutomaton::has_invariant(DiscreteLocation location, DiscreteEvent event) const
 {
 	DiscreteMode mode = this->mode(location);
     for(std::map<DiscreteEvent,VectorFunction>::const_iterator inv_it=mode.invariants().begin();
@@ -418,6 +445,16 @@ HybridAutomaton::has_invariant(DiscreteEvent event, DiscreteLocation location) c
                 return true;
         }
     return false;
+}
+
+
+DiscreteLocation
+HybridAutomaton::target(DiscreteLocation source, DiscreteEvent event) const {
+    if(this->has_transition(source,event)) {
+        return this->transition(event,source).target();
+    } else {
+        return source;
+    }
 }
 
 

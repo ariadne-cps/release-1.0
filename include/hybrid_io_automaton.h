@@ -598,14 +598,23 @@ class HybridIOAutomaton
     //! \brief Test if the hybrid automaton has a discrete mode with discrete location \a location.
     bool has_mode(DiscreteLocation location) const;
 
-    //! \brief Test if the hybrid automaton has an invariant with \a event in location \a location.
-    bool has_invariant(DiscreteEvent event, DiscreteLocation location) const;
+    //! \brief The set of all events possible in the given \a location.
+    virtual Set<DiscreteEvent> events(DiscreteLocation location) const;
 
     //! \brief Get the event kind for an \a event in a \a location.
     virtual EventKind event_kind(DiscreteLocation location, DiscreteEvent event) const;
 
+    //! \brief Test if the hybrid automaton has an invariant or guard constraint in the \a location labelled by \a event.
+    virtual bool has_guard(DiscreteLocation location, DiscreteEvent event) const;
+
+    //! \brief Test if the hybrid automaton has an invariant with \a event in location \a location.
+    virtual bool has_invariant(DiscreteLocation location, DiscreteEvent event) const;
+
     //! \brief Test if the hybrid automaton has a discrete transition with \a event_id and \a source_id.
-    bool has_transition(DiscreteEvent event, DiscreteLocation source) const;
+    virtual bool has_transition(DiscreteLocation source, DiscreteEvent event) const;
+
+    //! \brief The target location of \a event starting in the \a source location.
+    virtual DiscreteLocation target(DiscreteLocation source, DiscreteEvent event) const;
 
     //! \brief The discrete mode with given discrete location.
     const DiscreteIOMode& mode(DiscreteLocation location) const;

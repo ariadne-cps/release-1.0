@@ -105,6 +105,9 @@ class HybridAutomatonInterface {
     //! \brief Test if the hybrid automaton has an invariant or guard constraint in the \a location labelled by \a event.
     virtual bool has_guard(DiscreteLocation location, DiscreteEvent event) const = 0;
 
+    //! \brief Test if the hybrid automaton has an invariant or urgent guard constraint in the \a location labelled by \a event.
+    virtual bool has_invariant(DiscreteLocation location, DiscreteEvent event) const = 0;
+
     //! \brief Test if the hybrid automaton has a discrete transition in \a source due to \a event.
     virtual bool has_transition(DiscreteLocation source, DiscreteEvent event) const = 0;
 

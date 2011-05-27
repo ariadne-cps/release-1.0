@@ -468,7 +468,7 @@ HybridIOAutomaton::new_invariant(DiscreteLocation location,
     DiscreteIOMode& mode=this->_mode(location);
 	DiscreteEvent invariant_event(location.name()+"-inv"+to_str(mode._invariants.size()));
 
-    if(this->has_transition(invariant_event,location)) {
+    if(this->has_transition(location,invariant_event)) {
         throw std::runtime_error("The automaton already has a transition with the would-be id and the given location as source id.");
     }
 
@@ -532,11 +532,11 @@ HybridIOAutomaton::new_transition(DiscreteEvent event,
         ARIADNE_FAIL_MSG("Event " << event << " is an input event in automaton " << this->_name << 
             ": transition cannot be urgent.");
     }
-    if(this->has_invariant(event,source)) {
+    if(this->has_invariant(source,event)) {
         ARIADNE_FAIL_MSG("The automaton " << this->_name << " already has an invariant with id "
             << event << " in location " << source << ".");
     }
-    if(this->has_transition(event,source)) {
+    if(this->has_transition(source,event)) {
         ARIADNE_FAIL_MSG("The automaton " << this->_name << " already has a transition with id "
             << event << " and source " << source << ".");
     }
@@ -554,7 +554,7 @@ HybridIOAutomaton::new_transition(DiscreteEvent event,
 const DiscreteIOTransition&
 HybridIOAutomaton::new_transition(const DiscreteIOTransition& trans)
 {
-    if(this->has_transition(trans.event(),trans.source())) {
+    if(this->has_transition(trans.source(),trans.event())) {
         ARIADNE_FAIL_MSG("The automaton " << this->_name << " already has a transition with id "
             << trans.event() << " and source " << trans.source() << ".");
     }
@@ -564,7 +564,7 @@ HybridIOAutomaton::new_transition(const DiscreteIOTransition& trans)
     if(!this->has_mode(trans.target())) {
         ARIADNE_FAIL_MSG("The automaton " << this->_name << " does not contain a target mode with id " << trans.target());
     }
-    if(this->has_invariant(trans.event(),trans.source())) {
+    if(this->has_invariant(trans.source(),trans.event())) {
         ARIADNE_FAIL_MSG("The automaton " << this->_name << " already has an invariant with id "
             << trans.event() << " in location " << trans.source() << ".");
     }
@@ -579,7 +579,7 @@ HybridIOAutomaton::set_reset(DiscreteEvent event,
                              DiscreteLocation source,
                              const std::map< RealVariable, RealExpression >& reset)
 {
-    if(!this->has_transition(event,source)) {
+    if(!this->has_transition(source,event)) {
         ARIADNE_FAIL_MSG("The automaton " << this->_name << " has no transition with event "
             << event << " and source " << source << ".");
     }
@@ -599,7 +599,7 @@ HybridIOAutomaton::set_reset(DiscreteEvent event,
                              const RealVariable& var,
                              const RealExpression& reset)
 {
-    if(!this->has_transition(event,source)) {
+    if(!this->has_transition(source,event)) {
         ARIADNE_FAIL_MSG("The automaton " << this->_name << " has no transition with event "
             << event << " and source " << source << ".");
     }
@@ -618,7 +618,7 @@ HybridIOAutomaton::set_activation(DiscreteEvent event,
                                   DiscreteLocation source,
                                   const RealExpression& activation)
 {
-    if(!this->has_transition(event,source)) {
+    if(!this->has_transition(source,event)) {
         ARIADNE_FAIL_MSG("The automaton " << this->_name << " has no transition with event "
             << event << " and source " << source << ".");
     }
@@ -685,8 +685,37 @@ HybridIOAutomaton::has_mode(DiscreteLocation location) const
 }
 
 
+Set<DiscreteEvent>
+HybridIOAutomaton::events(DiscreteLocation location) const
+{
+	Set<DiscreteEvent> result;
+
+	DiscreteIOMode mode = this->mode(location);
+
+	std::list< DiscreteIOTransition > trans = transitions(location);
+
+	for (std::list<DiscreteIOTransition>::const_iterator trans_it = trans.begin(); trans_it != trans.end(); ++trans_it) {
+		result.insert(trans_it->event());
+	}
+
+	for (std::map<DiscreteEvent,RealExpression>::const_iterator inv_it = mode.invariants().begin();
+			inv_it != mode.invariants().end(); ++inv_it) {
+		result.insert(inv_it->first);
+	}
+
+	return result;
+}
+
+
 bool
-HybridIOAutomaton::has_invariant(DiscreteEvent event, DiscreteLocation location) const
+HybridIOAutomaton::has_guard(DiscreteLocation location, DiscreteEvent event) const
+{
+	return this->has_transition(location,event) || this->has_invariant(location,event);
+}
+
+
+bool
+HybridIOAutomaton::has_invariant(DiscreteLocation location, DiscreteEvent event) const
 {
 	DiscreteIOMode mode = this->mode(location);
     for(std::map<DiscreteEvent,RealExpression>::const_iterator inv_it=mode.invariants().begin();
@@ -697,6 +726,15 @@ HybridIOAutomaton::has_invariant(DiscreteEvent event, DiscreteLocation location)
     return false;
 }
 
+
+DiscreteLocation
+HybridIOAutomaton::target(DiscreteLocation source, DiscreteEvent event) const {
+    if(this->has_transition(source,event)) {
+        return this->transition(event,source).target();
+    } else {
+        return source;
+    }
+}
 
 
 EventKind
@@ -722,7 +760,7 @@ HybridIOAutomaton::event_kind(DiscreteLocation location, DiscreteEvent event) co
 
 
 bool
-HybridIOAutomaton::has_transition(DiscreteEvent event, DiscreteLocation source) const
+HybridIOAutomaton::has_transition(DiscreteLocation source, DiscreteEvent event) const
 {
     for(discrete_transition_const_iterator transition_iter=this->_transitions.begin();
         transition_iter!=this->_transitions.end(); ++transition_iter)
