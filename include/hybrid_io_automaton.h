@@ -300,6 +300,7 @@ std::ostream& operator<<(std::ostream& os, const DiscreteIOTransition& dt);
 
  */
 class HybridIOAutomaton
+	: public HybridAutomatonInterface
 {
   public:
     typedef std::list<DiscreteIOTransition>::const_iterator discrete_transition_const_iterator;
@@ -619,14 +620,17 @@ class HybridIOAutomaton
     //! \brief The discrete mode with given discrete location.
     const DiscreteIOMode& mode(DiscreteLocation location) const;
 
+    //! \brief The set of discrete modes.
+    const std::list< DiscreteIOMode >& modes() const;
+
     //! \brief The discrete transition with given \a event and \a source location.
     const DiscreteIOTransition& transition(DiscreteEvent event, DiscreteLocation source) const;
 
-    //! \brief The set of discrete modes. 
-    const std::list< DiscreteIOMode >& modes() const;
-
     //! \brief The set of discrete transitions. 
     const std::list< DiscreteIOTransition >& transitions() const;
+
+    //! \brief The discrete transitions from location \a source.
+    std::list< DiscreteIOTransition > transitions(DiscreteLocation source) const;
 
     //! \brief Get the value of a parameter.
     Real parameter_value(String name) const;
@@ -643,8 +647,31 @@ class HybridIOAutomaton
 	/*! \brief Substitute values from a set \a params, using the midpoint if \a use_midpoint is set. */
 	void substitute(const RealParameterSet& params, bool use_midpoint);
 
-    //! \brief The discrete transitions from location \a source.
-    std::list< DiscreteIOTransition > transitions(DiscreteLocation source) const;
+    //@}
+
+    //@{
+    //! \name Methods for extracting the continuous dynamics.
+
+    //! \brief The dynamic valid in the mode \a location.
+    virtual RealVectorFunction dynamic_function(DiscreteLocation location) const;
+
+    //! \brief The constraint function defining the invariant or time-can-progress predicate \f$p(x)\leq0\f$.
+    virtual RealScalarFunction invariant_function(DiscreteLocation location, DiscreteEvent event) const;
+
+    //! \brief The constraint function defining the condition \f$c(x)\geq0\f$ under which a transition occurs.
+    virtual RealScalarFunction guard_function(DiscreteLocation location, DiscreteEvent event) const;
+
+    //! \brief The dynamic valid in the mode \a location.
+    virtual RealVectorFunction reset_function(DiscreteLocation location, DiscreteEvent event) const;
+
+    //! \brief The hybrid state space.
+    virtual HybridSpace state_space() const;
+
+    //! \brief The continuous state space in the \a location.
+    virtual RealSpace continuous_state_space(DiscreteLocation location) const;
+
+    //! \brief The dimension of the state space in the given \a location.
+    virtual uint dimension(DiscreteLocation location) const;
 
     //@}
 

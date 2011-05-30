@@ -30,7 +30,7 @@
 #include "assignment.h"
 #include "operators.h"
 #include "space.h"
-
+#include "hybrid_set.h"
 
 namespace Ariadne {
 
@@ -919,6 +919,128 @@ HybridIOAutomaton::controlled_events() const
     result.insert(this->_output_events.begin(), this->_output_events.end());
     
     return result;
+}
+
+
+RealVectorFunction
+HybridIOAutomaton::dynamic_function(DiscreteLocation location) const
+{
+	RealVectorFunction func;
+
+	bool found = false;
+    for(discrete_mode_const_iterator mode_iter=this->_modes.begin();
+        mode_iter!=this->_modes.end(); ++mode_iter) {
+    	if (mode_iter->location() == location) {
+    		RealSpace continuous_state_space = this->continuous_state_space(location);
+    		const std::map< RealVariable, RealExpression >& dynamics = mode_iter->dynamics();
+    	   	uint i=0;
+    		for (std::map<RealVariable,RealExpression>::const_iterator dyn_it = dynamics.begin(); dyn_it != dynamics.end(); ++dyn_it)
+    			func.set(i++,RealScalarFunction(dyn_it->second,continuous_state_space));
+    		found = true;
+    		break;
+    	}
+    }
+    ARIADNE_ASSERT_MSG(found, "The location is not present into the automaton.");
+    return func;
+}
+
+
+RealScalarFunction
+HybridIOAutomaton::invariant_function(DiscreteLocation location, DiscreteEvent event) const
+{
+	RealScalarFunction func;
+
+	bool found = false;
+    for(discrete_mode_const_iterator mode_iter=this->_modes.begin();
+        mode_iter!=this->_modes.end(); ++mode_iter) {
+    	if (mode_iter->location() == location) {
+    		RealSpace continuous_state_space = this->continuous_state_space(location);
+    		std::map<DiscreteEvent,RealExpression>::const_iterator inv_it = mode_iter->_invariants.find(event);
+    		ARIADNE_ASSERT_MSG(inv_it != mode_iter->_invariants.end(),
+    				"The invariant with event '" << event.name() << "' is not present into the automaton.");
+    		func = RealScalarFunction(inv_it->second,continuous_state_space);
+    		found = true;
+    		break;
+    	}
+    }
+    ARIADNE_ASSERT_MSG(found, "The location is not present into the automaton.");
+    return func;
+}
+
+
+RealScalarFunction
+HybridIOAutomaton::guard_function(DiscreteLocation location, DiscreteEvent event) const
+{
+	RealScalarFunction func;
+
+	bool found = false;
+    for(discrete_transition_const_iterator trans_iter=this->_transitions.begin();
+    		trans_iter!=this->_transitions.end(); ++trans_iter) {
+    	if (trans_iter->source() == location && trans_iter->event() == event) {
+    		RealSpace continuous_state_space = this->continuous_state_space(location);
+    		func = RealScalarFunction(trans_iter->_activation,continuous_state_space);
+    		found = true;
+    		break;
+    	}
+    }
+    ARIADNE_ASSERT_MSG(found, "No transition with the given location and event is present into the automaton.");
+    return func;
+}
+
+
+RealVectorFunction
+HybridIOAutomaton::reset_function(DiscreteLocation location, DiscreteEvent event) const
+{
+	RealVectorFunction func;
+
+	bool found = false;
+    for(discrete_transition_const_iterator trans_iter=this->_transitions.begin();
+    		trans_iter!=this->_transitions.end(); ++trans_iter) {
+    	if (trans_iter->source() == location && trans_iter->event() == event) {
+    		RealSpace continuous_state_space = this->continuous_state_space(location);
+    		const std::map< RealVariable, RealExpression >& reset = trans_iter->reset();
+    		uint i = 0;
+    		for (std::map<RealVariable,RealExpression>::const_iterator reset_it = reset.begin(); reset_it != reset.end(); ++reset_it)
+    			func.set(i++,RealScalarFunction(reset_it->second,continuous_state_space));
+    		found = true;
+    		break;
+    	}
+    }
+    ARIADNE_ASSERT_MSG(found, "No transition with the given location and event is present into the automaton.");
+    return func;
+}
+
+
+HybridSpace
+HybridIOAutomaton::state_space() const
+{
+	HybridSpace result;
+	for (std::list<DiscreteIOMode>::const_iterator mode_it = this->_modes.begin(); mode_it != this->_modes.end(); ++mode_it) {
+		DiscreteLocation loc = mode_it->location();
+		result.insert(std::pair<DiscreteLocation,uint>(loc,this->dimension(loc)));
+	}
+	return result;
+}
+
+
+RealSpace
+HybridIOAutomaton::continuous_state_space(DiscreteLocation location) const
+{
+	RealSpace result;
+
+	std::set<RealVariable> controlled_vars = this->controlled_vars();
+
+	for (std::set<RealVariable>::const_iterator var_it = controlled_vars.begin(); var_it != controlled_vars.end(); ++var_it) {
+		result.append(*var_it);
+	}
+	return result;
+}
+
+
+uint
+HybridIOAutomaton::dimension(DiscreteLocation location) const
+{
+	return this->controlled_vars().size();
 }
 
 

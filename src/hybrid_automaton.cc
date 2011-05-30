@@ -458,6 +458,22 @@ HybridAutomaton::target(DiscreteLocation source, DiscreteEvent event) const {
 }
 
 
+uint
+HybridAutomaton::dimension(DiscreteLocation location) const
+{
+	uint dim = 0;
+    for(discrete_mode_const_iterator mode_iter=this->_modes.begin();
+        mode_iter!=this->_modes.end(); ++mode_iter) {
+    	if (mode_iter->location() == location) {
+    		dim = mode_iter->dimension();
+    		break;
+    	}
+    }
+    ARIADNE_ASSERT_MSG(dim > 0, "The location is not present into the automaton.");
+    return dim;
+}
+
+
 HybridSpace
 HybridAutomaton::state_space() const
 {
@@ -468,6 +484,92 @@ HybridAutomaton::state_space() const
             result[mode_iter->location()]=mode_iter->dimension();
         }
     return result;
+}
+
+
+RealSpace
+HybridAutomaton::continuous_state_space(DiscreteLocation location) const
+{
+	ARIADNE_NOT_IMPLEMENTED;
+}
+
+
+RealVectorFunction
+HybridAutomaton::dynamic_function(DiscreteLocation location) const
+{
+	RealVectorFunction func;
+
+	bool found = false;
+    for(discrete_mode_const_iterator mode_iter=this->_modes.begin();
+        mode_iter!=this->_modes.end(); ++mode_iter) {
+    	if (mode_iter->location() == location) {
+    		func = mode_iter->_dynamic;
+    		found = true;
+    		break;
+    	}
+    }
+    ARIADNE_ASSERT_MSG(found, "The location is not present into the automaton.");
+    return func;
+}
+
+
+RealScalarFunction
+HybridAutomaton::invariant_function(DiscreteLocation location, DiscreteEvent event) const
+{
+	RealScalarFunction func;
+
+	bool found = false;
+    for(discrete_mode_const_iterator mode_iter=this->_modes.begin();
+        mode_iter!=this->_modes.end(); ++mode_iter) {
+    	if (mode_iter->location() == location) {
+    		invariant_const_iterator inv_it = mode_iter->_invariants.find(event);
+    		ARIADNE_ASSERT_MSG(inv_it != mode_iter->_invariants.end(),
+    				"The invariant with event '" << event.name() << "' is not present into the automaton.");
+    		func = inv_it->second[0];
+    		found = true;
+    		break;
+    	}
+    }
+    ARIADNE_ASSERT_MSG(found, "The location is not present into the automaton.");
+    return func;
+}
+
+
+RealScalarFunction
+HybridAutomaton::guard_function(DiscreteLocation location, DiscreteEvent event) const
+{
+	RealScalarFunction func;
+
+	bool found = false;
+    for(discrete_transition_const_iterator trans_iter=this->_transitions.begin();
+    		trans_iter!=this->_transitions.end(); ++trans_iter) {
+    	if (trans_iter->source() == location && trans_iter->event() == event) {
+    		func = trans_iter->_activation[0];
+    		found = true;
+    		break;
+    	}
+    }
+    ARIADNE_ASSERT_MSG(found, "No transition with the given location and event is present into the automaton.");
+    return func;
+}
+
+
+RealVectorFunction
+HybridAutomaton::reset_function(DiscreteLocation location, DiscreteEvent event) const
+{
+	RealVectorFunction func;
+
+	bool found = false;
+    for(discrete_transition_const_iterator trans_iter=this->_transitions.begin();
+    		trans_iter!=this->_transitions.end(); ++trans_iter) {
+    	if (trans_iter->source() == location && trans_iter->event() == event) {
+    		func = trans_iter->reset();
+    		found = true;
+    		break;
+    	}
+    }
+    ARIADNE_ASSERT_MSG(found, "No transition with the given location and event is present into the automaton.");
+    return func;
 }
 
 

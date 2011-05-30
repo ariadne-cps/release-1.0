@@ -291,15 +291,15 @@ inline bool operator<(const DiscreteTransition& transition1, const DiscreteTrans
 
  */
 class HybridAutomaton
+	: public HybridAutomatonInterface
 {
   public:
     //! \brief The type used to represent time.
     typedef HybridTime TimeType;
     //! \brief The type used to represent real numbers.
-    typedef double RealType ;
+    typedef double RealType;
     //! \brief The type used to describe the state space.
     typedef HybridSpace StateSpaceType;
-
 
     typedef std::map<DiscreteEvent,VectorFunction>::const_iterator invariant_const_iterator;
     typedef std::list<DiscreteTransition>::const_iterator discrete_transition_const_iterator;
@@ -588,8 +588,26 @@ class HybridAutomaton
     //! \brief The permissive events (invariants and urgent transitions) in \a location.
     std::map<DiscreteEvent,VectorFunction> permissive_guards(DiscreteLocation location) const;
 
+    //! \brief The dimension of the state space in the given \a location.
+    virtual uint dimension(DiscreteLocation location) const;
+
     //! \brief The state space of the system.
-    HybridSpace state_space() const;
+    virtual HybridSpace state_space() const;
+
+    //! \brief The continuous state space in the \a location.
+    virtual RealSpace continuous_state_space(DiscreteLocation location) const;
+
+    //! \brief The dynamic valid in the mode \a location.
+    virtual RealVectorFunction dynamic_function(DiscreteLocation location) const;
+
+    //! \brief The constraint function defining the invariant or time-can-progress predicate \f$p(x)\leq0\f$.
+    virtual RealScalarFunction invariant_function(DiscreteLocation location, DiscreteEvent event) const;
+
+    //! \brief The constraint function defining the condition \f$c(x)\geq0\f$ under which a transition occurs.
+    virtual RealScalarFunction guard_function(DiscreteLocation location, DiscreteEvent event) const;
+
+    //! \brief The dynamic valid in the mode \a location.
+    virtual RealVectorFunction reset_function(DiscreteLocation location, DiscreteEvent event) const;
 
     //! \brief Gets the parameters (i.e., any RealParameter whose name starts from a letter) from the modes and transitions. */
     RealParameterSet parameters() const;
