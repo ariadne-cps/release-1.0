@@ -45,6 +45,10 @@ enum DominanceSystem { DOMINATING_SYSTEM, DOMINATED_SYSTEM };
 class Verifier
     : public Loggable
 {
+  public:
+
+    typedef ParameterizableHybridAutomatonInterface SystemType;
+
   private:
 
     /*! \brief Holds the cached result of an outer approximation of a system. */
@@ -158,14 +162,14 @@ class Verifier
 	 * definitely respects the \a safety_constraint.
 	 * \details The \a constants are substituted into the system. */
 	bool _safety_proving_once(
-			HybridAutomaton& system,
+			SystemType& system,
 			const HybridImageSet& initial_set,
 			const HybridConstraintSet& safety_constraint,
 			const RealParameterSet& params) const;
 
     /*! \brief Returns the new initial grid tree set for a chain reach. */
     HybridGridTreeSet _reachability_refinement_starting_set(
-    		HybridAutomaton& system,
+    		SystemType& system,
     		const HybridImageSet& initial_set,
     		const HybridConstraintSet& constraint_set,
     		const HybridGridTreeSet& reachability_restriction,
@@ -175,7 +179,7 @@ class Verifier
 	 * does definitely DOES NOT respect the \a safety_constraint.
 	 * \details The \a params are substituted into the system. */
 	bool _safety_disproving_once(
-			HybridAutomaton& system,
+			SystemType& system,
 			const HybridImageSet& initial_set,
 			const HybridConstraintSet& safety_constraint,
 			const RealParameterSet& params) const;
@@ -184,7 +188,7 @@ class Verifier
      * respects the \a safety_constraint.
      * \details The \a params are substituted into the system. */
     tribool _safety_once(
-    		HybridAutomaton& system,
+    		SystemType& system,
 			const HybridImageSet& initial_set,
 			const HybridConstraintSet& safety_constraint,
 			const RealParameterSet& constants) const;
@@ -280,13 +284,13 @@ class Verifier
 
 	/*! \brief Resets cached information, then chooses the initial evolution settings for safety verification. */
 	void _resetAndChooseInitialSafetySettings(
-			const HybridAutomaton& system,
+			const SystemType& system,
 			const HybridBoxes& domain,
 			const Set<Identifier>& locked_params) const;
 
 	/*! \brief Chooses the initial evolution settings for safety verification of the proper analyser. */
 	void _chooseInitialSafetySettings(
-			const HybridAutomaton& system,
+			const SystemType& system,
 			const HybridBoxes& domain,
 			const Set<Identifier>& locked_params) const;
 
@@ -301,13 +305,13 @@ class Verifier
 	 * only the information on the \a domain.
 	 */
 	std::pair<HybridGridTreeSet,HybridGridTreeSet> _getCoarseOuterApproximationAndReachabilityRestriction(
-			const HybridAutomaton& system,
+			const SystemType& system,
 			const HybridBoxes& domain,
 			bool equal_grid_for_all_locations) const;
 
 	/*! \brief Tune the settings for the next iterative verification step. */
 	void _tuneIterativeStepSettings(
-			const HybridAutomaton& system,
+			const SystemType& system,
 			const HybridGridTreeSet& hgts_domain,
 			bool equal_grid_for_all_locations,
 			Semantics semantics) const;
@@ -332,9 +336,6 @@ class Verifier
 	//@}
 
 };
-
-/* \brief Provides a better printing of a tribool verification result */
-std::string pretty_print(tribool value);
 
 /*! \brief Splits the parameters to the maximum based on the \a tolerance
  *  \details The \a numIntervalsPerParam is the number of intervals to split for each parameter.

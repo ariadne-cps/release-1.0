@@ -64,7 +64,7 @@ _safety(
 		SafetyVerificationInput& verInput,
 		const RealParameter& param) const
 {
-	HybridAutomaton& system = verInput.getSystem();
+	SystemType& system = verInput.getSystem();
 
 	Real originalParameterValue = system.parameter_value(param.name());
 
@@ -97,7 +97,7 @@ _safety_nosplitting(
 	ARIADNE_LOG(2,"\n");
 	ARIADNE_LOG(2,"Iterative verification...\n");
 
-	HybridAutomaton& system = verInput.getSystem();
+	SystemType& system = verInput.getSystem();
 
 	if (_settings->plot_results)
 		_plot_dirpath_init(system.name());
@@ -149,7 +149,7 @@ _safety_once(
 bool
 Verifier::
 _safety_proving_once(
-		SystemType& system,
+		SystemType& sys,
 		const HybridImageSet& initial_set,
 		const HybridConstraintSet& safety_constraint,
 		const RealParameterSet& params) const
@@ -160,23 +160,23 @@ _safety_proving_once(
 
 	int& maximum_grid_depth = _analyser->settings().maximum_grid_depth;
 
-	RealParameterSet original_params = system.parameters();
+	RealParameterSet original_params = sys.parameters();
 
-	system.substitute(params,_settings->use_param_midpoints_for_proving);
+	sys.substitute_all(params,_settings->use_param_midpoints_for_proving);
 
 	ARIADNE_LOG(4,"Tuning settings for this proving iteration...\n");
 
 	static const bool EQUAL_GRID_FOR_ALL_LOCATIONS = false;
-	_tuneIterativeStepSettings(system,_safety_coarse_outer_approximation->get(),
+	_tuneIterativeStepSettings(sys,_safety_coarse_outer_approximation->get(),
 			EQUAL_GRID_FOR_ALL_LOCATIONS,UPPER_SEMANTICS);
 
-	ARIADNE_LOG(5, "Using reachability restriction: " << pretty_print(!_safety_reachability_restriction.empty()) << "\n");
+	ARIADNE_LOG(5, "Using reachability restriction: " << tribool_pretty_print(!_safety_reachability_restriction.empty()) << "\n");
 
 	ARIADNE_LOG(4,"Performing outer reachability analysis...\n");
 
 	try {
 
-		ARIADNE_LOG(5, "Parameters: " << system.parameters() << "\n");
+		ARIADNE_LOG(5, "Parameters: " << sys.parameters() << "\n");
 
 		/* Given the initial set I, forward reachability F, and unsafe region U:
 
@@ -193,18 +193,18 @@ _safety_proving_once(
 
 		if (!_safety_reachability_restriction.empty() && _settings->enable_backward_refinement_for_testing_inclusion) {
 
-			HybridGridTreeSet backward_initial = _reachability_refinement_starting_set(system,initial_set,
+			HybridGridTreeSet backward_initial = _reachability_refinement_starting_set(sys,initial_set,
 					safety_constraint,_safety_reachability_restriction,DIRECTION_BACKWARD);
 
 			if (backward_initial.empty()) {
 				ARIADNE_LOG(4, "The initial set for backward reachability is empty.\n");
-				system.substitute(original_params);
+				sys.substitute_all(original_params);
 				return true;
 			}
 
 			ARIADNE_LOG(5,"Retrieving backward reachability...\n");
 
-			HybridGridTreeSet backward_reach = _analyser->outer_chain_reach(system,backward_initial,
+			HybridGridTreeSet backward_reach = _analyser->outer_chain_reach(sys,backward_initial,
 					DIRECTION_BACKWARD,_safety_reachability_restriction);
 
 			_safety_reachability_restriction = backward_reach;
@@ -218,7 +218,7 @@ _safety_proving_once(
 
 		HybridGridTreeSet forward_initial;
 		if (!_safety_reachability_restriction.empty()) {
-			forward_initial = _reachability_refinement_starting_set(system,initial_set,
+			forward_initial = _reachability_refinement_starting_set(sys,initial_set,
 				safety_constraint,_safety_reachability_restriction,DIRECTION_FORWARD);
 		} else {
 			forward_initial.adjoin_outer_approximation(initial_set,maximum_grid_depth);
@@ -227,13 +227,13 @@ _safety_proving_once(
 
 		if (forward_initial.empty()) {
 			ARIADNE_LOG(4, "The initial set for forward reachability is empty.\n");
-			system.substitute(original_params);
+			sys.substitute_all(original_params);
 			return true;
 		}
 
 		ARIADNE_LOG(5,"Retrieving forward reachability...\n");
 
-		HybridGridTreeSet forward_reach = _analyser->outer_chain_reach(system,forward_initial,
+		HybridGridTreeSet forward_reach = _analyser->outer_chain_reach(sys,forward_initial,
 				DIRECTION_FORWARD,_safety_reachability_restriction);
 
 		ARIADNE_LOG(6,"Reachability size: " << forward_reach.size() << "\n");
@@ -254,7 +254,7 @@ _safety_proving_once(
 		result = false;
 	}
 
-	system.substitute(original_params);
+	sys.substitute_all(original_params);
 
 	return result;
 }
@@ -306,7 +306,7 @@ _update_safety_cached_reachability_with(const HybridGridTreeSet& reach) const
 bool
 Verifier::
 _safety_disproving_once(
-		HybridAutomaton& system,
+		SystemType& sys,
 		const HybridImageSet& initial_set,
 		const HybridConstraintSet& safety_constraint,
 		const RealParameterSet& params) const
@@ -315,17 +315,17 @@ _safety_disproving_once(
 
 	bool result = false;
 
-	RealParameterSet original_params = system.parameters();
+	RealParameterSet original_params = sys.parameters();
 
-	system.substitute(params,_settings->use_param_midpoints_for_disproving);
+	sys.substitute_all(params,_settings->use_param_midpoints_for_disproving);
 
 	ARIADNE_LOG(4,"Tuning settings for this disproving iteration...\n");
 
 	static const bool EQUAL_GRID_FOR_ALL_LOCATIONS = false;
-	_tuneIterativeStepSettings(system,_safety_coarse_outer_approximation->get(),
+	_tuneIterativeStepSettings(sys,_safety_coarse_outer_approximation->get(),
 			EQUAL_GRID_FOR_ALL_LOCATIONS,LOWER_SEMANTICS);
 
-	ARIADNE_LOG(5, "Using reachability restriction: " << pretty_print(!_safety_reachability_restriction.empty()) << "\n");
+	ARIADNE_LOG(5, "Using reachability restriction: " << tribool_pretty_print(!_safety_reachability_restriction.empty()) << "\n");
 
 	ARIADNE_LOG(4,"Performing lower reachability analysis...\n");
 
@@ -333,7 +333,7 @@ _safety_disproving_once(
 		HybridGridTreeSet reach;
 		HybridFloatVector epsilon;
 		make_lpair<HybridGridTreeSet,HybridFloatVector>(reach,epsilon) = _analyser->lower_reach_and_epsilon(
-				system,initial_set,safety_constraint,_safety_reachability_restriction);
+				sys,initial_set,safety_constraint,_safety_reachability_restriction);
 
 		ARIADNE_LOG(5, "Epsilon: " << epsilon << "\n");
 
@@ -345,7 +345,7 @@ _safety_disproving_once(
 		result = true;
 	}
 
-	system.substitute(original_params);
+	sys.substitute_all(original_params);
 
 	ARIADNE_LOG(4, (result ? "Disproved.\n" : "Not disproved.\n") );
 
@@ -373,7 +373,7 @@ parametric_safety(
 		RealParameterSet current_params = *splitting_it;
 		ARIADNE_LOG(1,"Parameter values: " << current_params << " ");
 		tribool outcome = _safety_nosplitting(verInput,current_params);
-		ARIADNE_LOG(1,"Outcome: " << pretty_print(outcome) << "\n");
+		ARIADNE_LOG(1,"Outcome: " << tribool_pretty_print(outcome) << "\n");
 		result.push_back(ParametricOutcome(current_params,outcome));
 	}
 
@@ -397,7 +397,7 @@ _dominance(
 		DominanceVerificationInput& dominated,
 		const RealParameter& param) const
 {
-	HybridAutomaton& system = dominating.getSystem();
+	SystemType& system = dominating.getSystem();
 
 	Real original_value = system.parameter_value(param.name());
 
@@ -440,7 +440,7 @@ parametric_dominance(
 		RealParameterSet current_params = *splitting_it;
 		ARIADNE_LOG(1,"Parameter values: " << current_params << " ");
 		tribool outcome = _dominance(dominating,dominated,current_params);
-		ARIADNE_LOG(1,"Outcome: " << pretty_print(outcome) << "\n");
+		ARIADNE_LOG(1,"Outcome: " << tribool_pretty_print(outcome) << "\n");
 		result.push_back(ParametricOutcome(current_params,outcome));
 	}
 
@@ -497,7 +497,7 @@ Verifier::_dominance_proving_once(
 
 	const RealParameterSet& original_constants = dominating.getSystem().parameters();
 
-	dominating.getSystem().substitute(params,_settings->use_param_midpoints_for_proving);
+	dominating.getSystem().substitute_all(params,_settings->use_param_midpoints_for_proving);
 
 	try {
 		GridTreeSet flattened_dominated_lower_reach;
@@ -519,7 +519,7 @@ Verifier::_dominance_proving_once(
 
 	ARIADNE_LOG(3, (result ? "Proved.\n" : "Not proved.\n") );
 
-	dominating.getSystem().substitute(original_constants);
+	dominating.getSystem().substitute_all(original_constants);
 
 	return result;
 }
@@ -536,7 +536,7 @@ Verifier::_dominance_disproving_once(
 
 	const RealParameterSet& original_params = dominating.getSystem().parameters();
 
-	dominating.getSystem().substitute(params,_settings->use_param_midpoints_for_disproving);
+	dominating.getSystem().substitute_all(params,_settings->use_param_midpoints_for_disproving);
 
 	try {
 		GridTreeSet flattened_dominating_lower_reach;
@@ -556,7 +556,7 @@ Verifier::_dominance_disproving_once(
 
 	ARIADNE_LOG(3, (result ? "Disproved.\n" : "Not disproved.\n") );
 
-	dominating.getSystem().substitute(original_params);
+	dominating.getSystem().substitute_all(original_params);
 
 	return result;
 }
@@ -643,7 +643,7 @@ _dominance_flattened_outer_reach(
 void
 Verifier::
 _resetAndChooseInitialSafetySettings(
-		const HybridAutomaton& system,
+		const SystemType& system,
 		const HybridBoxes& domain,
 		const Set<Identifier>& locked_params_ids) const
 {
@@ -666,7 +666,7 @@ _resetAndChooseInitialSafetySettings(
 std::pair<HybridGridTreeSet,HybridGridTreeSet>
 Verifier::
 _getCoarseOuterApproximationAndReachabilityRestriction(
-		const HybridAutomaton& system,
+		const SystemType& system,
 		const HybridBoxes& domain,
 		bool equal_grid_for_all_locations) const
 {
@@ -690,7 +690,7 @@ _getCoarseOuterApproximationAndReachabilityRestriction(
 void
 Verifier::
 _chooseInitialSafetySettings(
-		const HybridAutomaton& system,
+		const SystemType& system,
 		const HybridBoxes& domain,
 		const Set<Identifier>& locked_params_ids) const
 {
@@ -709,7 +709,7 @@ _chooseInitialSafetySettings(
 void
 Verifier::
 _tuneIterativeStepSettings(
-		const HybridAutomaton& system,
+		const SystemType& system,
 		const HybridGridTreeSet& hgts_domain,
 		bool equal_grid_for_all_locations,
 		Semantics semantics) const
@@ -769,7 +769,7 @@ _chooseDominanceSettings(
 	static const bool EQUAL_GRID_FOR_ALL_LOCATIONS = true;
 	_tuneIterativeStepSettings(verInput.getSystem(),outer_reach,EQUAL_GRID_FOR_ALL_LOCATIONS,semantics);
 
-	ARIADNE_LOG(5, "Use reachability restriction: " << pretty_print(!outer_approx_constraint.empty()) << "\n");
+	ARIADNE_LOG(5, "Use reachability restriction: " << tribool_pretty_print(!outer_approx_constraint.empty()) << "\n");
 
 	_analyser->settings().lock_to_grid_time = getLockToGridTime(verInput.getSystem(),_analyser->settings().domain_bounds);
 	ARIADNE_LOG(5, "Lock to grid time: " << _analyser->settings().lock_to_grid_time << "\n");
@@ -826,17 +826,6 @@ _plot_dominance(
 	string filename = system_descr + "-" + verification_descr + "-";
 	filename.append(mgd_char);
 	plot(_plot_dirpath,filename,reach);
-}
-
-
-std::string
-pretty_print(tribool value)
-{
-	if (definitely(value))
-		return "True";
-	if (!possibly(value))
-		return "False";
-	return "Indeterminate";
 }
 
 

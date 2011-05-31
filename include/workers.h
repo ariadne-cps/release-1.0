@@ -40,7 +40,7 @@ public:
 	// Constructor
     UpperReachEvolveWorker(
     		const boost::shared_ptr<HybridDiscretiser<CE> >& discretiser,
-    		const HybridAutomaton& sys,
+    		const HybridAutomatonInterface& sys,
     		const list<EnclosureType>& initial_enclosures,
     		const HybridTime& time,
     		EvolutionDirection direction,
@@ -88,7 +88,7 @@ private:
 
 	// A reference to the input variables
 	const boost::shared_ptr<HybridDiscretiser<CE> >& _discretiser;
-	const HybridAutomaton& _sys;
+	const HybridAutomatonInterface& _sys;
 	const list<EnclosureType>& _initial_enclosures;
 	const HybridTime& _time;
 	const EvolutionDirection& _direction;
@@ -161,7 +161,7 @@ public:
     LowerReachEpsilonWorker(
     		const boost::shared_ptr<HybridDiscretiser<CE> >& discretiser,
 			EL& initial_enclosures,
-			const HybridAutomaton& sys,
+			const HybridAutomatonInterface& sys,
 			const HybridTime& time,
 			const HybridGrid& grid,
 			const int& accuracy,
@@ -204,7 +204,7 @@ private:
 	// A reference to the input variables
     const boost::shared_ptr<HybridDiscretiser<CE> >& _discretiser;
 	EL& _initial_enclosures;
-	const HybridAutomaton& _sys;
+	const HybridAutomatonInterface& _sys;
 	const HybridTime& _time;
 	const HybridGrid& _grid;
 	const int& _accuracy;

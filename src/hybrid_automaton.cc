@@ -678,7 +678,7 @@ HybridAutomaton::transition(DiscreteEvent event, DiscreteLocation source) const
 }
 
 
-const std::string&
+const String&
 HybridAutomaton::name() const
 {
     return this->_name;
@@ -707,7 +707,7 @@ operator<<(std::ostream& os, const HybridAutomaton& ha)
 }
 
 void 
-HybridAutomaton::substitute(RealParameter param)
+HybridAutomaton::substitute(const RealParameter& param)
 {
 	RealParameterSet parameters = this->parameters();
 
@@ -726,13 +726,6 @@ HybridAutomaton::substitute(RealParameter param)
 		trans_it->substitute(param);
 }
 
-void
-HybridAutomaton::substitute(const RealParameterSet& params)
-{
-	for (RealParameterSet::const_iterator param_it = params.begin(); param_it != params.end(); ++param_it)
-		substitute(*param_it);
-}
-
 
 void
 HybridAutomaton::substitute(const RealParameterSet& params, bool use_midpoint)
@@ -743,21 +736,6 @@ HybridAutomaton::substitute(const RealParameterSet& params, bool use_midpoint)
 		else
 			substitute(*param_it);
 	}
-}
-
-Real
-HybridAutomaton::parameter_value(String name) const
-{
-	RealParameterSet parameters = this->parameters();
-
-	for (RealParameterSet::const_iterator parameter_it = parameters.begin();
-												 parameter_it != parameters.end();
-												 ++parameter_it) {
-		if (parameter_it->name() == name)
-			return parameter_it->value();
-	}
-
-	ARIADNE_FAIL_MSG("The parameter '" << name << "' was not found in the system.");
 }
 
 

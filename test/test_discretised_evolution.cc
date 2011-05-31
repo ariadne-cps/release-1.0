@@ -102,7 +102,7 @@ void TestDiscretisedEvolution::test_hybrid_time() const
     cout << "henon=" << henon << endl;
     HybridAutomaton ha("Henon");
     ha.new_mode(location,IdentityFunction(2));
-    ha.new_transition(event,location,location,henon,VectorConstantFunction(Vector<Float>(1,1.0),2),false);
+    ha.new_transition(event,location,location,henon,VectorConstantFunction(Vector<Float>(1,1.0),2),PERMISSIVE);
 
     // Define a bounding box for the evolution
     std::cout<<"making bounding_box"<<std::endl;

@@ -21,10 +21,45 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#include "hybrid_automaton_interface.h"
 #include "parametric.h"
+#include "box.h"
+#include "textplot.h"
+#include "graphics.h"
 
 namespace Ariadne {
 
+Real Parameterizable::parameter_value(String name) const
+{
+	RealParameterSet parameters = this->parameters();
+	for (RealParameterSet::const_iterator parameter_it = parameters.begin();
+												 parameter_it != parameters.end();
+												 ++parameter_it) {
+		if (parameter_it->name() == name)
+			return parameter_it->value();
+	}
+
+	ARIADNE_FAIL_MSG("The parameter '" << name << "' was not found in the object.");
+}
+
+
+void
+Parameterizable::substitute_all(const RealParameterSet& params, bool use_midpoints)
+{
+	for (RealParameterSet::const_iterator param_it = params.begin(); param_it != params.end(); ++param_it) {
+		if (use_midpoints)
+			substitute(RealParameter(param_it->name(),param_it->value().midpoint()));
+		else
+			substitute(*param_it);
+	}
+}
+
+std::ostream&
+ParameterizableHybridAutomatonInterface::write(std::ostream& os) const
+{
+	os << this->name();
+	return os;
+}
 
 
 ParametricOutcome::ParametricOutcome(const RealParameterSet& params, tribool value)
@@ -69,7 +104,7 @@ ParametricOutcome::getOutcome() const
 std::ostream&
 ParametricOutcome::write(std::ostream& os) const
 {
-	os << "(" << _params << "->" << pretty_print(_value) << ")";
+	os << "(" << _params << "->" << tribool_pretty_print(_value) << ")";
 	return os;
 }
 

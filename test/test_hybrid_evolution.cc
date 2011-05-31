@@ -56,8 +56,6 @@ class TestHybridEvolution
     typedef Vector<Float> FVector;
     typedef Matrix<Float> FMatrix;
 
-    static const bool non_urgent=false;
-    static const bool urgent=true;
   private:
     static HybridAutomaton system();
   public:
@@ -94,8 +92,8 @@ TestHybridEvolution::system()
     automaton.new_mode(location1,dynamic1);
     automaton.new_mode(location2,dynamic2);
     //automaton.new_invariant(location2,invariant2);
-    automaton.new_transition(event3,location1,location2,reset,guard3,urgent);
-    automaton.new_transition(event4,location2,location1,reset,guard4,urgent);
+    automaton.new_transition(event3,location1,location2,reset,guard3,URGENT);
+    automaton.new_transition(event4,location2,location1,reset,guard4,URGENT);
     //automaton.new_unforced_transition(event4,location2,location1,reset,activation4);
 
     cout << "Finished creating hybrid automaton." << endl;
@@ -340,7 +338,7 @@ HybridAutomaton TestHybridEvolver::make_hybrid_automaton(const ScalarFunction& g
     HybridAutomaton system;
     system.new_mode(q1,VectorFunction(join(o,z)));
     system.new_mode(q2,VectorFunction(join(z,o)));
-    system.new_transition(e,q1,q2,IdentityFunction(2),VectorFunction(1u,guard),true);
+    system.new_transition(e,q1,q2,IdentityFunction(2),VectorFunction(1u,guard),URGENT);
     return system;
 }
 

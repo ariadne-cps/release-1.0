@@ -860,7 +860,7 @@ HybridIOAutomaton::_transition(DiscreteEvent event, DiscreteLocation source)
 }
 
 
-const std::string&
+const String&
 HybridIOAutomaton::name() const
 {
     return this->_name;
@@ -1714,13 +1714,6 @@ HybridIOAutomaton::substitute(const RealParameter& param)
 		trans_it->substitute(param);
 }
 
-void
-HybridIOAutomaton::substitute(const RealParameterSet& params)
-{
-	for (RealParameterSet::const_iterator param_it = params.begin(); param_it != params.end(); ++param_it)
-		substitute(*param_it);
-}
-
 
 void
 HybridIOAutomaton::substitute(const RealParameterSet& params, bool use_midpoint)
@@ -1733,21 +1726,6 @@ HybridIOAutomaton::substitute(const RealParameterSet& params, bool use_midpoint)
 	}
 }
 
-
-Real
-HybridIOAutomaton::parameter_value(String name) const
-{
-	RealParameterSet parameters = this->parameters();
-
-	for (RealParameterSet::const_iterator parameter_it = parameters.begin();
-												 parameter_it != parameters.end();
-												 ++parameter_it) {
-		if (parameter_it->name() == name)
-			return parameter_it->value();
-	}
-
-	ARIADNE_FAIL_MSG("The parameter is not used anywhere in the system.");
-}
 
 RealParameterSet
 HybridIOAutomaton::parameters() const

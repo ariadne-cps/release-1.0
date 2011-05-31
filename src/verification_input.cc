@@ -33,7 +33,7 @@ namespace Ariadne {
 
 
 VerificationInput::VerificationInput(
-		HybridAutomaton& system,
+		SystemType& system,
 		HybridImageSet& initial_set,
 		HybridBoxes& domain) :
 		_system(system),
@@ -73,7 +73,7 @@ VerificationInput::write(std::ostream& os) const
 
 
 SafetyVerificationInput::SafetyVerificationInput(
-		HybridAutomaton& system,
+		SystemType& system,
 		HybridImageSet& initial_set,
 		HybridBoxes& domain,
 		HybridConstraintSet& safety_constraint) :
@@ -111,7 +111,7 @@ SafetyVerificationInput::write(std::ostream& os) const
 
 
 DominanceVerificationInput::DominanceVerificationInput(
-		HybridAutomaton& system,
+		SystemType& system,
 		HybridImageSet& initial_set,
 		HybridBoxes& domain,
 		Vector<uint>& projection) :

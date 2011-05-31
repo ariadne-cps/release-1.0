@@ -141,28 +141,28 @@ void TestHybridIOAutomaton::test_valve_definition()
     std::map< RealVariable, RealExpression> res;
     res[y] = y;
     // when open is received, go to opening
-    valve.new_transition(e_open, idle, opening, false);
-    ARIADNE_TEST_ASSERT(valve.has_transition(e_open,idle));
+    valve.new_transition(e_open, idle, opening, PERMISSIVE);
+    ARIADNE_TEST_ASSERT(valve.has_transition(idle,e_open));
     ARIADNE_TEST_TRY(valve.set_reset(e_open, idle, y, y));
-    valve.new_transition(e_open, opening, opening, res, false);
-    ARIADNE_TEST_ASSERT(valve.has_transition(e_open,opening));
-    valve.new_transition(e_open, closing, opening, res, false);
-    ARIADNE_TEST_ASSERT(valve.has_transition(e_open,closing));
+    valve.new_transition(e_open, opening, opening, res, PERMISSIVE);
+    ARIADNE_TEST_ASSERT(valve.has_transition(opening,e_open));
+    valve.new_transition(e_open, closing, opening, res, PERMISSIVE);
+    ARIADNE_TEST_ASSERT(valve.has_transition(closing,e_open));
      // when closed is received, go to closing
     valve.new_unforced_transition(e_close, idle, closing, res);
-    ARIADNE_TEST_ASSERT(valve.has_transition(e_close,idle));
+    ARIADNE_TEST_ASSERT(valve.has_transition(idle,e_close));
     valve.new_unforced_transition(e_close, opening, closing, res);
-    ARIADNE_TEST_ASSERT(valve.has_transition(e_close,opening));
+    ARIADNE_TEST_ASSERT(valve.has_transition(opening,e_close));
     valve.new_unforced_transition(e_close, closing, closing, res);
-    ARIADNE_TEST_ASSERT(valve.has_transition(e_close,closing));
+    ARIADNE_TEST_ASSERT(valve.has_transition(closing,e_close));
     // when the valve is fully open go from opening to idle
     RealExpression y_geq_one = y - 1.0;
     valve.new_forced_transition(e_idle, opening, idle, res, y_geq_one);
-    ARIADNE_TEST_ASSERT(valve.has_transition(e_idle,opening));
+    ARIADNE_TEST_ASSERT(valve.has_transition(opening,e_idle));
     // when the valve is fully close go from closing to idle
     RealExpression y_leq_zero = - y;
     valve.new_forced_transition(e_idle, closing, idle, res, y_leq_zero);
-    ARIADNE_TEST_ASSERT(valve.has_transition(e_idle,closing));
+    ARIADNE_TEST_ASSERT(valve.has_transition(closing,e_idle));
     // creating a forced transition with an input event should cause an exception
     ARIADNE_TEST_FAIL(valve.new_forced_transition(e_open, idle, idle, y_geq_one));
     // creating a transition with an input event and a custom activation should cause an exception
@@ -209,7 +209,7 @@ void TestHybridIOAutomaton::test_controller_definition()
     Float delta = 0.05;
     RealExpression x_geq_hmax = x - hmax + delta;
     controller.new_unforced_transition(e_close, rising, falling, x_geq_hmax);
-    ARIADNE_TEST_ASSERT(controller.has_transition(e_close,rising));
+    ARIADNE_TEST_ASSERT(controller.has_transition(rising,e_close));
     // Add the invariant x < hmax + delta to rising
     RealExpression x_leq_hmax = x - hmax - delta;
     controller.new_invariant(rising, x_leq_hmax);
@@ -218,7 +218,7 @@ void TestHybridIOAutomaton::test_controller_definition()
     Float hmin = 5.5;
     RealExpression x_leq_hmin = hmin + delta - x;
     controller.new_unforced_transition(e_open, falling, rising, x_leq_hmin);
-    ARIADNE_TEST_ASSERT(controller.has_transition(e_close,rising));
+    ARIADNE_TEST_ASSERT(controller.has_transition(rising,e_close));
     // Add the invariant x > hmin - delta to falling
     RealExpression x_geq_hmin = hmin - delta - x;
     controller.new_invariant(falling, x_geq_hmin);

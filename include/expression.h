@@ -54,7 +54,7 @@ class EnumeratedValue;
 
 typedef String Identifier;
 typedef Parameter<Real> RealParameter;
-typedef std::set<Parameter<Real>,ParameterSetComparator<Real> > RealParameterSet;
+typedef std::set<RealParameter,ParameterSetComparator<Real> > RealParameterSet;
 
 class UntypedVariable;
 template<class T> class Variable;

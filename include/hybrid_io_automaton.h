@@ -40,6 +40,7 @@
 #include "discrete_event.h"
 #include "variables.h"
 #include "hybrid_automaton_interface.h"
+#include "parametric.h"
 
 namespace Ariadne {
 
@@ -53,7 +54,9 @@ class HybridAutomaton;
  *
  * \sa \link Ariadne::HybridIOAutomaton \c HybridIOAutomaton \endlink, \link Ariadne::DiscreteIOTransition \c DiscreteIOTransition \endlink
  */
-class DiscreteIOMode {
+class DiscreteIOMode
+	: public Parameterizable
+{
     friend class HybridIOAutomaton;
   private:
 
@@ -89,10 +92,10 @@ class DiscreteIOMode {
         return this->_invariants; }
    
 	//! \brief Substitute the parameter \a param, if present, on the invariants and dynamic functions.
-	void substitute(const RealParameter& param);
+	virtual void substitute(const RealParameter& param);
 
-	/*! \brief Get the parameters (i.e., the RealConstant whose name start with a letter) from the dynamics and invariants */
-	RealParameterSet parameters() const {
+	/*! \brief Get the parameters from the dynamics and invariants */
+	virtual RealParameterSet parameters() const {
 		RealParameterSet result;
 		for (std::map<RealVariable,RealExpression>::const_iterator dyn_it=this->_dynamics.begin();dyn_it!=this->_dynamics.end();++dyn_it) {
 			RealParameterSet new_parameters = dyn_it->second.parameters();
@@ -147,6 +150,7 @@ std::ostream& operator<<(std::ostream& os, const DiscreteIOMode& dm);
  * \sa \link Ariadne::HybridIOAutomaton \c HybridIOAutomaton \endlink, \link Ariadne::DiscreteIOMode \c DiscreteIOMode \endlink
  */
 class DiscreteIOTransition
+	: public Parameterizable
 {
     friend class HybridIOAutomaton;
   private:
@@ -185,10 +189,10 @@ class DiscreteIOTransition
         return this->_target; }
 
 	//! \brief Substitute the parameter \a param, if present, on the reset and activation functions.
-	void substitute(const RealParameter& param);
+	virtual void substitute(const RealParameter& param);
 
-	/*! \brief Get the parameters (i.e., the RealConstant whose name starts with a letter) from the transition and reset dynamics. */
-	RealParameterSet parameters() const {
+	/*! \brief Get the parameters from the transition and reset dynamics. */
+	virtual RealParameterSet parameters() const {
 		RealParameterSet result = this->_activation.parameters();
 		for (std::map<RealVariable,RealExpression>::const_iterator reset_it=_reset.begin();reset_it!=_reset.end();++reset_it) {
 			RealParameterSet reset_parameters = reset_it->second.parameters();
@@ -300,7 +304,7 @@ std::ostream& operator<<(std::ostream& os, const DiscreteIOTransition& dt);
 
  */
 class HybridIOAutomaton
-	: public HybridAutomatonInterface
+	: public ParameterizableHybridAutomatonInterface
 {
   public:
     typedef std::list<DiscreteIOTransition>::const_iterator discrete_transition_const_iterator;
@@ -560,7 +564,7 @@ class HybridIOAutomaton
     //! \name Data access and queries.
 
     //! \brief Returns the hybrid automaton's name.
-    const std::string& name() const;
+    virtual const String& name() const;
 
     //! \brief The sets of input, output, and internal variables.
     const std::set< RealVariable >& input_vars() const;
@@ -632,17 +636,11 @@ class HybridIOAutomaton
     //! \brief The discrete transitions from location \a source.
     std::list< DiscreteIOTransition > transitions(DiscreteLocation source) const;
 
-    //! \brief Get the value of a parameter.
-    Real parameter_value(String name) const;
-
 	/*! \brief Get the parameters (i.e., the RealConstant whose name start with a letter) from the dynamics and invariants */
-	RealParameterSet parameters() const;
+	virtual RealParameterSet parameters() const;
 
 	//! \brief Substitute the parameter \a param, if present, on all the functions of modes and transitions.
-	void substitute(const RealParameter& param);
-
-	/*! \brief Substitute values from a set \a params. */
-	void substitute(const RealParameterSet& params);
+	virtual void substitute(const RealParameter& param);
 
 	/*! \brief Substitute values from a set \a params, using the midpoint if \a use_midpoint is set. */
 	void substitute(const RealParameterSet& params, bool use_midpoint);

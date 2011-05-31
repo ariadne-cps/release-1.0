@@ -76,7 +76,8 @@ class UnderspecifiedSystemError : public SystemSpecificationError {
 
 //! \ingroup SystemModule
 //! \brief Base interface for hybrid systems, to allow different types to be used in evolution routines.
-class HybridAutomatonInterface {
+class HybridAutomatonInterface
+{
   public:
     //! \brief The type used to represent time.
     typedef HybridTime TimeType;
@@ -89,6 +90,9 @@ class HybridAutomatonInterface {
 
     //@{
     //! \name Data access and queries.
+
+    //! \brief The name of the automaton.
+    virtual const String& name() const = 0;
 
     //@{
     //! \name Methods for testing and extracting the discrete dynamics.

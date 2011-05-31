@@ -39,6 +39,7 @@
 #include "discrete_event.h"
 #include "variables.h"
 #include "hybrid_automaton_interface.h"
+#include "parametric.h"
 
 namespace Ariadne {
 
@@ -65,7 +66,9 @@ class Grid;
  *
  * \sa \link Ariadne::HybridAutomaton \c HybridAutomaton \endlink, \link Ariadne::DiscreteTransition \c DiscreteTransition \endlink
  */
-class DiscreteMode {
+class DiscreteMode
+	: public Parameterizable
+{
     friend class HybridAutomaton;
   private:
 
@@ -103,14 +106,14 @@ class DiscreteMode {
     }
 
 	/*! \brief Substitute the parameter \a param, if present, on the invariants and dynamic functions. */
-	void substitute(const RealParameter& param) {
+	virtual void substitute(const RealParameter& param) {
 		this->_dynamic.substitute(param);
 		for (std::map<DiscreteEvent,VectorFunction>::iterator it=this->_invariants.begin();it!=this->_invariants.end();it++)
 			it->second.substitute(param);
 	}
 
 	/*! \brief Get the parameters from the dynamics and invariants */
-	RealParameterSet parameters() const {
+	virtual RealParameterSet parameters() const {
 		RealParameterSet result = this->_dynamic.parameters();
 		for (std::map<DiscreteEvent,VectorFunction>::const_iterator it=this->_invariants.begin();it!=this->_invariants.end();it++) {
 			RealParameterSet new_parameters = it->second.parameters();
@@ -161,6 +164,7 @@ inline bool operator<(const DiscreteMode& mode1, const DiscreteMode& mode2) {
  * \sa \link Ariadne::HybridAutomaton \c HybridAutomaton \endlink, \link Ariadne::DiscreteMode \c DiscreteMode \endlink
  */
 class DiscreteTransition
+	: public Parameterizable
 {
     friend class HybridAutomaton;
   private:
@@ -199,13 +203,13 @@ class DiscreteTransition
         return this->_target; }
 
 	/*! \brief Substitute the parameter \a param, if present, on the reset and activation functions. */
-	void substitute(const RealParameter& param) {
+	virtual void substitute(const RealParameter& param) {
 		this->_activation.substitute(param);
 		this->_reset.substitute(param);
 	}
 
 	/*! \brief Get the parameters (i.e., the RealConstant whose name starts with a letter) from the transition and reset dynamics. */
-	RealParameterSet parameters() const {
+	virtual RealParameterSet parameters() const {
 		RealParameterSet result = this->_activation.parameters();
 		RealParameterSet reset_parameters = this->_reset.parameters();
 		result.insert(reset_parameters.begin(),reset_parameters.end());
@@ -291,7 +295,7 @@ inline bool operator<(const DiscreteTransition& transition1, const DiscreteTrans
 
  */
 class HybridAutomaton
-	: public HybridAutomatonInterface
+	: public ParameterizableHybridAutomatonInterface
 {
   public:
     //! \brief The type used to represent time.
@@ -544,7 +548,7 @@ class HybridAutomaton
     //! \name Data access and queries.
 
     //! \brief Returns the hybrid automaton's name.
-    const std::string& name() const;
+    virtual const String& name() const;
 
     //! \brief Test if the hybrid automaton has a discrete mode with discrete location \a location.
     virtual bool has_mode(DiscreteLocation location) const;
@@ -610,16 +614,10 @@ class HybridAutomaton
     virtual RealVectorFunction reset_function(DiscreteLocation location, DiscreteEvent event) const;
 
     //! \brief Gets the parameters (i.e., any RealParameter whose name starts from a letter) from the modes and transitions. */
-    RealParameterSet parameters() const;
-
-    //! \brief Get the value of a parameter.
-    Real parameter_value(String name) const;
+    virtual RealParameterSet parameters() const;
 
 	/*! \brief Substitute the parameter \a param, if present, on all the functions of modes and transitions. */
-	void substitute(RealParameter param);
-
-	/*! \brief Substitute parameters from a set \a params. */
-	void substitute(const RealParameterSet& params);
+	virtual void substitute(const RealParameter& param);
 
 	/*! \brief Substitute parameter values from a set \a params, using the midpoint if \a use_midpoint is set. */
 	void substitute(const RealParameterSet& params, bool use_midpoint);

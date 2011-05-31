@@ -41,6 +41,15 @@ inline tribool operator^(tribool tb1, tribool tb2) { return (tb1&&!tb2)||(!tb1&&
 
 inline std::ostream& operator<<(std::ostream& os, tribool tb) {  return boost::logic::operator<<(os << std::boolalpha,tb); }
 
+/* \brief Provides a better printing of a tribool verification result */
+inline std::string tribool_pretty_print(tribool value) {
+	if (definitely(value))
+		return "True";
+	if (!possibly(value))
+		return "False";
+	return "Indeterminate";
+}
+
 /*
 #ifdef DOXYGEN
 namespace Ariadne {

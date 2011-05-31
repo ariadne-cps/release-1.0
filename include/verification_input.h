@@ -28,7 +28,8 @@
 #ifndef ARIADNE_VERIFICATION_INPUT_H_
 #define ARIADNE_VERIFICATION_INPUT_H_
 
-#include "hybrid_automaton.h"
+#include "hybrid_automaton_interface.h"
+#include "parametric.h"
 #include "hybrid_set.h"
 
 namespace Ariadne {
@@ -36,18 +37,20 @@ namespace Ariadne {
 /** Provides a basic bundle for systems and their relative input for verification. */
 class VerificationInput
 {
+  public:
+	typedef ParameterizableHybridAutomatonInterface SystemType;
   private:
-	HybridAutomaton& _system;
+	SystemType& _system;
 	HybridImageSet& _initial_set;
 	HybridBoxes& _domain;
 
   public:
-	HybridAutomaton& getSystem() const { return _system; }
+	SystemType& getSystem() const { return _system; }
 	HybridImageSet& getInitialSet() const { return _initial_set; }
 	HybridBoxes& getDomain() const { return _domain; }
 
 	VerificationInput(
-			HybridAutomaton& system,
+			SystemType& system,
 			HybridImageSet& initial_set,
 			HybridBoxes& domain);
 
@@ -73,7 +76,7 @@ class SafetyVerificationInput : public VerificationInput
 	const HybridConstraintSet& getSafetyConstraint() const { return _safety_constraint; }
 
 	SafetyVerificationInput(
-			HybridAutomaton& system,
+			SystemType& system,
 			HybridImageSet& initial_set,
 			HybridBoxes& domain,
 			HybridConstraintSet& safety_constraint);
@@ -105,7 +108,7 @@ class DominanceVerificationInput : public VerificationInput
 	const Vector<uint>& getProjection() const { return _projection; }
 
 	DominanceVerificationInput(
-			HybridAutomaton& system,
+			SystemType& system,
 			HybridImageSet& initial_set,
 			HybridBoxes& domain,
 			Vector<uint>& projection);

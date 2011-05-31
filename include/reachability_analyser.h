@@ -58,7 +58,7 @@ template<class BS> class HybridBasicSet;
 typedef HybridBasicSet<Box> HybridBox;
 typedef std::map<DiscreteLocation,Vector<Float> > HybridFloatVector;
 typedef std::map<Identifier,int> ParameterIdIntMap;
-typedef HybridAutomaton SystemType;
+typedef ParameterizableHybridAutomatonInterface SystemType;
 typedef HybridEvolver::EnclosureType EnclosureType;
 typedef HybridEvolver::ContinuousEnclosureType ContinuousEnclosureType;
 
@@ -82,7 +82,7 @@ class HybridReachabilityAnalyser
     boost::shared_ptr< HybridDiscretiser<HybridEvolver::ContinuousEnclosureType> > _discretiser;
   public:
     typedef DiscreteEvolutionSettings EvolutionSettingsType;
-    typedef HybridAutomaton SystemType;
+    typedef ParameterizableHybridAutomatonInterface SystemType;
     typedef SystemType::StateSpaceType StateSpaceType;
     typedef SystemType::TimeType TimeType;
     typedef HybridGridTreeSet SetApproximationType;
@@ -218,7 +218,6 @@ class HybridReachabilityAnalyser
   public:
 
     typedef HybridTime T;
-    typedef HybridAutomaton Sys;
     typedef HybridListSet<Box> BxLS;
     typedef HybridGrid Gr;
     typedef HybridGridCell GC;
@@ -241,19 +240,19 @@ class HybridReachabilityAnalyser
 
     // Helper functions for operators on lists of sets.
     GTS _upper_reach(
-    		const Sys& sys,
+    		const SystemType& sys,
     		const GTS& set,
     		const T& time,
     		const int accuracy) const;
 
     std::pair<GTS,GTS> _upper_reach_evolve(
-    		const Sys& sys,
+    		const SystemType& sys,
     		const GTS& set,
     		const T& time,
     		const int accuracy) const;
 
     std::pair<GTS,GTS> _upper_reach_evolve(
-    		const Sys& sys,
+    		const SystemType& sys,
     		const list<EnclosureType>& initial_enclosures,
     		const T& time,
     		EvolutionDirection direction,
@@ -278,28 +277,30 @@ class HybridReachabilityAnalyser
      * \details Ignores enclosures that lie outside the domain.
      */
     void _outer_chain_reach_forward_pushTargetCells(
-    		const HybridGridTreeSet& reachCells,
     		const SystemType& system,
+    		const HybridGridTreeSet& reachCells,
     		std::list<EnclosureType>& result_enclosures,
     		bool use_domain_checking) const;
 
     /*! \brief Pushes into \a result_enclosures the source enclosures from \a sourceCellsOverapprox that reach \a reachCells. */
     void _outer_chain_reach_backward_pushSourceCells(
-    		const HybridGridTreeSet& reachCells,
-    		HybridGridTreeSet sourceCellsOverapprox,
     		const SystemType& system,
-    		std::list<EnclosureType>& result_enclosures) const;
+    		const HybridGridTreeSet& reachCells,
+    		std::list<EnclosureType>& result_enclosures,
+    		HybridGridTreeSet sourceCellsOverapprox) const;
 
     /*! \brief Checks whether a box \a bx is outside any invariant from \a invariants. */
     bool _outer_chain_reach_isOutsideInvariants(
-    		const Box& bx,
-    		const std::map<DiscreteEvent,VectorFunction>& invariants) const;
+    		const SystemType& system,
+    		const DiscreteLocation& location,
+    		const Box& bx) const;
 
-    /*! \brief Checks whether the transition \a trans for enclosure \a source under dynamic \a dynamic is feasible.
+    /*! \brief Checks whether the transition of kind \a event_kind, with a given \a activation, is feasible for enclosure \a source under dynamic \a dynamic.
      * \details By feasibility we mean that, under upper semantics, it would be taken by \a source.
      */
     bool _is_transition_feasible(
-    		const DiscreteTransition& trans,
+    		const ScalarFunction& activation,
+    		EventKind event_kind,
     		const VectorFunction& dynamic,
     		const ContinuousEnclosureType& source,
     		Semantics semantics) const;
@@ -307,19 +308,18 @@ class HybridReachabilityAnalyser
     /*! \brief Pushes the enclosures from the \a source enclosure into the \a destination enclosure list, for all \a transitions.
      */
     void _outer_chain_reach_forward_pushTargetEnclosures(
-    		const std::list<DiscreteTransition>& transitions,
-			const ContinuousEnclosureType& source,
-			const VectorFunction& dynamic,
+    		const SystemType& system,
+    		const DiscreteLocation& sourceLocation,
+    		const ContinuousEnclosureType& sourceEnclosure,
 			const HybridGrid& grid,
 			std::list<EnclosureType>& result_enclosures,
 			bool use_domain_checking) const;
 
     void _outer_chain_reach_backward_pushSourceEnclosures(
-    		const std::list<DiscreteTransition>& transitions,
+    		const SystemType& system,
     		const DiscreteLocation& sourceLocation,
-			const Box& sourceBox,
+    		const ContinuousEnclosureType& sourceEnclosure,
 			const HybridGridTreeSet& targetCells,
-			const VectorFunction& dynamic,
 			const HybridGrid& grid,
 			std::list<EnclosureType>& result_enclosures) const;
 
@@ -355,7 +355,7 @@ class HybridReachabilityAnalyser
      *  all the remaining from right to left. If no parameters to split are available, returns the original parameters.
      */
     std::list<RealParameterSet> _getSplitParametersIntervalsSet(
-    		HybridAutomaton system,
+    		SystemType& system,
     		float tolerance) const;
 };
 
@@ -407,7 +407,7 @@ list<EnclosureType> enclosures_from_split_domain_midpoints(
  * @return A split factor for each non-singleton parameter name of the \a system.
  */
 ParameterIdIntMap getSplitFactorsOfParameters(
-		HybridAutomaton& system,
+		SystemType& system,
 		const Set<Identifier>& locked_params_ids,
 		const Float& targetRatioPerc,
 		const HybridBoxes& bounding_domain);
@@ -425,13 +425,13 @@ RealParameter getBestParameterToSplit(
  * are stored in \a referenceWidths and the \f$ w \f$ values are obtained from the \a system.
  */
 Float getMaxDerivativeWidthRatio(
-		const HybridAutomaton& system,
+		const SystemType& system,
 		const HybridFloatVector& referenceWidths,
 		const HybridBoxes& domain);
 
 /*! \brief Helper function to get the widths of the derivatives from the \a system */
 HybridFloatVector getDerivativeWidths(
-		const HybridAutomaton& system,
+		const SystemType& system,
 		const HybridBoxes& domain);
 
 /*! \brief Gets the set of all the midpoints of the split intervals in \a intervals_set. */
@@ -507,7 +507,7 @@ Float getLockToGridTime(
  *  \a outer_approx_constraint and a domain \a domain_constraint.
  * \details ASSUMPTION: the continuous variables are preserved in order and quantity between discrete states. */
 HybridFloatVector getHybridMaximumAbsoluteDerivatives(
-		const HybridAutomatonInterface& system,
+		const SystemType& system,
 		const HybridGridTreeSet& outer_approx_constraint,
 		const HybridBoxes& domain_constraint);
 

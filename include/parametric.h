@@ -25,14 +25,47 @@
  *  \brief Data structures for handling parametric analysis.
  */
 
-#include "ariadne.h"
+#include "tribool.h"
+#include "variables.h"
 
 #ifndef ARIADNE_PARAMETRIC_H
 #define ARIADNE_PARAMETRIC_H
 
 namespace Ariadne {
 
+class HybridAutomatonInterface;
+
+typedef Parameter<Real> RealParameter;
 typedef std::set<RealParameter,ParameterSetComparator<Real> > RealParameterSet;
+
+
+class Parameterizable
+{
+  public:
+	//! \brief Extracts from the value of the parameter having identifier \a name.
+	Real parameter_value(String name) const;
+
+	/*! \brief Substitute values from a set \a params. */
+	void substitute_all(const RealParameterSet& params, bool use_midpoints = false);
+
+	//! \brief Get the set of parameters.
+    virtual RealParameterSet parameters() const = 0;
+
+	//! \brief Substitute the parameter \a param where present.
+	virtual void substitute(const RealParameter& param) = 0;
+};
+
+
+class ParameterizableHybridAutomatonInterface
+	: public Parameterizable
+	, public HybridAutomatonInterface
+{
+  public:
+	virtual std::ostream& write(std::ostream&) const;
+};
+
+inline std::ostream& operator<<(std::ostream& os, const ParameterizableHybridAutomatonInterface& ha) {
+    return ha.write(os); }
 
 /**
  * \brief The data structure for the outcome over a configuration of parameters (i.e. constants of a system)
