@@ -27,6 +27,7 @@
 #include <string>
 
 #include "verification_input.h"
+#include "hybrid_set.h"
 
 namespace Ariadne {
 

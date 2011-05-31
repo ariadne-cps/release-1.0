@@ -1562,25 +1562,24 @@ getLockToGridTime(
 
 HybridFloatVector
 getHybridMaximumAbsoluteDerivatives(
-		const HybridAutomaton& system,
+		const HybridAutomatonInterface& system,
 		const HybridGridTreeSet& outer_approx_constraint,
 		const HybridBoxes& domain_constraint)
 {
 	HybridFloatVector result;
 
-	// Get the size of the continuous space (NOTE: taken as equal for all locations)
-	const uint css = system.state_space().locations_begin()->second;
+	HybridSpace hspace = system.state_space();
 
 	// The variable for the bounding box of the derivatives
 	Vector<Interval> der;
 
-	// For each mode
-	for (list<DiscreteMode>::const_iterator modes_it = system.modes().begin(); modes_it != system.modes().end(); modes_it++) {
+	for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); hs_it++) {
 
-		const DiscreteLocation& loc = modes_it->location();
+		const DiscreteLocation& loc = hs_it->first;
+		const uint dim = hs_it->second;
 
 		// Insert the corresponding hmad pair, initialized with zero maximum absolute derivatives
-		result.insert(pair<DiscreteLocation,Vector<Float> >(loc,Vector<Float>(css)));
+		result.insert(pair<DiscreteLocation,Vector<Float> >(loc,Vector<Float>(dim)));
 
 		// If the reached region for the location exists and is not empty, check its cells, otherwise use the whole domain
 		if (outer_approx_constraint.has_location(loc) && !outer_approx_constraint[loc].empty()) {
@@ -1589,18 +1588,18 @@ getHybridMaximumAbsoluteDerivatives(
 			// For each of its hybrid cells
 			for (GridTreeSet::const_iterator cells_it = reach.begin(); cells_it != reach.end(); cells_it++) {
 				// Gets the derivative bounds
-				der = modes_it->dynamic()(cells_it->box());
+				der = system.dynamic_function(loc)(cells_it->box());
 
 				// For each variable, sets the maximum value
-				for (uint i=0;i<css;i++)
+				for (uint i=0;i<dim;i++)
 					result[loc][i] = max(result[loc][i], abs(der[i]).upper());
 			}
 		} else {
 			// Gets the first order derivatives in respect to the dynamic of the mode, applied to the domain of the corresponding location
-			der = modes_it->dynamic()(domain_constraint.find(loc)->second);
+			der = system.dynamic_function(loc)(domain_constraint.find(loc)->second);
 
 			// Gets the maximum absolute derivatives
-			for (uint i=0;i<css;i++)
+			for (uint i=0;i<dim;i++)
 				result[loc][i] = abs(der[i]).upper();
 		}
 	}

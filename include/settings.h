@@ -249,7 +249,7 @@ class DiscreteEvolutionSettings {
  *    An appropriate hybrid grid for the specified system. 
  */
 inline
-HybridGrid grid_for(const HybridAutomaton& system, 
+HybridGrid grid_for(const HybridAutomatonInterface& system,
                     const DiscreteEvolutionSettings& settings)
 {
   return ((settings.grid)->empty()?

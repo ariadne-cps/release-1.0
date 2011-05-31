@@ -52,7 +52,7 @@ template<class Sys, class BS> class Evolver;
 
 class VectorTaylorFunction;
 class TaylorSet;
-class HybridAutomaton;
+class HybridAutomatonInterface;
 template<class ES> class Orbit;
 
 class EvolutionSettings;
@@ -68,7 +68,7 @@ class DiscreteEvent;
  * The actual evolution steps are performed by the HybridEvolver class.
  */
 class ImageSetHybridEvolver
-    : public EvolverBase<HybridAutomaton,HybridTaylorSet>
+    : public EvolverBase<HybridAutomatonInterface,HybridTaylorSet>
     , public Loggable
 {
     typedef ScalarFunction ScalarFunctionType;
@@ -83,11 +83,11 @@ class ImageSetHybridEvolver
     typedef TaylorSet SetModelType;
   public:
     typedef ContinuousEvolutionSettings EvolutionSettingsType;
-    typedef HybridAutomaton::TimeType TimeType;
+    typedef HybridAutomatonInterface::TimeType TimeType;
     typedef int IntegerType;
     typedef Float RealType;
     typedef std::vector<DiscreteEvent> EventListType;
-    typedef HybridAutomaton SystemType;
+    typedef HybridAutomatonInterface SystemType;
     typedef TaylorSet ContinuousEnclosureType;
     typedef TaylorSet TimedSetModelType;
     typedef HybridBasicSet<TaylorSet> HybridEnclosureType;
@@ -178,41 +178,36 @@ class ImageSetHybridEvolver
      */
     void compute_initially_active_events(
     		std::map<DiscreteEvent,tribool>&,
-            const std::map<DiscreteEvent,VectorFunction>&,
+            const std::map<DiscreteEvent,RealScalarFunction>&,
             const ContinuousEnclosureType&,
             Semantics semantics) const;
 
     bool has_nonnegative_crossing(
-    		const std::map<DiscreteEvent,VectorFunction>& blocking_guards,
-			const VectorFunction dynamic,
+    		const std::map<DiscreteEvent,RealScalarFunction>& urgent_guards,
+			const RealVectorFunction dynamic,
 			const Box& set_bounds,
 			Semantics semantics) const;
 
     bool is_enclosure_to_be_discarded(
     		const ContinuousEnclosureType& enclosure,
-            const std::map<DiscreteEvent,VectorFunction>& blocking_guards,
-            const VectorFunction& dynamic,
+            const std::map<DiscreteEvent,RealScalarFunction>& urgent_guards,
+            const RealVectorFunction& dynamic,
             Semantics semantics) const;
 
     void compute_flow_model(
     		FlowSetModelType&,
     		BoxType&,
     		Float&,
-    		VectorFunction,
+    		RealVectorFunction,
             const SetModelType&,
             const TimeModelType&,
             Float,
             Semantics) const;
 
-    void compute_crossing_time_and_direction(
-    		TimeModelType&, Interval&,
-            VectorFunction guard,
-            const FlowSetModelType& flow_set) const;
-
     void compute_eventBlockingTimes_and_nonTransverseEvents(
     		std::map<DiscreteEvent,TimeModelType>&,
     		std::set<DiscreteEvent>&,
-            const std::map<DiscreteEvent,VectorFunction>& blocking_guards,
+            const std::map<DiscreteEvent,RealScalarFunction>& urgent_guards,
             const FlowSetModelType& flow_set_model,
             Semantics semantics) const;
 
@@ -222,7 +217,7 @@ class ImageSetHybridEvolver
 
     void compute_activationTimes(
     		std::map<DiscreteEvent,tuple<TimeModelType,TimeModelType> >& activation_times,
-            const std::map<DiscreteEvent,VectorFunction>& activations,
+            const std::map<DiscreteEvent,RealScalarFunction>& activations,
             const FlowSetModelType& flow_set_model,
             const TimeModelType& blocking_time_model,
             const Semantics semantics) const;
@@ -280,17 +275,17 @@ class ImageSetHybridEvolver
     				  	   TimeModelType& blocking_time_model,
     				  	   const TimeModelType& time_step_model,
     				  	   const SetModelType& flow_set_model,
-    				  	   const std::map<DiscreteEvent,VectorFunction>& blocking_guards,
+    				  	   const std::map<DiscreteEvent,RealScalarFunction>& blocking_guards,
     				  	   double SMALL_RELATIVE_TIME,
     				  	   Semantics semantics) const;
 
-    void _compute_activation_info(std::map<DiscreteEvent,VectorFunction>& activations,
+    void _compute_activation_info(std::map<DiscreteEvent,RealScalarFunction>& activations,
     						 	  ActivationTimesType& activation_times,
     						 	  const std::set<DiscreteEvent>& non_transverse_events,
     						 	  const SetModelType& flow_set_model,
     						 	  const TimeModelType& blocking_time_model,
-    						 	  const std::map<DiscreteEvent,VectorFunction>& blocking_guards,
-    						 	  const std::map<DiscreteEvent,VectorFunction>& invariants,
+    						 	  const std::map<DiscreteEvent,RealScalarFunction>& blocking_guards,
+    						 	  const std::map<DiscreteEvent,RealScalarFunction>& invariants,
     						 	  const Semantics semantics) const;
 
     void _compute_and_adjoin_reachableSet(EnclosureListType& reach_sets,
@@ -301,15 +296,14 @@ class ImageSetHybridEvolver
     									 const TimeModelType& blocking_time_model,
     									 Semantics semantics) const;
 
-    void _logEvolutionStepInitialState(const EventListType& events,
+    void _logEvolutionStepInitialState(const EventListType& previous_events,
     							  	   const TimeModelType& time_model,
     							  	   const DiscreteLocation& location,
     							  	   const SetModelType& set_model,
-    							  	   const VectorFunction& dynamic,
-    							  	   const std::map<DiscreteEvent,VectorFunction>& invariants,
-    							  	   const std::list<DiscreteTransition>& transitions,
-    							  	   const std::map<DiscreteEvent,VectorFunction>& blocking_guards,
-    							  	   const std::map<DiscreteEvent,VectorFunction>& permissive_guards) const;
+    							  	   const RealVectorFunction& dynamic,
+    							  	   const std::map<DiscreteEvent,RealScalarFunction>& invariants,
+    							  	   const std::map<DiscreteEvent,RealScalarFunction>& blocking_guards,
+    							  	   const std::map<DiscreteEvent,RealScalarFunction>& permissive_guards) const;
 
 
 
@@ -328,8 +322,8 @@ class ImageSetHybridEvolver
 
 /*! \brief Whether a box \a set_bounds under a given \a dynamic positively crosses an \a activation. */
 tribool positively_crossing(const Box& set_bounds,
-							const VectorFunction& dynamic,
-							const ScalarFunction& activation);
+							const RealVectorFunction& dynamic,
+							const RealScalarFunction& activation);
 
 
 } // namespace Ariadne

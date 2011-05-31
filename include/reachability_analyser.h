@@ -102,10 +102,10 @@ class HybridReachabilityAnalyser
     template<class HybridEnclosureType>
     HybridReachabilityAnalyser(
     		const EvolutionSettingsType& parameters,
-            const EvolverInterface<HybridAutomaton,HybridEnclosureType>& evolver);
+            const EvolverInterface<HybridAutomatonInterface,HybridEnclosureType>& evolver);
 
     template<class HybridEnclosureType>
-    HybridReachabilityAnalyser(const EvolverInterface<HybridAutomaton,HybridEnclosureType>& evolver);
+    HybridReachabilityAnalyser(const EvolverInterface<HybridAutomatonInterface,HybridEnclosureType>& evolver);
 
     /*! \brief Make a dynamically-allocated copy. */
     virtual HybridReachabilityAnalyser* clone() const { return new HybridReachabilityAnalyser(*this); }
@@ -361,7 +361,7 @@ class HybridReachabilityAnalyser
 
 template<class HybridEnclosureType>
 HybridReachabilityAnalyser::
-HybridReachabilityAnalyser(const EvolverInterface<HybridAutomaton,HybridEnclosureType>& evolver)
+HybridReachabilityAnalyser(const EvolverInterface<HybridAutomatonInterface,HybridEnclosureType>& evolver)
 	: _settings(new EvolutionSettingsType())
 	, _discretiser(new HybridDiscretiser<typename HybridEnclosureType::ContinuousStateSetType>(evolver))
 	, free_cores(0)
@@ -376,7 +376,7 @@ template<class HybridEnclosureType>
 HybridReachabilityAnalyser::
 HybridReachabilityAnalyser(
 		const EvolutionSettingsType& parameters,
-		const EvolverInterface<HybridAutomaton,HybridEnclosureType>& evolver)
+		const EvolverInterface<HybridAutomatonInterface,HybridEnclosureType>& evolver)
 	: _settings(new EvolutionSettingsType(parameters))
 	, _discretiser(new HybridDiscretiser<typename HybridEnclosureType::ContinuousStateSetType>(evolver))
 	, free_cores(0)
@@ -507,7 +507,7 @@ Float getLockToGridTime(
  *  \a outer_approx_constraint and a domain \a domain_constraint.
  * \details ASSUMPTION: the continuous variables are preserved in order and quantity between discrete states. */
 HybridFloatVector getHybridMaximumAbsoluteDerivatives(
-		const SystemType& system,
+		const HybridAutomatonInterface& system,
 		const HybridGridTreeSet& outer_approx_constraint,
 		const HybridBoxes& domain_constraint);
 
