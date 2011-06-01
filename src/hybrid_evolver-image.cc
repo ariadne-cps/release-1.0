@@ -99,7 +99,8 @@ ImageSetHybridEvolver::ImageSetHybridEvolver()
 
 ImageSetHybridEvolver::ImageSetHybridEvolver(const EvolutionSettingsType& p)
     : _settings(new EvolutionSettingsType(p)),
-      _upper_toolbox(new TaylorCalculus())
+      _upper_toolbox(new TaylorCalculus()),
+	  _lower_toolbox(new TaylorCalculus())
 {
 }
 
@@ -819,11 +820,11 @@ _computeEvolutionForEvents(std::list< HybridTimedSetType >& working_sets,
 			ARIADNE_LOG(3,"Non blocking event "<<event<<":\n");
 			ARIADNE_LOG(3,"  lower_active_time_model="<<lower_active_time_model.range()<<";\n");
 			ARIADNE_LOG(3,"  upper_active_time_model="<<upper_active_time_model.range()<<";\n");
-			SetModelType active_set_model=this->_upper_toolbox->reachability_step(flow_set_model,lower_active_time_model,upper_active_time_model);
+			SetModelType active_set_model=this->getCalculusInterface(semantics).reachability_step(flow_set_model,lower_active_time_model,upper_active_time_model);
 			ARIADNE_LOG(3,"  active_set="<<active_set_model.range()<<";\n");
 			SetModelType jump_set_model=apply(system.reset_function(location,event),active_set_model);
 			ARIADNE_LOG(3,"  jump_set_model="<<active_set_model.range()<<";\n");
-			const TimeModelType active_time_model = this->_upper_toolbox->reachability_time(time_model+lower_active_time_model*time_step,time_model+upper_active_time_model*time_step);
+			const TimeModelType active_time_model = this->getCalculusInterface(semantics).reachability_time(time_model+lower_active_time_model*time_step,time_model+upper_active_time_model*time_step);
 			ARIADNE_LOG(3,"  active_time_model="<<active_time_model.range()<<".\n");
 
 			DiscreteLocation jump_location=system.target(location,event);
