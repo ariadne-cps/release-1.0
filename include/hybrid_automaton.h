@@ -67,7 +67,7 @@ class Grid;
  * \sa \link Ariadne::HybridAutomaton \c HybridAutomaton \endlink, \link Ariadne::DiscreteTransition \c DiscreteTransition \endlink
  */
 class DiscreteMode
-	: public Parameterizable
+	: public Parameterisable
 {
     friend class HybridAutomaton;
   private:
@@ -164,7 +164,7 @@ inline bool operator<(const DiscreteMode& mode1, const DiscreteMode& mode2) {
  * \sa \link Ariadne::HybridAutomaton \c HybridAutomaton \endlink, \link Ariadne::DiscreteMode \c DiscreteMode \endlink
  */
 class DiscreteTransition
-	: public Parameterizable
+	: public Parameterisable
 {
     friend class HybridAutomaton;
   private:
@@ -295,7 +295,7 @@ inline bool operator<(const DiscreteTransition& transition1, const DiscreteTrans
 
  */
 class HybridAutomaton
-	: public ParameterizableHybridAutomatonInterface
+	: public ParameterisableHybridAutomatonInterface
 {
   public:
     //! \brief The type used to represent time.

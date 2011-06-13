@@ -29,7 +29,7 @@
 
 namespace Ariadne {
 
-Real Parameterizable::parameter_value(String name) const
+Real Parameterisable::parameter_value(String name) const
 {
 	RealParameterSet parameters = this->parameters();
 	for (RealParameterSet::const_iterator parameter_it = parameters.begin();
@@ -42,9 +42,23 @@ Real Parameterizable::parameter_value(String name) const
 	ARIADNE_FAIL_MSG("The parameter '" << name << "' was not found in the object.");
 }
 
+RealParameterSet
+Parameterisable::nonsingleton_parameters() const
+{
+	RealParameterSet parameters = this->parameters();
+
+	RealParameterSet result;
+	for (RealParameterSet::const_iterator param_it = parameters.begin(); param_it != parameters.end(); ++param_it) {
+		if (!param_it->value().singleton())
+			result.insert(*param_it);
+	}
+
+	return result;
+}
+
 
 void
-Parameterizable::substitute_all(const RealParameterSet& params, bool use_midpoints)
+Parameterisable::substitute_all(const RealParameterSet& params, bool use_midpoints)
 {
 	for (RealParameterSet::const_iterator param_it = params.begin(); param_it != params.end(); ++param_it) {
 		if (use_midpoints)
@@ -55,7 +69,7 @@ Parameterizable::substitute_all(const RealParameterSet& params, bool use_midpoin
 }
 
 std::ostream&
-ParameterizableHybridAutomatonInterface::write(std::ostream& os) const
+ParameterisableHybridAutomatonInterface::write(std::ostream& os) const
 {
 	os << this->name();
 	return os;

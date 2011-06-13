@@ -28,6 +28,7 @@
 #include "ariadne.h"
 
 #include "watertank-monolithic-hysteresis.h"
+#include "watertank-compositional-hysteresis.h"
 #include "watertank-monolithic-proportional.h"
 #include "watertank-nonlinear-monolithic-hysteresis.h"
 #include "watertank-nonlinear-monolithic-proportional.h"

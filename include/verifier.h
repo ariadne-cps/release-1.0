@@ -47,7 +47,7 @@ class Verifier
 {
   public:
 
-    typedef ParameterizableHybridAutomatonInterface SystemType;
+    typedef ParameterisableHybridAutomatonInterface SystemType;
 
   private:
 

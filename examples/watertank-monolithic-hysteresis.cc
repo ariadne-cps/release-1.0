@@ -1,5 +1,5 @@
 /***************************************************************************
- *            watertank-monolithic-hysteresis-verify.cc
+ *            watertank-monolithic-hysteresis.cc
  *
  *  Copyright  2010  Luca Geretti
  *

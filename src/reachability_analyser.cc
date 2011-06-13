@@ -474,7 +474,7 @@ _outer_chain_reach(
 {
 	HybridGridTreeSet reach;
 
-	RealParameterSet original_parameters = nonsingleton_parameters(sys.parameters());
+	RealParameterSet original_parameters = sys.nonsingleton_parameters();
 
 	std::list<RealParameterSet> split_intervals_set = _getSplitParametersIntervalsSet(sys,_settings->splitting_constants_target_ratio);
 
@@ -952,7 +952,7 @@ lower_reach_and_epsilon(
 	for (HybridSpace::const_iterator hs_it = state_space.begin(); hs_it != state_space.end(); ++hs_it)
 		epsilon.insert(std::pair<DiscreteLocation,Vector<Float> >(hs_it->first,Vector<Float>(hs_it->second)));
 
-	RealParameterSet original_parameters = nonsingleton_parameters(system.parameters());
+	RealParameterSet original_parameters = system.nonsingleton_parameters();
 
 	std::list<RealParameterSet> split_intervals_set = _getSplitParametersIntervalsSet(system,_settings->splitting_constants_target_ratio);
 	std::list<RealParameterSet> split_midpoints_set = getSplitParametersMidpointsSet(split_intervals_set);
@@ -1016,7 +1016,7 @@ _getSplitParametersIntervalsSet(
 	std::list<RealParameterSet> result;
 
 	if (split_factors.empty()) {
-		result.push_back(nonsingleton_parameters(system.parameters()));
+		result.push_back(system.nonsingleton_parameters());
 		return result;
 	}
 
@@ -1119,7 +1119,7 @@ list<EnclosureType> enclosures_of_domains_midpoints(
 
 ParameterIdIntMap
 getSplitFactorsOfParameters(
-		SystemType& system,
+		SystemType& sys,
 		const Set<Identifier>& locked_params_ids,
 		const Float& targetRatioPerc,
 		const HybridBoxes& bounding_domain)
@@ -1141,7 +1141,7 @@ getSplitFactorsOfParameters(
 
 	ParameterIdIntMap result;
 
-	RealParameterSet working_parameters = nonsingleton_parameters(system.parameters());
+	RealParameterSet working_parameters = sys.nonsingleton_parameters();
 
 	// Remove the locked constants
 	for (Set<Identifier>::const_iterator locked_parameter_it = locked_params_ids.begin();
@@ -1165,35 +1165,35 @@ getSplitFactorsOfParameters(
 												 parameter_it != working_parameters.end();
 												 ++parameter_it) {
 			result.insert(std::pair<Identifier,int>(parameter_it->name(),1));
-			system.substitute(RealParameter(parameter_it->name(),parameter_it->value().midpoint()));
+			sys.substitute(RealParameter(parameter_it->name(),parameter_it->value().midpoint()));
 	}
 
 	// Gets the derivative widths corresponding to all accessible constants having midpoint value
-	HybridFloatVector mid_der_widths = getDerivativeWidths(system, bounding_domain);
+	HybridFloatVector mid_der_widths = getDerivativeWidths(sys, bounding_domain);
 	// Restores the system to the original values
-	system.substitute_all(working_parameters);
+	sys.substitute_all(working_parameters);
 
 	// While the ratio is sufficiently high, gets the best constant and substitutes half its interval into the system
 	// If the maximum ratio is zero, then no constant affects the derivatives and splitting them would neither be necessary nor correct
 	// given the current unfair implementation of _getBestConstantToSplit
-	Float maxRatio = getMaxDerivativeWidthRatio(system, mid_der_widths, bounding_domain);
+	Float maxRatio = getMaxDerivativeWidthRatio(sys, mid_der_widths, bounding_domain);
 	if (maxRatio > maxRatioThreshold) {
 		Float ratio = maxRatio;
 
 		while (ratio > targetRatioPerc*maxRatio) {
-			RealParameter bestParameter = getBestParameterToSplit(system, working_parameters, mid_der_widths, bounding_domain);
+			RealParameter bestParameter = getBestParameterToSplit(sys, working_parameters, mid_der_widths, bounding_domain);
 
 			Interval originalInterval = bestParameter.value();
 			Float quarterIntervalWidth = originalInterval.width()/4;
 			Interval halvedInterval = Interval(originalInterval.midpoint()-quarterIntervalWidth,
 											   originalInterval.midpoint()+quarterIntervalWidth);
 
-			system.substitute(RealParameter(bestParameter.name(),Real(halvedInterval)));
+			sys.substitute(RealParameter(bestParameter.name(),Real(halvedInterval)));
 			result[bestParameter.name()]++;
-			ratio = getMaxDerivativeWidthRatio(system, mid_der_widths, bounding_domain);
+			ratio = getMaxDerivativeWidthRatio(sys, mid_der_widths, bounding_domain);
 		}
 
-		system.substitute_all(working_parameters);
+		sys.substitute_all(working_parameters);
 	}
 
 	return result;
@@ -1554,7 +1554,7 @@ getLockToGridTime(
 		const uint dim = hs_it->second;
 		const Box& loc_domain = domain.find(loc)->second;
 
-		// Gets the first order derivatives in respect to the dynamic of the location, applied to the domain of the corresponding domain
+		// Gets the first order derivatives in respect to the dynamic of the location, applied to the corresponding domain
 		Vector<Interval> der_bbx = sys.dynamic_function(loc)(loc_domain);
 
 		for (uint i=0;i<dim;i++) {

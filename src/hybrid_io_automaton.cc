@@ -933,9 +933,11 @@ HybridIOAutomaton::dynamic_function(DiscreteLocation location) const
     	if (mode_iter->location() == location) {
     		RealSpace continuous_state_space = this->continuous_state_space(location);
     		const std::map< RealVariable, RealExpression >& dynamics = mode_iter->dynamics();
+    		func = RealVectorFunction(dynamics.size(),continuous_state_space.size());
     	   	uint i=0;
     		for (std::map<RealVariable,RealExpression>::const_iterator dyn_it = dynamics.begin(); dyn_it != dynamics.end(); ++dyn_it)
     			func.set(i++,RealScalarFunction(dyn_it->second,continuous_state_space));
+
     		found = true;
     		break;
     	}
@@ -999,6 +1001,7 @@ HybridIOAutomaton::reset_function(DiscreteLocation location, DiscreteEvent event
     	if (trans_iter->source() == location && trans_iter->event() == event) {
     		RealSpace continuous_state_space = this->continuous_state_space(location);
     		const std::map< RealVariable, RealExpression >& reset = trans_iter->reset();
+    		func = RealVectorFunction(reset.size(),continuous_state_space.size());
     		uint i = 0;
     		for (std::map<RealVariable,RealExpression>::const_iterator reset_it = reset.begin(); reset_it != reset.end(); ++reset_it)
     			func.set(i++,RealScalarFunction(reset_it->second,continuous_state_space));

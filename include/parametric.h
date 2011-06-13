@@ -39,11 +39,14 @@ typedef Parameter<Real> RealParameter;
 typedef std::set<RealParameter,ParameterSetComparator<Real> > RealParameterSet;
 
 
-class Parameterizable
+class Parameterisable
 {
   public:
 	//! \brief Extracts from the value of the parameter having identifier \a name.
 	Real parameter_value(String name) const;
+
+	//! \brief Extracts the subset of parameters whose values are not singleton.
+	RealParameterSet nonsingleton_parameters() const;
 
 	/*! \brief Substitute values from a set \a params. */
 	void substitute_all(const RealParameterSet& params, bool use_midpoints = false);
@@ -56,15 +59,15 @@ class Parameterizable
 };
 
 
-class ParameterizableHybridAutomatonInterface
-	: public Parameterizable
+class ParameterisableHybridAutomatonInterface
+	: public Parameterisable
 	, public HybridAutomatonInterface
 {
   public:
 	virtual std::ostream& write(std::ostream&) const;
 };
 
-inline std::ostream& operator<<(std::ostream& os, const ParameterizableHybridAutomatonInterface& ha) {
+inline std::ostream& operator<<(std::ostream& os, const ParameterisableHybridAutomatonInterface& ha) {
     return ha.write(os); }
 
 /**

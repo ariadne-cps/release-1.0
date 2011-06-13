@@ -55,7 +55,7 @@ class HybridAutomaton;
  * \sa \link Ariadne::HybridIOAutomaton \c HybridIOAutomaton \endlink, \link Ariadne::DiscreteIOTransition \c DiscreteIOTransition \endlink
  */
 class DiscreteIOMode
-	: public Parameterizable
+	: public Parameterisable
 {
     friend class HybridIOAutomaton;
   private:
@@ -150,7 +150,7 @@ std::ostream& operator<<(std::ostream& os, const DiscreteIOMode& dm);
  * \sa \link Ariadne::HybridIOAutomaton \c HybridIOAutomaton \endlink, \link Ariadne::DiscreteIOMode \c DiscreteIOMode \endlink
  */
 class DiscreteIOTransition
-	: public Parameterizable
+	: public Parameterisable
 {
     friend class HybridIOAutomaton;
   private:
@@ -304,7 +304,7 @@ std::ostream& operator<<(std::ostream& os, const DiscreteIOTransition& dt);
 
  */
 class HybridIOAutomaton
-	: public ParameterizableHybridAutomatonInterface
+	: public ParameterisableHybridAutomatonInterface
 {
   public:
     typedef std::list<DiscreteIOTransition>::const_iterator discrete_transition_const_iterator;

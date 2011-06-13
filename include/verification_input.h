@@ -38,7 +38,7 @@ namespace Ariadne {
 class VerificationInput
 {
   public:
-	typedef ParameterizableHybridAutomatonInterface SystemType;
+	typedef ParameterisableHybridAutomatonInterface SystemType;
   private:
 	SystemType& _system;
 	HybridImageSet& _initial_set;

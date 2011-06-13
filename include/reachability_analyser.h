@@ -58,7 +58,7 @@ template<class BS> class HybridBasicSet;
 typedef HybridBasicSet<Box> HybridBox;
 typedef std::map<DiscreteLocation,Vector<Float> > HybridFloatVector;
 typedef std::map<Identifier,int> ParameterIdIntMap;
-typedef ParameterizableHybridAutomatonInterface SystemType;
+typedef ParameterisableHybridAutomatonInterface SystemType;
 typedef HybridEvolver::EnclosureType EnclosureType;
 typedef HybridEvolver::ContinuousEnclosureType ContinuousEnclosureType;
 
@@ -82,7 +82,7 @@ class HybridReachabilityAnalyser
     boost::shared_ptr< HybridDiscretiser<HybridEvolver::ContinuousEnclosureType> > _discretiser;
   public:
     typedef DiscreteEvolutionSettings EvolutionSettingsType;
-    typedef ParameterizableHybridAutomatonInterface SystemType;
+    typedef ParameterisableHybridAutomatonInterface SystemType;
     typedef SystemType::StateSpaceType StateSpaceType;
     typedef SystemType::TimeType TimeType;
     typedef HybridGridTreeSet SetApproximationType;

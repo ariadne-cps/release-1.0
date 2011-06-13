@@ -1,9 +1,9 @@
 bin_PROGRAMS= 	tutorial \
 		watertank-monolithic-hysteresis \
+        watertank-compositional-hysteresis \
 		watertank-monolithic-proportional \
 		watertank-nonlinear-monolithic-hysteresis \
 		watertank-nonlinear-monolithic-proportional \
-		watertank-compositional-hysteresis \
 		watertank-aasap \
 		watertank-monolithic-dominance \
 		watertank-nonlinear-monolithic-dominance \
