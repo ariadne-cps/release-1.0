@@ -196,13 +196,13 @@ class HybridReachabilityAnalyser
      * raising an exception if this is the case.
      * \return The reach and the epsilon values. */
     virtual std::pair<HybridGridTreeSet,HybridFloatVector> lower_reach_and_epsilon(
-    		SystemType& system,
-			const HybridImageSet& initial_set,
-			const HybridConstraintSet& constraint_set,
-			const HybridGridTreeSet& reachability_restriction) const;
-  
+            SystemType& system,
+            const HybridImageSet& initial_set,
+            const HybridConstraintSet& constraint_set,
+            const HybridGridTreeSet& reachability_restriction) const;
+
     /*! \brief Tunes the settings of the internal evolver. */
-    void tuneEvolverSettings(
+    void tune_evolver_settings(
     		const SystemType& system,
     		const HybridFloatVector& hmad,
 			uint maximum_grid_depth,
@@ -230,7 +230,7 @@ class HybridReachabilityAnalyser
   private:
 
     /*! \brief Gets the calculus interface from the hybrid evolver. */
-    const CalculusInterface<TaylorModel>& _getCalculusInterface(Semantics semantics) const;
+    const CalculusInterface<TaylorModel>& _get_calculus_interface(Semantics semantics) const;
 
     /*! \brief Plots \a reach in \a plot_dirpath directory, where \a name_prefix as a prefix to the filename */
     void _plot_reach(

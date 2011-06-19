@@ -102,7 +102,7 @@ _safety_nosplitting(
 	if (_settings->plot_results)
 		_plot_dirpath_init(system.name());
 
-	_resetAndChooseInitialSafetySettings(system,verInput.getDomain(),parameters_identifiers(params));
+	_reset_and_choose_initial_safety_settings(system,verInput.getDomain(),parameters_identifiers(params));
 
 	int& depth = _analyser->settings().maximum_grid_depth;
 	for (depth = _analyser->settings().lowest_maximum_grid_depth;
@@ -167,7 +167,7 @@ _safety_proving_once(
 	ARIADNE_LOG(4,"Tuning settings for this proving iteration...\n");
 
 	static const bool EQUAL_GRID_FOR_ALL_LOCATIONS = false;
-	_tuneIterativeStepSettings(sys,_safety_coarse_outer_approximation->get(),
+	_tune_iterative_step_settings(sys,_safety_coarse_outer_approximation->get(),
 			EQUAL_GRID_FOR_ALL_LOCATIONS,UPPER_SEMANTICS);
 
 	ARIADNE_LOG(5, "Using reachability restriction: " << tribool_pretty_print(!_safety_reachability_restriction.empty()) << "\n");
@@ -322,7 +322,7 @@ _safety_disproving_once(
 	ARIADNE_LOG(4,"Tuning settings for this disproving iteration...\n");
 
 	static const bool EQUAL_GRID_FOR_ALL_LOCATIONS = false;
-	_tuneIterativeStepSettings(sys,_safety_coarse_outer_approximation->get(),
+	_tune_iterative_step_settings(sys,_safety_coarse_outer_approximation->get(),
 			EQUAL_GRID_FOR_ALL_LOCATIONS,LOWER_SEMANTICS);
 
 	ARIADNE_LOG(5, "Using reachability restriction: " << tribool_pretty_print(!_safety_reachability_restriction.empty()) << "\n");
@@ -461,7 +461,7 @@ Verifier::_dominance(
 	if (_settings->plot_results)
 		_plot_dirpath_init(dominating.getSystem().name() + "&" + dominated.getSystem().name());
 
-	_resetAndChooseInitialDominanceSettings(dominating,dominated);
+	_reset_and_choose_initial_dominance_settings(dominating,dominated);
 
 	int& depth = _analyser->settings().maximum_grid_depth;
     for (depth = _analyser->settings().lowest_maximum_grid_depth;
@@ -578,7 +578,7 @@ _dominance_flattened_lower_reach_and_epsilon(
 
 	ARIADNE_LOG(4,"Choosing the settings for the lower reached region of the " << descriptor << " system...\n");
 
-	_chooseDominanceSettings(verInfo,locked_params_ids,outer_approximation,reachability_restriction,LOWER_SEMANTICS);
+	_choose_dominance_settings(verInfo,locked_params_ids,outer_approximation,reachability_restriction,LOWER_SEMANTICS);
 
 	ARIADNE_LOG(4,"Getting the lower reached region of the " << descriptor << " system...\n");
 
@@ -620,7 +620,7 @@ _dominance_flattened_outer_reach(
 
 	ARIADNE_LOG(4,"Choosing the settings for the outer reached region of the " << descriptor << " system...\n");
 
-	_chooseDominanceSettings(verInput,locked_params_ids,outer_approximation_cache.get(),reachability_restriction,UPPER_SEMANTICS);
+	_choose_dominance_settings(verInput,locked_params_ids,outer_approximation_cache.get(),reachability_restriction,UPPER_SEMANTICS);
 
 	ARIADNE_LOG(4,"Getting the outer reached region of the " << descriptor << " system...\n");
 
@@ -642,7 +642,7 @@ _dominance_flattened_outer_reach(
 
 void
 Verifier::
-_resetAndChooseInitialSafetySettings(
+_reset_and_choose_initial_safety_settings(
 		const SystemType& system,
 		const HybridBoxes& domain,
 		const Set<Identifier>& locked_params_ids) const
@@ -652,11 +652,11 @@ _resetAndChooseInitialSafetySettings(
 	_safety_coarse_outer_approximation->reset();
 	_safety_reachability_restriction = HybridGridTreeSet();
 
-	_chooseInitialSafetySettings(system,domain,locked_params_ids);
+	_choose_initial_safety_settings(system,domain,locked_params_ids);
 
 	if (_settings->enable_domain_enforcing) {
 		std::pair<HybridGridTreeSet,HybridGridTreeSet> reach_pair =
-				_getCoarseOuterApproximationAndReachabilityRestriction(system,domain,EQUAL_GRID_FOR_ALL_LOCATIONS);
+				_get_coarse_outer_approximation_and_reachability_restriction(system,domain,EQUAL_GRID_FOR_ALL_LOCATIONS);
 		_safety_coarse_outer_approximation->set(reach_pair.first);
 		_safety_reachability_restriction = reach_pair.second;
 	}
@@ -665,7 +665,7 @@ _resetAndChooseInitialSafetySettings(
 
 std::pair<HybridGridTreeSet,HybridGridTreeSet>
 Verifier::
-_getCoarseOuterApproximationAndReachabilityRestriction(
+_get_coarse_outer_approximation_and_reachability_restriction(
 		const SystemType& system,
 		const HybridBoxes& domain,
 		bool equal_grid_for_all_locations) const
@@ -689,7 +689,7 @@ _getCoarseOuterApproximationAndReachabilityRestriction(
 
 void
 Verifier::
-_chooseInitialSafetySettings(
+_choose_initial_safety_settings(
 		const SystemType& system,
 		const HybridBoxes& domain,
 		const Set<Identifier>& locked_params_ids) const
@@ -708,7 +708,7 @@ _chooseInitialSafetySettings(
 
 void
 Verifier::
-_tuneIterativeStepSettings(
+_tune_iterative_step_settings(
 		const SystemType& system,
 		const HybridGridTreeSet& hgts_domain,
 		bool equal_grid_for_all_locations,
@@ -722,12 +722,12 @@ _tuneIterativeStepSettings(
 			new HybridGrid(getHybridGrid(hmad,_analyser->settings().domain_bounds,equal_grid_for_all_locations)));
 	ARIADNE_LOG(5, "Grid lengths: " << _analyser->settings().grid->lengths() << "\n");
 
-	_analyser->tuneEvolverSettings(system,hmad,_analyser->settings().maximum_grid_depth,semantics);
+	_analyser->tune_evolver_settings(system,hmad,_analyser->settings().maximum_grid_depth,semantics);
 }
 
 void
 Verifier::
-_resetAndChooseInitialDominanceSettings(
+_reset_and_choose_initial_dominance_settings(
 		DominanceVerificationInput& dominating,
 		DominanceVerificationInput& dominated) const
 {
@@ -741,13 +741,13 @@ _resetAndChooseInitialDominanceSettings(
 
 	if (_settings->enable_domain_enforcing) {
 		std::pair<HybridGridTreeSet,HybridGridTreeSet> dominating_reach_pair =
-				_getCoarseOuterApproximationAndReachabilityRestriction(dominating.getSystem(),
+				_get_coarse_outer_approximation_and_reachability_restriction(dominating.getSystem(),
 						dominating.getDomain(),EQUAL_GRID_FOR_ALL_LOCATIONS);
 		_dominating_coarse_outer_approximation->set(dominating_reach_pair.first);
 		_dominating_reachability_restriction = dominating_reach_pair.second;
 
 		std::pair<HybridGridTreeSet,HybridGridTreeSet> dominated_reach_pair =
-				_getCoarseOuterApproximationAndReachabilityRestriction(dominated.getSystem(),
+				_get_coarse_outer_approximation_and_reachability_restriction(dominated.getSystem(),
 						dominated.getDomain(),EQUAL_GRID_FOR_ALL_LOCATIONS);
 		_dominated_coarse_outer_approximation->set(dominated_reach_pair.first);
 		_dominated_reachability_restriction = dominated_reach_pair.second;
@@ -756,7 +756,7 @@ _resetAndChooseInitialDominanceSettings(
 
 void
 Verifier::
-_chooseDominanceSettings(
+_choose_dominance_settings(
 		const DominanceVerificationInput& verInput,
 		const Set<Identifier>& locked_params_ids,
 		const HybridGridTreeSet& outer_reach,
@@ -767,7 +767,7 @@ _chooseDominanceSettings(
 	ARIADNE_LOG(5, "Domain: " << _analyser->settings().domain_bounds << "\n");
 
 	static const bool EQUAL_GRID_FOR_ALL_LOCATIONS = true;
-	_tuneIterativeStepSettings(verInput.getSystem(),outer_reach,EQUAL_GRID_FOR_ALL_LOCATIONS,semantics);
+	_tune_iterative_step_settings(verInput.getSystem(),outer_reach,EQUAL_GRID_FOR_ALL_LOCATIONS,semantics);
 
 	ARIADNE_LOG(5, "Use reachability restriction: " << tribool_pretty_print(!outer_approx_constraint.empty()) << "\n");
 

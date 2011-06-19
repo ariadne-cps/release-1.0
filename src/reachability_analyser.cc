@@ -81,7 +81,7 @@ HybridReachabilityAnalyser(const HybridDiscretiser<HybridEvolver::ContinuousEncl
 
 const CalculusInterface<TaylorModel>&
 HybridReachabilityAnalyser::
-_getCalculusInterface(Semantics semantics) const
+_get_calculus_interface(Semantics semantics) const
 {
 	ImageSetHybridEvolver& evolver = dynamic_cast<ImageSetHybridEvolver&>(*this->_discretiser->evolver());
 	return evolver.getCalculusInterface(semantics);
@@ -645,7 +645,7 @@ _outer_chain_reach_isOutsideInvariants(
 		EventKind kind = system.event_kind(location,event);
 		if (kind == INVARIANT) {
 			const ScalarFunction& activation = system.invariant_function(location,event);
-			tribool is_active = _getCalculusInterface(UPPER_SEMANTICS).active(VectorFunction(1,activation),bx);
+			tribool is_active = _get_calculus_interface(UPPER_SEMANTICS).active(VectorFunction(1,activation),bx);
 			if (definitely(is_active)) {
 				ARIADNE_LOG(6,"Invariant '" << event.name() << "' is definitely active: transitions will not be checked.\n");
 				return true;
@@ -680,7 +680,7 @@ _outer_chain_reach_forward_pushTargetEnclosures(
 			if (_is_transition_feasible(system.guard_function(sourceLocation,event),kind,
 					system.dynamic_function(sourceLocation),sourceEnclosure,UPPER_SEMANTICS)) {
 				const DiscreteLocation& target_loc = system.target(sourceLocation,event);
-				const ContinuousEnclosureType target_encl = _getCalculusInterface(UPPER_SEMANTICS).reset_step(
+				const ContinuousEnclosureType target_encl = _get_calculus_interface(UPPER_SEMANTICS).reset_step(
 						system.reset_function(sourceLocation,event),sourceEnclosure);
 				const Box& target_bounding = _settings->domain_bounds[target_loc];
 				const Vector<Float> minTargetCellWidths = grid[target_loc].lengths()/numCellDivisions;
@@ -714,7 +714,7 @@ _outer_chain_reach_backward_pushSourceEnclosures(
 			if (_is_transition_feasible(system.guard_function(sourceLocation,event),kind,
 					system.dynamic_function(sourceLocation),sourceEnclosure,UPPER_SEMANTICS)) {
 				const DiscreteLocation& target_loc = system.target(sourceLocation,event);
-				const ContinuousEnclosureType target_encl = _getCalculusInterface(UPPER_SEMANTICS).reset_step(
+				const ContinuousEnclosureType target_encl = _get_calculus_interface(UPPER_SEMANTICS).reset_step(
 						system.reset_function(sourceLocation,event),sourceEnclosure);
 				const HybridBox targetHBox(target_loc,target_encl.bounding_box());
 
@@ -741,7 +741,7 @@ _is_transition_feasible(
 
 	const bool is_urgent = (event_kind == URGENT);
 
-	tribool is_guard_active = _getCalculusInterface(semantics).active(VectorFunction(1,activation),source);
+	tribool is_guard_active = _get_calculus_interface(semantics).active(VectorFunction(1,activation),source);
 
 	ARIADNE_LOG(8,"Guard activity: " << is_guard_active << "\n");
 
@@ -989,7 +989,7 @@ lower_reach_and_epsilon(
 
 void
 HybridReachabilityAnalyser::
-tuneEvolverSettings(
+tune_evolver_settings(
 		const SystemType& system,
 		const HybridFloatVector& hmad,
 		uint maximum_grid_depth,

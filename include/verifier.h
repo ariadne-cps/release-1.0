@@ -219,7 +219,7 @@ class Verifier
 
 	/*! \brief Choose the settings for the next dominance iteration, given a bundle of information around a system and a set of constants
 	 * that must be ignore when choosing the splitting factors of the system. */
-	void _chooseDominanceSettings(
+	void _choose_dominance_settings(
 			const DominanceVerificationInput& systemBundle,
 			const Set<Identifier>& locked_params,
 			const HybridGridTreeSet& domain_reach,
@@ -283,13 +283,13 @@ class Verifier
 	//! \name Other helper methods
 
 	/*! \brief Resets cached information, then chooses the initial evolution settings for safety verification. */
-	void _resetAndChooseInitialSafetySettings(
+	void _reset_and_choose_initial_safety_settings(
 			const SystemType& system,
 			const HybridBoxes& domain,
 			const Set<Identifier>& locked_params) const;
 
 	/*! \brief Chooses the initial evolution settings for safety verification of the proper analyser. */
-	void _chooseInitialSafetySettings(
+	void _choose_initial_safety_settings(
 			const SystemType& system,
 			const HybridBoxes& domain,
 			const Set<Identifier>& locked_params) const;
@@ -297,20 +297,20 @@ class Verifier
 	/*! \brief Resets cached information, then chooses the initial settings for dominance verification.
 	 * \details It is not allowed to tune the analysers, since they are used on different systems on each iteration.
 	 */
-	void _resetAndChooseInitialDominanceSettings(
+	void _reset_and_choose_initial_dominance_settings(
 			DominanceVerificationInput& dominating,
 			DominanceVerificationInput& dominated) const;
 
 	/*! \brief Obtains a coarse outer approximation and a reachability restriction of the \a system using
 	 * only the information on the \a domain.
 	 */
-	std::pair<HybridGridTreeSet,HybridGridTreeSet> _getCoarseOuterApproximationAndReachabilityRestriction(
+	std::pair<HybridGridTreeSet,HybridGridTreeSet> _get_coarse_outer_approximation_and_reachability_restriction(
 			const SystemType& system,
 			const HybridBoxes& domain,
 			bool equal_grid_for_all_locations) const;
 
 	/*! \brief Tune the settings for the next iterative verification step. */
-	void _tuneIterativeStepSettings(
+	void _tune_iterative_step_settings(
 			const SystemType& system,
 			const HybridGridTreeSet& hgts_domain,
 			bool equal_grid_for_all_locations,
