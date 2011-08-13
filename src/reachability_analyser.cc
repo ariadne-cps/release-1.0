@@ -131,7 +131,7 @@ _upper_reach_evolve(
 {
 	std::list<EnclosureType> initial_enclosures = cells_to_smallest_enclosures(initial_set,accuracy);
 
-	return _upper_reach_evolve(sys,initial_enclosures,time,DIRECTION_FORWARD,false,accuracy);
+	return _upper_reach_evolve(sys,initial_enclosures,time,false,DIRECTION_FORWARD,accuracy);
 }
 
 std::pair<HybridGridTreeSet,HybridGridTreeSet>
@@ -140,8 +140,8 @@ _upper_reach_evolve(
 		const SystemType& sys,
         const list<EnclosureType>& initial_enclosures,
         const HybridTime& time,
-        EvolutionDirection direction,
         bool enable_premature_termination_on_blocking_event,
+        ContinuousEvolutionDirection direction,
         int accuracy) const
 {
 	std::pair<GTS,GTS> result;
@@ -156,7 +156,7 @@ _upper_reach_evolve(
 	HybridGrid grid=grid_for(sys,*_settings);
 
 	UpperReachEvolveWorker worker(_discretiser,sys,initial_enclosures,time,
-			direction,enable_premature_termination_on_blocking_event,grid,accuracy,concurrency);
+			enable_premature_termination_on_blocking_event,direction,grid,accuracy,concurrency);
 	result = worker.get_result();
 
     ARIADNE_LOG(4,"Reach size = "<<reach.size()<<"\n");
@@ -439,7 +439,7 @@ HybridReachabilityAnalyser::
 outer_chain_reach(
 		SystemType& sys,
 		const HybridImageSet& initial_set,
-		EvolutionDirection direction,
+		ContinuousEvolutionDirection direction,
 		const HybridGridTreeSet& reachability_restriction) const
 {
 	HybridGridTreeSet initial(*_settings->grid);
@@ -455,7 +455,7 @@ HybridReachabilityAnalyser::
 outer_chain_reach(
 		SystemType& sys,
 		const HybridGridTreeSet& initial,
-		EvolutionDirection direction,
+		ContinuousEvolutionDirection direction,
 		const HybridGridTreeSet& reachability_restriction) const
 {
     std::list<EnclosureType> initial_enclosures = cells_to_smallest_enclosures(initial,_settings->maximum_grid_depth);
@@ -469,7 +469,7 @@ HybridReachabilityAnalyser::
 _outer_chain_reach(
 		SystemType& sys,
 		const std::list<EnclosureType>& initial_enclosures,
-		EvolutionDirection direction,
+		ContinuousEvolutionDirection direction,
 		const HybridGridTreeSet& reachability_restriction) const
 {
 	HybridGridTreeSet reach;
@@ -511,7 +511,7 @@ HybridReachabilityAnalyser::
 _outer_chain_reach_splitted(
 		const SystemType& sys,
 		const std::list<EnclosureType>& initial_enclosures,
-		EvolutionDirection direction,
+		ContinuousEvolutionDirection direction,
 		const HybridGridTreeSet& restriction) const
 {
 	ARIADNE_ASSERT_MSG(!(direction == DIRECTION_BACKWARD && restriction.empty()),
@@ -538,9 +538,9 @@ _outer_chain_reach_splitted(
 
         ARIADNE_LOG(4,"Initial enclosures size = " << working_enclosures.size() << "\n");
 
-        static const bool enable_premature_termination_on_blocking_event = true;
+        static const bool ignore_activations = true;
         make_lpair(new_reach,new_final) = _upper_reach_evolve(sys,working_enclosures,
-        		hybrid_lock_to_grid_time,direction,enable_premature_termination_on_blocking_event,maximum_grid_depth);
+        		hybrid_lock_to_grid_time,ignore_activations,direction,maximum_grid_depth);
 
         new_final.remove(final);
 		new_reach.remove(reach);
@@ -995,11 +995,7 @@ tune_evolver_settings(
 		uint maximum_grid_depth,
 		Semantics semantics)
 {
-	HybridGrid grid = *_settings->grid;
-	_discretiser->settings().maximum_enclosure_cell = getMaximumEnclosureCell(grid,maximum_grid_depth);
-	ARIADNE_LOG(2, "Maximum enclosure cell: " << _discretiser->settings().maximum_enclosure_cell << "\n");
-	_discretiser->settings().hybrid_maximum_step_size = getHybridMaximumStepSize(hmad,grid,maximum_grid_depth,semantics);
-	ARIADNE_LOG(2, "Maximum step size: " << _discretiser->settings().hybrid_maximum_step_size << "\n");
+	_discretiser->tune_evolver_settings(*_settings->grid,hmad,maximum_grid_depth,semantics);
 }
 
 std::list<RealParameterSet>
@@ -1512,34 +1508,6 @@ getGrid(
 }
 
 
-Vector<Float>
-getMaximumEnclosureCell(
-		const HybridGrid& hgrid,
-		int maximum_grid_depth)
-{
-	// Introduces a ratio (>1) in respect to the grid cell
-	// NOTE: it is preferable to have the ratio slightly lesser than an integer multiple of the grid cell, so that
-	// the overapproximation error due to discretization is minimized
-	static const double RATIO = 1.9;
-
-	// Gets the size of the continuous space
-	const uint css = hgrid.locations_begin()->second.lengths().size();
-
-	// Initializes the result
-	Vector<Float> result(css);
-
-	// For each location and dimension of the space
-	for (HybridGrid::locations_const_iterator hg_it = hgrid.locations_begin(); hg_it != hgrid.locations_end(); hg_it++) {
-		ARIADNE_ASSERT_MSG(hg_it->second.lengths().size() == css,
-				"The maximum enclosure cell is obtained under the assumption that the continuous state space dimension is the same for all locations.");
-		for (uint i=0;i<css;i++)
-			if (hg_it->second.lengths()[i] > result[i])
-				result[i] = hg_it->second.lengths()[i];
-	}
-
-	return RATIO*result/(1<<maximum_grid_depth);
-}
-
 Float
 getLockToGridTime(
 		const SystemType& sys,
@@ -1611,40 +1579,6 @@ getHybridMaximumAbsoluteDerivatives(
 
 	// Returns
 	return result;
-}
-
-
-std::map<DiscreteLocation,Float>
-getHybridMaximumStepSize(
-		const HybridFloatVector& hmad,
-		const HybridGrid& hgrid,
-		int maximum_grid_depth,
-		Semantics semantics)
-{
-	// We choose a coefficient for upper semantics such that an enclosure at maximum size is able to cross
-	// urgent transitions in one step. For lower semantics we prefer to have a finer result.
-	Float coefficient = (semantics == UPPER_SEMANTICS ? 2.0 : 1.0);
-
-	// Initialize the hybrid maximum step size
-	std::map<DiscreteLocation,Float> hmss;
-
-	// For each couple DiscreteLocation,Vector<Float>
-	for (HybridFloatVector::const_iterator hfv_it = hmad.begin(); hfv_it != hmad.end(); hfv_it++)
-	{
-		const uint dim = hfv_it->second.size();
-		// Initializes the maximum step size
-		Float mss = 0.0;
-		// For each dimension of the space, if the derivative is not zero,
-		// evaluates the ratio between the minimum cell length and the derivative itself
-		for (uint i=0;i<dim;i++)
-			if (hfv_it->second[i] > 0)
-				mss = max(mss,hgrid[hfv_it->first].lengths()[i]/(1 << maximum_grid_depth)/hfv_it->second[i]);
-
-		// Inserts the value (twice the value since the maximum enclosure is set as ~2 the grid cell)
-		hmss.insert(std::pair<DiscreteLocation,Float>(hfv_it->first,coefficient*mss));
-	}
-
-	return hmss;
 }
 
 

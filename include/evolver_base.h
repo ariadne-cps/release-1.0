@@ -53,43 +53,36 @@ template<class SYS, class ES> class EvolverBase
 	}
 
   public:
+    Orbit<ES> orbit(const SYS& system, const ES& initial_set, const T& time, Semantics semantics) const {
+        Orbit<ES> orbit(initial_set);
+        ESL final; ESL reachable; ESL intermediate;
+        this->_evolution(final,reachable,intermediate,system,initial_set,time,false,DIRECTION_FORWARD,semantics);
+        orbit.adjoin_intermediate(intermediate);
+        orbit.adjoin_reach(reachable);
+        orbit.adjoin_final(final);
+        return orbit;
+    }
     //! \brief Compute an approximation to the evolution set under the given semantics. 
     ESL evolve(const SYS& system, const ES& initial_set, const T& time, Semantics semantics) const {
-        ESL final; ESL reachable; ESL intermediate; this->_evolution(final,reachable,intermediate,system,initial_set,time,semantics); return final; }
+        ESL final; ESL reachable; ESL intermediate; this->_evolution(final,reachable,intermediate,system,initial_set,time,false,DIRECTION_FORWARD,semantics); return final; }
 
     //! \brief Compute an approximation to the evolution set under the given semantics. 
     ESL reach(const SYS& system, const ES& initial_set, const T& time, Semantics semantics) const {
-        ESL final; ESL reachable; ESL intermediate; this->_evolution(final,reachable,intermediate,system,initial_set,time,semantics); return reachable; }
+        ESL final; ESL reachable; ESL intermediate; this->_evolution(final,reachable,intermediate,system,initial_set,time,false,DIRECTION_FORWARD,semantics); return reachable; }
     //! \brief Compute an approximation to the evolution set under the given semantics. 
     std::pair<ESL,ESL> reach_evolve(const SYS& system, const ES& initial_set, const T& time, Semantics semantics) const {
-        ESL final; ESL reachable; ESL intermediate; this->_evolution(final,reachable,intermediate,system,initial_set,time,semantics); return std::make_pair(reachable,final); }
+        ESL final; ESL reachable; ESL intermediate; this->_evolution(final,reachable,intermediate,system,initial_set,time,false,DIRECTION_FORWARD,semantics); return std::make_pair(reachable,final); }
+    //! \brief Compute an approximation to the evolution set under the given semantics.
+    std::pair<ESL,ESL> reach_evolve(const SYS& system, const ES& initial_set, const T& time, bool ignore_activations, ContinuousEvolutionDirection continuous_direction, Semantics semantics) const {
+    	ESL final; ESL reachable; ESL intermediate; this->_evolution(final,reachable,intermediate,system,initial_set,time,ignore_activations,continuous_direction,semantics); return std::make_pair(reachable,final); }
 
-    //! \brief Compute an approximation to the evolution set under the given semantics. 
-    void evolution(ESL& final, const SYS& system, const ES& initial, const T& time, Semantics semantics) const {
-        ESL reachable; ESL intermediate; this->_evolution(final,reachable,intermediate,system,initial,time,semantics); }
-        
-    //! \brief Compute an approximation to the evolution set under the given semantics. 
-    void evolution(ESL& final, const SYS& system, const ESL& initial, const T& time, Semantics semantics) const {
-        ESL reachable; ESL intermediate; for(ESLCI iter=initial.begin(); iter!=initial.end(); ++iter) { this->_evolution(final,reachable,intermediate,system,ES(*iter),time,semantics); } }
-
-    //! \brief Compute an approximation to the evolution set under the given semantics. 
-    void evolution(ESL& final, ESL& reachable, const SYS& system, const ES& initial, const T& time, Semantics semantics) const {
-        ESL intermediate; this->_evolution(final,reachable,intermediate,system,initial,time,semantics); }
-        
-    //! \brief Compute an approximation to the evolution set under the given semantics. 
-    void evolution(ESL& final, ESL& reachable, const SYS& system, const ESL& initial, const T& time, Semantics semantics) const {
-        ESL intermediate; for(ESLCI iter=initial.begin(); iter!=initial.end(); ++iter) { this->_evolution(final,reachable,intermediate,system,*iter,time,semantics); } }
-
-    //! \brief Compute an approximation to the evolution set under the given semantics. 
-    void evolution(ESL& final, ESL& reachable, ESL& intermediate, const SYS& system, const ESL& initial, const T& time, Semantics semantics) const {
-        for(ESLCI iter=initial.begin(); iter!=initial.end(); ++iter) { this->_evolution(final,reachable,intermediate,system,*iter,time,semantics); } }
   protected:
-    virtual void _evolution(ESL& final, ESL& reachable, ESL& intermediate, const SYS& system, const ES& initial, const T& time, Semantics semantics) const = 0;
+    virtual void _evolution(ESL& final, ESL& reachable, ESL& intermediate, const SYS& system, const ES& initial, const T& time, bool ignore_activations, ContinuousEvolutionDirection direction, Semantics semantics) const = 0;
 };
 
 inline
 VectorFunction
-get_directed_dynamic(const VectorFunction& dynamic, EvolutionDirection direction)
+get_directed_dynamic(const VectorFunction& dynamic, ContinuousEvolutionDirection direction)
 {
 	const ScalarFunction minus_one = ScalarFunction::constant(dynamic.result_size(),-1);
 	return (direction == DIRECTION_FORWARD ? dynamic : dynamic*minus_one);

@@ -50,11 +50,12 @@ template<class SYS, class ES>
 class EvolverInterface 
 {
   public:
+	typedef uint AccuracyType;
     typedef SYS SystemType;
     typedef ES EnclosureType;
     typedef typename SystemType::TimeType TimeType;
     typedef ListSet<EnclosureType> EnclosureListType;
-	typedef ContinuousEvolutionSettings EvolutionSettingsType;
+	typedef EnclosedEvolutionSettings EvolutionSettingsType;
 
 
     //! \brief Virtual destructor. 
@@ -71,6 +72,13 @@ class EvolverInterface
 
 	//! \brief Get the settings of the evolution.
     virtual const EvolutionSettingsType& settings() const = 0;
+
+    //! \brief Tunes the settings of the evolution.
+    virtual void tune_settings(
+			const HybridGrid& grid,
+			const HybridFloatVector& hmad,
+			AccuracyType accuracy,
+			Semantics semantics) = 0;
 
 
   public:
@@ -105,48 +113,19 @@ class EvolverInterface
                  const EnclosureType& initial_set, 
                  const TimeType& time, 
                  Semantics semantics) const = 0;
-  
-    //! \brief Compute an approximation to the evolved set under the given semantics. 
-    virtual 
-    void 
-    evolution(EnclosureListType& final, 
-              const SystemType& system, 
-              const EnclosureType& initial, 
-              const TimeType& time, 
-              Semantics semantics) const = 0;
 
-    //! \brief Compute an approximation to the evolved and reachable sets 
-    //! under the given semantics. 
-    virtual void evolution(EnclosureListType& final, 
-                           EnclosureListType& intermediate, 
-                           const SystemType& system, 
-                           const EnclosureType& initial, 
-                           const TimeType& time, 
-                           Semantics semantics) const = 0;
-  
-
-    //! \brief Compute an approximation to the evolved set under the given semantics, 
-    //! starting from a list of enclosure sets. 
-    virtual 
-    void 
-    evolution(EnclosureListType& final, 
-              const SystemType& system, 
-              const EnclosureListType& initial, 
-              const TimeType& time, 
-              Semantics semantics) const = 0;
-
-    //! \brief Compute an approximation to the evolved and reachable sets 
-    //! under the given semantics starting from a list of enclosure sets. 
-    virtual 
-    void 
-    evolution(EnclosureListType& final, 
-              EnclosureListType& intermediate, 
-              const SystemType& system, 
-              const EnclosureListType& initial, 
-              const TimeType& time, 
-              Semantics semantics) const = 0;
-  
-
+    //! \brief Compute an approximation to the evolved and reachable sets under the given semantics.
+    //! \details Optionally it is possible to choose to ignore activations, or to set the direction of continuous evolution.
+    //! Beware that the direction of the discrete jumps is not altered.
+    virtual
+    pair<EnclosureListType,EnclosureListType>
+    reach_evolve(
+    		const SystemType& system,
+            const EnclosureType& initial_set,
+            const TimeType& time,
+            bool ignore_activations,
+            ContinuousEvolutionDirection continuous_direction,
+            Semantics semantics) const = 0;
 };
 
 

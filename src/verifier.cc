@@ -267,7 +267,7 @@ _reachability_refinement_starting_set(
 		const HybridImageSet& initial_set,
 		const HybridConstraintSet& constraint_set,
 		const HybridGridTreeSet& reachability_restriction,
-		EvolutionDirection direction) const
+		ContinuousEvolutionDirection direction) const
 {
 	int& maximum_grid_depth = _analyser->settings().maximum_grid_depth;
 
@@ -695,7 +695,7 @@ _choose_initial_safety_settings(
 		const Set<Identifier>& locked_params_ids) const
 {
 	ARIADNE_LOG(3,"Choosing the initial settings of the analyser...\n");
-	DiscreteEvolutionSettings& settings = _analyser->settings();
+	DiscretisedEvolutionSettings& settings = _analyser->settings();
 
 	settings.domain_bounds = domain;
 	ARIADNE_LOG(4, "Domain: " << domain << "\n");

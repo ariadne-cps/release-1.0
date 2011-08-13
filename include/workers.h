@@ -36,6 +36,8 @@ public:
 	typedef HybridGridTreeSet HGTS;
     typedef HybridEvolver::EnclosureType EnclosureType;
 	typedef HybridEvolver::ContinuousEnclosureType CE;
+	typedef std::list<EnclosureType> EL;
+	typedef ListSet<EnclosureType> ELS;
 
 	// Constructor
     UpperReachEvolveWorker(
@@ -43,8 +45,8 @@ public:
     		const HybridAutomatonInterface& sys,
     		const list<EnclosureType>& initial_enclosures,
     		const HybridTime& time,
-    		EvolutionDirection direction,
-    		bool enable_premature_termination_on_blocking_event,
+    		bool ignore_activations,
+    		ContinuousEvolutionDirection continuous_direction,
     		const HybridGrid& grid,
     		const int& accuracy,
     		const uint& concurrency)
@@ -52,8 +54,8 @@ public:
 	  _sys(sys), 
 	  _initial_enclosures(initial_enclosures),
 	  _time(time),
-	  _direction(direction),
-	  _enable_premature_termination_on_blocking_event(enable_premature_termination_on_blocking_event),
+	  _ignore_activations(ignore_activations),
+	  _continuous_direction(continuous_direction),
 	  _grid(grid),
 	  _accuracy(accuracy),
 	  _concurrency(concurrency),
@@ -70,16 +72,8 @@ public:
 
     std::pair<HGTS,HGTS> get_result() 
     {
-    	EvolutionDirection saved_direction = _discretiser->evolver()->settings().direction;
-    	_discretiser->evolver()->settings().direction = _direction;
-    	bool saved_enable_premature_termination_on_blocking_event = _discretiser->evolver()->settings().enable_premature_termination_on_blocking_event;
-    	_discretiser->evolver()->settings().enable_premature_termination_on_blocking_event = _enable_premature_termination_on_blocking_event;
-
     	_start();
     	_wait_completion();
-
-    	_discretiser->evolver()->settings().direction = saved_direction;
-    	_discretiser->evolver()->settings().enable_premature_termination_on_blocking_event = saved_enable_premature_termination_on_blocking_event;
 
 		return make_pair<HGTS,HGTS>(_reach,_evolve);
     }
@@ -91,8 +85,8 @@ private:
 	const HybridAutomatonInterface& _sys;
 	const list<EnclosureType>& _initial_enclosures;
 	const HybridTime& _time;
-	const EvolutionDirection& _direction;
-	const bool& _enable_premature_termination_on_blocking_event;
+	const bool& _ignore_activations;
+	const ContinuousEvolutionDirection& _continuous_direction;
 	const HybridGrid& _grid;
 	const int& _accuracy;
 	const uint& _concurrency;
@@ -126,12 +120,18 @@ private:
 				++_enclosures_it;
 				_inp_mutex.unlock();		
 
-        		HGTS reach, evolve;
-		        make_lpair(reach,evolve)=_discretiser->evolution(_sys,enclosure,_time,_grid,_accuracy,UPPER_SEMANTICS);
+				// Get the enclosures from the initial enclosure, in a lock_time flight
+				ELS current_reach_enclosures, current_evolve_enclosures;
+				make_ltuple<ELS,ELS>(current_reach_enclosures,current_evolve_enclosures) =
+										_discretiser->evolver()->reach_evolve(_sys,enclosure,_time,_ignore_activations,_continuous_direction,UPPER_SEMANTICS);
+
+				// Get the discretisation
+				HGTS current_reach = outer_approximation(current_reach_enclosures,_grid,_accuracy);
+				HGTS current_evolve = outer_approximation(current_evolve_enclosures,_grid,_accuracy);
 
 				_out_mutex.lock();
-		        _reach.adjoin(reach);
-        		_evolve.adjoin(evolve);
+		        _reach.adjoin(current_reach);
+        		_evolve.adjoin(current_evolve);
 				_out_mutex.unlock();
 			}
         }
@@ -238,16 +238,14 @@ private:
 				_initial_enclosures.pop_front();
 				_inp_mutex.unlock();
 
-				HGTS current_reach, current_evolve;
-				ELS current_reach_enclosures, current_evolve_enclosures;
-
 				// Get the enclosures from the initial enclosure, in a lock_time flight
+				ELS current_reach_enclosures, current_evolve_enclosures;
 				make_ltuple<ELS,ELS>(current_reach_enclosures,current_evolve_enclosures) =
 										_discretiser->evolver()->reach_evolve(_sys,current_initial_enclosure,_time,LOWER_SEMANTICS);
 
 				// Get the discretisation
-				current_reach = outer_approximation(current_reach_enclosures,_grid,_accuracy);
-				current_evolve = outer_approximation(current_evolve_enclosures,_grid,_accuracy);
+				HGTS current_reach = outer_approximation(current_reach_enclosures,_grid,_accuracy);
+				HGTS current_evolve = outer_approximation(current_evolve_enclosures,_grid,_accuracy);
 
 				_out_mutex.lock();
 

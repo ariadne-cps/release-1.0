@@ -130,9 +130,9 @@ void TestHybridEvolution::test_constant_derivative_system() const
         // Test continuous evolution without any jumps
         HybridTime evolution_time(0.5,1);
         ARIADNE_TEST_PRINT(evolution_time);
-        Orbit<HybridTaylorSet> orbit=evolver.orbit(automaton,initial_set,evolution_time);
+        Orbit<HybridTaylorSet> orbit=evolver.orbit(automaton,initial_set,evolution_time,UPPER_SEMANTICS);
         ARIADNE_TEST_PRINT(orbit);
-        ListSet<HybridTaylorSet> final_set=evolver.evolve(automaton,initial_set,evolution_time);
+        ListSet<HybridTaylorSet> final_set=evolver.evolve(automaton,initial_set,evolution_time,UPPER_SEMANTICS);
         ARIADNE_TEST_PRINT(final_set);
         HybridTaylorSet expected_final_set(q1,Box(2, +0.4375,+0.5625, -0.0625,+0.0625));
         ARIADNE_TEST_PRINT(expected_final_set);
@@ -144,10 +144,10 @@ void TestHybridEvolution::test_constant_derivative_system() const
         HybridTime evolution_time(2.0,2);
         ARIADNE_TEST_PRINT(evolution_time);
 
-        Orbit<HybridTaylorSet> orbit=evolver.orbit(automaton,initial_set,evolution_time);
+        Orbit<HybridTaylorSet> orbit=evolver.orbit(automaton,initial_set,evolution_time,UPPER_SEMANTICS);
         ARIADNE_TEST_PRINT(orbit);
 
-        ListSet<HybridTaylorSet> final_set=evolver.evolve(automaton,initial_set,evolution_time);
+        ListSet<HybridTaylorSet> final_set=evolver.evolve(automaton,initial_set,evolution_time,UPPER_SEMANTICS);
         ARIADNE_TEST_PRINT(final_set);
         HybridTaylorSet expected_final_set(q2,Box(2, -0.0625,+0.0625, -0.0625,+0.0625));
         ARIADNE_TEST_PRINT(expected_final_set);
@@ -198,7 +198,7 @@ void TestHybridEvolution::test_bouncing_ball() const
     // Test continuous evolution without any jumps
     HybridTime evolution_time(1.5,2);
     ARIADNE_TEST_PRINT(evolution_time);
-    Orbit<HybridTaylorSet> orbit=evolver.orbit(automaton,initial_set,evolution_time);
+    Orbit<HybridTaylorSet> orbit=evolver.orbit(automaton,initial_set,evolution_time,UPPER_SEMANTICS);
     ARIADNE_TEST_PRINT(orbit);
     ARIADNE_TEST_EVALUATE(orbit.intermediate()[q2]);
     ARIADNE_TEST_EVALUATE(orbit.reach()[q2]);
@@ -253,7 +253,7 @@ void TestHybridEvolution::test_affine_system() const
 
     // Compute the reachable sets
     cout << "Computing orbit... "<<std::flush;
-    Orbit<HybridEnclosureType> orbit=evolver.orbit(automaton,initial_hybrid_set,hybrid_evolution_time);
+    Orbit<HybridEnclosureType> orbit=evolver.orbit(automaton,initial_hybrid_set,hybrid_evolution_time,UPPER_SEMANTICS);
     cout << "done"<<std::endl;
     ListSet<HybridEnclosureType> hybrid_evolve_set,hybrid_intermediate_set,hybrid_reach_set;
     hybrid_evolve_set = orbit.final();

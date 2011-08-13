@@ -82,9 +82,10 @@ class ImageSetHybridEvolver
     typedef TaylorSet FlowSetModelType;
     typedef TaylorSet SetModelType;
   public:
-    typedef ContinuousEvolutionSettings EvolutionSettingsType;
+    typedef EnclosedEvolutionSettings EvolutionSettingsType;
     typedef HybridAutomatonInterface::TimeType TimeType;
     typedef int IntegerType;
+    typedef uint AccuracyType;
     typedef Float RealType;
     typedef std::vector<DiscreteEvent> EventListType;
     typedef HybridAutomatonInterface SystemType;
@@ -129,43 +130,24 @@ class ImageSetHybridEvolver
 	//! \brief A constant reference to the settings controlling the evolution.
     const EvolutionSettingsType& settings() const { return *this->_settings; }
 
+	//! \brief Modifies the settings, given some metrics.
+	void tune_settings(
+			const HybridGrid& grid,
+			const HybridFloatVector& hmad,
+			AccuracyType accuracy,
+			Semantics semantics);
+
     //@}
-
-    //@{
-    //! \name Evolution using abstract sets.
-
-    //! \brief Compute an approximation to the orbit set using the given semantics.
-    Orbit<EnclosureType> orbit(const SystemType& system, const EnclosureType& initial_set, const TimeType& time, Semantics semantics=UPPER_SEMANTICS) const;
-
-    //! \brief Compute an approximation to the evolution set using the given semantics.
-    EnclosureListType evolve(const SystemType& system, const EnclosureType& initial_set, const TimeType& time, Semantics semantics=UPPER_SEMANTICS) const {
-        EnclosureListType final; EnclosureListType reachable; EnclosureListType intermediate;
-        this->_evolution(final,reachable,intermediate,system,initial_set,time,semantics);
-        return final; }
-
-    //! \brief Compute an approximation to the evolution set under the given semantics.
-    EnclosureListType reach(const SystemType& system, const EnclosureType& initial_set, const TimeType& time, Semantics semantics=UPPER_SEMANTICS) const {
-        EnclosureListType final; EnclosureListType reachable; EnclosureListType intermediate;
-        this->_evolution(final,reachable,intermediate,system,initial_set,time,semantics);
-        reachable.adjoin(final);
-        return reachable; }
-
-    //! \brief Compute an approximation to the evolution set under the given semantics, returning the reached and final sets.
-    std::pair<EnclosureListType,EnclosureListType> reach_evolve(const SystemType& system, const EnclosureType& initial_set, const TimeType& time, Semantics semantics=LOWER_SEMANTICS) const {
-        EnclosureListType final; EnclosureListType reachable; EnclosureListType intermediate;
-        this->_evolution(final,reachable,intermediate,system,initial_set,time,semantics);
-        reachable.adjoin(final);
-        return make_pair<EnclosureListType,EnclosureListType>(reachable,final); }
 
   protected:
     virtual void _evolution(EnclosureListType& final, EnclosureListType& reachable, EnclosureListType& intermediate,
-                            const SystemType& system, const EnclosureType& initial, const TimeType& time,
-                            Semantics semantics) const;
+                            const SystemType& system, const EnclosureType& initial, const TimeType& time, bool ignore_activations,
+                            ContinuousEvolutionDirection direction, Semantics semantics) const;
 
     virtual void _evolution_step(std::list< HybridTimedSetType >& working_sets,
                                   EnclosureListType& reachable, EnclosureListType& intermediate,
                                   const SystemType& system, const HybridTimedSetType& current_set, const TimeType& time,
-                                  Semantics semantics) const;
+                                  bool ignore_activations, ContinuousEvolutionDirection direction, Semantics semantics) const;
 
   protected:
     TimeModelType crossing_time(VectorFunction guard, const FlowSetModelType& flow_set, Semantics semantics) const;
@@ -268,6 +250,7 @@ class ImageSetHybridEvolver
 			   	   	   	   	   	    const TimeModelType& time_model,
 			   	   	   	   	   	    const TimeModelType& blocking_time_model,
 			   	   	   	   	   	    const Float& time_step,
+			   	   	   	   	   	    bool ignore_activations,
 			   	   	   	   	   	    Semantics semantics) const;
 
     void _compute_blocking_info(std::set<DiscreteEvent>& non_transverse_events,
@@ -324,6 +307,21 @@ class ImageSetHybridEvolver
 tribool positively_crossing(const Box& set_bounds,
 							const RealVectorFunction& dynamic,
 							const RealScalarFunction& activation);
+
+
+/*! \brief Set the maximum enclosure cell from the hybrid grid \a hgrid and the \a maximum_grid_depth. */
+Vector<Float> getMaximumEnclosureCell(
+		const HybridGrid& hgrid,
+		int maximum_grid_depth);
+
+/*! \brief Get the hybrid maximum integration step size, under the assumption that given the maximum derivatives \a hmad,
+	all variables in a step must cover a length greater than a length determined by the \a hgrid with a given \a maximum_grid_depth.
+	\details The actual result is scaled based on the \a semantics. */
+std::map<DiscreteLocation,Float> getHybridMaximumStepSize(
+		const HybridFloatVector& hmad,
+		const HybridGrid& hgrid,
+		int maximum_grid_depth,
+		Semantics semantics);
 
 
 } // namespace Ariadne

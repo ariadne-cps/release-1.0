@@ -174,13 +174,14 @@ class HybridDiscretiser
     //@}
 
     //@{
-    //! \name Gets and sets the continuous evolution settings
+    //! \name Gets and sets the continuous evolution settings.
 
-	//! \brief Gets the evolution settings from the evolver
-	const ContinuousEvolutionSettings& settings() const { return this->_evolver->settings(); }
-
-	//! \brief Gets a reference for setting the evolution settings from the evolver
-	ContinuousEvolutionSettings& settings() { return this->_evolver->settings(); }
+	//! \brief Modifies the settings of the evolver, given some metrics.
+	void tune_evolver_settings(
+			const HybridGrid& grid,
+			const HybridFloatVector& hmad,
+			uint maximum_grid_depth,
+			Semantics semantics);
 
 	//@}
 

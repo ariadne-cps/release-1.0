@@ -40,21 +40,16 @@ namespace Ariadne {
 
 class DiscreteLocation;
 
-enum EvolutionDirection { DIRECTION_FORWARD, DIRECTION_BACKWARD };
+enum ContinuousEvolutionDirection { DIRECTION_FORWARD, DIRECTION_BACKWARD };
 
-//! \brief Settings for controlling the accuracy of continuous evolution methods.
-class ContinuousEvolutionSettings {
+//! \brief Settings for controlling the accuracy of evolution methods on enclosure sets.
+class EnclosedEvolutionSettings {
   public:
     typedef uint UnsignedIntType;
     typedef double RealType;
 
     //! \brief Default constructor gives reasonable values.
-    ContinuousEvolutionSettings();
-
-	//! \brief The direction of continuous evolution.
-    //! \details Please note that backward hybrid evolution is supported only in the context of
-    //! outer chain reachability calculation. */
-	EvolutionDirection direction;
+    EnclosedEvolutionSettings();
 
     //! \brief A suggested order for the representation of enclosure sets.
     UnsignedIntType spacial_order;
@@ -83,14 +78,11 @@ class ContinuousEvolutionSettings {
     //! \brief Terminate evolution if basic sets became too large (true by default).
 	//! \details In the case of upper semantics, if true and no subdivisions are present, the set is put into the final sets. In the case of lower semantics, the set is discarded.
     bool enable_premature_termination_on_enclosure_size;
-
-    //! \brief Terminate evolution if basic sets can not proceed on continuous evolution due to a definitely active blocking event (false by default).
-    bool enable_premature_termination_on_blocking_event;
 };
 
 
 //! \brief Settings for controlling the accuracy of discretised evolution methods and reachability analysis.
-class DiscreteEvolutionSettings {
+class DiscretisedEvolutionSettings {
   public:
     //! \brief The integer type.
     typedef int IntType;
@@ -100,7 +92,7 @@ class DiscreteEvolutionSettings {
     typedef double RealType;
   
     //! \brief Default constructer gives reasonable values. 
-    DiscreteEvolutionSettings();
+    DiscretisedEvolutionSettings();
 
     //! \brief The time after which infinite-time upper-evolution routines
     //! may approximate computed sets on a grid. 
@@ -250,7 +242,7 @@ class DiscreteEvolutionSettings {
  */
 inline
 HybridGrid grid_for(const HybridAutomatonInterface& system,
-                    const DiscreteEvolutionSettings& settings)
+                    const DiscretisedEvolutionSettings& settings)
 {
   return ((settings.grid)->empty()?
             HybridGrid(system.state_space()):
@@ -259,7 +251,7 @@ HybridGrid grid_for(const HybridAutomatonInterface& system,
 
 //! \brief Settings for controlling the accuracy of evolution methods and reachability analysis.
 class EvolutionSettings
-    : public ContinuousEvolutionSettings, public DiscreteEvolutionSettings 
+    : public EnclosedEvolutionSettings, public DiscretisedEvolutionSettings 
 { };
 
 
@@ -301,20 +293,18 @@ class VerificationSettings {
 };
 
 inline
-ContinuousEvolutionSettings::ContinuousEvolutionSettings() 
-    : direction(DIRECTION_FORWARD),
-      spacial_order(1),
+EnclosedEvolutionSettings::EnclosedEvolutionSettings() 
+    : spacial_order(1),
       temporal_order(4),
       minimum_step_size(0.0),
       minimum_enclosure_cell(Vector<RealType>(0)),
       maximum_enclosure_cell(Vector<RealType>(0)),
       enable_subdivisions(false),
-      enable_premature_termination_on_enclosure_size(true),
-	  enable_premature_termination_on_blocking_event(false)
+      enable_premature_termination_on_enclosure_size(true)
 { }
 
 inline
-DiscreteEvolutionSettings::DiscreteEvolutionSettings() 
+DiscretisedEvolutionSettings::DiscretisedEvolutionSettings() 
     : transient_time(0.0),
       transient_steps(0),
       lock_to_grid_time(1.0),
@@ -343,10 +333,9 @@ VerificationSettings::VerificationSettings() :
 
 inline
 std::ostream& 
-operator<<(std::ostream& os, const ContinuousEvolutionSettings& p) 
+operator<<(std::ostream& os, const EnclosedEvolutionSettings& p) 
 {
     os << "ContinuousEvolutionSettings"
-       << "(\n  direction=" << p.direction
        << ",\n  spacial_order=" << p.spacial_order
        << ",\n  temporal_order=" << p.temporal_order
        << ",\n  minimum_step_size=" << p.minimum_step_size
@@ -355,7 +344,6 @@ operator<<(std::ostream& os, const ContinuousEvolutionSettings& p)
        << ",\n  maximum_enclosure_cell=" << p.maximum_enclosure_cell
        << ",\n  enable_subdivisions=" << p.enable_subdivisions
        << ",\n  enable_premature_termination_on_enclosure_size=" << p.enable_premature_termination_on_enclosure_size
-       << ",\n  enable_premature_termination_on_blocking_event=" << p.enable_premature_termination_on_blocking_event
        << "\n)\n";
     return os;
 }
@@ -363,7 +351,7 @@ operator<<(std::ostream& os, const ContinuousEvolutionSettings& p)
 
 inline
 std::ostream& 
-operator<<(std::ostream& os, const DiscreteEvolutionSettings& p) 
+operator<<(std::ostream& os, const DiscretisedEvolutionSettings& p) 
 {
     os << "DiscreteEvolutionSettings"
        << "(\n  lock_to_grid_steps=" << p.lock_to_grid_steps
@@ -392,7 +380,6 @@ std::ostream&
 operator<<(std::ostream& os, const EvolutionSettings& p) 
 {
     os << "EvolutionSettings"
-       << "(\n  direction=" << p.direction
        << ",\n  spacial_order=" << p.spacial_order
        << ",\n  temporal_order=" << p.temporal_order
        << ",\n  minimum_step_size=" << p.minimum_step_size
@@ -401,7 +388,6 @@ operator<<(std::ostream& os, const EvolutionSettings& p)
        << ",\n  maximum_enclosure_cell=" << p.maximum_enclosure_cell
        << ",\n  enable_subdivisions=" << p.enable_subdivisions
        << ",\n  enable_premature_termination_on_enclosure_size=" << p.enable_premature_termination_on_enclosure_size
-       << ",\n  enable_premature_termination_on_blocking_event=" << p.enable_premature_termination_on_blocking_event
 
        << ",\n\n  lock_to_grid_steps=" << p.lock_to_grid_steps
        << ",\n  lock_to_grid_time=" << p.lock_to_grid_time

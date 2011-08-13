@@ -121,24 +121,18 @@ ImageSetHybridEvolver::ImageSetHybridEvolver(const EvolutionSettingsType& p,
 {
 }
 
-
-Orbit<ImageSetHybridEvolver::EnclosureType>
+void
 ImageSetHybridEvolver::
-orbit(const SystemType& system,
-      const EnclosureType& initial_set,
-      const TimeType& time,
-      Semantics semantics) const
+tune_settings(
+		const HybridGrid& grid,
+		const HybridFloatVector& hmad,
+		AccuracyType accuracy,
+		Semantics semantics)
 {
-    Orbit<EnclosureType> orbit(initial_set);
-    EnclosureListType final;
-    EnclosureListType reachable;
-    EnclosureListType intermediate;
-    this->_evolution(final,reachable,intermediate,
-                     system,initial_set,time,semantics);
-    orbit.adjoin_intermediate(intermediate);
-    orbit.adjoin_reach(reachable);
-    orbit.adjoin_final(final);
-    return orbit;
+	this->_settings->maximum_enclosure_cell = getMaximumEnclosureCell(grid,accuracy);
+	ARIADNE_LOG(2, "Maximum enclosure cell: " << this->_settings->maximum_enclosure_cell << "\n");
+	this->_settings->hybrid_maximum_step_size = getHybridMaximumStepSize(hmad,grid,accuracy,semantics);
+	ARIADNE_LOG(2, "Maximum step size: " << this->_settings->hybrid_maximum_step_size << "\n");
 }
 
 
@@ -150,6 +144,8 @@ _evolution(EnclosureListType& final_sets,
            const SystemType& system,
            const EnclosureType& initial_set,
            const TimeType& maximum_hybrid_time,
+           bool ignore_activations,
+           ContinuousEvolutionDirection direction,
            Semantics semantics) const
 {
     ARIADNE_LOG(5,ARIADNE_PRETTY_FUNCTION<<"\n");
@@ -196,7 +192,8 @@ _evolution(EnclosureListType& final_sets,
             if(semantics == UPPER_SEMANTICS)
                 final_sets.adjoin(initial_location,this->getCalculusInterface(semantics).enclosure(initial_set_model));
         } else {
-            this->_evolution_step(working_sets,reach_sets,intermediate_sets,system,current_set,maximum_hybrid_time,semantics);
+            this->_evolution_step(working_sets,reach_sets,intermediate_sets,system,current_set,maximum_hybrid_time,
+            		ignore_activations,direction,semantics);
         }
 
 		_logStepAtVerbosity1(working_sets,reach_sets,initial_events,initial_time_model,initial_set_model,initial_location);
@@ -212,6 +209,8 @@ _evolution_step(std::list< HybridTimedSetType >& working_sets,
                 const SystemType& system,
                 const HybridTimedSetType& working_set,
                 const TimeType& maximum_hybrid_time,
+                bool ignore_activations,
+                ContinuousEvolutionDirection direction,
                 Semantics semantics) const
 {
     // Use the following basic algorithm for computing an evolution step
@@ -313,7 +312,7 @@ _evolution_step(std::list< HybridTimedSetType >& working_sets,
     steps=events_history.size();
 
     // Extract information about the current location
-    const RealVectorFunction dynamic=get_directed_dynamic(system.dynamic_function(location),_settings->direction);
+    const RealVectorFunction dynamic=get_directed_dynamic(system.dynamic_function(location),direction);
     Set<DiscreteEvent> available_events = system.events(location);
     std::map<DiscreteEvent,RealScalarFunction> urgent_guards, permissive_guards, invariants;
 
@@ -369,7 +368,7 @@ _evolution_step(std::list< HybridTimedSetType >& working_sets,
     				  time_step_model,flow_set_model,urgent_guards,SMALL_RELATIVE_TIME,semantics);
 
     ActivationTimesType activation_times;
-    if (!_settings->enable_premature_termination_on_blocking_event) {
+    if (!ignore_activations) {
     	_compute_activation_info(permissive_guards,activation_times,non_transverse_events,
     			flow_set_model,blocking_time_model,urgent_guards,invariants,semantics);
     }
@@ -379,7 +378,7 @@ _evolution_step(std::list< HybridTimedSetType >& working_sets,
 
     if(semantics!=LOWER_SEMANTICS || blocking_events.size()==1)
     	_computeEvolutionForEvents(working_sets,intermediate_sets,system,location,blocking_events,events_history,
-    								activation_times,flow_set_model,time_model,blocking_time_model,time_step,semantics);
+    								activation_times,flow_set_model,time_model,blocking_time_model,time_step,ignore_activations,semantics);
 
 }
 
@@ -783,6 +782,7 @@ _computeEvolutionForEvents(std::list< HybridTimedSetType >& working_sets,
 						   const TimeModelType& time_model,
 						   const TimeModelType& blocking_time_model,
 						   const Float& time_step,
+						   bool ignore_activations,
 						   Semantics semantics) const
 {
     TimeModelType final_time_model=time_model+blocking_time_model*time_step;
@@ -800,7 +800,7 @@ _computeEvolutionForEvents(std::list< HybridTimedSetType >& working_sets,
         } else {
             EventKind kind = system.event_kind(location,event);
             bool is_transition = (kind == URGENT || kind == PERMISSIVE);
-        	if(is_transition && !_settings->enable_premature_termination_on_blocking_event) {
+        	if(is_transition && !ignore_activations) {
         		intermediate_sets.adjoin(make_pair(location,evolved_set_model));
 				SetModelType jump_set_model=apply(system.reset_function(location,event),evolved_set_model);
 				DiscreteLocation jump_location=system.target(location,event);
@@ -810,7 +810,7 @@ _computeEvolutionForEvents(std::list< HybridTimedSetType >& working_sets,
         	}
         }
     }
-    if (!_settings->enable_premature_termination_on_blocking_event) {
+    if (!ignore_activations) {
 		// Compute evolution for non-blocking events
 		for(std::map< DiscreteEvent, tuple<TimeModelType,TimeModelType> >::const_iterator
 			iter=activation_times.begin(); iter!=activation_times.end(); ++iter) {
@@ -1048,6 +1048,68 @@ _add_models_subdivisions_time(std::list< HybridTimedSetType >& working_sets,
     SetModelType initial_timed_set_model=join(initial_set_model.models(),initial_time_model);
     array< TimedSetModelType > subdivisions=this->getCalculusInterface(semantics).subdivide(initial_timed_set_model,nd);
     _add_subdivisions(working_sets,subdivisions,initial_location,initial_events,nd);
+}
+
+Vector<Float>
+getMaximumEnclosureCell(
+		const HybridGrid& hgrid,
+		int maximum_grid_depth)
+{
+	// Introduces a ratio (>1) in respect to the grid cell
+	// NOTE: it is preferable to have the ratio slightly lesser than an integer multiple of the grid cell, so that
+	// the overapproximation error due to discretization is minimized
+	static const double RATIO = 1.9;
+
+	// Gets the size of the continuous space
+	const uint css = hgrid.locations_begin()->second.lengths().size();
+
+	// Initializes the result
+	Vector<Float> result(css);
+
+	// For each location and dimension of the space
+	for (HybridGrid::locations_const_iterator hg_it = hgrid.locations_begin(); hg_it != hgrid.locations_end(); hg_it++) {
+		ARIADNE_ASSERT_MSG(hg_it->second.lengths().size() == css,
+				"The maximum enclosure cell is obtained under the assumption that the continuous state space dimension is the same for all locations.");
+		for (uint i=0;i<css;i++)
+			if (hg_it->second.lengths()[i] > result[i])
+				result[i] = hg_it->second.lengths()[i];
+	}
+
+	return RATIO*result/(1<<maximum_grid_depth);
+}
+
+
+std::map<DiscreteLocation,Float>
+getHybridMaximumStepSize(
+		const HybridFloatVector& hmad,
+		const HybridGrid& hgrid,
+		int maximum_grid_depth,
+		Semantics semantics)
+{
+	// We choose a coefficient for upper semantics such that an enclosure at maximum size is able to cross
+	// urgent transitions in one step. For lower semantics we prefer to have a finer result.
+	Float coefficient = (semantics == UPPER_SEMANTICS ? 2.0 : 1.0);
+
+	// Initialize the hybrid maximum step size
+	std::map<DiscreteLocation,Float> hmss;
+
+	// For each couple DiscreteLocation,Vector<Float>
+	for (HybridFloatVector::const_iterator hfv_it = hmad.begin(); hfv_it != hmad.end(); hfv_it++)
+	{
+		const uint dim = hfv_it->second.size();
+		// Initializes the maximum step size
+		Float mss = 0.0;
+		// For each dimension of the space, if the derivative is not zero,
+		// evaluates the ratio between the minimum cell length and the derivative itself
+		for (uint i=0;i<dim;i++)
+			if (hfv_it->second[i] > 0)
+				mss = max(mss,hgrid[hfv_it->first].lengths()[i]/(1 << maximum_grid_depth)/hfv_it->second[i]);
+
+		// Inserts the value (twice the value since the maximum enclosure is set as ~2 the grid cell)
+		hmss.insert(std::pair<DiscreteLocation,Float>(hfv_it->first,coefficient*mss));
+	}
+
+	return hmss;
 }
 
 

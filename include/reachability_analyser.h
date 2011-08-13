@@ -78,10 +78,10 @@ class HybridReachabilityAnalyser
     : public Loggable
 {
   private:
-    boost::shared_ptr< DiscreteEvolutionSettings > _settings;
+    boost::shared_ptr< DiscretisedEvolutionSettings > _settings;
     boost::shared_ptr< HybridDiscretiser<HybridEvolver::ContinuousEnclosureType> > _discretiser;
   public:
-    typedef DiscreteEvolutionSettings EvolutionSettingsType;
+    typedef DiscretisedEvolutionSettings EvolutionSettingsType;
     typedef ParameterisableHybridAutomatonInterface SystemType;
     typedef SystemType::StateSpaceType StateSpaceType;
     typedef SystemType::TimeType TimeType;
@@ -175,13 +175,13 @@ class HybridReachabilityAnalyser
     virtual SetApproximationType outer_chain_reach(
     		SystemType& system,
 			const HybridImageSet& initial_set,
-			EvolutionDirection direction,
+			ContinuousEvolutionDirection direction,
 			const HybridGridTreeSet& reachability_restriction) const;
 
     virtual SetApproximationType outer_chain_reach(
     		SystemType& system,
     		const HybridGridTreeSet& initial,
-    		EvolutionDirection direction,
+    		ContinuousEvolutionDirection direction,
     		const HybridGridTreeSet& reachability_restriction) const;
 
     /*! \brief Compute the epsilon lower bounds of \a system starting in \a initial_set.
@@ -255,22 +255,22 @@ class HybridReachabilityAnalyser
     		const SystemType& sys,
     		const list<EnclosureType>& initial_enclosures,
     		const T& time,
-    		EvolutionDirection direction,
     		bool enable_premature_termination_on_blocking_event,
+    		ContinuousEvolutionDirection direction,
     		int accuracy) const;
 
     /*! \brief Performs outer chain reach calculation. */
     SetApproximationType _outer_chain_reach(
     		SystemType& system,
     		const std::list<EnclosureType>& initial_enclosures,
-    		EvolutionDirection direction,
+    		ContinuousEvolutionDirection direction,
     		const HybridGridTreeSet& reachability_restriction) const;
 
     /*! \brief Performs outer chain reach calculation, where the constants of the \a system are assumed to be already splitted. */
     SetApproximationType _outer_chain_reach_splitted(
     		const SystemType& system,
     		const std::list<EnclosureType>& initial_enclosures,
-    		EvolutionDirection direction,
+    		ContinuousEvolutionDirection direction,
     		const HybridGridTreeSet& reachability_restriction) const;
 
     /*! \brief Pushes into \a result_enclosures the enclosures from \a reachCells.
@@ -480,20 +480,6 @@ HybridGrid getHybridGrid(
 Grid getGrid(
 		const HybridFloatVector& hmad,
 		const HybridBoxes& domain);
-
-/*! \brief Set the maximum enclosure cell from the hybrid grid \a hgrid and the \a maximum_grid_depth. */
-Vector<Float> getMaximumEnclosureCell(
-		const HybridGrid& hgrid,
-		int maximum_grid_depth);
-
-/*! \brief Get the hybrid maximum integration step size, under the assumption that given the maximum derivatives \a hmad,
-	all variables in a step must cover a length greater than a length determined by the \a hgrid with a given \a maximum_grid_depth.
-	\details The actual result is scaled based on the \a semantics. */
-std::map<DiscreteLocation,Float> getHybridMaximumStepSize(
-		const HybridFloatVector& hmad,
-		const HybridGrid& hgrid,
-		int maximum_grid_depth,
-		Semantics semantics);
 
 /*! \brief Set the lock to grid time of \system.
 	\details The value is taken as the maximum over the times required by any variable on any location to cover a distance equal to

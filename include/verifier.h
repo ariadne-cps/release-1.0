@@ -173,7 +173,7 @@ class Verifier
     		const HybridImageSet& initial_set,
     		const HybridConstraintSet& constraint_set,
     		const HybridGridTreeSet& reachability_restriction,
-    		EvolutionDirection direction) const;
+    		ContinuousEvolutionDirection direction) const;
 
 	/*! \brief Prove (once, i.e. for a given grid depth) that the reachable set of \a system starting in \a initial_set
 	 * does definitely DOES NOT respect the \a safety_constraint.

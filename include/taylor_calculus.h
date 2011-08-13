@@ -161,7 +161,7 @@ class TaylorCalculus
 
     //! \brief Computes the points reached by evolution of the \a flow_set_model
     //! over the unit scaled integraton time model.
-    SetModelType reachability_step(const FlowSetModelType& flow_set_model,
+    virtual SetModelType reachability_step(const FlowSetModelType& flow_set_model,
                                    const TimeModelType& scaled_initial_time_model,
                                    const TimeModelType& scaled_final_time_model) const;
 
@@ -178,7 +178,7 @@ class TaylorCalculus
 
     //! \brief Computes the points reached by evolution of the \a initial_set_model under the flow
     //! given by \a flow_model for times between \a initial_time_model and \a final_time_model.
-    SetModelType reachability_step(const FlowModelType& flow_model,
+    virtual SetModelType reachability_step(const FlowModelType& flow_model,
                                    const SetModelType& initial_set_model,
                                    const TimeType& initial_timel,
                                    const TimeType& final_time) const;

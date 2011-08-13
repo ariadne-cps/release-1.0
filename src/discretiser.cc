@@ -273,6 +273,18 @@ _discretise(const ListSet<EnclosureType>& enclosure_list_set,
     return discretised_set; 
 }
 
+template<class ES>
+void
+HybridDiscretiser<ES>::
+tune_evolver_settings(
+		const HybridGrid& grid,
+		const HybridFloatVector& hmad,
+		uint maximum_grid_depth,
+		Semantics semantics)
+{
+	this->_evolver->tune_settings(grid,hmad,maximum_grid_depth,semantics);
+}
+
 
 template class HybridDiscretiser<TaylorSet>;
 
