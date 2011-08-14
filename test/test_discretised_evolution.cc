@@ -36,7 +36,6 @@
 #include "hybrid_automaton.h"
 #include "hybrid_evolver.h"
 #include "orbit.h"
-#include "discretiser.h"
 #include "graphics.h"
 
 #include "models.h"
@@ -91,8 +90,6 @@ void TestDiscretisedEvolution::test_hybrid_time() const
 
     // Set up the evaluators
     HybridEvolver evolver(parameters);
-    HybridDiscretiser< EnclosureType > discrete_evolver(evolver);
-
 
     // Set up the vector field
     Float a=1.5; Float b=0.375;
@@ -126,8 +123,8 @@ void TestDiscretisedEvolution::test_hybrid_time() const
     // Compute the reachable sets
     cout << "Computing evolution... " << flush;
     // evolver.verbosity=1;
-    Orbit<HybridEnclosureType> evolve_orbit
-        = evolver.orbit(ha,HybridEnclosureType(hybrid_initial_set),htime,UPPER_SEMANTICS);
+    HybridEnclosureType hybrid_initial_enclosure(hybrid_initial_cell.first,EnclosureType(hybrid_initial_cell.second.box()));
+    Orbit<HybridEnclosureType> evolve_orbit = evolver.orbit(ha,hybrid_initial_enclosure,htime,UPPER_SEMANTICS);
     cout << "done." << endl;
 
     cout << "enclosure_orbit="<<evolve_orbit<<endl;
@@ -141,12 +138,10 @@ void TestDiscretisedEvolution::test_hybrid_time() const
 
     // Compute the reachable sets
     cout << "Computing discretised evolution... " << flush;
-    //Orbit<HybridGridCell> discrete_orbit
-    //    = discrete_evolver.upper_evolution(ha,hybrid_initial_cell,htime,depth);
-    HybridEnclosureType hybrid_initial_enclosure = discrete_evolver.enclosure(hybrid_initial_cell);
-    HybridGridTreeSet reach,final;
-    make_lpair(reach,final)
-        = discrete_evolver.evolution(ha,hybrid_initial_enclosure,htime,hagrid,depth,UPPER_SEMANTICS);
+
+
+    HybridGridTreeSet reach(outer_approximation(evolve_orbit.reach(),hagrid,depth));
+    HybridGridTreeSet final(outer_approximation(evolve_orbit.final(),hagrid,depth));
     cout << "done." << endl;
 
     GridTreeSet const& reach_cells=reach[location];

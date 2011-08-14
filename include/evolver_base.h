@@ -57,9 +57,7 @@ template<class SYS, class ES> class EvolverBase
         Orbit<ES> orbit(initial_set);
         ESL final; ESL reachable; ESL intermediate;
         this->_evolution(final,reachable,intermediate,system,initial_set,time,false,DIRECTION_FORWARD,semantics);
-        orbit.adjoin_intermediate(intermediate);
-        orbit.adjoin_reach(reachable);
-        orbit.adjoin_final(final);
+        orbit.adjoin_intermediate(intermediate); orbit.adjoin_reach(reachable); orbit.adjoin_final(final);
         return orbit;
     }
     //! \brief Compute an approximation to the evolution set under the given semantics. 

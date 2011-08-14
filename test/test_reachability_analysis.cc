@@ -32,7 +32,6 @@
 #include "hybrid_automaton.h"
 #include "settings.h"
 #include "hybrid_evolver.h"
-#include "discretiser.h"
 #include "reachability_analyser.h"
 #include "graphics.h"
 #include "logging.h"
@@ -72,7 +71,6 @@ class TestReachabilityAnalysis
         Grid grid(2);
         HybridEvolver evolver(parameters);
         evolver.verbosity=0;
-        //HybridDiscretiser<EnclosureType> discretiser(evolver);
         HybridReachabilityAnalyser analyser(parameters,evolver);
         cout << "Done building analyser\n";
         return analyser;

@@ -54,7 +54,6 @@
 #include "evolver_interface.h"
 #include "taylor_calculus.h"
 
-#include "discretiser.h"
 #include "reachability_analyser.h"
 #include "logging.h"
 
@@ -70,20 +69,11 @@ HybridReachabilityAnalyser::
 {
 }
 
-
-HybridReachabilityAnalyser::
-HybridReachabilityAnalyser(const HybridDiscretiser<HybridEvolver::ContinuousEnclosureType>& discretiser)
-    : _settings(new EvolutionSettingsType())
-    , _discretiser(discretiser.clone())
-	, free_cores(0)
-{
-}
-
 const CalculusInterface<TaylorModel>&
 HybridReachabilityAnalyser::
 _get_calculus_interface(Semantics semantics) const
 {
-	ImageSetHybridEvolver& evolver = dynamic_cast<ImageSetHybridEvolver&>(*this->_discretiser->evolver());
+	ImageSetHybridEvolver& evolver = dynamic_cast<ImageSetHybridEvolver&>(*this->_evolver);
 	return evolver.getCalculusInterface(semantics);
 }
 
@@ -114,8 +104,9 @@ _upper_reach(
     HybridGridTreeSet cells=set;
     cells.mince(accuracy);
     for(HybridGridTreeSet::const_iterator iter=cells.begin(); iter!=cells.end(); ++iter) {
-        EnclosureType enclosure=_discretiser->enclosure(*iter);
-        result.adjoin(_discretiser->reach(sys,enclosure,time,grid,accuracy,UPPER_SEMANTICS));
+    	EnclosureType enclosure(iter->first,ContinuousEnclosureType(iter->second.box()));
+    	ListSet<EnclosureType> reach_enclosures = _evolver->reach(sys,enclosure,time,UPPER_SEMANTICS);
+        result.adjoin(outer_approximation(reach_enclosures,grid,accuracy));
     }
     return result;
 }
@@ -155,7 +146,7 @@ _upper_reach_evolve(
 
 	HybridGrid grid=grid_for(sys,*_settings);
 
-	UpperReachEvolveWorker worker(_discretiser,sys,initial_enclosures,time,
+	UpperReachEvolveWorker worker(_evolver,sys,initial_enclosures,time,
 			enable_premature_termination_on_blocking_event,direction,grid,accuracy,concurrency);
 	result = worker.get_result();
 
@@ -182,8 +173,8 @@ lower_evolve(
 
 	ARIADNE_LOG(3,"Computing evolution...\n");
     for (list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); encl_it++) {
-        GTS cell_final=_discretiser->evolve(system,*encl_it,time,grid,_settings->maximum_grid_depth,LOWER_SEMANTICS);
-        evolve.adjoin(cell_final);
+        ListSet<EnclosureType> final_enclosures = _evolver->evolve(system,*encl_it,time,LOWER_SEMANTICS);
+        evolve.adjoin(outer_approximation(final_enclosures,grid,_settings->maximum_grid_depth));
     }
 
     return evolve;
@@ -208,7 +199,8 @@ lower_reach(
     ARIADNE_LOG(3,"Evolving and discretising...\n");
 
     for (list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); encl_it++) {
-        reach.adjoin(_discretiser->reach(sys,*encl_it,time,grid,_settings->maximum_grid_depth,LOWER_SEMANTICS));
+    	ListSet<EnclosureType> reach_enclosures = _evolver->reach(sys,*encl_it,time,LOWER_SEMANTICS);
+        reach.adjoin(outer_approximation(reach_enclosures,grid,_settings->maximum_grid_depth));
     }
 
 	return reach;
@@ -232,10 +224,9 @@ lower_reach_evolve(
 
 	ARIADNE_LOG(3,"Computing evolution...\n");
     for (list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); encl_it++) {
-        GTS cell_reach,cell_final;
-        make_lpair(cell_reach,cell_final)=_discretiser->evolution(sys,*encl_it,time,grid,_settings->maximum_grid_depth,LOWER_SEMANTICS);
-        reach.adjoin(cell_reach);
-        evolve.adjoin(cell_final);
+        Orbit<EnclosureType> orbit = _evolver->orbit(sys,*encl_it,time,LOWER_SEMANTICS);
+        reach.adjoin(outer_approximation(orbit.reach(),grid,_settings->maximum_grid_depth));
+        evolve.adjoin(outer_approximation(orbit.final(),grid,_settings->maximum_grid_depth));
     }
 
     return make_pair(reach,evolve);
@@ -308,10 +299,9 @@ upper_reach_evolve(
 
     std::list<EnclosureType> initial_enclosures = cells_to_smallest_enclosures(initial,maximum_grid_depth);
     for (std::list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); ++encl_it) {
-    	GTS cell_reach,cell_final;
-        make_lpair(cell_reach,cell_final)=_discretiser->evolution(sys,*encl_it,hybrid_lock_to_grid_time,grid,maximum_grid_depth,UPPER_SEMANTICS);
-        reach.adjoin(cell_reach);
-        evolve.adjoin(cell_final);
+        Orbit<EnclosureType> orbit = _evolver->orbit(sys,*encl_it,hybrid_lock_to_grid_time,UPPER_SEMANTICS);
+        reach.adjoin(outer_approximation(orbit.reach(),grid,maximum_grid_depth));
+        evolve.adjoin(outer_approximation(orbit.final(),grid,maximum_grid_depth));
     }
 
     for(uint i=1; i<time_steps; ++i) {
@@ -384,10 +374,9 @@ chain_reach(
 
     std::list<EnclosureType> initial_enclosures = cells_to_smallest_enclosures(initial,maximum_grid_depth);
     for (std::list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); ++encl_it) {
-    	GTS cell_reach,cell_final;
-        make_lpair(cell_reach,cell_final)=_discretiser->evolution(sys,*encl_it,hybrid_transient_time,grid,maximum_grid_depth,UPPER_SEMANTICS);
-        reach.adjoin(cell_reach);
-        evolve.adjoin(cell_final);
+        Orbit<EnclosureType> orbit = _evolver->orbit(sys,*encl_it,hybrid_transient_time,UPPER_SEMANTICS);
+        reach.adjoin(outer_approximation(orbit.reach(),grid,maximum_grid_depth));
+        evolve.adjoin(outer_approximation(orbit.final(),grid,maximum_grid_depth));
     }
 
     evolve.restrict(bounding);
@@ -793,7 +782,7 @@ _outer_chain_reach_pushLocalFinalCells(
 			ARIADNE_LOG(5,"Discarding enclosure " << bx << " from final cell outside the domain in location " << loc.name() <<".\n");
 			throw ReachOutOfDomainException("a final cell is outside the domain");
 		} else {
-			result_enclosures.push_back(_discretiser->enclosure(*cell_it));
+			result_enclosures.push_back(EnclosureType(cell_it->first,ContinuousEnclosureType(cell_it->second.box())));
 		}
 	}
 }
@@ -814,8 +803,8 @@ _lower_reach_and_epsilon(
 	ARIADNE_ASSERT_MSG(concurrency>0 && concurrency <= boost::thread::hardware_concurrency(),"Error: concurrency must be positive and less than the maximum allowed.");
 
 	HybridGrid grid = grid_for(system,*_settings);
-
 	TimeType lock_time(_settings->lock_to_grid_time,_settings->lock_to_grid_steps);
+	const int accuracy = _settings->maximum_grid_depth;
 
 	bool use_domain_checking = reachability_restriction.empty();
 
@@ -826,8 +815,7 @@ _lower_reach_and_epsilon(
 	for (HybridSpace::const_iterator hs_it = state_space.begin(); hs_it != state_space.end(); ++hs_it)
 		epsilon.insert(std::pair<DiscreteLocation,Vector<Float> >(hs_it->first,Vector<Float>(hs_it->second)));
 
-    EL initial_enclosures = enclosures_from_split_domain_midpoints(initial_set,
-    		min_cell_widths(grid,_settings->maximum_grid_depth));
+    EL initial_enclosures = enclosures_from_split_domain_midpoints(initial_set,min_cell_widths(grid,accuracy));
 
     if (!reachability_restriction.empty())
     	initial_enclosures = restrict_enclosures(initial_enclosures,reachability_restriction);
@@ -849,8 +837,7 @@ _lower_reach_and_epsilon(
 
 		ARIADNE_LOG(4,"Initial enclosures size = " << initial_enclosures.size() << "\n");
 
-		LowerReachEpsilonWorker worker(_discretiser,initial_enclosures,system,lock_time,grid,
-				_settings->maximum_grid_depth,concurrency);
+		LowerReachEpsilonWorker worker(_evolver,initial_enclosures,system,lock_time,grid,accuracy,concurrency);
 
 		ARIADNE_LOG(4,"Evolving and discretising...\n");
 
@@ -862,10 +849,10 @@ _lower_reach_and_epsilon(
 		if (!constraint_set.empty()) {
 			HybridGridTreeSet local_reachability_restriction = reachability_restriction;
 			if (local_reachability_restriction.empty())
-				local_reachability_restriction.adjoin_outer_approximation(_settings->domain_bounds,_settings->maximum_grid_depth);
+				local_reachability_restriction.adjoin_outer_approximation(_settings->domain_bounds,accuracy);
 
 			HybridGridTreeSet possibly_feasible_cells = Ariadne::possibly_feasible_cells(local_reach,constraint_set,
-					local_epsilon,local_reachability_restriction,_settings->maximum_grid_depth);
+					local_epsilon,local_reachability_restriction,accuracy);
 
 			if (possibly_feasible_cells.size() < local_reach.size()) {
 				throw ReachUnsatisfiesConstraintException("The lower reached region partially does not satisfy the constraint.");
@@ -995,7 +982,7 @@ tune_evolver_settings(
 		uint maximum_grid_depth,
 		Semantics semantics)
 {
-	_discretiser->tune_evolver_settings(*_settings->grid,hmad,maximum_grid_depth,semantics);
+	_evolver->tune_settings(*_settings->grid,hmad,maximum_grid_depth,semantics);
 }
 
 std::list<RealParameterSet>

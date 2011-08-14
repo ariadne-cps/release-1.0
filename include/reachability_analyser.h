@@ -34,7 +34,6 @@
 
 #include "hybrid_set_interface.h"
 #include "evolver_interface.h"
-#include "discretiser_interface.h"
 #include "reachability_analyser_interface.h"
 
 #include "orbit.h"
@@ -42,7 +41,6 @@
 #include "hybrid_set.h"
 #include "graphics.h"
 
-#include "discretiser.h"
 #include "hybrid_evolver.h"
 
 #include "logging.h"
@@ -77,9 +75,6 @@ const unsigned analyser_max_verbosity_level_used = 7;
 class HybridReachabilityAnalyser
     : public Loggable
 {
-  private:
-    boost::shared_ptr< DiscretisedEvolutionSettings > _settings;
-    boost::shared_ptr< HybridDiscretiser<HybridEvolver::ContinuousEnclosureType> > _discretiser;
   public:
     typedef DiscretisedEvolutionSettings EvolutionSettingsType;
     typedef ParameterisableHybridAutomatonInterface SystemType;
@@ -89,14 +84,14 @@ class HybridReachabilityAnalyser
     typedef HybridEvolver::EnclosureType EnclosureType;
     typedef HybridEvolver::ContinuousEnclosureType ContinuousEnclosureType;
     typedef SetApproximationType (HybridReachabilityAnalyser::*OuterChainReachFuncPtr)(const SystemType&, const HybridImageSet&) const;
+  private:
+    boost::shared_ptr< DiscretisedEvolutionSettings > _settings;
+    boost::shared_ptr< EvolverInterface<HybridAutomatonInterface,EnclosureType>  > _evolver;
   public:
     //@{
     //! \name Constructors and destructors
     /*! \brief Virtual destructor */
     virtual ~HybridReachabilityAnalyser();
-
-    /*! \brief Construct from a method for evolving basic sets. */
-    HybridReachabilityAnalyser(const HybridDiscretiser<HybridEvolver::ContinuousEnclosureType>& discretiser);
 
     /*! \brief Construct from evolution parameters and a method for evolving basic sets. */
     template<class HybridEnclosureType>
@@ -363,12 +358,9 @@ template<class HybridEnclosureType>
 HybridReachabilityAnalyser::
 HybridReachabilityAnalyser(const EvolverInterface<HybridAutomatonInterface,HybridEnclosureType>& evolver)
 	: _settings(new EvolutionSettingsType())
-	, _discretiser(new HybridDiscretiser<typename HybridEnclosureType::ContinuousStateSetType>(evolver))
+	, _evolver(evolver.clone())
 	, free_cores(0)
-
 {
-	ImageSetHybridEvolver& internal_evolver = dynamic_cast<ImageSetHybridEvolver&>(*this->_discretiser->evolver());
-	internal_evolver.verb_tab_prefix = verb_tab_prefix + analyser_max_verbosity_level_used;
 }
 
 
@@ -378,11 +370,9 @@ HybridReachabilityAnalyser(
 		const EvolutionSettingsType& parameters,
 		const EvolverInterface<HybridAutomatonInterface,HybridEnclosureType>& evolver)
 	: _settings(new EvolutionSettingsType(parameters))
-	, _discretiser(new HybridDiscretiser<typename HybridEnclosureType::ContinuousStateSetType>(evolver))
+	, _evolver(evolver.clone())
 	, free_cores(0)
 {
-	ImageSetHybridEvolver& internal_evolver = dynamic_cast<ImageSetHybridEvolver&>(*this->_discretiser->evolver());
-	internal_evolver.verb_tab_prefix = verb_tab_prefix + analyser_max_verbosity_level_used;
 }
 
 /*! \brief Gets the minimum allowed widths of the cells of the \a grid under \a maximum_grid_depth */

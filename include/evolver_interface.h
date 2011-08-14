@@ -37,6 +37,7 @@ using std::pair;
 
 template<class ES> class ListSet;
 template<class ES> class Orbit;
+class TaylorModel;
 
 enum Semantics { LOWER_SEMANTICS, UPPER_SEMANTICS }; 
 

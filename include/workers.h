@@ -38,10 +38,11 @@ public:
 	typedef HybridEvolver::ContinuousEnclosureType CE;
 	typedef std::list<EnclosureType> EL;
 	typedef ListSet<EnclosureType> ELS;
+	typedef boost::shared_ptr<EvolverInterface<HybridAutomatonInterface,EnclosureType> > EvolverType;
 
 	// Constructor
     UpperReachEvolveWorker(
-    		const boost::shared_ptr<HybridDiscretiser<CE> >& discretiser,
+    		const EvolverType& evolver,
     		const HybridAutomatonInterface& sys,
     		const list<EnclosureType>& initial_enclosures,
     		const HybridTime& time,
@@ -50,7 +51,7 @@ public:
     		const HybridGrid& grid,
     		const int& accuracy,
     		const uint& concurrency)
-	: _discretiser(discretiser),
+	: _evolver(evolver),
 	  _sys(sys), 
 	  _initial_enclosures(initial_enclosures),
 	  _time(time),
@@ -81,7 +82,7 @@ public:
 private:
 
 	// A reference to the input variables
-	const boost::shared_ptr<HybridDiscretiser<CE> >& _discretiser;
+	const EvolverType& _evolver;
 	const HybridAutomatonInterface& _sys;
 	const list<EnclosureType>& _initial_enclosures;
 	const HybridTime& _time;
@@ -98,8 +99,6 @@ private:
 
 	// The iterator for the enclosures
 	list<EnclosureType>::const_iterator _enclosures_it;
-
-	friend class HybridDiscretiser<CE>;
  
 	void _start()
 	{
@@ -123,7 +122,7 @@ private:
 				// Get the enclosures from the initial enclosure, in a lock_time flight
 				ELS current_reach_enclosures, current_evolve_enclosures;
 				make_ltuple<ELS,ELS>(current_reach_enclosures,current_evolve_enclosures) =
-										_discretiser->evolver()->reach_evolve(_sys,enclosure,_time,_ignore_activations,_continuous_direction,UPPER_SEMANTICS);
+										_evolver->reach_evolve(_sys,enclosure,_time,_ignore_activations,_continuous_direction,UPPER_SEMANTICS);
 
 				// Get the discretisation
 				HGTS current_reach = outer_approximation(current_reach_enclosures,_grid,_accuracy);
@@ -154,19 +153,18 @@ public:
 	typedef std::list<EnclosureType> EL;
 	typedef ListSet<EnclosureType> ELS;
 	typedef std::map<DiscreteLocation,uint> HUM;
-
-	friend class HybridDiscretiser<CE>;
+	typedef boost::shared_ptr<EvolverInterface<HybridAutomatonInterface,EnclosureType> > EvolverType;
 
 	// Constructor
     LowerReachEpsilonWorker(
-    		const boost::shared_ptr<HybridDiscretiser<CE> >& discretiser,
+    		const EvolverType& evolver,
 			EL& initial_enclosures,
 			const HybridAutomatonInterface& sys,
 			const HybridTime& time,
 			const HybridGrid& grid,
 			const int& accuracy,
 			const uint& concurrency)
-	: _discretiser(discretiser),
+	: _evolver(evolver),
 	  _initial_enclosures(initial_enclosures),
 	  _sys(sys), 
 	  _time(time),
@@ -202,7 +200,7 @@ public:
 private:
 
 	// A reference to the input variables
-    const boost::shared_ptr<HybridDiscretiser<CE> >& _discretiser;
+	const EvolverType& _evolver;
 	EL& _initial_enclosures;
 	const HybridAutomatonInterface& _sys;
 	const HybridTime& _time;
@@ -241,7 +239,7 @@ private:
 				// Get the enclosures from the initial enclosure, in a lock_time flight
 				ELS current_reach_enclosures, current_evolve_enclosures;
 				make_ltuple<ELS,ELS>(current_reach_enclosures,current_evolve_enclosures) =
-										_discretiser->evolver()->reach_evolve(_sys,current_initial_enclosure,_time,LOWER_SEMANTICS);
+										_evolver->reach_evolve(_sys,current_initial_enclosure,_time,LOWER_SEMANTICS);
 
 				// Get the discretisation
 				HGTS current_reach = outer_approximation(current_reach_enclosures,_grid,_accuracy);

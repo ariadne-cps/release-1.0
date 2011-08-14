@@ -858,6 +858,44 @@ template<class X> std::map<DiscreteLocation,Vector<X> > min_elementwise(
 	return result;
 }
 
+template<class ES>
+HybridGridTreeSet
+outer_approximation(const ListSet<HybridBasicSet<ES> >& hls,
+                    const HybridGrid& hgr,
+                    const int accuracy)
+{
+    HybridGridTreeSet result(hgr);
+    for(typename HybridListSet<ES>::const_iterator
+            iter=hls.begin(); iter!=hls.end(); ++iter)
+        {
+            DiscreteLocation loc=iter->first;
+            const ES& es=iter->second;
+            if(result.find(loc)==result.locations_end()) {
+                result.insert(make_pair(loc,GridTreeSet(hgr[loc])));
+            }
+            GridTreeSet& gts=result[loc];
+            gts.adjoin_outer_approximation(es.bounding_box(),accuracy);
+        }
+    return result;
+}
+
+template<class ES>
+HybridGridTreeSet
+outer_approximation(const HybridBasicSet<ES>& hs,
+                    const HybridGrid& hgr,
+                    const int accuracy)
+{
+    HybridGridTreeSet result(hgr);
+    DiscreteLocation loc=hs.location();
+    const ES& es=hs.continuous_state_set();
+    if(result.find(loc)==result.locations_end()) {
+        result.insert(make_pair(loc,GridTreeSet(hgr[loc])));
+    }
+    GridTreeSet& gts=result[loc];
+    gts.adjoin_outer_approximation(es.bounding_box(),accuracy);
+
+    return result;
+}
 
 //! \brief Whether \a cons_set is disjoint from \a grid_set.
 //! \details Note that if \a cons_set does not have one location of \a grid_set, then for that location the result is true.
