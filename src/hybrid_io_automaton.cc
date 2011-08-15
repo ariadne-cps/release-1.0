@@ -1692,7 +1692,8 @@ operator<<(std::ostream& os, const HybridIOAutomaton& ha)
         ", input vars=" << ha.input_vars() << ", output vars=" << ha.output_vars() <<
         ", internal vars=" << ha.internal_vars() <<
         ", input events=" << ha.input_events() << ", output events=" << ha.output_events() <<
-        ", internal events=" << ha.internal_events() <<        
+        ", internal events=" << ha.internal_events() <<
+        ", parameters" << ha.parameters() <<
         ", modes=" << ha.modes() << ", transitions=" << ha.transitions() << ")";
 }
 

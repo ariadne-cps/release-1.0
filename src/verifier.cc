@@ -721,8 +721,6 @@ _tune_iterative_step_settings(
 	_analyser->settings().grid = boost::shared_ptr<HybridGrid>(
 			new HybridGrid(getHybridGrid(hmad,_analyser->settings().domain_bounds,equal_grid_for_all_locations)));
 	ARIADNE_LOG(5, "Grid lengths: " << _analyser->settings().grid->lengths() << "\n");
-
-	_analyser->tune_evolver_settings(system,hmad,_analyser->settings().maximum_grid_depth,semantics);
 }
 
 void

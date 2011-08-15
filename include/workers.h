@@ -45,18 +45,18 @@ public:
     		const EvolverType& evolver,
     		const list<EnclosureType>& initial_enclosures,
     		const HybridTime& time,
-    		bool ignore_activations,
-    		ContinuousEvolutionDirection continuous_direction,
     		const HybridGrid& grid,
     		const int& accuracy,
+    		bool ignore_activations,
+    		ContinuousEvolutionDirection continuous_direction,
     		const uint& concurrency)
 	: _evolver(evolver),
 	  _initial_enclosures(initial_enclosures),
 	  _time(time),
-	  _ignore_activations(ignore_activations),
-	  _continuous_direction(continuous_direction),
 	  _grid(grid),
 	  _accuracy(accuracy),
+	  _ignore_activations(ignore_activations),
+	  _continuous_direction(continuous_direction),
 	  _concurrency(concurrency),
 	  _enclosures_it(_initial_enclosures.begin())
     {
@@ -83,10 +83,10 @@ private:
 	const EvolverType& _evolver;
 	const list<EnclosureType>& _initial_enclosures;
 	const HybridTime& _time;
-	const bool& _ignore_activations;
-	const ContinuousEvolutionDirection& _continuous_direction;
 	const HybridGrid& _grid;
 	const int& _accuracy;
+	const bool& _ignore_activations;
+	const ContinuousEvolutionDirection& _continuous_direction;
 	const uint& _concurrency;
 
 	HGTS _reach, _evolve;

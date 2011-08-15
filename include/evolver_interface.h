@@ -39,7 +39,7 @@ template<class ES> class ListSet;
 template<class ES> class Orbit;
 
 enum Semantics { LOWER_SEMANTICS, UPPER_SEMANTICS }; 
-
+enum ContinuousEvolutionDirection { DIRECTION_FORWARD, DIRECTION_BACKWARD };
   
 /*! \brief Interface for evolving a dynamic system.
  *

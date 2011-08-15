@@ -106,8 +106,6 @@ class ImageSetHybridEvolver
     /*! \brief Make a dynamically-allocated copy. */
     ImageSetHybridEvolver* clone() const { return new ImageSetHybridEvolver(*this); }
 
-    const CalculusInterface<TaylorModel>& getCalculusInterface() const { return *this->_toolbox; }
-
     //@{
     //! \name Settings controlling the evolution.
 

@@ -41,8 +41,6 @@ namespace Ariadne {
 
 class DiscreteLocation;
 
-enum ContinuousEvolutionDirection { DIRECTION_FORWARD, DIRECTION_BACKWARD };
-
 //! \brief Settings for controlling the accuracy of evolution methods on enclosure sets.
 class EnclosedEvolutionSettings {
   public:

@@ -701,6 +701,7 @@ std::ostream&
 operator<<(std::ostream& os, const HybridAutomaton& ha)
 {
     return os << "HybridAutomaton( name=" << ha.name() <<
+    							", parameters" << ha.parameters() <<
     							", modes=" << ha.modes() <<
     							", transitions=" << ha.transitions() <<
     							")";

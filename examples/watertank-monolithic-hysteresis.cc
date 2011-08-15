@@ -23,7 +23,6 @@
 
 #include "ariadne.h"
 #include "function.h"
-#include "taylor_calculus.h"
 #include "examples.h"
 
 using namespace Ariadne;
@@ -58,27 +57,22 @@ int main(int argc,char *argv[])
 	Box codomain(1,5.52,8.25);
 	HybridConstraintSet safety_constraint(system.state_space(),ConstraintSet(cons_f,codomain));
 
+	// The parameters
+	RealParameterSet parameters;
+	parameters.insert(RealParameter("hmin",Interval(5.0,6.0)));
+	parameters.insert(RealParameter("hmax",Interval(7.5,8.5)));
+
 	/// Verification
 
-	/*
-	TaylorCalculus outer_integrator(2,2,1e-4);
-	TaylorCalculus lower_integrator(2,2,1e-4);
-	ImageSetHybridEvolver evolver(system,outer_integrator,lower_integrator);
-	*/
-	ImageSetHybridEvolver evolver(system);
-	HybridReachabilityAnalyser analyser(evolver);
+	HybridReachabilityAnalyser analyser(system);
 	analyser.settings().highest_maximum_grid_depth = 4;
 	Verifier verifier(analyser);
 	verifier.verbosity = verifierVerbosity;
 	verifier.settings().maximum_parameter_depth = 3;
 	verifier.settings().plot_results = false;
 
-	// The parameters
-	RealParameterSet parameters;
-	parameters.insert(RealParameter("hmin",Interval(5.0,6.0)));
-	parameters.insert(RealParameter("hmax",Interval(7.5,8.5)));
-
 	SafetyVerificationInput verInfo(system, initial_set, domain, safety_constraint);
+
 	std::list<ParametricOutcome> results = verifier.parametric_safety(verInfo, parameters);
 	draw(system.name(),results);
 }

@@ -85,7 +85,7 @@ class HybridReachabilityAnalyser
     typedef HybridEvolver::ContinuousEnclosureType ContinuousEnclosureType;
   private:
     boost::shared_ptr< DiscretisedEvolutionSettings > _settings;
-    boost::shared_ptr< EvolverInterface<HybridAutomatonInterface,EnclosureType>  > _evolver;
+    boost::shared_ptr< HybridAutomatonInterface > _system;
   public:
     //@{
     //! \name Constructors and destructors
@@ -93,14 +93,12 @@ class HybridReachabilityAnalyser
     /*! \brief Virtual destructor */
     virtual ~HybridReachabilityAnalyser();
 
-    /*! \brief Construct from evolution parameters and a method for evolving basic sets. */
-    template<class HybridEnclosureType>
+    /*! \brief Construct from evolution settings and a system. */
     HybridReachabilityAnalyser(
-    		const EvolutionSettingsType& parameters,
-            const EvolverInterface<HybridAutomatonInterface,HybridEnclosureType>& evolver);
+    		const EvolutionSettingsType& settings,
+            const HybridAutomatonInterface& system);
 
-    template<class HybridEnclosureType>
-    HybridReachabilityAnalyser(const EvolverInterface<HybridAutomatonInterface,HybridEnclosureType>& evolver);
+    HybridReachabilityAnalyser(const HybridAutomatonInterface& system);
 
     /*! \brief Make a dynamically-allocated copy. */
     virtual HybridReachabilityAnalyser* clone() const { return new HybridReachabilityAnalyser(*this); }
@@ -108,7 +106,7 @@ class HybridReachabilityAnalyser
     //@}
 
     /*! \brief Returns the internal system. */
-    const HybridAutomatonInterface& system() const { return _evolver->system(); }
+    const HybridAutomatonInterface& system() const { return *_system; }
 
     //@{ 
     //! \name Methods to set and get the settings controlling the accuracy
@@ -200,13 +198,6 @@ class HybridReachabilityAnalyser
             const HybridConstraintSet& constraint_set,
             const HybridGridTreeSet& reachability_restriction) const;
 
-    /*! \brief Tunes the settings of the internal evolver. */
-    void tune_evolver_settings(
-    		const SystemType& system,
-    		const HybridFloatVector& hmad,
-			uint maximum_grid_depth,
-			Semantics semantics);
-
     //@}
 
   public:
@@ -228,32 +219,24 @@ class HybridReachabilityAnalyser
 
   private:
 
-    /*! \brief Gets the calculus interface from the hybrid evolver. */
-    const CalculusInterface<TaylorModel>& _get_calculus_interface() const;
-
     /*! \brief Plots \a reach in \a plot_dirpath directory, where \a name_prefix as a prefix to the filename */
     void _plot_reach(
     		const HybridGridTreeSet& reach,
     		string plot_dirpath,
     		string name_prefix) const;
 
-    // Helper functions for operators on lists of sets.
-    GTS _upper_reach(
-    		const SystemType& sys,
-    		const GTS& set,
-    		const T& time,
-    		const int accuracy) const;
-
     std::pair<GTS,GTS> _upper_reach_evolve(
     		const SystemType& sys,
     		const GTS& set,
     		const T& time,
+    		const HybridGridTreeSet& reachability_restriction,
     		const int accuracy) const;
 
     std::pair<GTS,GTS> _upper_reach_evolve(
     		const SystemType& sys,
     		const list<EnclosureType>& initial_enclosures,
     		const T& time,
+    		const HybridGridTreeSet& reachability_restriction,
     		bool enable_premature_termination_on_blocking_event,
     		ContinuousEvolutionDirection direction,
     		int accuracy) const;
@@ -357,27 +340,6 @@ class HybridReachabilityAnalyser
     		SystemType& system,
     		float tolerance) const;
 };
-
-template<class HybridEnclosureType>
-HybridReachabilityAnalyser::
-HybridReachabilityAnalyser(const EvolverInterface<HybridAutomatonInterface,HybridEnclosureType>& evolver)
-	: _settings(new EvolutionSettingsType())
-	, _evolver(evolver.clone())
-	, free_cores(0)
-{
-}
-
-
-template<class HybridEnclosureType>
-HybridReachabilityAnalyser::
-HybridReachabilityAnalyser(
-		const EvolutionSettingsType& parameters,
-		const EvolverInterface<HybridAutomatonInterface,HybridEnclosureType>& evolver)
-	: _settings(new EvolutionSettingsType(parameters))
-	, _evolver(evolver.clone())
-	, free_cores(0)
-{
-}
 
 /*! \brief Gets the minimum allowed widths of the cells of the \a grid under \a maximum_grid_depth */
 HybridFloatVector min_cell_widths(
