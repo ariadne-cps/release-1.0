@@ -89,6 +89,7 @@ class HybridReachabilityAnalyser
   public:
     //@{
     //! \name Constructors and destructors
+
     /*! \brief Virtual destructor */
     virtual ~HybridReachabilityAnalyser();
 
@@ -104,11 +105,11 @@ class HybridReachabilityAnalyser
     /*! \brief Make a dynamically-allocated copy. */
     virtual HybridReachabilityAnalyser* clone() const { return new HybridReachabilityAnalyser(*this); }
 
+    //@}
+
     /*! \brief Returns the internal system. */
     const HybridAutomatonInterface& system() const { return _evolver->system(); }
 
-    //@}
-  
     //@{ 
     //! \name Methods to set and get the settings controlling the accuracy
     /*! \brief The settings controlling the accuracy. */
@@ -228,7 +229,7 @@ class HybridReachabilityAnalyser
   private:
 
     /*! \brief Gets the calculus interface from the hybrid evolver. */
-    const CalculusInterface<TaylorModel>& _get_calculus_interface(Semantics semantics) const;
+    const CalculusInterface<TaylorModel>& _get_calculus_interface() const;
 
     /*! \brief Plots \a reach in \a plot_dirpath directory, where \a name_prefix as a prefix to the filename */
     void _plot_reach(

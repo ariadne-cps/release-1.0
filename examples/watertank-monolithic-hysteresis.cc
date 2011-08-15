@@ -60,9 +60,12 @@ int main(int argc,char *argv[])
 
 	/// Verification
 
+	/*
 	TaylorCalculus outer_integrator(2,2,1e-4);
 	TaylorCalculus lower_integrator(2,2,1e-4);
 	ImageSetHybridEvolver evolver(system,outer_integrator,lower_integrator);
+	*/
+	ImageSetHybridEvolver evolver(system);
 	HybridReachabilityAnalyser analyser(evolver);
 	analyser.settings().highest_maximum_grid_depth = 4;
 	Verifier verifier(analyser);

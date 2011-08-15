@@ -100,20 +100,13 @@ class ImageSetHybridEvolver
     typedef std::map< DiscreteEvent,tuple<TaylorModel,TaylorModel> > ActivationTimesType;
   public:
 
-    //! \brief Construct from parameters using a default integrator.
+    //! \brief Construct from a system.
     ImageSetHybridEvolver(const SystemType& system);
-
-    //! \brief Construct from provided integrators.
-    ImageSetHybridEvolver(const SystemType& system,
-    					  const TaylorCalculus& upper_calculus,
-    					  const TaylorCalculus& lower_calculus);
 
     /*! \brief Make a dynamically-allocated copy. */
     ImageSetHybridEvolver* clone() const { return new ImageSetHybridEvolver(*this); }
 
-    const CalculusInterface<TaylorModel>& getCalculusInterface(Semantics semantics) const {
-    	if (semantics == UPPER_SEMANTICS) return *this->_upper_toolbox;
-    	else return *this->_lower_toolbox; }
+    const CalculusInterface<TaylorModel>& getCalculusInterface() const { return *this->_toolbox; }
 
     //@{
     //! \name Settings controlling the evolution.
@@ -290,9 +283,7 @@ class ImageSetHybridEvolver
 
  private:
     boost::shared_ptr< EvolutionSettingsType > _settings;
-    boost::shared_ptr< CalculusInterface<TaylorModel> > _upper_toolbox;
-    boost::shared_ptr< CalculusInterface<TaylorModel> > _lower_toolbox;
-
+    boost::shared_ptr< CalculusInterface<TaylorModel> > _toolbox;
 };
 
 /*! \brief Whether a box \a set_bounds under a given \a dynamic positively crosses an \a activation. */

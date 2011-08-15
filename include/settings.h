@@ -35,6 +35,7 @@
 #include "grid_set.h"
 #include "hybrid_set.h"
 #include "variables.h"
+#include "hybrid_automaton_interface.h"
 
 namespace Ariadne {
 
@@ -47,26 +48,14 @@ class EnclosedEvolutionSettings {
   public:
     typedef uint UnsignedIntType;
     typedef double RealType;
+    typedef HybridAutomatonInterface SystemType;
 
     //! \brief Default constructor gives reasonable values.
-    EnclosedEvolutionSettings();
-
-    //! \brief A suggested order for the representation of enclosure sets.
-    UnsignedIntType spacial_order;
-
-    //! \brief A suggested order for the time-stepping method used for numerical integration.
-    UnsignedIntType temporal_order;
-
-    //! \brief A suggested minimum step size for integration. 
-    //! This value may be ignored if an integration step cannot be performed without reducing the step size below this value. 
-    RealType minimum_step_size;
+    EnclosedEvolutionSettings(const SystemType& sys);
 
     //! \brief The maximum allowable step size for integration, different for each location.
     //! Decreasing the values increases the accuracy of the computation.
     std::map<DiscreteLocation,RealType> hybrid_maximum_step_size;
-
-    //! \brief A suggested minimum cell of a basic set after a subdivision (not a strict bound). 
-    Vector<RealType> minimum_enclosure_cell;
 
     //! \brief The maximum allowable cell of a basic set during integration. 
     //! Decreasing the volume of the cell increases the accuracy of the computation of an over-approximation. 
@@ -91,7 +80,7 @@ class DiscretisedEvolutionSettings {
     //! \brief The real type.
     typedef double RealType;
   
-    //! \brief Default constructer gives reasonable values. 
+    //! \brief Default constructor gives reasonable values.
     DiscretisedEvolutionSettings();
 
     //! \brief The time after which infinite-time upper-evolution routines
@@ -249,11 +238,6 @@ HybridGrid grid_for(const HybridAutomatonInterface& system,
             *(settings.grid));
 }
 
-//! \brief Settings for controlling the accuracy of evolution methods and reachability analysis.
-class EvolutionSettings
-    : public EnclosedEvolutionSettings, public DiscretisedEvolutionSettings 
-{ };
-
 
 //! \brief Settings for controlling the accuracy of continuous evolution methods.
 class VerificationSettings {
@@ -293,15 +277,16 @@ class VerificationSettings {
 };
 
 inline
-EnclosedEvolutionSettings::EnclosedEvolutionSettings() 
-    : spacial_order(1),
-      temporal_order(4),
-      minimum_step_size(0.0),
-      minimum_enclosure_cell(Vector<RealType>(0)),
-      maximum_enclosure_cell(Vector<RealType>(0)),
+EnclosedEvolutionSettings::EnclosedEvolutionSettings(const SystemType& sys)
+    : maximum_enclosure_cell(Vector<RealType>(sys.state_space().begin()->second,2.0)),
       enable_subdivisions(false),
       enable_premature_termination_on_enclosure_size(true)
-{ }
+{
+	HybridSpace hspace(sys.state_space());
+	for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
+		hybrid_maximum_step_size[hs_it->first] = 1.0;
+	}
+}
 
 inline
 DiscretisedEvolutionSettings::DiscretisedEvolutionSettings() 
@@ -333,17 +318,13 @@ VerificationSettings::VerificationSettings() :
 
 inline
 std::ostream& 
-operator<<(std::ostream& os, const EnclosedEvolutionSettings& p) 
+operator<<(std::ostream& os, const EnclosedEvolutionSettings& s) 
 {
     os << "ContinuousEvolutionSettings"
-       << ",\n  spacial_order=" << p.spacial_order
-       << ",\n  temporal_order=" << p.temporal_order
-       << ",\n  minimum_step_size=" << p.minimum_step_size
-       << ",\n  hybrid_maximum_step_size=" << p.hybrid_maximum_step_size
-       << ",\n  minimum_enclosure_cell=" << p.minimum_enclosure_cell
-       << ",\n  maximum_enclosure_cell=" << p.maximum_enclosure_cell
-       << ",\n  enable_subdivisions=" << p.enable_subdivisions
-       << ",\n  enable_premature_termination_on_enclosure_size=" << p.enable_premature_termination_on_enclosure_size
+       << ",\n  hybrid_maximum_step_size=" << s.hybrid_maximum_step_size
+       << ",\n  maximum_enclosure_cell=" << s.maximum_enclosure_cell
+       << ",\n  enable_subdivisions=" << s.enable_subdivisions
+       << ",\n  enable_premature_termination_on_enclosure_size=" << s.enable_premature_termination_on_enclosure_size
        << "\n)\n";
     return os;
 }
@@ -351,60 +332,25 @@ operator<<(std::ostream& os, const EnclosedEvolutionSettings& p)
 
 inline
 std::ostream& 
-operator<<(std::ostream& os, const DiscretisedEvolutionSettings& p) 
+operator<<(std::ostream& os, const DiscretisedEvolutionSettings& s) 
 {
     os << "DiscreteEvolutionSettings"
-       << "(\n  lock_to_grid_steps=" << p.lock_to_grid_steps
-       << ",\n  lock_to_grid_time=" << p.lock_to_grid_time
+       << "(\n  lock_to_grid_steps=" << s.lock_to_grid_steps
+       << ",\n  lock_to_grid_time=" << s.lock_to_grid_time
 
-       << ",\n  transient_time=" << p.transient_time
-       << ",\n  transient_steps=" << p.transient_steps
+       << ",\n  transient_time=" << s.transient_time
+       << ",\n  transient_steps=" << s.transient_steps
 
-       << ",\n  initial_grid_depth=" << p.initial_grid_depth
-       << ",\n  initial_grid_density=" << p.initial_grid_density
-       << ",\n  maximum_grid_depth=" << p.maximum_grid_depth
-       << ",\n  lowest_maximum_grid_depth=" << p.lowest_maximum_grid_depth
-       << ",\n  highest_maximum_grid_depth=" << p.highest_maximum_grid_depth
-       << ",\n  maximum_grid_height=" << p.maximum_grid_height
-       << ",\n  bounding_domain=" << p.domain_bounds
-       << ",\n  grid=" << *p.grid
-       << ",\n  splitting_constants_target_ratio=" << p.splitting_constants_target_ratio
-       << ",\n  enable_lower_pruning=" << p.enable_lower_pruning
-       << "\n)\n";
-    return os;
-}
-
-
-inline
-std::ostream& 
-operator<<(std::ostream& os, const EvolutionSettings& p) 
-{
-    os << "EvolutionSettings"
-       << ",\n  spacial_order=" << p.spacial_order
-       << ",\n  temporal_order=" << p.temporal_order
-       << ",\n  minimum_step_size=" << p.minimum_step_size
-       << ",\n  hybrid_maximum_step_size=" << p.hybrid_maximum_step_size
-       << ",\n  minimum_enclosure_cell=" << p.minimum_enclosure_cell
-       << ",\n  maximum_enclosure_cell=" << p.maximum_enclosure_cell
-       << ",\n  enable_subdivisions=" << p.enable_subdivisions
-       << ",\n  enable_premature_termination_on_enclosure_size=" << p.enable_premature_termination_on_enclosure_size
-
-       << ",\n\n  lock_to_grid_steps=" << p.lock_to_grid_steps
-       << ",\n  lock_to_grid_time=" << p.lock_to_grid_time
-
-       << ",\n  transient_time=" << p.transient_time
-       << ",\n  transient_steps=" << p.transient_steps
-
-       << ",\n  initial_grid_depth=" << p.initial_grid_depth
-       << ",\n  initial_grid_density=" << p.initial_grid_density
-       << ",\n  maximum_grid_depth=" << p.maximum_grid_depth
-       << ",\n  lowest_maximum_grid_depth=" << p.lowest_maximum_grid_depth
-       << ",\n  highest_maximum_grid_depth=" << p.highest_maximum_grid_depth
-       << ",\n  maximum_grid_height=" << p.maximum_grid_height
-       << ",\n  bounding_domain=" << p.domain_bounds
-       << ",\n  grid=" << *p.grid
-       << ",\n  splitting_constants_target_ratio=" << p.splitting_constants_target_ratio
-       << ",\n  enable_lower_pruning=" << p.enable_lower_pruning
+       << ",\n  initial_grid_depth=" << s.initial_grid_depth
+       << ",\n  initial_grid_density=" << s.initial_grid_density
+       << ",\n  maximum_grid_depth=" << s.maximum_grid_depth
+       << ",\n  lowest_maximum_grid_depth=" << s.lowest_maximum_grid_depth
+       << ",\n  highest_maximum_grid_depth=" << s.highest_maximum_grid_depth
+       << ",\n  maximum_grid_height=" << s.maximum_grid_height
+       << ",\n  bounding_domain=" << s.domain_bounds
+       << ",\n  grid=" << *s.grid
+       << ",\n  splitting_constants_target_ratio=" << s.splitting_constants_target_ratio
+       << ",\n  enable_lower_pruning=" << s.enable_lower_pruning
        << "\n)\n";
     return os;
 }
@@ -412,15 +358,15 @@ operator<<(std::ostream& os, const EvolutionSettings& p)
 
 inline
 std::ostream&
-operator<<(std::ostream& os, const VerificationSettings& p)
+operator<<(std::ostream& os, const VerificationSettings& s)
 {
     os << "VerificationSettings"
-       << "(\n  plot_results=" << p.plot_results
-       << ",\n  maximum_parameter_depth=" << p.maximum_parameter_depth
-       << ",\n  use_param_midpoints_for_proving=" << p.use_param_midpoints_for_proving
-       << ",\n  use_param_midpoints_for_disproving=" << p.use_param_midpoints_for_disproving
-       << ",\n  enable_fb_refinement_for_safety_proving=" << p.enable_backward_refinement_for_testing_inclusion
-       << ",\n  enable_domain_enforcing=" << p.enable_domain_enforcing
+       << "(\n  plot_results=" << s.plot_results
+       << ",\n  maximum_parameter_depth=" << s.maximum_parameter_depth
+       << ",\n  use_param_midpoints_for_proving=" << s.use_param_midpoints_for_proving
+       << ",\n  use_param_midpoints_for_disproving=" << s.use_param_midpoints_for_disproving
+       << ",\n  enable_fb_refinement_for_safety_proving=" << s.enable_backward_refinement_for_testing_inclusion
+       << ",\n  enable_domain_enforcing=" << s.enable_domain_enforcing
        << "\n)\n";
     return os;
 }
