@@ -105,7 +105,7 @@ _upper_reach(
     cells.mince(accuracy);
     for(HybridGridTreeSet::const_iterator iter=cells.begin(); iter!=cells.end(); ++iter) {
     	EnclosureType enclosure(iter->first,ContinuousEnclosureType(iter->second.box()));
-    	ListSet<EnclosureType> reach_enclosures = _evolver->reach(sys,enclosure,time,UPPER_SEMANTICS);
+    	ListSet<EnclosureType> reach_enclosures = _evolver->reach(enclosure,time,UPPER_SEMANTICS);
         result.adjoin(outer_approximation(reach_enclosures,grid,accuracy));
     }
     return result;
@@ -146,7 +146,7 @@ _upper_reach_evolve(
 
 	HybridGrid grid=grid_for(sys,*_settings);
 
-	UpperReachEvolveWorker worker(_evolver,sys,initial_enclosures,time,
+	UpperReachEvolveWorker worker(_evolver,initial_enclosures,time,
 			enable_premature_termination_on_blocking_event,direction,grid,accuracy,concurrency);
 	result = worker.get_result();
 
@@ -173,7 +173,7 @@ lower_evolve(
 
 	ARIADNE_LOG(3,"Computing evolution...\n");
     for (list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); encl_it++) {
-        ListSet<EnclosureType> final_enclosures = _evolver->evolve(system,*encl_it,time,LOWER_SEMANTICS);
+        ListSet<EnclosureType> final_enclosures = _evolver->evolve(*encl_it,time,LOWER_SEMANTICS);
         evolve.adjoin(outer_approximation(final_enclosures,grid,_settings->maximum_grid_depth));
     }
 
@@ -199,7 +199,7 @@ lower_reach(
     ARIADNE_LOG(3,"Evolving and discretising...\n");
 
     for (list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); encl_it++) {
-    	ListSet<EnclosureType> reach_enclosures = _evolver->reach(sys,*encl_it,time,LOWER_SEMANTICS);
+    	ListSet<EnclosureType> reach_enclosures = _evolver->reach(*encl_it,time,LOWER_SEMANTICS);
         reach.adjoin(outer_approximation(reach_enclosures,grid,_settings->maximum_grid_depth));
     }
 
@@ -224,7 +224,7 @@ lower_reach_evolve(
 
 	ARIADNE_LOG(3,"Computing evolution...\n");
     for (list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); encl_it++) {
-        Orbit<EnclosureType> orbit = _evolver->orbit(sys,*encl_it,time,LOWER_SEMANTICS);
+        Orbit<EnclosureType> orbit = _evolver->orbit(*encl_it,time,LOWER_SEMANTICS);
         reach.adjoin(outer_approximation(orbit.reach(),grid,_settings->maximum_grid_depth));
         evolve.adjoin(outer_approximation(orbit.final(),grid,_settings->maximum_grid_depth));
     }
@@ -299,7 +299,7 @@ upper_reach_evolve(
 
     std::list<EnclosureType> initial_enclosures = cells_to_smallest_enclosures(initial,maximum_grid_depth);
     for (std::list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); ++encl_it) {
-        Orbit<EnclosureType> orbit = _evolver->orbit(sys,*encl_it,hybrid_lock_to_grid_time,UPPER_SEMANTICS);
+        Orbit<EnclosureType> orbit = _evolver->orbit(*encl_it,hybrid_lock_to_grid_time,UPPER_SEMANTICS);
         reach.adjoin(outer_approximation(orbit.reach(),grid,maximum_grid_depth));
         evolve.adjoin(outer_approximation(orbit.final(),grid,maximum_grid_depth));
     }
@@ -374,7 +374,7 @@ chain_reach(
 
     std::list<EnclosureType> initial_enclosures = cells_to_smallest_enclosures(initial,maximum_grid_depth);
     for (std::list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); ++encl_it) {
-        Orbit<EnclosureType> orbit = _evolver->orbit(sys,*encl_it,hybrid_transient_time,UPPER_SEMANTICS);
+        Orbit<EnclosureType> orbit = _evolver->orbit(*encl_it,hybrid_transient_time,UPPER_SEMANTICS);
         reach.adjoin(outer_approximation(orbit.reach(),grid,maximum_grid_depth));
         evolve.adjoin(outer_approximation(orbit.final(),grid,maximum_grid_depth));
     }
@@ -837,7 +837,7 @@ _lower_reach_and_epsilon(
 
 		ARIADNE_LOG(4,"Initial enclosures size = " << initial_enclosures.size() << "\n");
 
-		LowerReachEpsilonWorker worker(_evolver,initial_enclosures,system,lock_time,grid,accuracy,concurrency);
+		LowerReachEpsilonWorker worker(_evolver,initial_enclosures,lock_time,grid,accuracy,concurrency);
 
 		ARIADNE_LOG(4,"Evolving and discretising...\n");
 

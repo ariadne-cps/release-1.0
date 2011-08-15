@@ -43,7 +43,6 @@ public:
 	// Constructor
     UpperReachEvolveWorker(
     		const EvolverType& evolver,
-    		const HybridAutomatonInterface& sys,
     		const list<EnclosureType>& initial_enclosures,
     		const HybridTime& time,
     		bool ignore_activations,
@@ -52,7 +51,6 @@ public:
     		const int& accuracy,
     		const uint& concurrency)
 	: _evolver(evolver),
-	  _sys(sys), 
 	  _initial_enclosures(initial_enclosures),
 	  _time(time),
 	  _ignore_activations(ignore_activations),
@@ -83,7 +81,6 @@ private:
 
 	// A reference to the input variables
 	const EvolverType& _evolver;
-	const HybridAutomatonInterface& _sys;
 	const list<EnclosureType>& _initial_enclosures;
 	const HybridTime& _time;
 	const bool& _ignore_activations;
@@ -122,7 +119,7 @@ private:
 				// Get the enclosures from the initial enclosure, in a lock_time flight
 				ELS current_reach_enclosures, current_evolve_enclosures;
 				make_ltuple<ELS,ELS>(current_reach_enclosures,current_evolve_enclosures) =
-										_evolver->reach_evolve(_sys,enclosure,_time,_ignore_activations,_continuous_direction,UPPER_SEMANTICS);
+										_evolver->reach_evolve(enclosure,_time,_ignore_activations,_continuous_direction,UPPER_SEMANTICS);
 
 				// Get the discretisation
 				HGTS current_reach = outer_approximation(current_reach_enclosures,_grid,_accuracy);
@@ -159,14 +156,12 @@ public:
     LowerReachEpsilonWorker(
     		const EvolverType& evolver,
 			EL& initial_enclosures,
-			const HybridAutomatonInterface& sys,
 			const HybridTime& time,
 			const HybridGrid& grid,
 			const int& accuracy,
 			const uint& concurrency)
 	: _evolver(evolver),
 	  _initial_enclosures(initial_enclosures),
-	  _sys(sys), 
 	  _time(time),
 	  _grid(grid),
 	  _accuracy(accuracy),
@@ -175,7 +170,7 @@ public:
     	_reach = HGTS(grid);
 		_evolve_global = HGTS(grid);
 
-    	HybridSpace state_space = _sys.state_space();
+    	HybridSpace state_space = _evolver->system().state_space();
     	for (HybridSpace::const_iterator hs_it = state_space.begin(); hs_it != state_space.end(); ++hs_it)
     		_epsilon.insert(std::pair<DiscreteLocation,Vector<Float> >(hs_it->first,Vector<Float>(hs_it->second)));
     }
@@ -202,7 +197,6 @@ private:
 	// A reference to the input variables
 	const EvolverType& _evolver;
 	EL& _initial_enclosures;
-	const HybridAutomatonInterface& _sys;
 	const HybridTime& _time;
 	const HybridGrid& _grid;
 	const int& _accuracy;
@@ -239,7 +233,7 @@ private:
 				// Get the enclosures from the initial enclosure, in a lock_time flight
 				ELS current_reach_enclosures, current_evolve_enclosures;
 				make_ltuple<ELS,ELS>(current_reach_enclosures,current_evolve_enclosures) =
-										_evolver->reach_evolve(_sys,current_initial_enclosure,_time,LOWER_SEMANTICS);
+										_evolver->reach_evolve(current_initial_enclosure,_time,LOWER_SEMANTICS);
 
 				// Get the discretisation
 				HGTS current_reach = outer_approximation(current_reach_enclosures,_grid,_accuracy);

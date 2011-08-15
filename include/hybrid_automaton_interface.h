@@ -31,6 +31,7 @@
 #include "function.h"
 #include "discrete_event.h"
 #include "discrete_location.h"
+#include "parametric.h"
 
 namespace Ariadne {
 
@@ -77,6 +78,7 @@ class UnderspecifiedSystemError : public SystemSpecificationError {
 //! \ingroup SystemModule
 //! \brief Base interface for hybrid systems, to allow different types to be used in evolution routines.
 class HybridAutomatonInterface
+	: public Parameterisable
 {
   public:
     //! \brief The type used to represent time.
@@ -87,6 +89,9 @@ class HybridAutomatonInterface
   public:
     //! \brief Virtual destructor.
     virtual ~HybridAutomatonInterface() { }
+
+    //! \brief Cloning operator.
+    virtual HybridAutomatonInterface* clone() const = 0;
 
     //@{
     //! \name Data access and queries.
@@ -147,6 +152,11 @@ class HybridAutomatonInterface
     //@}
 
 };
+
+inline std::ostream& operator<<(std::ostream& os, const HybridAutomatonInterface& ha) {
+	os << ha.name();
+	return os;
+}
 
 inline std::ostream& operator<<(std::ostream& os, const EventKind& evk) {
     switch(evk) {

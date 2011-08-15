@@ -68,13 +68,6 @@ Parameterisable::substitute_all(const RealParameterSet& params, bool use_midpoin
 	}
 }
 
-std::ostream&
-ParameterisableHybridAutomatonInterface::write(std::ostream& os) const
-{
-	os << this->name();
-	return os;
-}
-
 
 ParametricOutcome::ParametricOutcome(const RealParameterSet& params, tribool value)
 {

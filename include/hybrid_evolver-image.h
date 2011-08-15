@@ -100,20 +100,13 @@ class ImageSetHybridEvolver
     typedef std::map< DiscreteEvent,tuple<TaylorModel,TaylorModel> > ActivationTimesType;
   public:
 
-    //! \brief Default constructor.
-    ImageSetHybridEvolver();
-
     //! \brief Construct from parameters using a default integrator.
-    ImageSetHybridEvolver(const EvolutionSettingsType& parameters);
+    ImageSetHybridEvolver(const SystemType& system);
 
-    //! \brief Construct from integrator with default parameters.
-    ImageSetHybridEvolver(const TaylorCalculus& upper_calculus,
-    					  const TaylorCalculus& lower_calculus);
-
-    //! \brief Construct from parameters and integrator.
-    ImageSetHybridEvolver(const EvolutionSettingsType& p,
+    //! \brief Construct from provided integrators.
+    ImageSetHybridEvolver(const SystemType& system,
     					  const TaylorCalculus& upper_calculus,
-    		    		  const TaylorCalculus& lower_calculus);
+    					  const TaylorCalculus& lower_calculus);
 
     /*! \brief Make a dynamically-allocated copy. */
     ImageSetHybridEvolver* clone() const { return new ImageSetHybridEvolver(*this); }
@@ -141,12 +134,12 @@ class ImageSetHybridEvolver
 
   protected:
     virtual void _evolution(EnclosureListType& final, EnclosureListType& reachable, EnclosureListType& intermediate,
-                            const SystemType& system, const EnclosureType& initial, const TimeType& time, bool ignore_activations,
+                            const EnclosureType& initial, const TimeType& time, bool ignore_activations,
                             ContinuousEvolutionDirection direction, Semantics semantics) const;
 
     virtual void _evolution_step(std::list< HybridTimedSetType >& working_sets,
                                   EnclosureListType& reachable, EnclosureListType& intermediate,
-                                  const SystemType& system, const HybridTimedSetType& current_set, const TimeType& time,
+                                  const HybridTimedSetType& current_set, const TimeType& time,
                                   bool ignore_activations, ContinuousEvolutionDirection direction, Semantics semantics) const;
 
   protected:
@@ -241,7 +234,6 @@ class ImageSetHybridEvolver
 
     void _computeEvolutionForEvents(std::list< HybridTimedSetType >& working_sets,
 			   	   	   	   	   	    EnclosureListType& intermediate_sets,
-			   	   	   	   	   	    const SystemType& system,
 			   	   	   	   	   	    const DiscreteLocation& location,
 			   	   	   	   	   	    const std::set<DiscreteEvent>& blocking_events,
 			   	   	   	   	   	    const EventListType& events,

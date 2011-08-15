@@ -295,7 +295,7 @@ inline bool operator<(const DiscreteTransition& transition1, const DiscreteTrans
 
  */
 class HybridAutomaton
-	: public ParameterisableHybridAutomatonInterface
+	: public HybridAutomatonInterface
 {
   public:
     //! \brief The type used to represent time.
@@ -328,8 +328,9 @@ class HybridAutomaton
     //! \brief Construct an empty automaton with the given name
     HybridAutomaton(const std::string& name);
 
-    //! \brief Construct dynamically-allocated copy. (Not currently implemented)
-    HybridAutomaton* clone() const;
+    //! \brief Construct dynamically-allocated copy.
+    // FIXME: provide true deep copy implementation
+    HybridAutomaton* clone() const { return new HybridAutomaton(*this); }
 
     //! \brief  Destructor.
     ~HybridAutomaton();

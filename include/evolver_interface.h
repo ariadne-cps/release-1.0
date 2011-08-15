@@ -37,7 +37,6 @@ using std::pair;
 
 template<class ES> class ListSet;
 template<class ES> class Orbit;
-class TaylorModel;
 
 enum Semantics { LOWER_SEMANTICS, UPPER_SEMANTICS }; 
 
@@ -68,11 +67,8 @@ class EvolverInterface
     //! \brief Write to an output stream. 
     virtual std::ostream& write(std::ostream& os) const = 0;
 
-	//! \brief Set the settings of the evolution.
-	virtual EvolutionSettingsType& settings() = 0;
-
-	//! \brief Get the settings of the evolution.
-    virtual const EvolutionSettingsType& settings() const = 0;
+    //! \brief Gets the system associated with the evolver.
+    virtual const SYS& system() const = 0;
 
     //! \brief Tunes the settings of the evolution.
     virtual void tune_settings(
@@ -86,32 +82,28 @@ class EvolverInterface
     //! \brief Compute an approximation to the evolved set under the given semantics. 
     virtual 
     Orbit<EnclosureType>
-    orbit(const SystemType& system, 
-          const EnclosureType& initial_set, 
+    orbit(const EnclosureType& initial_set,
           const TimeType& time, 
           Semantics semantics) const = 0;
 
     //! \brief Compute an approximation to the evolved set under the given semantics. 
     virtual 
     EnclosureListType 
-    evolve(const SystemType& system, 
-           const EnclosureType& initial_set, 
+    evolve(const EnclosureType& initial_set,
            const TimeType& time, 
            Semantics semantics) const = 0;
 
     //! \brief Compute an approximation to the reachable set under the given semantics. 
     virtual 
     EnclosureListType 
-    reach(const SystemType& system, 
-          const EnclosureType& initial_set, 
+    reach(const EnclosureType& initial_set,
           const TimeType& time, 
           Semantics semantics) const = 0;
 
     //! \brief Compute an approximation to the evolved and reachable sets under the given semantics. 
     virtual 
     pair<EnclosureListType,EnclosureListType> 
-    reach_evolve(const SystemType& system, 
-                 const EnclosureType& initial_set, 
+    reach_evolve(const EnclosureType& initial_set,
                  const TimeType& time, 
                  Semantics semantics) const = 0;
 
@@ -121,7 +113,6 @@ class EvolverInterface
     virtual
     pair<EnclosureListType,EnclosureListType>
     reach_evolve(
-    		const SystemType& system,
             const EnclosureType& initial_set,
             const TimeType& time,
             bool ignore_activations,

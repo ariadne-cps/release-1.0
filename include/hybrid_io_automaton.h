@@ -304,7 +304,7 @@ std::ostream& operator<<(std::ostream& os, const DiscreteIOTransition& dt);
 
  */
 class HybridIOAutomaton
-	: public ParameterisableHybridAutomatonInterface
+	: public HybridAutomatonInterface
 {
   public:
     typedef std::list<DiscreteIOTransition>::const_iterator discrete_transition_const_iterator;
@@ -360,6 +360,10 @@ class HybridIOAutomaton
                       const std::set< DiscreteEvent >& input_events,
                       const std::set< DiscreteEvent >& output_events,
                       const std::set< DiscreteEvent >& internal_events);
+
+    //! \brief Construct dynamically-allocated copy.
+    // FIXME: provide true deep copy implementation
+    HybridIOAutomaton* clone() const { return new HybridIOAutomaton(*this); }
 
     //@}
 

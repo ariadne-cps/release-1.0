@@ -82,14 +82,7 @@ void TestDiscretisedEvolution::test_hybrid_time() const
     int depth=8;
     DiscreteLocation location(1);
     DiscreteEvent event(1);
-
-    EvolutionSettings parameters;
-	parameters.maximum_enclosure_cell=Vector<Float>(2,0.5);
-    parameters.hybrid_maximum_step_size[location]=maximum_step_size;
     Grid grid(2);
-
-    // Set up the evaluators
-    HybridEvolver evolver(parameters);
 
     // Set up the vector field
     Float a=1.5; Float b=0.375;
@@ -100,6 +93,11 @@ void TestDiscretisedEvolution::test_hybrid_time() const
     HybridAutomaton ha("Henon");
     ha.new_mode(location,IdentityFunction(2));
     ha.new_transition(event,location,location,henon,VectorConstantFunction(Vector<Float>(1,1.0),2),PERMISSIVE);
+
+    // Set up the evaluators
+    HybridEvolver evolver(ha);
+    evolver.settings().maximum_enclosure_cell=Vector<Float>(2,0.5);
+    evolver.settings().hybrid_maximum_step_size[location]=maximum_step_size;
 
     // Define a bounding box for the evolution
     std::cout<<"making bounding_box"<<std::endl;
@@ -124,7 +122,7 @@ void TestDiscretisedEvolution::test_hybrid_time() const
     cout << "Computing evolution... " << flush;
     // evolver.verbosity=1;
     HybridEnclosureType hybrid_initial_enclosure(hybrid_initial_cell.first,EnclosureType(hybrid_initial_cell.second.box()));
-    Orbit<HybridEnclosureType> evolve_orbit = evolver.orbit(ha,hybrid_initial_enclosure,htime,UPPER_SEMANTICS);
+    Orbit<HybridEnclosureType> evolve_orbit = evolver.orbit(hybrid_initial_enclosure,htime,UPPER_SEMANTICS);
     cout << "done." << endl;
 
     cout << "enclosure_orbit="<<evolve_orbit<<endl;

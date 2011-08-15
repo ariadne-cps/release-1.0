@@ -41,41 +41,44 @@ template<class SYS, class ES> class EvolverBase
     typedef typename SYS::TimeType T;
     typedef ListSet<ES> ESL;
     typedef typename ESL::const_iterator ESLCI;
+
   public:
 
-    //! \brief Write to an output stream. 
     virtual std::ostream& write(std::ostream& os) const {
         return os << "Evolver( ... )"; }
 
-    //! \brief Default constructor.
-    EvolverBase()
+    EvolverBase(const SYS& system) :
+    	_sys(system.clone())
 	{
 	}
 
+    virtual const SYS& system() const { return *_sys; }
+
   public:
-    Orbit<ES> orbit(const SYS& system, const ES& initial_set, const T& time, Semantics semantics) const {
+    Orbit<ES> orbit(const ES& initial_set, const T& time, Semantics semantics) const {
         Orbit<ES> orbit(initial_set);
         ESL final; ESL reachable; ESL intermediate;
-        this->_evolution(final,reachable,intermediate,system,initial_set,time,false,DIRECTION_FORWARD,semantics);
+        this->_evolution(final,reachable,intermediate,initial_set,time,false,DIRECTION_FORWARD,semantics);
         orbit.adjoin_intermediate(intermediate); orbit.adjoin_reach(reachable); orbit.adjoin_final(final);
         return orbit;
     }
     //! \brief Compute an approximation to the evolution set under the given semantics. 
-    ESL evolve(const SYS& system, const ES& initial_set, const T& time, Semantics semantics) const {
-        ESL final; ESL reachable; ESL intermediate; this->_evolution(final,reachable,intermediate,system,initial_set,time,false,DIRECTION_FORWARD,semantics); return final; }
-
+    ESL evolve(const ES& initial_set, const T& time, Semantics semantics) const {
+        ESL final; ESL reachable; ESL intermediate; this->_evolution(final,reachable,intermediate,initial_set,time,false,DIRECTION_FORWARD,semantics); return final; }
     //! \brief Compute an approximation to the evolution set under the given semantics. 
-    ESL reach(const SYS& system, const ES& initial_set, const T& time, Semantics semantics) const {
-        ESL final; ESL reachable; ESL intermediate; this->_evolution(final,reachable,intermediate,system,initial_set,time,false,DIRECTION_FORWARD,semantics); return reachable; }
+    ESL reach(const ES& initial_set, const T& time, Semantics semantics) const {
+        ESL final; ESL reachable; ESL intermediate; this->_evolution(final,reachable,intermediate,initial_set,time,false,DIRECTION_FORWARD,semantics); return reachable; }
     //! \brief Compute an approximation to the evolution set under the given semantics. 
-    std::pair<ESL,ESL> reach_evolve(const SYS& system, const ES& initial_set, const T& time, Semantics semantics) const {
-        ESL final; ESL reachable; ESL intermediate; this->_evolution(final,reachable,intermediate,system,initial_set,time,false,DIRECTION_FORWARD,semantics); return std::make_pair(reachable,final); }
+    std::pair<ESL,ESL> reach_evolve(const ES& initial_set, const T& time, Semantics semantics) const {
+        ESL final; ESL reachable; ESL intermediate; this->_evolution(final,reachable,intermediate,initial_set,time,false,DIRECTION_FORWARD,semantics); return std::make_pair(reachable,final); }
     //! \brief Compute an approximation to the evolution set under the given semantics.
-    std::pair<ESL,ESL> reach_evolve(const SYS& system, const ES& initial_set, const T& time, bool ignore_activations, ContinuousEvolutionDirection continuous_direction, Semantics semantics) const {
-    	ESL final; ESL reachable; ESL intermediate; this->_evolution(final,reachable,intermediate,system,initial_set,time,ignore_activations,continuous_direction,semantics); return std::make_pair(reachable,final); }
+    std::pair<ESL,ESL> reach_evolve(const ES& initial_set, const T& time, bool ignore_activations, ContinuousEvolutionDirection continuous_direction, Semantics semantics) const {
+    	ESL final; ESL reachable; ESL intermediate; this->_evolution(final,reachable,intermediate,initial_set,time,ignore_activations,continuous_direction,semantics); return std::make_pair(reachable,final); }
 
   protected:
-    virtual void _evolution(ESL& final, ESL& reachable, ESL& intermediate, const SYS& system, const ES& initial, const T& time, bool ignore_activations, ContinuousEvolutionDirection direction, Semantics semantics) const = 0;
+    virtual void _evolution(ESL& final, ESL& reachable, ESL& intermediate, const ES& initial, const T& time, bool ignore_activations, ContinuousEvolutionDirection direction, Semantics semantics) const = 0;
+  protected:
+    boost::shared_ptr<SYS> _sys;
 };
 
 inline

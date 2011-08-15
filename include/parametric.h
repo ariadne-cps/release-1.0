@@ -58,18 +58,6 @@ class Parameterisable
 	virtual void substitute(const RealParameter& param) = 0;
 };
 
-
-class ParameterisableHybridAutomatonInterface
-	: public Parameterisable
-	, public HybridAutomatonInterface
-{
-  public:
-	virtual std::ostream& write(std::ostream&) const;
-};
-
-inline std::ostream& operator<<(std::ostream& os, const ParameterisableHybridAutomatonInterface& ha) {
-    return ha.write(os); }
-
 /**
  * \brief The data structure for the outcome over a configuration of parameters (i.e. constants of a system)
  */

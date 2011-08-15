@@ -88,34 +88,21 @@ const DiscreteEvent ImageSetHybridEvolver::blocking_event = -3;
 typedef VectorFunction RealVectorFunction;
 typedef ScalarFunction RealScalarFunction;
 
-ImageSetHybridEvolver::ImageSetHybridEvolver()
-    : _settings(new EvolutionSettingsType()),
+ImageSetHybridEvolver::ImageSetHybridEvolver(const SystemType& system)
+    : EvolverBase(system),
+      _settings(new EvolutionSettingsType()),
       _upper_toolbox(new TaylorCalculus()),
       _lower_toolbox(new TaylorCalculus())
 {
 	
 }
 
-
-ImageSetHybridEvolver::ImageSetHybridEvolver(const EvolutionSettingsType& p)
-    : _settings(new EvolutionSettingsType(p)),
-      _upper_toolbox(new TaylorCalculus()),
-	  _lower_toolbox(new TaylorCalculus())
-{
-}
-
-ImageSetHybridEvolver::ImageSetHybridEvolver(const TaylorCalculus& upper_calculus,
-											 const TaylorCalculus& lower_calculus)
-    : _settings(new EvolutionSettingsType()),
-      _upper_toolbox(new TaylorCalculus(upper_calculus)),
-      _lower_toolbox(new TaylorCalculus(lower_calculus))
-{
-}
-
-ImageSetHybridEvolver::ImageSetHybridEvolver(const EvolutionSettingsType& p,
-											 const TaylorCalculus& upper_calculus,
-											 const TaylorCalculus& lower_calculus)
-    : _settings(new EvolutionSettingsType(p)),
+ImageSetHybridEvolver::ImageSetHybridEvolver(
+		const SystemType& system,
+		const TaylorCalculus& upper_calculus,
+		const TaylorCalculus& lower_calculus)
+    : EvolverBase(system),
+      _settings(new EvolutionSettingsType()),
       _upper_toolbox(new TaylorCalculus(upper_calculus)),
       _lower_toolbox(new TaylorCalculus(lower_calculus))
 {
@@ -141,7 +128,6 @@ ImageSetHybridEvolver::
 _evolution(EnclosureListType& final_sets,
            EnclosureListType& reach_sets,
            EnclosureListType& intermediate_sets,
-           const SystemType& system,
            const EnclosureType& initial_set,
            const TimeType& maximum_hybrid_time,
            bool ignore_activations,
@@ -192,7 +178,7 @@ _evolution(EnclosureListType& final_sets,
             if(semantics == UPPER_SEMANTICS)
                 final_sets.adjoin(initial_location,this->getCalculusInterface(semantics).enclosure(initial_set_model));
         } else {
-            this->_evolution_step(working_sets,reach_sets,intermediate_sets,system,current_set,maximum_hybrid_time,
+            this->_evolution_step(working_sets,reach_sets,intermediate_sets,current_set,maximum_hybrid_time,
             		ignore_activations,direction,semantics);
         }
 
@@ -206,7 +192,6 @@ ImageSetHybridEvolver::
 _evolution_step(std::list< HybridTimedSetType >& working_sets,
                 EnclosureListType& reach_sets,
                 EnclosureListType& intermediate_sets,
-                const SystemType& system,
                 const HybridTimedSetType& working_set,
                 const TimeType& maximum_hybrid_time,
                 bool ignore_activations,
@@ -312,22 +297,22 @@ _evolution_step(std::list< HybridTimedSetType >& working_sets,
     steps=events_history.size();
 
     // Extract information about the current location
-    const RealVectorFunction dynamic=get_directed_dynamic(system.dynamic_function(location),direction);
-    Set<DiscreteEvent> available_events = system.events(location);
+    const RealVectorFunction dynamic=get_directed_dynamic(_sys->dynamic_function(location),direction);
+    Set<DiscreteEvent> available_events = _sys->events(location);
     std::map<DiscreteEvent,RealScalarFunction> urgent_guards, permissive_guards, invariants;
 
     for (Set<DiscreteEvent>::const_iterator event_it = available_events.begin(); event_it != available_events.end(); ++event_it) {
-    	EventKind kind = system.event_kind(location,*event_it);
+    	EventKind kind = _sys->event_kind(location,*event_it);
     	switch (kind) {
     		case INVARIANT:
-    			invariants.insert(std::pair<DiscreteEvent,RealScalarFunction>(*event_it,system.invariant_function(location,*event_it)));
-    			urgent_guards.insert(std::pair<DiscreteEvent,RealScalarFunction>(*event_it,system.invariant_function(location,*event_it)));
+    			invariants.insert(std::pair<DiscreteEvent,RealScalarFunction>(*event_it,_sys->invariant_function(location,*event_it)));
+    			urgent_guards.insert(std::pair<DiscreteEvent,RealScalarFunction>(*event_it,_sys->invariant_function(location,*event_it)));
     			break;
     		case URGENT:
-    			urgent_guards.insert(std::pair<DiscreteEvent,RealScalarFunction>(*event_it,system.guard_function(location,*event_it)));
+    			urgent_guards.insert(std::pair<DiscreteEvent,RealScalarFunction>(*event_it,_sys->guard_function(location,*event_it)));
     			break;
     		case PERMISSIVE:
-    			permissive_guards.insert(std::pair<DiscreteEvent,RealScalarFunction>(*event_it,system.guard_function(location,*event_it)));
+    			permissive_guards.insert(std::pair<DiscreteEvent,RealScalarFunction>(*event_it,_sys->guard_function(location,*event_it)));
     			break;
     		default:
     			ARIADNE_FAIL_MSG("Unhandled event kind.");
@@ -336,7 +321,7 @@ _evolution_step(std::list< HybridTimedSetType >& working_sets,
 
     // Check to make sure dimensions are correct
     ARIADNE_ASSERT(set_model.argument_size()==time_model.argument_size());
-    ARIADNE_ASSERT_MSG(set_model.result_size()==system.dimension(location),"set_model="<<set_model<<", location="<<location.name());
+    ARIADNE_ASSERT_MSG(set_model.result_size()==_sys->dimension(location),"set_model="<<set_model<<", location="<<location.name());
 
     _logEvolutionStepInitialState(events_history,time_model,location,set_model,dynamic,invariants,urgent_guards,permissive_guards);
 
@@ -377,7 +362,7 @@ _evolution_step(std::list< HybridTimedSetType >& working_sets,
     _compute_and_adjoin_reachableSet(reach_sets,reachable_set,location,flow_set_model,zero_time_model,blocking_time_model,semantics);
 
     if(semantics!=LOWER_SEMANTICS || blocking_events.size()==1)
-    	_computeEvolutionForEvents(working_sets,intermediate_sets,system,location,blocking_events,events_history,
+    	_computeEvolutionForEvents(working_sets,intermediate_sets,location,blocking_events,events_history,
     								activation_times,flow_set_model,time_model,blocking_time_model,time_step,ignore_activations,semantics);
 
 }
@@ -773,7 +758,6 @@ _logStepAtVerbosity1(const std::list<HybridTimedSetType>& working_sets,
 void ImageSetHybridEvolver::
 _computeEvolutionForEvents(std::list< HybridTimedSetType >& working_sets,
 						   EnclosureListType& intermediate_sets,
-						   const SystemType& system,
 						   const DiscreteLocation& location,
 						   const std::set<DiscreteEvent>& blocking_events,
 						   const EventListType& events,
@@ -798,12 +782,12 @@ _computeEvolutionForEvents(std::list< HybridTimedSetType >& working_sets,
             intermediate_sets.adjoin(make_pair(location,evolved_set_model));
             working_sets.push_back(make_tuple(location,events,evolved_set_model,final_time_model));
         } else {
-            EventKind kind = system.event_kind(location,event);
+            EventKind kind = _sys->event_kind(location,event);
             bool is_transition = (kind == URGENT || kind == PERMISSIVE);
         	if(is_transition && !ignore_activations) {
         		intermediate_sets.adjoin(make_pair(location,evolved_set_model));
-				SetModelType jump_set_model=apply(system.reset_function(location,event),evolved_set_model);
-				DiscreteLocation jump_location=system.target(location,event);
+				SetModelType jump_set_model=apply(_sys->reset_function(location,event),evolved_set_model);
+				DiscreteLocation jump_location=_sys->target(location,event);
 				std::vector<DiscreteEvent> jump_events=events;
 				jump_events.push_back(event);
 				working_sets.push_back(make_tuple(jump_location,jump_events,jump_set_model,final_time_model));
@@ -822,12 +806,12 @@ _computeEvolutionForEvents(std::list< HybridTimedSetType >& working_sets,
 			ARIADNE_LOG(3,"  upper_active_time_model="<<upper_active_time_model.range()<<";\n");
 			SetModelType active_set_model=this->getCalculusInterface(semantics).reachability_step(flow_set_model,lower_active_time_model,upper_active_time_model);
 			ARIADNE_LOG(3,"  active_set="<<active_set_model.range()<<";\n");
-			SetModelType jump_set_model=apply(system.reset_function(location,event),active_set_model);
+			SetModelType jump_set_model=apply(_sys->reset_function(location,event),active_set_model);
 			ARIADNE_LOG(3,"  jump_set_model="<<active_set_model.range()<<";\n");
 			const TimeModelType active_time_model = this->getCalculusInterface(semantics).reachability_time(time_model+lower_active_time_model*time_step,time_model+upper_active_time_model*time_step);
 			ARIADNE_LOG(3,"  active_time_model="<<active_time_model.range()<<".\n");
 
-			DiscreteLocation jump_location=system.target(location,event);
+			DiscreteLocation jump_location=_sys->target(location,event);
 			std::vector<DiscreteEvent> jump_events=events;
 			jump_events.push_back(event);
 			working_sets.push_back(make_tuple(jump_location,jump_events,jump_set_model,active_time_model));

@@ -56,7 +56,7 @@ template<class BS> class HybridBasicSet;
 typedef HybridBasicSet<Box> HybridBox;
 typedef std::map<DiscreteLocation,Vector<Float> > HybridFloatVector;
 typedef std::map<Identifier,int> ParameterIdIntMap;
-typedef ParameterisableHybridAutomatonInterface SystemType;
+typedef HybridAutomatonInterface SystemType;
 typedef HybridEvolver::EnclosureType EnclosureType;
 typedef HybridEvolver::ContinuousEnclosureType ContinuousEnclosureType;
 
@@ -77,13 +77,12 @@ class HybridReachabilityAnalyser
 {
   public:
     typedef DiscretisedEvolutionSettings EvolutionSettingsType;
-    typedef ParameterisableHybridAutomatonInterface SystemType;
+    typedef HybridAutomatonInterface SystemType;
     typedef SystemType::StateSpaceType StateSpaceType;
     typedef SystemType::TimeType TimeType;
     typedef HybridGridTreeSet SetApproximationType;
     typedef HybridEvolver::EnclosureType EnclosureType;
     typedef HybridEvolver::ContinuousEnclosureType ContinuousEnclosureType;
-    typedef SetApproximationType (HybridReachabilityAnalyser::*OuterChainReachFuncPtr)(const SystemType&, const HybridImageSet&) const;
   private:
     boost::shared_ptr< DiscretisedEvolutionSettings > _settings;
     boost::shared_ptr< EvolverInterface<HybridAutomatonInterface,EnclosureType>  > _evolver;
@@ -104,6 +103,10 @@ class HybridReachabilityAnalyser
 
     /*! \brief Make a dynamically-allocated copy. */
     virtual HybridReachabilityAnalyser* clone() const { return new HybridReachabilityAnalyser(*this); }
+
+    /*! \brief Returns the internal system. */
+    const HybridAutomatonInterface& system() const { return _evolver->system(); }
+
     //@}
   
     //@{ 
