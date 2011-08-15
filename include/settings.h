@@ -43,13 +43,18 @@ class DiscreteLocation;
 
 //! \brief Settings for controlling the accuracy of evolution methods on enclosure sets.
 class EnclosedEvolutionSettings {
+	friend class ImageSetHybridEvolver;
   public:
     typedef uint UnsignedIntType;
     typedef double RealType;
     typedef HybridAutomatonInterface SystemType;
 
+  protected:
+
     //! \brief Default constructor gives reasonable values.
     EnclosedEvolutionSettings(const SystemType& sys);
+
+  public:
 
     //! \brief The maximum allowable step size for integration, different for each location.
     //! Decreasing the values increases the accuracy of the computation.
@@ -70,16 +75,19 @@ class EnclosedEvolutionSettings {
 
 //! \brief Settings for controlling the accuracy of discretised evolution methods and reachability analysis.
 class DiscretisedEvolutionSettings {
+	friend class HybridReachabilityAnalyser;
   public:
-    //! \brief The integer type.
     typedef int IntType;
-    //! \brief The unsigned integer type.
     typedef uint UnsignedIntType;
-    //! \brief The real type.
     typedef double RealType;
+    typedef HybridAutomatonInterface SystemType;
   
-    //! \brief Default constructor gives reasonable values.
-    DiscretisedEvolutionSettings();
+  protected:
+
+    //! \brief Default constructor based on a system.
+    DiscretisedEvolutionSettings(const SystemType& sys);
+
+  public:
 
     //! \brief The time after which infinite-time upper-evolution routines
     //! may approximate computed sets on a grid. 
@@ -212,30 +220,6 @@ class DiscretisedEvolutionSettings {
 
 };
 
-/** 
- * Returns an appropriated grid for the system specified.
- *
- * This method returns a hybrid grid for the specified system. 
- * If \a *settings.grid is not empty, the method returns it, 
- * otherwise, it returns a hybrid grid for the state space 
- * of the provided system.
- *
- * @param system 
- *    The system for which we want a hybrid grid.
- * @param settings 
- *    The settings provided for the computation.
- * @return 
- *    An appropriate hybrid grid for the specified system. 
- */
-inline
-HybridGrid grid_for(const HybridAutomatonInterface& system,
-                    const DiscretisedEvolutionSettings& settings)
-{
-  return ((settings.grid)->empty()?
-            HybridGrid(system.state_space()):
-            *(settings.grid));
-}
-
 
 //! \brief Settings for controlling the accuracy of continuous evolution methods.
 class VerificationSettings {
@@ -287,7 +271,7 @@ EnclosedEvolutionSettings::EnclosedEvolutionSettings(const SystemType& sys)
 }
 
 inline
-DiscretisedEvolutionSettings::DiscretisedEvolutionSettings() 
+DiscretisedEvolutionSettings::DiscretisedEvolutionSettings(const SystemType& sys)
     : transient_time(0.0),
       transient_steps(0),
       lock_to_grid_time(1.0),
@@ -298,7 +282,7 @@ DiscretisedEvolutionSettings::DiscretisedEvolutionSettings()
 	  lowest_maximum_grid_depth(0),
 	  highest_maximum_grid_depth(9),
       maximum_grid_height(16),
-      grid(new HybridGrid()),
+      grid(new HybridGrid(sys.state_space())),
       splitting_constants_target_ratio(0.1),
 	  enable_lower_pruning(true)
 { }

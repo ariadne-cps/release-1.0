@@ -71,17 +71,7 @@ HybridReachabilityAnalyser::
 
 HybridReachabilityAnalyser::
 HybridReachabilityAnalyser(const HybridAutomatonInterface& system)
-	: _settings(new EvolutionSettingsType())
-	, _system(system.clone())
-	, free_cores(0)
-{
-}
-
-HybridReachabilityAnalyser::
-HybridReachabilityAnalyser(
-		const EvolutionSettingsType& settings,
-		const HybridAutomatonInterface& system)
-	: _settings(new EvolutionSettingsType(settings))
+	: _settings(new EvolutionSettingsType(system))
 	, _system(system.clone())
 	, free_cores(0)
 {
@@ -135,7 +125,7 @@ _upper_reach_evolve(
 	const uint concurrency = boost::thread::hardware_concurrency() - free_cores;
 	ARIADNE_ASSERT_MSG(concurrency>0 && concurrency <= boost::thread::hardware_concurrency(),"Error: concurrency must be positive and less than the maximum allowed.");
 
-	HybridGrid grid=grid_for(sys,*_settings);
+	HybridGrid grid = *_settings->grid;
 
     boost::shared_ptr<EvolverInterface<HybridAutomatonInterface,EnclosureType> > evolver(new ImageSetHybridEvolver(sys));
     evolver->tune_settings(grid,getHybridMaximumAbsoluteDerivatives(sys,reachability_restriction,_settings->domain_bounds),accuracy,UPPER_SEMANTICS);
@@ -153,35 +143,32 @@ _upper_reach_evolve(
 HybridReachabilityAnalyser::SetApproximationType
 HybridReachabilityAnalyser::
 lower_evolve(
-		const SystemType& sys,
         const HybridImageSet& initial_set,
         const TimeType& time) const
 {
-	return lower_reach_evolve(sys,initial_set,time).second;
+	return lower_reach_evolve(initial_set,time).second;
 }
 
 
 HybridReachabilityAnalyser::SetApproximationType
 HybridReachabilityAnalyser::
 lower_reach(
-		const SystemType& sys,
         const HybridImageSet& initial_set,
         const TimeType& time) const
 {
-	return lower_reach_evolve(sys,initial_set,time).first;
+	return lower_reach_evolve(initial_set,time).first;
 }
 
 
 std::pair<HybridReachabilityAnalyser::SetApproximationType,HybridReachabilityAnalyser::SetApproximationType>
 HybridReachabilityAnalyser::
 lower_reach_evolve(
-		const SystemType& sys,
         const HybridImageSet& initial_set,
         const TimeType& time) const
 {
     ARIADNE_LOG(2,"HybridReachabilityAnalyser::lower_reach_evolve(...)\n");
 
-    HybridGrid grid=grid_for(sys,*_settings);
+    HybridGrid grid = *_settings->grid;
     GTS reach(grid); GTS evolve(grid);
     // No reachability restriction involved
     GTS reachability_restriction(grid);
@@ -190,8 +177,8 @@ lower_reach_evolve(
     list<EnclosureType> initial_enclosures = enclosures_from_split_domain_midpoints(initial_set,
     		   min_cell_widths(grid,_settings->maximum_grid_depth));
 
-    boost::shared_ptr<EvolverInterface<HybridAutomatonInterface,EnclosureType> > evolver(new ImageSetHybridEvolver(sys));
-    evolver->tune_settings(grid,getHybridMaximumAbsoluteDerivatives(sys,reachability_restriction,_settings->domain_bounds),accuracy,LOWER_SEMANTICS);
+    boost::shared_ptr<EvolverInterface<HybridAutomatonInterface,EnclosureType> > evolver(new ImageSetHybridEvolver(*_system));
+    evolver->tune_settings(grid,getHybridMaximumAbsoluteDerivatives(*_system,reachability_restriction,_settings->domain_bounds),accuracy,LOWER_SEMANTICS);
 
 	ARIADNE_LOG(3,"Computing evolution...\n");
     for (list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); encl_it++) {
@@ -207,14 +194,13 @@ lower_reach_evolve(
 HybridReachabilityAnalyser::SetApproximationType
 HybridReachabilityAnalyser::
 upper_evolve(
-		const SystemType& sys,
         const HybridImageSet& initial_set,
         const TimeType& time) const
 {
-    ARIADNE_LOG(2,"HybridReachabilityAnalyser::upper_evolve(system,set,time)\n");
+    ARIADNE_LOG(2,"HybridReachabilityAnalyser::upper_evolve(set,time)\n");
  
 	GTS reach, evolve;
-	make_lpair(reach,evolve) = upper_reach_evolve(sys, initial_set, time); // Runs the upper_reach_evolve routine on its behalf
+	make_lpair(reach,evolve) = upper_reach_evolve(initial_set, time); // Runs the upper_reach_evolve routine on its behalf
 
     return evolve;
 }
@@ -224,14 +210,13 @@ upper_evolve(
 HybridReachabilityAnalyser::SetApproximationType
 HybridReachabilityAnalyser::
 upper_reach(
-		const SystemType& sys,
         const HybridImageSet& initial_set,
         const TimeType& time) const
 {
-    ARIADNE_LOG(2,"HybridReachabilityAnalyser::upper_reach(system,set,time)\n");
+    ARIADNE_LOG(2,"HybridReachabilityAnalyser::upper_reach(set,time)\n");
 
 	GTS reach, evolve;
-	make_lpair(reach,evolve) = upper_reach_evolve(sys, initial_set, time);
+	make_lpair(reach,evolve) = upper_reach_evolve(initial_set, time);
 
     return reach;
 }
@@ -240,14 +225,13 @@ upper_reach(
 std::pair<HybridReachabilityAnalyser::SetApproximationType,HybridReachabilityAnalyser::SetApproximationType>
 HybridReachabilityAnalyser::
 upper_reach_evolve(
-		const SystemType& sys,
         const HybridImageSet& initial_set,
         const TimeType& time) const
 {
     ARIADNE_LOG(2,"HybridReachabilityAnalyser::upper_reach_evolve(system,set,time)\n");
     ARIADNE_LOG(3,"initial_set="<<initial_set<<"\n");
 
-    HybridGrid grid=grid_for(sys,*_settings);
+    HybridGrid grid = *_settings->grid;
     GTS initial(grid),found(grid),evolve(grid),reach(grid);
 
     // No reachability restriction involved
@@ -272,8 +256,8 @@ upper_reach_evolve(
     ARIADNE_LOG(3,"Computing initial evolution...\n");
     initial.adjoin_outer_approximation(initial_set,maximum_grid_depth);
 
-    boost::shared_ptr<EvolverInterface<HybridAutomatonInterface,EnclosureType> > evolver(new ImageSetHybridEvolver(sys));
-    evolver->tune_settings(grid,getHybridMaximumAbsoluteDerivatives(sys,reachability_restriction,_settings->domain_bounds),maximum_grid_depth,UPPER_SEMANTICS);
+    boost::shared_ptr<EvolverInterface<HybridAutomatonInterface,EnclosureType> > evolver(new ImageSetHybridEvolver(*_system));
+    evolver->tune_settings(grid,getHybridMaximumAbsoluteDerivatives(*_system,reachability_restriction,_settings->domain_bounds),maximum_grid_depth,UPPER_SEMANTICS);
 
     std::list<EnclosureType> initial_enclosures = cells_to_smallest_enclosures(initial,maximum_grid_depth);
     for (std::list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); ++encl_it) {
@@ -284,7 +268,7 @@ upper_reach_evolve(
 
     for(uint i=1; i<time_steps; ++i) {
         ARIADNE_LOG(3,"computing "<<i+1<<"-th reachability step...\n");
-        make_lpair(found,evolve) = _upper_reach_evolve(sys,evolve,hybrid_lock_to_grid_time,reachability_restriction,maximum_grid_depth);
+        make_lpair(found,evolve) = _upper_reach_evolve(*_system,evolve,hybrid_lock_to_grid_time,reachability_restriction,maximum_grid_depth);
         ARIADNE_LOG(4,"found.size()="<<found.size()<<"\n");
         ARIADNE_LOG(4,"evolve.size()="<<evolve.size()<<"\n");
         reach.adjoin(found);
@@ -294,7 +278,7 @@ upper_reach_evolve(
     ARIADNE_LOG(5,"remaining_time="<<remaining_time<<"\n");
     if(!evolve.empty() && remaining_time > 0) {
         ARIADNE_LOG(3,"computing evolution for the remaining time...\n");
-        make_lpair(found,evolve) = _upper_reach_evolve(sys,evolve,hybrid_remaining_time,reachability_restriction,maximum_grid_depth);
+        make_lpair(found,evolve) = _upper_reach_evolve(*_system,evolve,hybrid_remaining_time,reachability_restriction,maximum_grid_depth);
         reach.adjoin(found);
     }
 
@@ -309,7 +293,6 @@ upper_reach_evolve(
 HybridReachabilityAnalyser::SetApproximationType
 HybridReachabilityAnalyser::
 chain_reach(
-		const SystemType& sys,
         const HybridImageSet& initial_set) const
 {
     ARIADNE_LOG(2,"HybridReachabilityAnalyser::chain_reach(system,initial_set)\n");
@@ -325,14 +308,14 @@ chain_reach(
     ARIADNE_LOG(4,"lock_to_grid_time=("<<lock_to_grid_time<<","<<lock_to_grid_steps<<")\n");
 
 	// Checks consistency of the bounding domain in respect to the state space
-	HybridSpace hspace = sys.state_space();
+	HybridSpace hspace = _system->state_space();
 	for (HybridSpace::locations_const_iterator hs_it = hspace.locations_begin(); hs_it != hspace.locations_end(); ++hs_it) {
 		if (domain.find(hs_it->first) == domain.end()) {
 			ARIADNE_FAIL_MSG("Error: the system state space and the bounding domain space do not match on the discrete space."); }		
 		else if (hs_it->second != domain[hs_it->first].size()) {
 			ARIADNE_FAIL_MSG("Error: the system state space and the bounding domain space do not match on the continuous space."); }}
 
-    HybridGrid grid=grid_for(sys,*_settings);
+	HybridGrid grid = *_settings->grid;
     GTS initial(grid), bounding(grid), evolve(grid), reach(grid), found(grid), intermediate(grid);
     // No reachability restriction involved
     GTS reachability_restriction(grid);
@@ -352,8 +335,8 @@ chain_reach(
 	ARIADNE_LOG(3,"Computing transient evolution...\n");
     initial.adjoin_outer_approximation(initial_set,maximum_grid_depth);
 
-    boost::shared_ptr<EvolverInterface<HybridAutomatonInterface,EnclosureType> > evolver(new ImageSetHybridEvolver(sys));
-    evolver->tune_settings(grid,getHybridMaximumAbsoluteDerivatives(sys,reachability_restriction,_settings->domain_bounds),maximum_grid_depth,UPPER_SEMANTICS);
+    boost::shared_ptr<EvolverInterface<HybridAutomatonInterface,EnclosureType> > evolver(new ImageSetHybridEvolver(*_system));
+    evolver->tune_settings(grid,getHybridMaximumAbsoluteDerivatives(*_system,reachability_restriction,_settings->domain_bounds),maximum_grid_depth,UPPER_SEMANTICS);
 
     std::list<EnclosureType> initial_enclosures = cells_to_smallest_enclosures(initial,maximum_grid_depth);
     for (std::list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); ++encl_it) {
@@ -375,7 +358,7 @@ chain_reach(
 
 		intermediate.adjoin(evolve);  
 
-        make_lpair(found,evolve)=_upper_reach_evolve(sys,evolve,hybrid_lock_to_grid_time,reachability_restriction,maximum_grid_depth);
+        make_lpair(found,evolve)=_upper_reach_evolve(*_system,evolve,hybrid_lock_to_grid_time,reachability_restriction,maximum_grid_depth);
         ARIADNE_LOG(4,"found.size()="<<found.size()<<"\n");
         ARIADNE_LOG(4,"evolve.size()="<<evolve.size()<<"\n");
 
@@ -396,20 +379,18 @@ chain_reach(
 HybridReachabilityAnalyser::SetApproximationType
 HybridReachabilityAnalyser::
 chain_reach(
-		const SystemType& sys,
         const HybridImageSet& initial_set,
         const HybridBoxes& bounding_set) const
 {
 	_settings->domain_bounds = bounding_set;
 
-	return chain_reach(sys,initial_set);
+	return chain_reach(initial_set);
 }
 
 
 HybridReachabilityAnalyser::SetApproximationType
 HybridReachabilityAnalyser::
 outer_chain_reach(
-		SystemType& sys,
 		const HybridImageSet& initial_set,
 		ContinuousEvolutionDirection direction,
 		const HybridGridTreeSet& reachability_restriction) const
@@ -418,21 +399,20 @@ outer_chain_reach(
     initial.adjoin_outer_approximation(initial_set,_settings->maximum_grid_depth);
     std::list<EnclosureType> initial_enclosures = cells_to_smallest_enclosures(initial,_settings->maximum_grid_depth);
 
-	return _outer_chain_reach(sys,initial_enclosures,direction,reachability_restriction);
+	return _outer_chain_reach(*_system,initial_enclosures,direction,reachability_restriction);
 }
 
 
 HybridReachabilityAnalyser::SetApproximationType
 HybridReachabilityAnalyser::
 outer_chain_reach(
-		SystemType& sys,
 		const HybridGridTreeSet& initial,
 		ContinuousEvolutionDirection direction,
 		const HybridGridTreeSet& reachability_restriction) const
 {
     std::list<EnclosureType> initial_enclosures = cells_to_smallest_enclosures(initial,_settings->maximum_grid_depth);
 
-	return _outer_chain_reach(sys,initial_enclosures,direction,reachability_restriction);
+	return _outer_chain_reach(*_system,initial_enclosures,direction,reachability_restriction);
 }
 
 
@@ -493,7 +473,7 @@ _outer_chain_reach_splitted(
     const int& lock_to_grid_steps = _settings->lock_to_grid_steps;
     const int& maximum_grid_depth = _settings->maximum_grid_depth;
 
-    HybridGrid grid=grid_for(sys,*_settings);
+    HybridGrid grid = *_settings->grid;
     HybridGridTreeSet new_final(grid), new_reach(grid), reach(grid), final(grid);
 
     bool use_domain_checking = reachability_restriction.empty();
@@ -781,7 +761,7 @@ _outer_chain_reach_pushLocalFinalCells(
 
 std::pair<HybridGridTreeSet,HybridFloatVector>
 HybridReachabilityAnalyser::
-_lower_reach_and_epsilon(
+_lower_chain_reach_and_epsilon(
 		const SystemType& system,
 		const HybridImageSet& initial_set,
 		const HybridConstraintSet& constraint_set,
@@ -793,7 +773,7 @@ _lower_reach_and_epsilon(
 	const uint concurrency = boost::thread::hardware_concurrency() - free_cores;
 	ARIADNE_ASSERT_MSG(concurrency>0 && concurrency <= boost::thread::hardware_concurrency(),"Error: concurrency must be positive and less than the maximum allowed.");
 
-	HybridGrid grid = grid_for(system,*_settings);
+	HybridGrid grid = *_settings->grid;
 	TimeType lock_time(_settings->lock_to_grid_time,_settings->lock_to_grid_steps);
 	const int accuracy = _settings->maximum_grid_depth;
 
@@ -908,34 +888,32 @@ _filter_enclosures(
 
 std::pair<HybridGridTreeSet,HybridFloatVector>
 HybridReachabilityAnalyser::
-lower_reach_and_epsilon(
-		SystemType& system,
+lower_chain_reach_and_epsilon(
 		const HybridImageSet& initial_set,
 		const HybridGridTreeSet& reachability_restriction) const
 {
 	HybridConstraintSet constraint_set;
-	return lower_reach_and_epsilon(system,initial_set,constraint_set,reachability_restriction);
+	return lower_chain_reach_and_epsilon(initial_set,constraint_set,reachability_restriction);
 }
 
 std::pair<HybridGridTreeSet,HybridFloatVector>
 HybridReachabilityAnalyser::
-lower_reach_and_epsilon(
-		SystemType& system,
+lower_chain_reach_and_epsilon(
 		const HybridImageSet& initial_set,
 		const HybridConstraintSet& constraint_set,
 		const HybridGridTreeSet& reachability_restriction) const
 {
-	HybridGrid grid = grid_for(system,*_settings);
+	HybridGrid grid = *_settings->grid;
 	HybridGridTreeSet reach(grid);
-	HybridSpace state_space = system.state_space();
+	HybridSpace state_space = _system->state_space();
 
 	HybridFloatVector epsilon;
 	for (HybridSpace::const_iterator hs_it = state_space.begin(); hs_it != state_space.end(); ++hs_it)
 		epsilon.insert(std::pair<DiscreteLocation,Vector<Float> >(hs_it->first,Vector<Float>(hs_it->second)));
 
-	RealParameterSet original_parameters = system.nonsingleton_parameters();
+	RealParameterSet original_parameters = _system->nonsingleton_parameters();
 
-	std::list<RealParameterSet> split_intervals_set = _getSplitParametersIntervalsSet(system,_settings->splitting_constants_target_ratio);
+	std::list<RealParameterSet> split_intervals_set = _getSplitParametersIntervalsSet(*_system,_settings->splitting_constants_target_ratio);
 	std::list<RealParameterSet> split_midpoints_set = getSplitParametersMidpointsSet(split_intervals_set);
 
 	try {
@@ -946,12 +924,13 @@ lower_reach_and_epsilon(
 														++set_it) {
 			ARIADNE_LOG(2,"<Split parameters set #" << ++i << " : " << *set_it << " >\n");
 
-			system.substitute_all(*set_it);
+			boost::shared_ptr<SystemType> local_sys(_system->clone());
+			local_sys->substitute_all(*set_it);
 
 			HybridGridTreeSet local_reach(grid);
 			HybridFloatVector local_epsilon;
 			make_lpair<HybridGridTreeSet,HybridFloatVector>(local_reach,local_epsilon) =
-					_lower_reach_and_epsilon(system,initial_set,constraint_set,reachability_restriction);
+					_lower_chain_reach_and_epsilon(*local_sys,initial_set,constraint_set,reachability_restriction);
 
 			reach.adjoin(local_reach);
 			epsilon = max_elementwise(epsilon,local_epsilon);
@@ -960,7 +939,7 @@ lower_reach_and_epsilon(
 		}
 
 	} catch (ReachUnsatisfiesConstraintException ex) {
-		system.substitute_all(original_parameters);
+		_system->substitute_all(original_parameters);
 		throw ex;
 	}
 

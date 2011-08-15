@@ -204,7 +204,7 @@ _safety_proving_once(
 
 			ARIADNE_LOG(5,"Retrieving backward reachability...\n");
 
-			HybridGridTreeSet backward_reach = _analyser->outer_chain_reach(sys,backward_initial,
+			HybridGridTreeSet backward_reach = _analyser->outer_chain_reach(backward_initial,
 					DIRECTION_BACKWARD,_safety_reachability_restriction);
 
 			_safety_reachability_restriction = backward_reach;
@@ -233,7 +233,7 @@ _safety_proving_once(
 
 		ARIADNE_LOG(5,"Retrieving forward reachability...\n");
 
-		HybridGridTreeSet forward_reach = _analyser->outer_chain_reach(sys,forward_initial,
+		HybridGridTreeSet forward_reach = _analyser->outer_chain_reach(forward_initial,
 				DIRECTION_FORWARD,_safety_reachability_restriction);
 
 		ARIADNE_LOG(6,"Reachability size: " << forward_reach.size() << "\n");
@@ -332,8 +332,8 @@ _safety_disproving_once(
 	try {
 		HybridGridTreeSet reach;
 		HybridFloatVector epsilon;
-		make_lpair<HybridGridTreeSet,HybridFloatVector>(reach,epsilon) = _analyser->lower_reach_and_epsilon(
-				sys,initial_set,safety_constraint,_safety_reachability_restriction);
+		make_lpair<HybridGridTreeSet,HybridFloatVector>(reach,epsilon) = _analyser->lower_chain_reach_and_epsilon(
+				initial_set,safety_constraint,_safety_reachability_restriction);
 
 		ARIADNE_LOG(5, "Epsilon: " << epsilon << "\n");
 
@@ -586,8 +586,8 @@ _dominance_flattened_lower_reach_and_epsilon(
 
 	HybridGridTreeSet reach;
 	HybridFloatVector epsilon;
-	make_lpair<HybridGridTreeSet,HybridFloatVector>(reach,epsilon) = _analyser->lower_reach_and_epsilon(
-			verInfo.getSystem(),verInfo.getInitialSet(),reachability_restriction);
+	make_lpair<HybridGridTreeSet,HybridFloatVector>(reach,epsilon) = _analyser->lower_chain_reach_and_epsilon(
+			verInfo.getInitialSet(),reachability_restriction);
 
 	GridTreeSet flattened_reach = flatten_and_project_down(reach,projection);
 
@@ -624,8 +624,7 @@ _dominance_flattened_outer_reach(
 
 	ARIADNE_LOG(4,"Getting the outer reached region of the " << descriptor << " system...\n");
 
-	HybridGridTreeSet reach = _analyser->outer_chain_reach(
-			verInput.getSystem(),verInput.getInitialSet(),DIRECTION_FORWARD,reachability_restriction);
+	HybridGridTreeSet reach = _analyser->outer_chain_reach(verInput.getInitialSet(),DIRECTION_FORWARD,reachability_restriction);
 
 	if (!outer_approximation_cache.is_set()) {
 		outer_approximation_cache.set(reach);

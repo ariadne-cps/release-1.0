@@ -93,11 +93,6 @@ class HybridReachabilityAnalyser
     /*! \brief Virtual destructor */
     virtual ~HybridReachabilityAnalyser();
 
-    /*! \brief Construct from evolution settings and a system. */
-    HybridReachabilityAnalyser(
-    		const EvolutionSettingsType& settings,
-            const HybridAutomatonInterface& system);
-
     HybridReachabilityAnalyser(const HybridAutomatonInterface& system);
 
     /*! \brief Make a dynamically-allocated copy. */
@@ -121,48 +116,40 @@ class HybridReachabilityAnalyser
     //! \name Evaluation of systems on abstract sets
     /*! \brief Compute a lower-approximation to the set obtained by evolving \a system for \a time starting in \a initial_set. */
     virtual SetApproximationType lower_evolve(
-    		const SystemType& system,
             const HybridImageSet& initial_set,
             const TimeType& time) const;
   
     /*! \brief Compute a lower-approximation to the reachable set of \a system starting in \a initial_set up to \a time (discrete part only). */
     virtual SetApproximationType lower_reach(
-    		const SystemType& system,
             const HybridImageSet& initial_set,
             const TimeType& time) const;
   
     /*! \brief Compute a lower-approximation to the reachable and evolved sets of \a system starting in \a initial_set up to \a time. */
     virtual std::pair<SetApproximationType,SetApproximationType> lower_reach_evolve(
-    		const SystemType& system,
             const HybridImageSet& initial_set,
             const TimeType& time) const;
   
     /*! \brief Compute an approximation to the set obtained by iterating \a time times \a system starting in \a initial_set. */
     virtual SetApproximationType upper_evolve(
-    		const SystemType& system,
             const HybridImageSet& initial_set,
             const TimeType& time) const;
   
     /*! \brief Compute an approximation to the reachable set of \a system starting in \a initial_set iterating at most \a time times. */
     virtual SetApproximationType upper_reach(
-    		const SystemType& system,
             const HybridImageSet& initial_set,
             const TimeType& timeType) const;
   
     /*! \brief Compute an approximation to the reachable and evolved sets of \a system starting in \a initial_set iterating at most \a time times. */
     virtual std::pair<SetApproximationType,SetApproximationType> upper_reach_evolve(
-    		const SystemType& system,
             const HybridImageSet& initial_set,
             const TimeType& time) const;
   
     /*! \brief Compute an outer-approximation to the chain-reachable set of \a system starting in \a initial_set. */
     virtual SetApproximationType chain_reach(
-    		const SystemType& system,
             const HybridImageSet& initial_set) const;
 
     /*! \brief Compute an outer-approximation to the chain-reachable set of \a system starting in \a initial_set and remaining in \a bounding_domain. \deprecated */
     virtual SetApproximationType chain_reach(
-    		const SystemType& system,
             const HybridImageSet& initial_set,
             const HybridBoxes& bounding_domain) const;
 
@@ -170,21 +157,18 @@ class HybridReachabilityAnalyser
      * upper semantics; the method performs discretisation before transitions, then checks activations on the discretised cells.
      * \return The reach set. */
     virtual SetApproximationType outer_chain_reach(
-    		SystemType& system,
 			const HybridImageSet& initial_set,
 			ContinuousEvolutionDirection direction,
 			const HybridGridTreeSet& reachability_restriction) const;
 
     virtual SetApproximationType outer_chain_reach(
-    		SystemType& system,
     		const HybridGridTreeSet& initial,
     		ContinuousEvolutionDirection direction,
     		const HybridGridTreeSet& reachability_restriction) const;
 
     /*! \brief Compute the epsilon lower bounds of \a system starting in \a initial_set.
      * \return The reach and the epsilon values. */
-    virtual std::pair<HybridGridTreeSet,HybridFloatVector> lower_reach_and_epsilon(
-    		SystemType& system,
+    virtual std::pair<HybridGridTreeSet,HybridFloatVector> lower_chain_reach_and_epsilon(
 			const HybridImageSet& initial_set,
 			const HybridGridTreeSet& reachability_restriction) const;
 
@@ -192,8 +176,7 @@ class HybridReachabilityAnalyser
      * \details If \a constraint_set is not empty, it checks whether the reachable area does not satisfy the constraint,
      * raising an exception if this is the case.
      * \return The reach and the epsilon values. */
-    virtual std::pair<HybridGridTreeSet,HybridFloatVector> lower_reach_and_epsilon(
-            SystemType& system,
+    virtual std::pair<HybridGridTreeSet,HybridFloatVector> lower_chain_reach_and_epsilon(
             const HybridImageSet& initial_set,
             const HybridConstraintSet& constraint_set,
             const HybridGridTreeSet& reachability_restriction) const;
@@ -315,7 +298,7 @@ class HybridReachabilityAnalyser
     /*! \brief Gets the lower reach and the epsilon for the \a system.
      * \details The \a constraint_set is checked: if not empty and its epsilon relaxation is not satisfied
      * for the current lower reach, an exception is raised. */
-    std::pair<HybridGridTreeSet,HybridFloatVector> _lower_reach_and_epsilon(
+    std::pair<HybridGridTreeSet,HybridFloatVector> _lower_chain_reach_and_epsilon(
     		const SystemType& system,
     		const HybridImageSet& initial_set,
 			const HybridConstraintSet& constraint_set,
