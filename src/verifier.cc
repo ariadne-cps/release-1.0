@@ -30,6 +30,8 @@
 
 namespace Ariadne {
 
+// To be updated as soon as the maximum verbosity changes
+const unsigned int VERIFIER_MAX_VERBOSITY_USED = 6;
 
 Verifier::Verifier(const HybridReachabilityAnalyser& analyser) :
 			_analyser(analyser.clone()),
@@ -38,14 +40,23 @@ Verifier::Verifier(const HybridReachabilityAnalyser& analyser) :
 			_dominating_coarse_outer_approximation(new OuterApproximationCache()),
 			_dominated_coarse_outer_approximation(new OuterApproximationCache())
 {
-	_analyser->verb_tab_prefix = verb_tab_prefix + verifier_max_verbosity_level_used;
+    this->max_verbosity_used = VERIFIER_MAX_VERBOSITY_USED;
+	_analyser->set_log_tab_offset(this->max_verbosity_used);
 }
+
 
 
 Verifier::~Verifier()
 {
 }
 
+
+void
+Verifier::set_verbosity(int verbosity)
+{
+    this->verbosity = verbosity;
+    _analyser->set_verbosity(verbosity-this->max_verbosity_used);
+}
 
 
 tribool

@@ -67,7 +67,7 @@ int main(int argc,char *argv[])
 	HybridReachabilityAnalyser analyser(system);
 	analyser.settings().highest_maximum_grid_depth = 4;
 	Verifier verifier(analyser);
-	verifier.verbosity = verifierVerbosity;
+	verifier.set_verbosity(verifierVerbosity);
 	verifier.settings().maximum_parameter_depth = 3;
 	verifier.settings().plot_results = false;
 

@@ -29,6 +29,7 @@
 #define ARIADNE_EVOLVER_INTERFACE_H
 
 #include "settings.h"
+#include "logging.h"
 
 namespace Ariadne {
 
@@ -47,7 +48,8 @@ enum ContinuousEvolutionDirection { DIRECTION_FORWARD, DIRECTION_BACKWARD };
  *   , \link Ariadne::ReachabilityAnalyserInterface \c ReachabilityAnalyserInterface<SYS> \endlink
  */
 template<class SYS, class ES> 
-class EvolverInterface 
+class EvolverInterface :
+    public Loggable
 {
   public:
 	typedef uint AccuracyType;

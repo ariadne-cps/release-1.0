@@ -68,6 +68,8 @@ void append(V& v, const C& c)
 
 namespace Ariadne {
 
+const unsigned int IMAGESET_EVOLVER_MAX_VERBOSITY_USED = 9;
+
 void wait_for_keypress() {
     std::string str;
     getline(std::cin,str);
@@ -93,7 +95,9 @@ ImageSetHybridEvolver::ImageSetHybridEvolver(const SystemType& system)
       _settings(new EvolutionSettingsType(system)),
       _toolbox(new TaylorCalculus())
 {
+    this->max_verbosity_used = IMAGESET_EVOLVER_MAX_VERBOSITY_USED;
 }
+
 
 void
 ImageSetHybridEvolver::

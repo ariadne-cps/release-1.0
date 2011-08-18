@@ -32,23 +32,29 @@
 #include <fstream>
 
 static const int verbosity=0;
-static const unsigned verb_tab_prefix=0;
+static const unsigned log_tab_offset=0;
 
 //! Send a message to the global logging stream. 
 #define ARIADNE_LOG(level,msg)                                  \
     if(verbosity >= level) { \
 		std::string tabulation; \
-		for (uint ariadne_log=0;ariadne_log<level-1+verb_tab_prefix;++ariadne_log) \
+		for (uint ariadne_log=0;ariadne_log<level-1+log_tab_offset;++ariadne_log) \
 			tabulation += "  "; \
 		std::clog << tabulation + msg << std::flush; }
 
 namespace Ariadne {
   
-struct Loggable {
-  public:
-    Loggable() : verbosity(0),verb_tab_prefix(0) { }
+class Loggable {
+
+  protected:
     mutable int verbosity;
-    mutable unsigned verb_tab_prefix;
+    mutable unsigned log_tab_offset;
+    mutable unsigned max_verbosity_used;
+  public:
+    Loggable() : verbosity(0),log_tab_offset(0),max_verbosity_used(0) { }
+
+    virtual void set_verbosity(int verbosity) { this->verbosity = verbosity; }
+    virtual void set_log_tab_offset(int offset) { this->log_tab_offset = offset; }
 };
 
 // Global log output file

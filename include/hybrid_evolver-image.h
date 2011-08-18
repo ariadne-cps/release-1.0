@@ -44,8 +44,6 @@
 #include "evolver_base.h"
 #include "settings.h"
 
-#include "logging.h"
-
 namespace Ariadne {
 
 template<class Sys, class BS> class Evolver;
@@ -69,7 +67,6 @@ class DiscreteEvent;
  */
 class ImageSetHybridEvolver
     : public EvolverBase<HybridAutomatonInterface,HybridTaylorSet>
-    , public Loggable
 {
     typedef ScalarFunction ScalarFunctionType;
     typedef VectorFunction VectorFunctionType;

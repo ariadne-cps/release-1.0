@@ -84,6 +84,8 @@ class HybridReachabilityAnalyser
     typedef HybridEvolver::EnclosureType EnclosureType;
     typedef HybridEvolver::ContinuousEnclosureType ContinuousEnclosureType;
   private:
+    typedef boost::shared_ptr<EvolverInterface<HybridAutomatonInterface,EnclosureType> > EvolverType;
+  private:
     boost::shared_ptr< DiscretisedEvolutionSettings > _settings;
     boost::shared_ptr< HybridAutomatonInterface > _system;
   public:
@@ -207,6 +209,11 @@ class HybridReachabilityAnalyser
     		const HybridGridTreeSet& reach,
     		string plot_dirpath,
     		string name_prefix) const;
+
+    EvolverType _get_tuned_evolver(
+            const SystemType& sys,
+            const HybridGridTreeSet& reachability_restriction,
+            Semantics semantics) const;
 
     std::pair<GTS,GTS> _upper_reach_evolve(
     		const SystemType& sys,

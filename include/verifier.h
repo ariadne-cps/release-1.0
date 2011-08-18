@@ -105,6 +105,10 @@ class Verifier
     VerificationSettings& settings() { return *this->_settings; }
     //@}
 
+    //! \brief Overrides the Loggable method.
+    //! \details Necessary to percolate to the internal analyser.
+    void set_verbosity(int verbosity);
+
     //@{
     //! \name Safety methods
 

@@ -64,6 +64,8 @@
 
 namespace Ariadne {
 
+const unsigned int ANALYSER_MAX_VERBOSITY_USED = 8;
+
 HybridReachabilityAnalyser::
 ~HybridReachabilityAnalyser()
 {
@@ -75,7 +77,27 @@ HybridReachabilityAnalyser(const HybridAutomatonInterface& system)
 	, _system(system.clone())
 	, free_cores(0)
 {
+    this->max_verbosity_used = ANALYSER_MAX_VERBOSITY_USED;
 }
+
+HybridReachabilityAnalyser::EvolverType
+HybridReachabilityAnalyser::
+_get_tuned_evolver(
+        const HybridAutomatonInterface& sys,
+        const HybridGridTreeSet& reachability_restriction,
+        Semantics semantics) const
+{
+    const int& accuracy = this->settings().maximum_grid_depth;
+    const HybridGrid& grid = *this->settings().grid;
+
+    EvolverType evolver(new ImageSetHybridEvolver(sys));
+    evolver->set_verbosity(this->verbosity - this->max_verbosity_used);
+    evolver->set_log_tab_offset(this->log_tab_offset + this->max_verbosity_used);
+    evolver->tune_settings(grid,getHybridMaximumAbsoluteDerivatives(sys,reachability_restriction,_settings->domain_bounds),accuracy,UPPER_SEMANTICS);
+
+    return evolver;
+}
+
 
 void
 HybridReachabilityAnalyser::
@@ -125,11 +147,9 @@ _upper_reach_evolve(
 	const uint concurrency = boost::thread::hardware_concurrency() - free_cores;
 	ARIADNE_ASSERT_MSG(concurrency>0 && concurrency <= boost::thread::hardware_concurrency(),"Error: concurrency must be positive and less than the maximum allowed.");
 
-	HybridGrid grid = *_settings->grid;
+	const HybridGrid& grid = *_settings->grid;
 
-    boost::shared_ptr<EvolverInterface<HybridAutomatonInterface,EnclosureType> > evolver(new ImageSetHybridEvolver(sys));
-    evolver->tune_settings(grid,getHybridMaximumAbsoluteDerivatives(sys,reachability_restriction,_settings->domain_bounds),accuracy,UPPER_SEMANTICS);
-
+	const EvolverType& evolver = _get_tuned_evolver(sys,reachability_restriction,UPPER_SEMANTICS);
 	UpperReachEvolveWorker worker(evolver,initial_enclosures,time,
 			grid,accuracy,enable_premature_termination_on_blocking_event,direction,concurrency);
 	result = worker.get_result();
@@ -177,9 +197,7 @@ lower_reach_evolve(
     list<EnclosureType> initial_enclosures = enclosures_from_split_domain_midpoints(initial_set,
     		   min_cell_widths(grid,_settings->maximum_grid_depth));
 
-    boost::shared_ptr<EvolverInterface<HybridAutomatonInterface,EnclosureType> > evolver(new ImageSetHybridEvolver(*_system));
-    evolver->tune_settings(grid,getHybridMaximumAbsoluteDerivatives(*_system,reachability_restriction,_settings->domain_bounds),accuracy,LOWER_SEMANTICS);
-
+    const EvolverType& evolver = _get_tuned_evolver(*_system,reachability_restriction,LOWER_SEMANTICS);
 	ARIADNE_LOG(3,"Computing evolution...\n");
     for (list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); encl_it++) {
         Orbit<EnclosureType> orbit = evolver->orbit(*encl_it,time,LOWER_SEMANTICS);
@@ -256,9 +274,7 @@ upper_reach_evolve(
     ARIADNE_LOG(3,"Computing initial evolution...\n");
     initial.adjoin_outer_approximation(initial_set,maximum_grid_depth);
 
-    boost::shared_ptr<EvolverInterface<HybridAutomatonInterface,EnclosureType> > evolver(new ImageSetHybridEvolver(*_system));
-    evolver->tune_settings(grid,getHybridMaximumAbsoluteDerivatives(*_system,reachability_restriction,_settings->domain_bounds),maximum_grid_depth,UPPER_SEMANTICS);
-
+    const EvolverType& evolver = _get_tuned_evolver(*_system,reachability_restriction,UPPER_SEMANTICS);
     std::list<EnclosureType> initial_enclosures = cells_to_smallest_enclosures(initial,maximum_grid_depth);
     for (std::list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); ++encl_it) {
         Orbit<EnclosureType> orbit = evolver->orbit(*encl_it,hybrid_lock_to_grid_time,UPPER_SEMANTICS);
@@ -335,8 +351,7 @@ chain_reach(
 	ARIADNE_LOG(3,"Computing transient evolution...\n");
     initial.adjoin_outer_approximation(initial_set,maximum_grid_depth);
 
-    boost::shared_ptr<EvolverInterface<HybridAutomatonInterface,EnclosureType> > evolver(new ImageSetHybridEvolver(*_system));
-    evolver->tune_settings(grid,getHybridMaximumAbsoluteDerivatives(*_system,reachability_restriction,_settings->domain_bounds),maximum_grid_depth,UPPER_SEMANTICS);
+    const EvolverType& evolver = _get_tuned_evolver(*_system,reachability_restriction,UPPER_SEMANTICS);
 
     std::list<EnclosureType> initial_enclosures = cells_to_smallest_enclosures(initial,maximum_grid_depth);
     for (std::list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); ++encl_it) {
@@ -793,8 +808,7 @@ _lower_chain_reach_and_epsilon(
 
     ARIADNE_LOG(3,"Computing recurrent evolution...\n");
 
-    boost::shared_ptr<EvolverInterface<HybridAutomatonInterface,EnclosureType> > evolver(new ImageSetHybridEvolver(system));
-    evolver->tune_settings(grid,getHybridMaximumAbsoluteDerivatives(system,reachability_restriction,_settings->domain_bounds),accuracy,LOWER_SEMANTICS);
+    const EvolverType& evolver = _get_tuned_evolver(system,reachability_restriction,LOWER_SEMANTICS);
 
     uint i=0;
     while (!initial_enclosures.empty()) {
