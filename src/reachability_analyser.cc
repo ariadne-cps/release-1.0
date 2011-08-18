@@ -85,15 +85,15 @@ HybridReachabilityAnalyser::
 _get_tuned_evolver(
         const HybridAutomatonInterface& sys,
         const HybridGridTreeSet& reachability_restriction,
+        int accuracy,
         Semantics semantics) const
 {
-    const int& accuracy = this->settings().maximum_grid_depth;
     const HybridGrid& grid = *this->settings().grid;
 
     EvolverType evolver(new ImageSetHybridEvolver(sys));
     evolver->set_verbosity(this->verbosity - this->max_verbosity_used);
     evolver->set_log_tab_offset(this->log_tab_offset + this->max_verbosity_used);
-    evolver->tune_settings(grid,getHybridMaximumAbsoluteDerivatives(sys,reachability_restriction,_settings->domain_bounds),accuracy,UPPER_SEMANTICS);
+    evolver->tune_settings(grid,getHybridMaximumAbsoluteDerivatives(sys,reachability_restriction,_settings->domain_bounds),accuracy,semantics);
 
     return evolver;
 }
@@ -149,7 +149,7 @@ _upper_reach_evolve(
 
 	const HybridGrid& grid = *_settings->grid;
 
-	const EvolverType& evolver = _get_tuned_evolver(sys,reachability_restriction,UPPER_SEMANTICS);
+	const EvolverType& evolver = _get_tuned_evolver(sys,reachability_restriction,accuracy,UPPER_SEMANTICS);
 	UpperReachEvolveWorker worker(evolver,initial_enclosures,time,
 			grid,accuracy,enable_premature_termination_on_blocking_event,direction,concurrency);
 	result = worker.get_result();
@@ -194,10 +194,9 @@ lower_reach_evolve(
     GTS reachability_restriction(grid);
     int accuracy = _settings->maximum_grid_depth;
 
-    list<EnclosureType> initial_enclosures = enclosures_from_split_domain_midpoints(initial_set,
-    		   min_cell_widths(grid,_settings->maximum_grid_depth));
+    list<EnclosureType> initial_enclosures = enclosures_from_split_domain_midpoints(initial_set,min_cell_widths(grid,accuracy));
 
-    const EvolverType& evolver = _get_tuned_evolver(*_system,reachability_restriction,LOWER_SEMANTICS);
+    const EvolverType& evolver = _get_tuned_evolver(*_system,reachability_restriction,accuracy,LOWER_SEMANTICS);
 	ARIADNE_LOG(3,"Computing evolution...\n");
     for (list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); encl_it++) {
         Orbit<EnclosureType> orbit = evolver->orbit(*encl_it,time,LOWER_SEMANTICS);
@@ -255,7 +254,7 @@ upper_reach_evolve(
     // No reachability restriction involved
     GTS reachability_restriction(grid);
 
-    int maximum_grid_depth = _settings->maximum_grid_depth;
+    int accuracy = _settings->maximum_grid_depth;
     Float real_time=time.continuous_time();
     uint discrete_steps=time.discrete_time();
     Float lock_to_grid_time=_settings->lock_to_grid_time;
@@ -272,19 +271,19 @@ upper_reach_evolve(
     ARIADNE_LOG(3,"time_steps="<<time_steps<<"  lock_to_grid_time="<<lock_to_grid_time<<"\n");
 
     ARIADNE_LOG(3,"Computing initial evolution...\n");
-    initial.adjoin_outer_approximation(initial_set,maximum_grid_depth);
+    initial.adjoin_outer_approximation(initial_set,accuracy);
 
-    const EvolverType& evolver = _get_tuned_evolver(*_system,reachability_restriction,UPPER_SEMANTICS);
-    std::list<EnclosureType> initial_enclosures = cells_to_smallest_enclosures(initial,maximum_grid_depth);
+    const EvolverType& evolver = _get_tuned_evolver(*_system,reachability_restriction,accuracy,UPPER_SEMANTICS);
+    std::list<EnclosureType> initial_enclosures = cells_to_smallest_enclosures(initial,accuracy);
     for (std::list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); ++encl_it) {
         Orbit<EnclosureType> orbit = evolver->orbit(*encl_it,hybrid_lock_to_grid_time,UPPER_SEMANTICS);
-        reach.adjoin(outer_approximation(orbit.reach(),grid,maximum_grid_depth));
-        evolve.adjoin(outer_approximation(orbit.final(),grid,maximum_grid_depth));
+        reach.adjoin(outer_approximation(orbit.reach(),grid,accuracy));
+        evolve.adjoin(outer_approximation(orbit.final(),grid,accuracy));
     }
 
     for(uint i=1; i<time_steps; ++i) {
         ARIADNE_LOG(3,"computing "<<i+1<<"-th reachability step...\n");
-        make_lpair(found,evolve) = _upper_reach_evolve(*_system,evolve,hybrid_lock_to_grid_time,reachability_restriction,maximum_grid_depth);
+        make_lpair(found,evolve) = _upper_reach_evolve(*_system,evolve,hybrid_lock_to_grid_time,reachability_restriction,accuracy);
         ARIADNE_LOG(4,"found.size()="<<found.size()<<"\n");
         ARIADNE_LOG(4,"evolve.size()="<<evolve.size()<<"\n");
         reach.adjoin(found);
@@ -294,7 +293,7 @@ upper_reach_evolve(
     ARIADNE_LOG(5,"remaining_time="<<remaining_time<<"\n");
     if(!evolve.empty() && remaining_time > 0) {
         ARIADNE_LOG(3,"computing evolution for the remaining time...\n");
-        make_lpair(found,evolve) = _upper_reach_evolve(*_system,evolve,hybrid_remaining_time,reachability_restriction,maximum_grid_depth);
+        make_lpair(found,evolve) = _upper_reach_evolve(*_system,evolve,hybrid_remaining_time,reachability_restriction,accuracy);
         reach.adjoin(found);
     }
 
@@ -308,8 +307,7 @@ upper_reach_evolve(
 
 HybridReachabilityAnalyser::SetApproximationType
 HybridReachabilityAnalyser::
-chain_reach(
-        const HybridImageSet& initial_set) const
+chain_reach(const HybridImageSet& initial_set) const
 {
     ARIADNE_LOG(2,"HybridReachabilityAnalyser::chain_reach(system,initial_set)\n");
 
@@ -318,7 +316,7 @@ chain_reach(
     int transient_steps = _settings->transient_steps;
     Float lock_to_grid_time = _settings->lock_to_grid_time;
     int lock_to_grid_steps = _settings->lock_to_grid_steps;
-    int maximum_grid_depth = _settings->maximum_grid_depth;
+    int accuracy = _settings->maximum_grid_depth;
 
     ARIADNE_LOG(4,"transient_time=("<<transient_time<<","<<transient_steps<<")\n");
     ARIADNE_LOG(4,"lock_to_grid_time=("<<lock_to_grid_time<<","<<lock_to_grid_steps<<")\n");
@@ -349,15 +347,15 @@ chain_reach(
     HybridTime hybrid_transient_time(transient_time, transient_steps);
 
 	ARIADNE_LOG(3,"Computing transient evolution...\n");
-    initial.adjoin_outer_approximation(initial_set,maximum_grid_depth);
+    initial.adjoin_outer_approximation(initial_set,accuracy);
 
-    const EvolverType& evolver = _get_tuned_evolver(*_system,reachability_restriction,UPPER_SEMANTICS);
+    const EvolverType& evolver = _get_tuned_evolver(*_system,reachability_restriction,accuracy,UPPER_SEMANTICS);
 
-    std::list<EnclosureType> initial_enclosures = cells_to_smallest_enclosures(initial,maximum_grid_depth);
+    std::list<EnclosureType> initial_enclosures = cells_to_smallest_enclosures(initial,accuracy);
     for (std::list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); ++encl_it) {
         Orbit<EnclosureType> orbit = evolver->orbit(*encl_it,hybrid_transient_time,UPPER_SEMANTICS);
-        reach.adjoin(outer_approximation(orbit.reach(),grid,maximum_grid_depth));
-        evolve.adjoin(outer_approximation(orbit.final(),grid,maximum_grid_depth));
+        reach.adjoin(outer_approximation(orbit.reach(),grid,accuracy));
+        evolve.adjoin(outer_approximation(orbit.final(),grid,accuracy));
     }
 
     evolve.restrict(bounding);
@@ -373,7 +371,7 @@ chain_reach(
 
 		intermediate.adjoin(evolve);  
 
-        make_lpair(found,evolve)=_upper_reach_evolve(*_system,evolve,hybrid_lock_to_grid_time,reachability_restriction,maximum_grid_depth);
+        make_lpair(found,evolve)=_upper_reach_evolve(*_system,evolve,hybrid_lock_to_grid_time,reachability_restriction,accuracy);
         ARIADNE_LOG(4,"found.size()="<<found.size()<<"\n");
         ARIADNE_LOG(4,"evolve.size()="<<evolve.size()<<"\n");
 
@@ -808,7 +806,7 @@ _lower_chain_reach_and_epsilon(
 
     ARIADNE_LOG(3,"Computing recurrent evolution...\n");
 
-    const EvolverType& evolver = _get_tuned_evolver(system,reachability_restriction,LOWER_SEMANTICS);
+    const EvolverType& evolver = _get_tuned_evolver(system,reachability_restriction,accuracy,LOWER_SEMANTICS);
 
     uint i=0;
     while (!initial_enclosures.empty()) {

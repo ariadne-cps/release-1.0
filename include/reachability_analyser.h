@@ -210,9 +210,11 @@ class HybridReachabilityAnalyser
     		string plot_dirpath,
     		string name_prefix) const;
 
+    /*! \brief Obtains an evolver from the system, already tuned in respect to a restriction, accuracy and semantics */
     EvolverType _get_tuned_evolver(
             const SystemType& sys,
             const HybridGridTreeSet& reachability_restriction,
+            int accuracy,
             Semantics semantics) const;
 
     std::pair<GTS,GTS> _upper_reach_evolve(
