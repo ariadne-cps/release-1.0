@@ -260,7 +260,7 @@ void plot(const string& foldername, const string& filename, const SET& set)
 				draw(fig,set); 
 
 				// If there are more than two variables, prints the variable numbers				
-				char num_char[6] = "";
+				char num_char[7] = "";
 				if (numvar>2)
 					sprintf(num_char,"[%u,%u]",x,y);
 				// Writes the figure file
@@ -283,7 +283,7 @@ void plot(const string& foldername, const string& filename, const SET& set)
 						draw(fig,set[loc_it->first]);
 
 						// If there are more than two variables, prints the variable numbers
-						char num_char[6] = "";
+						char num_char[7] = "";
 						if (numvar>2)
 							sprintf(num_char,"-[%u,%u]",x,y);
 						// Writes the figure file

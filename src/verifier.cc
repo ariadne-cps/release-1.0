@@ -40,6 +40,7 @@ Verifier::Verifier(const HybridReachabilityAnalyser& analyser) :
 			_dominating_coarse_outer_approximation(new OuterApproximationCache()),
 			_dominated_coarse_outer_approximation(new OuterApproximationCache())
 {
+    this->charcode = "v";
     this->max_verbosity_used = VERIFIER_MAX_VERBOSITY_USED;
 	_analyser->set_log_tab_offset(this->max_verbosity_used);
 }
@@ -105,8 +106,7 @@ _safety_nosplitting(
 		SafetyVerificationInput& verInput,
 		const RealParameterSet& params) const
 {
-	ARIADNE_LOG(2,"\n");
-	ARIADNE_LOG(2,"Iterative verification...\n");
+	ARIADNE_LOG(2,"Iterative verification...");
 
 	SystemType& system = verInput.getSystem();
 
@@ -120,7 +120,7 @@ _safety_nosplitting(
 			depth <= _analyser->settings().highest_maximum_grid_depth;
 			++depth) {
 
-		ARIADNE_LOG(2, "Depth " << depth << "\n");
+		ARIADNE_LOG(2, "Depth " << depth);
 
 		tribool result = _safety_once(system,verInput.getInitialSet(),verInput.getSafetyConstraint(),params);
 
@@ -140,19 +140,19 @@ _safety_once(
 		const HybridConstraintSet& safety_constraint,
 		const RealParameterSet& params) const
 {
-		ARIADNE_LOG(3, "Verification...\n");
+		ARIADNE_LOG(3, "Verification...");
 
 		if (_safety_proving_once(system,initial_set,safety_constraint,params)) {
-			ARIADNE_LOG(3, "Safe.\n");
+			ARIADNE_LOG(3, "Safe.");
 			return true;
 		}
 
 		if (_safety_disproving_once(system,initial_set,safety_constraint,params)) {
-			ARIADNE_LOG(3, "Unsafe.\n");
+			ARIADNE_LOG(3, "Unsafe.");
 			return false;
 		}
 
-		ARIADNE_LOG(3, "Indeterminate.\n");
+		ARIADNE_LOG(3, "Indeterminate.");
 		return indeterminate;
 }
 
@@ -167,7 +167,7 @@ _safety_proving_once(
 {
 	bool result;
 
-	ARIADNE_LOG(4,"Proving...\n");
+	ARIADNE_LOG(4,"Proving...");
 
 	int& maximum_grid_depth = _analyser->settings().maximum_grid_depth;
 
@@ -175,19 +175,19 @@ _safety_proving_once(
 
 	sys.substitute_all(params,_settings->use_param_midpoints_for_proving);
 
-	ARIADNE_LOG(4,"Tuning settings for this proving iteration...\n");
+	ARIADNE_LOG(4,"Tuning settings for this proving iteration...");
 
 	static const bool EQUAL_GRID_FOR_ALL_LOCATIONS = false;
 	_tune_iterative_step_settings(sys,_safety_coarse_outer_approximation->get(),
 			EQUAL_GRID_FOR_ALL_LOCATIONS,UPPER_SEMANTICS);
 
-	ARIADNE_LOG(5, "Using reachability restriction: " << tribool_pretty_print(!_safety_reachability_restriction.empty()) << "\n");
+	ARIADNE_LOG(5, "Using reachability restriction: " << tribool_pretty_print(!_safety_reachability_restriction.empty()));
 
-	ARIADNE_LOG(4,"Performing outer reachability analysis...\n");
+	ARIADNE_LOG(4,"Performing outer reachability analysis...");
 
 	try {
 
-		ARIADNE_LOG(5, "Parameters: " << sys.parameters() << "\n");
+		ARIADNE_LOG(5, "Parameters: " << sys.parameters());
 
 		/* Given the initial set I, forward reachability F, and unsafe region U:
 
@@ -208,19 +208,19 @@ _safety_proving_once(
 					safety_constraint,_safety_reachability_restriction,DIRECTION_BACKWARD);
 
 			if (backward_initial.empty()) {
-				ARIADNE_LOG(4, "The initial set for backward reachability is empty.\n");
+				ARIADNE_LOG(4, "The initial set for backward reachability is empty.");
 				sys.substitute_all(original_params);
 				return true;
 			}
 
-			ARIADNE_LOG(5,"Retrieving backward reachability...\n");
+			ARIADNE_LOG(5,"Retrieving backward reachability...");
 
 			HybridGridTreeSet backward_reach = _analyser->outer_chain_reach(backward_initial,
 					DIRECTION_BACKWARD,_safety_reachability_restriction);
 
 			_safety_reachability_restriction = backward_reach;
 
-			ARIADNE_LOG(6,"Reachability size: " << backward_reach.size() << "\n");
+			ARIADNE_LOG(6,"Reachability size: " << backward_reach.size());
 
 			if (_settings->plot_results)
 				_plot_reach(backward_reach,"backward",maximum_grid_depth);
@@ -237,17 +237,17 @@ _safety_proving_once(
 		}
 
 		if (forward_initial.empty()) {
-			ARIADNE_LOG(4, "The initial set for forward reachability is empty.\n");
+			ARIADNE_LOG(4, "The initial set for forward reachability is empty.");
 			sys.substitute_all(original_params);
 			return true;
 		}
 
-		ARIADNE_LOG(5,"Retrieving forward reachability...\n");
+		ARIADNE_LOG(5,"Retrieving forward reachability...");
 
 		HybridGridTreeSet forward_reach = _analyser->outer_chain_reach(forward_initial,
 				DIRECTION_FORWARD,_safety_reachability_restriction);
 
-		ARIADNE_LOG(6,"Reachability size: " << forward_reach.size() << "\n");
+		ARIADNE_LOG(6,"Reachability size: " << forward_reach.size());
 
 		if (_settings->plot_results)
 			_plot_reach(forward_reach,"forward",maximum_grid_depth);
@@ -258,10 +258,10 @@ _safety_proving_once(
 		result = definitely(covers(safety_constraint,forward_reach));
 
 	} catch (ReachOutOfDomainException ex) {
-		ARIADNE_LOG(4, "The outer reached region is partially out of the domain (skipped).\n");
+		ARIADNE_LOG(4, "The outer reached region is partially out of the domain (skipped).");
 		result = false;
 	} catch (ReachUnsatisfiesConstraintException ex) {
-		ARIADNE_LOG(4, "The outer reached region is not inside the safe region (skipped).\n");
+		ARIADNE_LOG(4, "The outer reached region is not inside the safe region (skipped).");
 		result = false;
 	}
 
@@ -294,7 +294,7 @@ _reachability_refinement_starting_set(
 		result.remove(definitely_covered_cells(result,constraint_set));
 	}
 
-	ARIADNE_LOG(6,"Starting set size: " << result.size() << "\n");
+	ARIADNE_LOG(6,"Starting set size: " << result.size());
 
 	if (_settings->plot_results)
 		_plot_reach(result,(direction == DIRECTION_FORWARD ? "initial" : "final"),maximum_grid_depth);
@@ -322,7 +322,7 @@ _safety_disproving_once(
 		const HybridConstraintSet& safety_constraint,
 		const RealParameterSet& params) const
 {
-	ARIADNE_LOG(4,"Disproving...\n");
+	ARIADNE_LOG(4,"Disproving...");
 
 	bool result = false;
 
@@ -330,15 +330,15 @@ _safety_disproving_once(
 
 	sys.substitute_all(params,_settings->use_param_midpoints_for_disproving);
 
-	ARIADNE_LOG(4,"Tuning settings for this disproving iteration...\n");
+	ARIADNE_LOG(4,"Tuning settings for this disproving iteration...");
 
 	static const bool EQUAL_GRID_FOR_ALL_LOCATIONS = false;
 	_tune_iterative_step_settings(sys,_safety_coarse_outer_approximation->get(),
 			EQUAL_GRID_FOR_ALL_LOCATIONS,LOWER_SEMANTICS);
 
-	ARIADNE_LOG(5, "Using reachability restriction: " << tribool_pretty_print(!_safety_reachability_restriction.empty()) << "\n");
+	ARIADNE_LOG(5, "Using reachability restriction: " << tribool_pretty_print(!_safety_reachability_restriction.empty()));
 
-	ARIADNE_LOG(4,"Performing lower reachability analysis...\n");
+	ARIADNE_LOG(4,"Performing lower reachability analysis...");
 
 	try {
 		HybridGridTreeSet reach;
@@ -346,19 +346,19 @@ _safety_disproving_once(
 		make_lpair<HybridGridTreeSet,HybridFloatVector>(reach,epsilon) = _analyser->lower_chain_reach_and_epsilon(
 				initial_set,safety_constraint,_safety_reachability_restriction);
 
-		ARIADNE_LOG(5, "Epsilon: " << epsilon << "\n");
+		ARIADNE_LOG(5, "Epsilon: " << epsilon);
 
 		if (_settings->plot_results)
 			_plot_reach(reach,"lower",_analyser->settings().maximum_grid_depth);
 
 	} catch (ReachUnsatisfiesConstraintException ex) {
-		ARIADNE_LOG(5, "The lower reached region is partially outside the safe region (skipped).\n");
+		ARIADNE_LOG(5, "The lower reached region is partially outside the safe region (skipped).");
 		result = true;
 	}
 
 	sys.substitute_all(original_params);
 
-	ARIADNE_LOG(4, (result ? "Disproved.\n" : "Not disproved.\n") );
+	ARIADNE_LOG(4, (result ? "Disproved." : "Not disproved.") );
 
 	return result;
 }
@@ -380,11 +380,10 @@ parametric_safety(
 													 splitting_it != splittings.end();
 													 ++splitting_it)
 	{
-		ARIADNE_LOG(1,"<Split parameters set #" << ++i << "/" << splittings.size() << ">\n");
-		RealParameterSet current_params = *splitting_it;
-		ARIADNE_LOG(1,"Parameter values: " << current_params << " ");
+	    RealParameterSet current_params = *splitting_it;
+		ARIADNE_LOG(1,"Split parameters set #" << ++i << "/" << splittings.size() << ": values " << current_params);
 		tribool outcome = _safety_nosplitting(verInput,current_params);
-		ARIADNE_LOG(1,"Outcome: " << tribool_pretty_print(outcome) << "\n");
+		ARIADNE_LOG(1,"Outcome: " << tribool_pretty_print(outcome));
 		result.push_back(ParametricOutcome(current_params,outcome));
 	}
 
@@ -447,11 +446,10 @@ parametric_dominance(
 	std::list<RealParameterSet> splittings = maximally_split_parameters(dominating_params,_settings->maximum_parameter_depth);
 	uint i=0;
 	for (std::list<RealParameterSet>::const_iterator splitting_it = splittings.begin(); splitting_it != splittings.end(); ++splitting_it) {
-		ARIADNE_LOG(1,"<Split parameters set #" << ++i << "/" << splittings.size() << ">\n");
-		RealParameterSet current_params = *splitting_it;
-		ARIADNE_LOG(1,"Parameter values: " << current_params << " ");
+	    RealParameterSet current_params = *splitting_it;
+	    ARIADNE_LOG(1,"Split parameters set #" << ++i << "/" << splittings.size() << ": values " << current_params);
 		tribool outcome = _dominance(dominating,dominated,current_params);
-		ARIADNE_LOG(1,"Outcome: " << tribool_pretty_print(outcome) << "\n");
+		ARIADNE_LOG(1,"Outcome: " << tribool_pretty_print(outcome));
 		result.push_back(ParametricOutcome(current_params,outcome));
 	}
 
@@ -467,7 +465,7 @@ Verifier::_dominance(
 {
 	ARIADNE_ASSERT(dominating.getProjection().size() == dominated.getProjection().size());
 
-	ARIADNE_LOG(1, "Dominance checking...\n");
+	ARIADNE_LOG(1, "Dominance checking...");
 
 	if (_settings->plot_results)
 		_plot_dirpath_init(dominating.getSystem().name() + "&" + dominated.getSystem().name());
@@ -479,20 +477,20 @@ Verifier::_dominance(
     		depth <= _analyser->settings().highest_maximum_grid_depth;
     		++depth)
 	{
-		ARIADNE_LOG(2, "Depth " << depth << "\n");
+		ARIADNE_LOG(2, "Depth " << depth);
 
 		if (_dominance_proving_once(dominating, dominated, params)) {
-			ARIADNE_LOG(3, "Dominates.\n");
+			ARIADNE_LOG(3, "Dominates.");
 			return true;
 		}
 
 		if (_dominance_disproving_once(dominating, dominated, params)) {
-			ARIADNE_LOG(3, "Does not dominate.\n");
+			ARIADNE_LOG(3, "Does not dominate.");
 			return false;
 		}
     }
 
-	ARIADNE_LOG(3, "Indeterminate.\n");
+	ARIADNE_LOG(3, "Indeterminate.");
 	return indeterminate;
 }
 
@@ -502,7 +500,7 @@ Verifier::_dominance_proving_once(
 		DominanceVerificationInput& dominated,
 		const RealParameterSet& params) const
 {
-	ARIADNE_LOG(3,"Proving...\n");
+	ARIADNE_LOG(3,"Proving...");
 
 	bool result;
 
@@ -521,14 +519,14 @@ Verifier::_dominance_proving_once(
 		result = definitely(covers(flattened_dominated_lower_reach,flattened_dominating_outer_reach,flattened_epsilon));
 
 		ARIADNE_LOG(4, "The outer reached region of the dominating system is " << (!result ? "not ": "") <<
-					   "inside the projected shrinked lower reached region of the dominated system.\n");
+					   "inside the projected shrinked lower reached region of the dominated system.");
 
 	} catch (ReachOutOfDomainException ex) {
-		ARIADNE_LOG(4,"The outer reached region of the dominating system is partially out of the domain (skipped).\n");
+		ARIADNE_LOG(4,"The outer reached region of the dominating system is partially out of the domain (skipped).");
 		result = false;
 	}
 
-	ARIADNE_LOG(3, (result ? "Proved.\n" : "Not proved.\n") );
+	ARIADNE_LOG(3, (result ? "Proved." : "Not proved.") );
 
 	dominating.getSystem().substitute_all(original_constants);
 
@@ -541,7 +539,7 @@ Verifier::_dominance_disproving_once(
 		DominanceVerificationInput& dominated,
 	  	const RealParameterSet& params) const
 {
-	ARIADNE_LOG(3,"Disproving...\n");
+	ARIADNE_LOG(3,"Disproving...");
 
 	bool result;
 
@@ -561,11 +559,11 @@ Verifier::_dominance_disproving_once(
 				flattened_epsilon,_analyser->settings().maximum_grid_depth));
 
 	} catch (ReachOutOfDomainException ex) {
-		ARIADNE_LOG(4,"The outer reached region of the dominated system is partially out of the domain (skipped).\n");
+		ARIADNE_LOG(4,"The outer reached region of the dominated system is partially out of the domain (skipped).");
 		result = false;
 	}
 
-	ARIADNE_LOG(3, (result ? "Disproved.\n" : "Not disproved.\n") );
+	ARIADNE_LOG(3, (result ? "Disproved." : "Not disproved.") );
 
 	dominating.getSystem().substitute_all(original_params);
 
@@ -587,11 +585,11 @@ _dominance_flattened_lower_reach_and_epsilon(
 			_dominating_reachability_restriction : _dominated_reachability_restriction);
 	Set<Identifier> locked_params_ids = (dominanceSystem == DOMINATING_SYSTEM ? parameters_identifiers(params) : Set<Identifier>());
 
-	ARIADNE_LOG(4,"Choosing the settings for the lower reached region of the " << descriptor << " system...\n");
+	ARIADNE_LOG(4,"Choosing the settings for the lower reached region of the " << descriptor << " system...");
 
 	_choose_dominance_settings(verInfo,locked_params_ids,outer_approximation,reachability_restriction,LOWER_SEMANTICS);
 
-	ARIADNE_LOG(4,"Getting the lower reached region of the " << descriptor << " system...\n");
+	ARIADNE_LOG(4,"Getting the lower reached region of the " << descriptor << " system...");
 
 	const Vector<uint>& projection = verInfo.getProjection();
 
@@ -609,7 +607,7 @@ _dominance_flattened_lower_reach_and_epsilon(
 			flattened_epsilon[i] = max(flattened_epsilon[i],epsilon_it->second[projection[i]]);
 	}
 
-	ARIADNE_LOG(5,"Flattened epsilon: " << flattened_epsilon << "\n");
+	ARIADNE_LOG(5,"Flattened epsilon: " << flattened_epsilon);
 
 	return std::pair<GridTreeSet,Vector<Float> >(flattened_reach,flattened_epsilon);
 }
@@ -629,11 +627,11 @@ _dominance_flattened_outer_reach(
 			_dominating_reachability_restriction : _dominated_reachability_restriction);
 	Set<Identifier> locked_params_ids = (dominanceSystem == DOMINATING_SYSTEM ? parameters_identifiers(params) : Set<Identifier>());
 
-	ARIADNE_LOG(4,"Choosing the settings for the outer reached region of the " << descriptor << " system...\n");
+	ARIADNE_LOG(4,"Choosing the settings for the outer reached region of the " << descriptor << " system...");
 
 	_choose_dominance_settings(verInput,locked_params_ids,outer_approximation_cache.get(),reachability_restriction,UPPER_SEMANTICS);
 
-	ARIADNE_LOG(4,"Getting the outer reached region of the " << descriptor << " system...\n");
+	ARIADNE_LOG(4,"Getting the outer reached region of the " << descriptor << " system...");
 
 	HybridGridTreeSet reach = _analyser->outer_chain_reach(verInput.getInitialSet(),DIRECTION_FORWARD,reachability_restriction);
 
@@ -704,15 +702,15 @@ _choose_initial_safety_settings(
 		const HybridBoxes& domain,
 		const Set<Identifier>& locked_params_ids) const
 {
-	ARIADNE_LOG(3,"Choosing the initial settings of the analyser...\n");
+	ARIADNE_LOG(3,"Choosing the initial settings of the analyser...");
 	DiscretisedEvolutionSettings& settings = _analyser->settings();
 
 	settings.domain_bounds = domain;
-	ARIADNE_LOG(4, "Domain: " << domain << "\n");
+	ARIADNE_LOG(4, "Domain: " << domain);
 	settings.lock_to_grid_time = getLockToGridTime(system,domain);
-	ARIADNE_LOG(4, "Lock to grid time: " << settings.lock_to_grid_time << "\n");
+	ARIADNE_LOG(4, "Lock to grid time: " << settings.lock_to_grid_time);
 	settings.locked_parameters_ids = locked_params_ids;
-	ARIADNE_LOG(4, "Locked parameters IDs: " << locked_params_ids << "\n");
+	ARIADNE_LOG(4, "Locked parameters IDs: " << locked_params_ids);
 }
 
 
@@ -724,13 +722,13 @@ _tune_iterative_step_settings(
 		bool equal_grid_for_all_locations,
 		Semantics semantics) const
 {
-	ARIADNE_LOG(5, "Derivatives evaluation source: " << (hgts_domain.empty() ? "Domain box" : "Outer approximation") << "\n");
+	ARIADNE_LOG(5, "Derivatives evaluation source: " << (hgts_domain.empty() ? "Domain box" : "Outer approximation"));
 
 	HybridFloatVector hmad = getHybridMaximumAbsoluteDerivatives(system,hgts_domain,_analyser->settings().domain_bounds);
-	ARIADNE_LOG(5, "Derivatives bounds: " << hmad << "\n");
+	ARIADNE_LOG(5, "Derivatives bounds: " << hmad);
 	_analyser->settings().grid = boost::shared_ptr<HybridGrid>(
 			new HybridGrid(getHybridGrid(hmad,_analyser->settings().domain_bounds,equal_grid_for_all_locations)));
-	ARIADNE_LOG(5, "Grid lengths: " << _analyser->settings().grid->lengths() << "\n");
+	ARIADNE_LOG(5, "Grid lengths: " << _analyser->settings().grid->lengths());
 }
 
 void
@@ -772,17 +770,17 @@ _choose_dominance_settings(
 		Semantics semantics) const
 {
 	_analyser->settings().domain_bounds = verInput.getDomain();
-	ARIADNE_LOG(5, "Domain: " << _analyser->settings().domain_bounds << "\n");
+	ARIADNE_LOG(5, "Domain: " << _analyser->settings().domain_bounds);
 
 	static const bool EQUAL_GRID_FOR_ALL_LOCATIONS = true;
 	_tune_iterative_step_settings(verInput.getSystem(),outer_reach,EQUAL_GRID_FOR_ALL_LOCATIONS,semantics);
 
-	ARIADNE_LOG(5, "Use reachability restriction: " << tribool_pretty_print(!outer_approx_constraint.empty()) << "\n");
+	ARIADNE_LOG(5, "Use reachability restriction: " << tribool_pretty_print(!outer_approx_constraint.empty()));
 
 	_analyser->settings().lock_to_grid_time = getLockToGridTime(verInput.getSystem(),_analyser->settings().domain_bounds);
-	ARIADNE_LOG(5, "Lock to grid time: " << _analyser->settings().lock_to_grid_time << "\n");
+	ARIADNE_LOG(5, "Lock to grid time: " << _analyser->settings().lock_to_grid_time);
 	_analyser->settings().locked_parameters_ids = locked_params_ids;
-	ARIADNE_LOG(5, "Locked parameters IDs: " << _analyser->settings().locked_parameters_ids << "\n");
+	ARIADNE_LOG(5, "Locked parameters IDs: " << _analyser->settings().locked_parameters_ids);
 }
 
 void

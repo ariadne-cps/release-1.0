@@ -30,7 +30,9 @@
 
 #include <iostream>
 #include <fstream>
+#include <string>
 
+static const std::string charcode="";
 static const int verbosity=0;
 static const unsigned log_tab_offset=0;
 
@@ -40,19 +42,21 @@ static const unsigned log_tab_offset=0;
 		std::string tabulation; \
 		for (uint ariadne_log=0;ariadne_log<level-1+log_tab_offset;++ariadne_log) \
 			tabulation += "  "; \
-		std::clog << tabulation + msg << std::flush; }
+		std::clog << "[" << charcode << ":" << level << "]" << tabulation + msg << std::endl << std::flush; }
 
 namespace Ariadne {
   
 class Loggable {
 
   protected:
+    mutable std::string charcode;
     mutable int verbosity;
     mutable unsigned log_tab_offset;
     mutable unsigned max_verbosity_used;
   public:
-    Loggable() : verbosity(0),log_tab_offset(0),max_verbosity_used(0) { }
+    Loggable() : charcode(""),verbosity(0),log_tab_offset(0),max_verbosity_used(0) { }
 
+    virtual void set_code(char code) { this->charcode = code; }
     virtual void set_verbosity(int verbosity) { this->verbosity = verbosity; }
     virtual void set_log_tab_offset(int offset) { this->log_tab_offset = offset; }
 };

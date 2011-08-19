@@ -36,7 +36,7 @@ int main(int argc,char *argv[])
 	HybridAutomaton system("traffic-arbitrator4");
 
     /// Set the system parameters
-	Float  a = 10.0;
+	Float a = 10.0;
 	Float b = 30.0;
 	Float c = 40.0;
 	Float d = 50.0;
@@ -47,6 +47,11 @@ int main(int argc,char *argv[])
 	Float alpha_min_prime = 0.0005;
 	Float alpha_initial_l = 0.1;
 	Float alpha_initial_u = 0.1;
+	RealParameter af_fa("af_fa",Interval(a - f, f - a));
+	RealParameter dc_eb("dc_eb",Interval(d - c, e - b));
+	RealParameter brl_crl("brl_crl",Interval(b - rl, c - rl));
+	RealParameter rue_rud("rue_rud",Interval(ru - e, ru - d));
+
 	RealParameter alpha_min("alpha_min",0.002);
 	RealParameter alpha_max("alpha_max",1.0);
 	RealParameter delta("delta",0.1);
@@ -106,14 +111,6 @@ int main(int argc,char *argv[])
     RealExpression id_y34 = y34;
     // Zero
     RealExpression zero = 0.0;
-    // [a-f f-a]
-    RealExpression af_fa = Interval(a - f, f - a);
-    // [d-c e-b]
-    RealExpression dc_eb = Interval(d - c, e - b);
-    // [b-rl c-rl]
-    RealExpression brl_crl = Interval(b - rl, c - rl);
-    // [ru-e ru-d]
-    RealExpression rue_rud = Interval(ru - e, ru - d);
 
     // Dynamics at the different modes
 
@@ -197,31 +194,20 @@ int main(int argc,char *argv[])
             Box(3,0.0,1.1*alpha_max.value().upper(),0.0,1.1*alpha_max.value().upper(),0.0,1.1*alpha_max.value().upper()));
 
     // The safety constraint
-    /*Box codomain(3,
+    Box codomain(3,
             alpha_min_prime,std::numeric_limits<double>::infinity(),
             alpha_min_prime,std::numeric_limits<double>::infinity(),
             alpha_min_prime,std::numeric_limits<double>::infinity());
     HybridConstraintSet safety_constraint(system.state_space(),ConstraintSet(identity,codomain));
-    */
-
-    List<RealExpression> id1;
-    id1.append(id_y12);
-    VectorFunction constr1(id1, varlist);
-    Box codomain(1,
-            alpha_min_prime,std::numeric_limits<double>::infinity());
-    HybridConstraintSet safety_constraint(system.state_space(),ConstraintSet(constr1,codomain));
-
 
     /// Verification
 
     HybridReachabilityAnalyser analyser(system);
-    analyser.verbosity = 9;
-    analyser.settings().highest_maximum_grid_depth = 4;
+    analyser.settings().highest_maximum_grid_depth = 6;
     Verifier verifier(analyser);
-    verifier.verbosity = thisVerbosity;
+    verifier.set_verbosity(thisVerbosity);
     verifier.settings().plot_results = true;
 
     SafetyVerificationInput verInfo(system, initial_set, domain, safety_constraint);
-
     cout << verifier.safety(verInfo) << "\n";
 }
