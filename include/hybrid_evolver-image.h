@@ -213,7 +213,7 @@ class ImageSetHybridEvolver
     					   const EventListType& initial_events,
     					   const uint dimension) const;
 
-    void _logStepAtVerbosity1(const std::list<HybridTimedSetType>& working_sets,
+    void _log_step_summary(const std::list<HybridTimedSetType>& working_sets,
     					 const EnclosureListType& reach_sets,
     					 const EventListType& initial_events,
     					 const TimeModelType& initial_time_model,

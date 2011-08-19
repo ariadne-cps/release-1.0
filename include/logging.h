@@ -34,13 +34,13 @@
 
 static const std::string charcode="";
 static const int verbosity=0;
-static const unsigned log_tab_offset=0;
+static const unsigned tab_offset=0;
 
 //! Send a message to the global logging stream. 
 #define ARIADNE_LOG(level,msg)                                  \
     if(verbosity >= level) { \
 		std::string tabulation; \
-		for (uint ariadne_log=0;ariadne_log<level-1+log_tab_offset;++ariadne_log) \
+		for (uint ariadne_log=0;ariadne_log<level+tab_offset;++ariadne_log) \
 			tabulation += "  "; \
 		std::clog << "[" << charcode << ":" << level << "]" << tabulation + msg << std::endl << std::flush; }
 
@@ -51,14 +51,14 @@ class Loggable {
   protected:
     mutable std::string charcode;
     mutable int verbosity;
-    mutable unsigned log_tab_offset;
-    mutable unsigned max_verbosity_used;
+    mutable unsigned tab_offset; // The tabbing offset for logging on this class (set by a parent class)
+    mutable unsigned child_tab_offset; // The additional offset required to activate logging on child loggable classes
   public:
-    Loggable() : charcode(""),verbosity(0),log_tab_offset(0),max_verbosity_used(0) { }
+    Loggable() : charcode(""),verbosity(0),tab_offset(0),child_tab_offset(0) { }
 
     virtual void set_code(char code) { this->charcode = code; }
     virtual void set_verbosity(int verbosity) { this->verbosity = verbosity; }
-    virtual void set_log_tab_offset(int offset) { this->log_tab_offset = offset; }
+    virtual void set_tab_offset(int offset) { this->tab_offset = offset; }
 };
 
 // Global log output file

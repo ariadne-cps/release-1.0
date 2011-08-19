@@ -386,7 +386,7 @@ HybridFloatVector getDerivativeWidths(
 std::list<RealParameterSet> getSplitParametersMidpointsSet(const std::list<RealParameterSet>& intervals_set);
 
 /*! \brief Splits the constant \a con into \a numParts parts. */
-std::vector<RealParameter> split(
+std::vector<RealParameter> split_reordered(
 		const RealParameter& con,
 		uint numParts);
 

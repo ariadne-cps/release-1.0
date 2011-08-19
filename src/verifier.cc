@@ -30,8 +30,7 @@
 
 namespace Ariadne {
 
-// To be updated as soon as the maximum verbosity changes
-const unsigned int VERIFIER_MAX_VERBOSITY_USED = 6;
+const unsigned int VERIFIER_CHILD_OFFSET = 5;
 
 Verifier::Verifier(const HybridReachabilityAnalyser& analyser) :
 			_analyser(analyser.clone()),
@@ -41,8 +40,8 @@ Verifier::Verifier(const HybridReachabilityAnalyser& analyser) :
 			_dominated_coarse_outer_approximation(new OuterApproximationCache())
 {
     this->charcode = "v";
-    this->max_verbosity_used = VERIFIER_MAX_VERBOSITY_USED;
-	_analyser->set_log_tab_offset(this->max_verbosity_used);
+    this->child_tab_offset = VERIFIER_CHILD_OFFSET;
+	_analyser->set_tab_offset(this->tab_offset+this->child_tab_offset);
 }
 
 
@@ -56,7 +55,7 @@ void
 Verifier::set_verbosity(int verbosity)
 {
     this->verbosity = verbosity;
-    _analyser->set_verbosity(verbosity-this->max_verbosity_used);
+    _analyser->set_verbosity(verbosity-this->child_tab_offset);
 }
 
 
