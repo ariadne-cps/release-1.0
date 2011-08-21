@@ -65,11 +65,11 @@ int main(int argc,char *argv[])
 	/// Verification
 
 	HybridReachabilityAnalyser analyser(system);
-	analyser.settings().highest_maximum_grid_depth = 4;
 	analyser.free_cores = 3;
 	Verifier verifier(analyser);
 	verifier.set_verbosity(verifierVerbosity);
 	verifier.settings().maximum_parameter_depth = 3;
+	verifier.settings().time_limit_for_outcome = 10;
 	verifier.settings().plot_results = false;
 
 	SafetyVerificationInput verInfo(system, initial_set, domain, safety_constraint);

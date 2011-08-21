@@ -176,21 +176,6 @@ class DiscretisedEvolutionSettings {
     //! This parameter is only used in upper_evolve(), upper_reach() and chain_reach() routines.
     IntType maximum_grid_depth;
 
-    //! \brief Set the highest allowed value of maximum_grid_depth to be used by an analysis method that iteratively refines the grid depth.
-    //! \details
-    //! Increasing this value (greater or equal to zero) reduces the computation time when very high accuracy is required for verification,
-	//! but can increase the computation time when very low accuracy is sufficient instead.
-    //!  <br> 
-    //! This parameter is only used in the iterative routines such as verify_iterative() and the *_parametric() routines.
-	IntType lowest_maximum_grid_depth;
-
-    //! \brief Set the highest allowed value of maximum_grid_depth to be used by an analysis method that iteratively refines the grid depth.
-    //! \details
-    //! Increasing this value increases the maximum accuracy of the computation for iterative methods. 
-    //!  <br> 
-    //! This parameter is only used in the verify_iterative() routine.
-	IntType highest_maximum_grid_depth;
-
     //! \brief Set the maximum height used for approximation on a grid for chain reachability computations.
     //! \details
     //! Increasing this value increases domain over which computation is performed. 
@@ -232,30 +217,31 @@ class VerificationSettings {
 
     /*! \brief Whether the analysis results must be plotted. */
 	bool plot_results;
+
+	/*! \brief The time (in seconds) under which a verification outcome should be obtained.
+	 * \details The verifier would stop iterative refinement (yielding indeterminate) as soon as
+	 * it surpasses this value. */
+	uint time_limit_for_outcome;
+
 	/*! \brief The maximum depth of parameter range splitting.
-	 * \details A value of zero means that the parameter space is not splitted at all. */
+	 * \details A value of zero means that the parameter space is not splitted at all. The total verification time
+	 * in this case is multiplied by 2^(number_of_parameters * maximum_parameter_depth). */
 	uint maximum_parameter_depth;
+
 	/*! \brief Whether to substitute midpoints of parameter boxes when proving.
 	 * \details Defaults to false. A value of true would not yield a formal result for the parameter box
 	 * but would be useful for quick pre-analysis. */
 	bool use_param_midpoints_for_proving;
+
 	/*! \brief Whether to substitute midpoints of parameter boxes when disproving.
 	 * \details Defaults to true. Indeed, if we use a value of false and successfully disprove, we gain no additional insight.
 	 * Choosing false has the benefit of exploring the whole parameter box, but the drawback of possibly be unable to successfully disprove at all
 	 * due to error radii. */
 	bool use_param_midpoints_for_disproving;
 
-    //! \brief Enable backward refinement of reachability when testing inclusion in a constraint.
- 	//! \details The refinement itself is done only after a reachability restriction is available.
+    /*/ \brief Enable backward refinement of reachability when testing inclusion in a constraint.
+ 	 * \details The refinement itself is done only after a reachability restriction is available. */
  	bool enable_backward_refinement_for_testing_inclusion;
-
- 	/*! \brief Enable domain enforcing.
- 	 *  \details If enforcing is disabled, the domain is only used to terminate reachability as soon as the domain is
- 	 *  not respected. If enforcing is enabled, then reachability is strictly restricted inside the domain. In this case,
- 	 *  there is an implicit assumption that the reachability is guaranteed to be inside the domain (the user must provide
- 	 *  such guarantee by properly choosing the domain, otherwise the results are valid only on the domain itself).
- 	 */
- 	bool enable_domain_enforcing;
 };
 
 inline
@@ -279,8 +265,6 @@ DiscretisedEvolutionSettings::DiscretisedEvolutionSettings(const SystemType& sys
       initial_grid_depth(10),
       initial_grid_density(8),
       maximum_grid_depth(6),
-	  lowest_maximum_grid_depth(0),
-	  highest_maximum_grid_depth(9),
       maximum_grid_height(16),
       grid(new HybridGrid(sys.state_space())),
       splitting_constants_target_ratio(0.1),
@@ -290,11 +274,11 @@ DiscretisedEvolutionSettings::DiscretisedEvolutionSettings(const SystemType& sys
 inline
 VerificationSettings::VerificationSettings() :
 		plot_results(false),
+		time_limit_for_outcome(10),
     	maximum_parameter_depth(3),
     	use_param_midpoints_for_proving(false),
     	use_param_midpoints_for_disproving(true),
-    	enable_backward_refinement_for_testing_inclusion(true),
-		enable_domain_enforcing(false)
+    	enable_backward_refinement_for_testing_inclusion(true)
 { }
 
 
@@ -326,8 +310,6 @@ operator<<(std::ostream& os, const DiscretisedEvolutionSettings& s)
        << ",\n  initial_grid_depth=" << s.initial_grid_depth
        << ",\n  initial_grid_density=" << s.initial_grid_density
        << ",\n  maximum_grid_depth=" << s.maximum_grid_depth
-       << ",\n  lowest_maximum_grid_depth=" << s.lowest_maximum_grid_depth
-       << ",\n  highest_maximum_grid_depth=" << s.highest_maximum_grid_depth
        << ",\n  maximum_grid_height=" << s.maximum_grid_height
        << ",\n  bounding_domain=" << s.domain_bounds
        << ",\n  grid=" << *s.grid
@@ -344,11 +326,11 @@ operator<<(std::ostream& os, const VerificationSettings& s)
 {
     os << "VerificationSettings"
        << "(\n  plot_results=" << s.plot_results
+       << ",\n  time_limit_for_outcome" << s.time_limit_for_outcome
        << ",\n  maximum_parameter_depth=" << s.maximum_parameter_depth
        << ",\n  use_param_midpoints_for_proving=" << s.use_param_midpoints_for_proving
        << ",\n  use_param_midpoints_for_disproving=" << s.use_param_midpoints_for_disproving
-       << ",\n  enable_fb_refinement_for_safety_proving=" << s.enable_backward_refinement_for_testing_inclusion
-       << ",\n  enable_domain_enforcing=" << s.enable_domain_enforcing
+       << ",\n  enable_backward_refinement_for_testing_inclusion=" << s.enable_backward_refinement_for_testing_inclusion
        << "\n)\n";
     return os;
 }

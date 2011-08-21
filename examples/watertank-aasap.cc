@@ -242,8 +242,6 @@ int main(int argc,char *argv[])
 	// Create an evolver and analyser objects, then set their verbosity
 	HybridEvolver evolver;
 	HybridReachabilityAnalyser analyser(evolver);
-	analyser.settings().lowest_maximum_grid_depth = 0;
-	analyser.settings().highest_maximum_grid_depth = 8;
 	analyser.free_cores = 0;
 	Verifier verifier(analyser);
 	verifier.verbosity = verifierVerbosity;

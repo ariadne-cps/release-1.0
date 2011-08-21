@@ -203,7 +203,6 @@ int main(int argc,char *argv[])
     /// Verification
 
     HybridReachabilityAnalyser analyser(system);
-    analyser.settings().highest_maximum_grid_depth = 6;
     Verifier verifier(analyser);
     verifier.set_verbosity(thisVerbosity);
     verifier.settings().plot_results = true;

@@ -114,10 +114,9 @@ _safety_nosplitting(
 
 	_reset_and_choose_initial_safety_settings(system,verInput.getDomain(),parameters_identifiers(params));
 
-	int& depth = _analyser->settings().maximum_grid_depth;
-	for (depth = _analyser->settings().lowest_maximum_grid_depth;
-			depth <= _analyser->settings().highest_maximum_grid_depth;
-			++depth) {
+    int& depth = _analyser->settings().maximum_grid_depth;
+    depth = 0;
+	for (time_t initial_time = time(NULL); time(NULL) - initial_time < _settings->time_limit_for_outcome; ++depth) {
 
 		ARIADNE_LOG(2, "Depth " << depth);
 
@@ -472,9 +471,8 @@ Verifier::_dominance(
 	_reset_and_choose_initial_dominance_settings(dominating,dominated);
 
 	int& depth = _analyser->settings().maximum_grid_depth;
-    for (depth = _analyser->settings().lowest_maximum_grid_depth;
-    		depth <= _analyser->settings().highest_maximum_grid_depth;
-    		++depth)
+	depth = 0;
+    for (time_t initial_time = time(NULL); time(NULL) - initial_time < _settings->time_limit_for_outcome; ++depth)
 	{
 		ARIADNE_LOG(2, "Depth " << depth);
 
@@ -654,19 +652,10 @@ _reset_and_choose_initial_safety_settings(
 		const HybridBoxes& domain,
 		const Set<Identifier>& locked_params_ids) const
 {
-	static const bool EQUAL_GRID_FOR_ALL_LOCATIONS = false;
-
 	_safety_coarse_outer_approximation->reset();
 	_safety_reachability_restriction = HybridGridTreeSet();
 
 	_choose_initial_safety_settings(system,domain,locked_params_ids);
-
-	if (_settings->enable_domain_enforcing) {
-		std::pair<HybridGridTreeSet,HybridGridTreeSet> reach_pair =
-				_get_coarse_outer_approximation_and_reachability_restriction(system,domain,EQUAL_GRID_FOR_ALL_LOCATIONS);
-		_safety_coarse_outer_approximation->set(reach_pair.first);
-		_safety_reachability_restriction = reach_pair.second;
-	}
 }
 
 
@@ -736,27 +725,11 @@ _reset_and_choose_initial_dominance_settings(
 		DominanceVerificationInput& dominating,
 		DominanceVerificationInput& dominated) const
 {
-	static const bool EQUAL_GRID_FOR_ALL_LOCATIONS = true;
-
 	_dominating_coarse_outer_approximation->reset();
 	_dominated_coarse_outer_approximation->reset();
 
 	_dominating_reachability_restriction = HybridGridTreeSet();
 	_dominated_reachability_restriction = HybridGridTreeSet();
-
-	if (_settings->enable_domain_enforcing) {
-		std::pair<HybridGridTreeSet,HybridGridTreeSet> dominating_reach_pair =
-				_get_coarse_outer_approximation_and_reachability_restriction(dominating.getSystem(),
-						dominating.getDomain(),EQUAL_GRID_FOR_ALL_LOCATIONS);
-		_dominating_coarse_outer_approximation->set(dominating_reach_pair.first);
-		_dominating_reachability_restriction = dominating_reach_pair.second;
-
-		std::pair<HybridGridTreeSet,HybridGridTreeSet> dominated_reach_pair =
-				_get_coarse_outer_approximation_and_reachability_restriction(dominated.getSystem(),
-						dominated.getDomain(),EQUAL_GRID_FOR_ALL_LOCATIONS);
-		_dominated_coarse_outer_approximation->set(dominated_reach_pair.first);
-		_dominated_reachability_restriction = dominated_reach_pair.second;
-	}
 }
 
 void

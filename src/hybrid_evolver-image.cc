@@ -133,8 +133,7 @@ _evolution(EnclosureListType& final_sets,
     std::list< HybridTimedSetType > working_sets;
     _evolution_add_initialSet(working_sets,initial_set,semantics);
 
-	// While there exists a working set, process it and increment the total
-    uint i=0;
+	// While there exists a working set, process it
 	while(!working_sets.empty()) {
 
 		// Get the least recent working set, pop it and update the corresponding size

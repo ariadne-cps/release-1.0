@@ -59,7 +59,6 @@ class EvolverInterface :
     typedef ListSet<EnclosureType> EnclosureListType;
 	typedef EnclosedEvolutionSettings EvolutionSettingsType;
 
-
     //! \brief Virtual destructor. 
     virtual ~EvolverInterface() {};
 
@@ -78,7 +77,6 @@ class EvolverInterface :
 			const HybridFloatVector& hmad,
 			AccuracyType accuracy,
 			Semantics semantics) = 0;
-
 
   public:
     //! \brief Compute an approximation to the evolved set under the given semantics. 

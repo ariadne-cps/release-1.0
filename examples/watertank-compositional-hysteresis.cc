@@ -63,13 +63,10 @@ int main(int argc,char *argv[])
 	TaylorCalculus lower_integrator(2,2,1e-4);
 	ImageSetHybridEvolver evolver(system,outer_integrator,lower_integrator);
 	HybridReachabilityAnalyser analyser(evolver);
-	analyser.settings().lowest_maximum_grid_depth = 0;
-	analyser.settings().highest_maximum_grid_depth = 7;
 	Verifier verifier(analyser);
 	verifier.verbosity = verifierVerbosity;
 	verifier.settings().maximum_parameter_depth = 3;
 	verifier.settings().plot_results = true;
-	verifier.settings().enable_domain_enforcing = true;
 
 	RealParameterSet parameters;
 	parameters.insert(RealParameter("hmin",Interval(5.0,6.0)));

@@ -110,11 +110,9 @@ int main(int argc,char *argv[])
 	TaylorCalculus lower_integrator(2,2,1e-4);
 	ImageSetHybridEvolver evolver(outer_integrator,lower_integrator);
 	HybridReachabilityAnalyser analyser(evolver);
-	analyser.settings().highest_maximum_grid_depth = 10;
 	Verifier verifier(analyser);
 	verifier.settings().enable_backward_refinement_for_testing_inclusion = true;
 	verifier.settings().maximum_parameter_depth = 2;
-	verifier.settings().enable_domain_enforcing = true;
 	verifier.settings().plot_results = false;
 
 	SafetyVerificationInput verInput(system, initial_set, domain, safety_constraint);
