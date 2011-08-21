@@ -185,6 +185,12 @@ class HybridReachabilityAnalyser
 
     //@}
 
+    /*! \brief Chooses the initial evolution settings. */
+    void choose_initial_settings(
+            const SystemType& system,
+            const HybridBoxes& domain,
+            const Set<Identifier>& locked_params);
+
   public:
 
 	// The reduction in the number of logical cores used in multithreading (down from the maximum concurrency of the machine) (zero by default)

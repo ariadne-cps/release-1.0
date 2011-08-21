@@ -57,24 +57,22 @@ int main(int argc,char *argv[])
 	Box codomain(1,5.25,8.25);
 	HybridConstraintSet safety_constraint(system.state_space(),ConstraintSet(cons_f,codomain));
 
+	// System input
 	SafetyVerificationInput verInput(system, initial_set, domain, safety_constraint);
 
+    // The parameters
+    RealParameterSet parameters;
+    parameters.insert(RealParameter("hmin",Interval(5.25,6.25)));
+    parameters.insert(RealParameter("hmax",Interval(7.25,8.25)));
+
 	/// Verification
-	TaylorCalculus outer_integrator(2,2,1e-4);
-	TaylorCalculus lower_integrator(2,2,1e-4);
-	ImageSetHybridEvolver evolver(outer_integrator,lower_integrator);
-	HybridReachabilityAnalyser analyser(evolver);
-	Verifier verifier(analyser);
-	verifier.verbosity = verifierVerbosity;
-	verifier.settings().plot_results = true;
-	verifier.settings().maximum_parameter_depth = 5;
+    HybridReachabilityAnalyser analyser(system);
+    Verifier verifier(analyser);
+    verifier.set_verbosity(verifierVerbosity);
+    verifier.settings().maximum_parameter_depth = 3;
+    verifier.settings().time_limit_for_outcome = 10;
+    verifier.settings().plot_results = false;
 
-	// The parameters
-	RealParameterSet parameters;
-	parameters.insert(RealParameter("hmin",Interval(5.25,6.25)));
-	parameters.insert(RealParameter("hmax",Interval(7.25,8.25)));
-
-	//cout << verifier.safety(verInput) << "\n";
 	std::list<ParametricOutcome> results = verifier.parametric_safety(verInput, parameters);
 	draw(system.name(),results);
 }

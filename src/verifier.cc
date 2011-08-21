@@ -112,15 +112,14 @@ _safety_nosplitting(
 	if (_settings->plot_results)
 		_plot_dirpath_init(system.name());
 
-	_reset_and_choose_initial_safety_settings(system,verInput.getDomain(),parameters_identifiers(params));
+	_reset_safety_settings();
 
-    int& depth = _analyser->settings().maximum_grid_depth;
-    depth = 0;
-	for (time_t initial_time = time(NULL); time(NULL) - initial_time < _settings->time_limit_for_outcome; ++depth) {
+	time_t initial_time = time(NULL);
+	for (int accuracy = 0; time(NULL) - initial_time < _settings->time_limit_for_outcome; ++accuracy) {
 
-		ARIADNE_LOG(2, "Depth " << depth);
+		ARIADNE_LOG(2, "Accuracy " << accuracy);
 
-		tribool result = _safety_once(system,verInput.getInitialSet(),verInput.getSafetyConstraint(),params);
+		tribool result = _safety_once(verInput,accuracy,params);
 
 		if (!indeterminate(result))
 			return result;
@@ -132,42 +131,42 @@ _safety_nosplitting(
 
 tribool
 Verifier::
-_safety_once(
-		SystemType& system,
-		const HybridImageSet& initial_set,
-		const HybridConstraintSet& safety_constraint,
+_safety_once(SafetyVerificationInput& verInput,
+		const unsigned int& accuracy,
 		const RealParameterSet& params) const
 {
-		ARIADNE_LOG(3, "Verification...");
+    ARIADNE_LOG(3, "Verification...");
 
-		if (_safety_proving_once(system,initial_set,safety_constraint,params)) {
-			ARIADNE_LOG(3, "Safe.");
-			return true;
-		}
+    if (_safety_proving_once(verInput,accuracy,params)) {
+        ARIADNE_LOG(3, "Safe.");
+        return true;
+    }
 
-		if (_safety_disproving_once(system,initial_set,safety_constraint,params)) {
-			ARIADNE_LOG(3, "Unsafe.");
-			return false;
-		}
+    if (_safety_disproving_once(verInput,accuracy,params)) {
+        ARIADNE_LOG(3, "Unsafe.");
+        return false;
+    }
 
-		ARIADNE_LOG(3, "Indeterminate.");
-		return indeterminate;
+    ARIADNE_LOG(3, "Indeterminate.");
+    return indeterminate;
 }
 
 
 bool
 Verifier::
 _safety_proving_once(
-		SystemType& sys,
-		const HybridImageSet& initial_set,
-		const HybridConstraintSet& safety_constraint,
+        SafetyVerificationInput& verInput,
+		const unsigned int& accuracy,
 		const RealParameterSet& params) const
 {
 	bool result;
 
-	ARIADNE_LOG(4,"Proving...");
+	SystemType& sys = verInput.getSystem();
+	const HybridImageSet& initial_set = verInput.getInitialSet();
+	const HybridConstraintSet& safety_constraint = verInput.getSafetyConstraint();
+	const HybridBoxes& domain_bounds = verInput.getDomain();
 
-	int& maximum_grid_depth = _analyser->settings().maximum_grid_depth;
+	ARIADNE_LOG(4,"Proving...");
 
 	RealParameterSet original_params = sys.parameters();
 
@@ -175,10 +174,17 @@ _safety_proving_once(
 
 	ARIADNE_LOG(4,"Tuning settings for this proving iteration...");
 
-	static const bool EQUAL_GRID_FOR_ALL_LOCATIONS = false;
-	_tune_iterative_step_settings(sys,_safety_coarse_outer_approximation->get(),
-			EQUAL_GRID_FOR_ALL_LOCATIONS,UPPER_SEMANTICS);
+    HybridReachabilityAnalyser analyser(sys);
 
+    analyser.settings().maximum_grid_depth = accuracy;
+    analyser.choose_initial_settings(sys,domain_bounds,parameters_identifiers(params));
+    ARIADNE_LOG(5, "Derivatives evaluation source: " << (_safety_coarse_outer_approximation->get().empty() ? "Domain box" : "Outer approximation"));
+    HybridFloatVector hmad = getHybridMaximumAbsoluteDerivatives(sys,_safety_coarse_outer_approximation->get(),domain_bounds);
+    ARIADNE_LOG(5, "Derivatives bounds: " << hmad);
+    static const bool EQUAL_GRID_FOR_ALL_LOCATIONS = false;
+    analyser.settings().grid = boost::shared_ptr<HybridGrid>(
+            new HybridGrid(getHybridGrid(hmad,domain_bounds,EQUAL_GRID_FOR_ALL_LOCATIONS)));
+    ARIADNE_LOG(5, "Grid lengths: " << analyser.settings().grid->lengths());
 	ARIADNE_LOG(5, "Using reachability restriction: " << tribool_pretty_print(!_safety_reachability_restriction.empty()));
 
 	ARIADNE_LOG(4,"Performing outer reachability analysis...");
@@ -202,7 +208,7 @@ _safety_proving_once(
 
 		if (!_safety_reachability_restriction.empty() && _settings->enable_backward_refinement_for_testing_inclusion) {
 
-			HybridGridTreeSet backward_initial = _reachability_refinement_starting_set(sys,initial_set,
+			HybridGridTreeSet backward_initial = _reachability_refinement_starting_set(analyser,sys,initial_set,
 					safety_constraint,_safety_reachability_restriction,DIRECTION_BACKWARD);
 
 			if (backward_initial.empty()) {
@@ -213,7 +219,7 @@ _safety_proving_once(
 
 			ARIADNE_LOG(5,"Retrieving backward reachability...");
 
-			HybridGridTreeSet backward_reach = _analyser->outer_chain_reach(backward_initial,
+			HybridGridTreeSet backward_reach = analyser.outer_chain_reach(backward_initial,
 					DIRECTION_BACKWARD,_safety_reachability_restriction);
 
 			_safety_reachability_restriction = backward_reach;
@@ -221,17 +227,17 @@ _safety_proving_once(
 			ARIADNE_LOG(6,"Reachability size: " << backward_reach.size());
 
 			if (_settings->plot_results)
-				_plot_reach(backward_reach,"backward",maximum_grid_depth);
+				_plot_reach(backward_reach,"backward",accuracy);
 
 		}
 
 		HybridGridTreeSet forward_initial;
 		if (!_safety_reachability_restriction.empty()) {
-			forward_initial = _reachability_refinement_starting_set(sys,initial_set,
+			forward_initial = _reachability_refinement_starting_set(analyser,sys,initial_set,
 				safety_constraint,_safety_reachability_restriction,DIRECTION_FORWARD);
 		} else {
-			forward_initial.adjoin_outer_approximation(initial_set,maximum_grid_depth);
-			forward_initial.mince(maximum_grid_depth);
+			forward_initial.adjoin_outer_approximation(initial_set,accuracy);
+			forward_initial.mince(accuracy);
 		}
 
 		if (forward_initial.empty()) {
@@ -242,13 +248,13 @@ _safety_proving_once(
 
 		ARIADNE_LOG(5,"Retrieving forward reachability...");
 
-		HybridGridTreeSet forward_reach = _analyser->outer_chain_reach(forward_initial,
+		HybridGridTreeSet forward_reach = analyser.outer_chain_reach(forward_initial,
 				DIRECTION_FORWARD,_safety_reachability_restriction);
 
 		ARIADNE_LOG(6,"Reachability size: " << forward_reach.size());
 
 		if (_settings->plot_results)
-			_plot_reach(forward_reach,"forward",maximum_grid_depth);
+			_plot_reach(forward_reach,"forward",accuracy);
 
 		_update_safety_cached_reachability_with(forward_reach);
 
@@ -272,30 +278,31 @@ _safety_proving_once(
 HybridGridTreeSet
 Verifier::
 _reachability_refinement_starting_set(
+        const HybridReachabilityAnalyser& analyser,
 		SystemType& system,
 		const HybridImageSet& initial_set,
 		const HybridConstraintSet& constraint_set,
 		const HybridGridTreeSet& reachability_restriction,
 		ContinuousEvolutionDirection direction) const
 {
-	int& maximum_grid_depth = _analyser->settings().maximum_grid_depth;
+	const int& accuracy = analyser.settings().maximum_grid_depth;
 
-	HybridGridTreeSet result(*_analyser->settings().grid);
+	HybridGridTreeSet result(*analyser.settings().grid);
 
 	if (direction == DIRECTION_FORWARD) {
-		result.adjoin_outer_approximation(initial_set,maximum_grid_depth);
-		result.mince(maximum_grid_depth);
+		result.adjoin_outer_approximation(initial_set,accuracy);
+		result.mince(accuracy);
 		result.restrict(reachability_restriction);
 	} else {
 		result = reachability_restriction;
-		result.mince(maximum_grid_depth);
+		result.mince(accuracy);
 		result.remove(definitely_covered_cells(result,constraint_set));
 	}
 
 	ARIADNE_LOG(6,"Starting set size: " << result.size());
 
 	if (_settings->plot_results)
-		_plot_reach(result,(direction == DIRECTION_FORWARD ? "initial" : "final"),maximum_grid_depth);
+		_plot_reach(result,(direction == DIRECTION_FORWARD ? "initial" : "final"),accuracy);
 
 	return result;
 }
@@ -315,14 +322,18 @@ _update_safety_cached_reachability_with(const HybridGridTreeSet& reach) const
 bool
 Verifier::
 _safety_disproving_once(
-		SystemType& sys,
-		const HybridImageSet& initial_set,
-		const HybridConstraintSet& safety_constraint,
+        SafetyVerificationInput& verInput,
+        const unsigned int& accuracy,
 		const RealParameterSet& params) const
 {
-	ARIADNE_LOG(4,"Disproving...");
-
 	bool result = false;
+
+    SystemType& sys = verInput.getSystem();
+    const HybridImageSet& initial_set = verInput.getInitialSet();
+    const HybridConstraintSet& safety_constraint = verInput.getSafetyConstraint();
+    const HybridBoxes& domain_bounds = verInput.getDomain();
+
+    ARIADNE_LOG(4,"Disproving...");
 
 	RealParameterSet original_params = sys.parameters();
 
@@ -330,24 +341,31 @@ _safety_disproving_once(
 
 	ARIADNE_LOG(4,"Tuning settings for this disproving iteration...");
 
-	static const bool EQUAL_GRID_FOR_ALL_LOCATIONS = false;
-	_tune_iterative_step_settings(sys,_safety_coarse_outer_approximation->get(),
-			EQUAL_GRID_FOR_ALL_LOCATIONS,LOWER_SEMANTICS);
+    HybridReachabilityAnalyser analyser(sys);
 
-	ARIADNE_LOG(5, "Using reachability restriction: " << tribool_pretty_print(!_safety_reachability_restriction.empty()));
+    analyser.settings().maximum_grid_depth = accuracy;
+    analyser.choose_initial_settings(sys,domain_bounds,parameters_identifiers(params));
+    ARIADNE_LOG(5, "Derivatives evaluation source: " << (_safety_coarse_outer_approximation->get().empty() ? "Domain box" : "Outer approximation"));
+    HybridFloatVector hmad = getHybridMaximumAbsoluteDerivatives(sys,_safety_coarse_outer_approximation->get(),domain_bounds);
+    ARIADNE_LOG(5, "Derivatives bounds: " << hmad);
+    static const bool EQUAL_GRID_FOR_ALL_LOCATIONS = false;
+    analyser.settings().grid = boost::shared_ptr<HybridGrid>(
+            new HybridGrid(getHybridGrid(hmad,domain_bounds,EQUAL_GRID_FOR_ALL_LOCATIONS)));
+    ARIADNE_LOG(5, "Grid lengths: " << analyser.settings().grid->lengths());
+    ARIADNE_LOG(5, "Using reachability restriction: " << tribool_pretty_print(!_safety_reachability_restriction.empty()));
 
 	ARIADNE_LOG(4,"Performing lower reachability analysis...");
 
 	try {
 		HybridGridTreeSet reach;
 		HybridFloatVector epsilon;
-		make_lpair<HybridGridTreeSet,HybridFloatVector>(reach,epsilon) = _analyser->lower_chain_reach_and_epsilon(
+		make_lpair<HybridGridTreeSet,HybridFloatVector>(reach,epsilon) = analyser.lower_chain_reach_and_epsilon(
 				initial_set,safety_constraint,_safety_reachability_restriction);
 
 		ARIADNE_LOG(5, "Epsilon: " << epsilon);
 
 		if (_settings->plot_results)
-			_plot_reach(reach,"lower",_analyser->settings().maximum_grid_depth);
+			_plot_reach(reach,"lower",accuracy);
 
 	} catch (ReachUnsatisfiesConstraintException ex) {
 		ARIADNE_LOG(5, "The lower reached region is partially outside the safe region (skipped).");
@@ -468,7 +486,7 @@ Verifier::_dominance(
 	if (_settings->plot_results)
 		_plot_dirpath_init(dominating.getSystem().name() + "&" + dominated.getSystem().name());
 
-	_reset_and_choose_initial_dominance_settings(dominating,dominated);
+	_reset_dominance_settings();
 
 	int& depth = _analyser->settings().maximum_grid_depth;
 	depth = 0;
@@ -647,15 +665,23 @@ _dominance_flattened_outer_reach(
 
 void
 Verifier::
-_reset_and_choose_initial_safety_settings(
-		const SystemType& system,
-		const HybridBoxes& domain,
-		const Set<Identifier>& locked_params_ids) const
+_reset_safety_settings() const
 {
 	_safety_coarse_outer_approximation->reset();
-	_safety_reachability_restriction = HybridGridTreeSet();
 
-	_choose_initial_safety_settings(system,domain,locked_params_ids);
+	_safety_reachability_restriction = HybridGridTreeSet();
+}
+
+
+void
+Verifier::
+_reset_dominance_settings() const
+{
+    _dominating_coarse_outer_approximation->reset();
+    _dominated_coarse_outer_approximation->reset();
+
+    _dominating_reachability_restriction = HybridGridTreeSet();
+    _dominated_reachability_restriction = HybridGridTreeSet();
 }
 
 
@@ -683,24 +709,6 @@ _get_coarse_outer_approximation_and_reachability_restriction(
 }
 
 
-void
-Verifier::
-_choose_initial_safety_settings(
-		const SystemType& system,
-		const HybridBoxes& domain,
-		const Set<Identifier>& locked_params_ids) const
-{
-	ARIADNE_LOG(3,"Choosing the initial settings of the analyser...");
-	DiscretisedEvolutionSettings& settings = _analyser->settings();
-
-	settings.domain_bounds = domain;
-	ARIADNE_LOG(4, "Domain: " << domain);
-	settings.lock_to_grid_time = getLockToGridTime(system,domain);
-	ARIADNE_LOG(4, "Lock to grid time: " << settings.lock_to_grid_time);
-	settings.locked_parameters_ids = locked_params_ids;
-	ARIADNE_LOG(4, "Locked parameters IDs: " << locked_params_ids);
-}
-
 
 void
 Verifier::
@@ -717,19 +725,6 @@ _tune_iterative_step_settings(
 	_analyser->settings().grid = boost::shared_ptr<HybridGrid>(
 			new HybridGrid(getHybridGrid(hmad,_analyser->settings().domain_bounds,equal_grid_for_all_locations)));
 	ARIADNE_LOG(5, "Grid lengths: " << _analyser->settings().grid->lengths());
-}
-
-void
-Verifier::
-_reset_and_choose_initial_dominance_settings(
-		DominanceVerificationInput& dominating,
-		DominanceVerificationInput& dominated) const
-{
-	_dominating_coarse_outer_approximation->reset();
-	_dominated_coarse_outer_approximation->reset();
-
-	_dominating_reachability_restriction = HybridGridTreeSet();
-	_dominated_reachability_restriction = HybridGridTreeSet();
 }
 
 void

@@ -166,13 +166,13 @@ class Verifier
 	 * definitely respects the \a safety_constraint.
 	 * \details The \a constants are substituted into the system. */
 	bool _safety_proving_once(
-			SystemType& system,
-			const HybridImageSet& initial_set,
-			const HybridConstraintSet& safety_constraint,
+	        SafetyVerificationInput& verInput,
+			const unsigned int& accuracy,
 			const RealParameterSet& params) const;
 
     /*! \brief Returns the new initial grid tree set for a chain reach. */
     HybridGridTreeSet _reachability_refinement_starting_set(
+            const HybridReachabilityAnalyser& analyser,
     		SystemType& system,
     		const HybridImageSet& initial_set,
     		const HybridConstraintSet& constraint_set,
@@ -183,18 +183,16 @@ class Verifier
 	 * does definitely DOES NOT respect the \a safety_constraint.
 	 * \details The \a params are substituted into the system. */
 	bool _safety_disproving_once(
-			SystemType& system,
-			const HybridImageSet& initial_set,
-			const HybridConstraintSet& safety_constraint,
+	        SafetyVerificationInput& verInput,
+	        const unsigned int& accuracy,
 			const RealParameterSet& params) const;
 
     /*! \brief Attempt (once, i.e. for a given grid depth) to verify that the reachable set of \a system starting in \a initial_set
      * respects the \a safety_constraint.
      * \details The \a params are substituted into the system. */
     tribool _safety_once(
-    		SystemType& system,
-			const HybridImageSet& initial_set,
-			const HybridConstraintSet& safety_constraint,
+            SafetyVerificationInput& verInput,
+            const unsigned int& accuracy,
 			const RealParameterSet& constants) const;
 
 	/*! \brief Performs iterative safety verification where \a parameter is substituted into the system.
@@ -286,24 +284,11 @@ class Verifier
 	//@{
 	//! \name Other helper methods
 
-	/*! \brief Resets cached information, then chooses the initial evolution settings for safety verification. */
-	void _reset_and_choose_initial_safety_settings(
-			const SystemType& system,
-			const HybridBoxes& domain,
-			const Set<Identifier>& locked_params) const;
+	/*! \brief Resets cached information. */
+	void _reset_safety_settings() const;
 
-	/*! \brief Chooses the initial evolution settings for safety verification of the proper analyser. */
-	void _choose_initial_safety_settings(
-			const SystemType& system,
-			const HybridBoxes& domain,
-			const Set<Identifier>& locked_params) const;
-
-	/*! \brief Resets cached information, then chooses the initial settings for dominance verification.
-	 * \details It is not allowed to tune the analysers, since they are used on different systems on each iteration.
-	 */
-	void _reset_and_choose_initial_dominance_settings(
-			DominanceVerificationInput& dominating,
-			DominanceVerificationInput& dominated) const;
+	/*! \brief Resets cached information. */
+	void _reset_dominance_settings() const;
 
 	/*! \brief Obtains a coarse outer approximation and a reachability restriction of the \a system using
 	 * only the information on the \a domain.

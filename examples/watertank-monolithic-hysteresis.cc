@@ -65,7 +65,6 @@ int main(int argc,char *argv[])
 	/// Verification
 
 	HybridReachabilityAnalyser analyser(system);
-	analyser.free_cores = 3;
 	Verifier verifier(analyser);
 	verifier.set_verbosity(verifierVerbosity);
 	verifier.settings().maximum_parameter_depth = 3;

@@ -102,6 +102,23 @@ _get_tuned_evolver(
 
 void
 HybridReachabilityAnalyser::
+choose_initial_settings(
+        const SystemType& system,
+        const HybridBoxes& domain,
+        const Set<Identifier>& locked_params_ids)
+{
+    ARIADNE_LOG(1,"Choosing the initial settings...");
+
+    _settings->domain_bounds = domain;
+    ARIADNE_LOG(2, "Domain: " << domain);
+    _settings->lock_to_grid_time = getLockToGridTime(system,domain);
+    ARIADNE_LOG(2, "Lock to grid time: " << _settings->lock_to_grid_time);
+    _settings->locked_parameters_ids = locked_params_ids;
+    ARIADNE_LOG(2, "Locked parameters IDs: " << locked_params_ids);
+}
+
+void
+HybridReachabilityAnalyser::
 _plot_reach(
 		const HybridGridTreeSet& reach,
 		string plot_dirpath,
