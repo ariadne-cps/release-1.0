@@ -102,9 +102,6 @@ class HybridReachabilityAnalyser
 
     //@}
 
-    /*! \brief Returns the internal system. */
-    const HybridAutomatonInterface& system() const { return *_system; }
-
     //@{ 
     //! \name Methods to set and get the settings controlling the accuracy
     /*! \brief The settings controlling the accuracy. */
@@ -145,43 +142,35 @@ class HybridReachabilityAnalyser
     virtual std::pair<SetApproximationType,SetApproximationType> upper_reach_evolve(
             const HybridImageSet& initial_set,
             const TimeType& time) const;
-  
-    /*! \brief Compute an outer-approximation to the chain-reachable set of \a system starting in \a initial_set. */
-    virtual SetApproximationType chain_reach(
+
+    /*! \brief Compute an outer-approximation to the chain-reachable set of \a system starting in \a initial_set, using upper semantics.
+     * \return The reach set. */
+    virtual SetApproximationType outer_chain_reach(
             const HybridImageSet& initial_set) const;
 
-    /*! \brief Compute an outer-approximation to the chain-reachable set of \a system starting in \a initial_set and remaining in \a bounding_domain. \deprecated */
-    virtual SetApproximationType chain_reach(
-            const HybridImageSet& initial_set,
-            const HybridBoxes& bounding_domain) const;
-
     /*! \brief Compute an outer-approximation to the chain-reachable set of \a system starting in \a initial_set with a given \a direction, using
-     * upper semantics; the method performs discretisation before transitions, then checks activations on the discretised cells.
+     * upper semantics.
      * \return The reach set. */
     virtual SetApproximationType outer_chain_reach(
 			const HybridImageSet& initial_set,
-			ContinuousEvolutionDirection direction,
-			const HybridGridTreeSet& reachability_restriction) const;
+			const HybridGridTreeSet& reachability_restriction,
+			ContinuousEvolutionDirection direction) const;
 
     virtual SetApproximationType outer_chain_reach(
-    		const HybridGridTreeSet& initial,
-    		ContinuousEvolutionDirection direction,
-    		const HybridGridTreeSet& reachability_restriction) const;
+    		const HybridGridTreeSet& initial_set,
+    		const HybridGridTreeSet& reachability_restriction,
+    		ContinuousEvolutionDirection direction) const;
+
+    /*! \brief Compute the epsilon lower bounds of \a system starting in \a initial_set.
+     * \return The reach and the epsilon values. */
+    virtual std::pair<HybridGridTreeSet,HybridFloatVector> lower_chain_reach_and_epsilon(
+            const HybridImageSet& initial_set) const;
 
     /*! \brief Compute the epsilon lower bounds of \a system starting in \a initial_set.
      * \return The reach and the epsilon values. */
     virtual std::pair<HybridGridTreeSet,HybridFloatVector> lower_chain_reach_and_epsilon(
 			const HybridImageSet& initial_set,
 			const HybridGridTreeSet& reachability_restriction) const;
-
-    /*! \brief Compute the epsilon lower bounds of \a system starting in \a initial_set.
-     * \details If \a constraint_set is not empty, it checks whether the reachable area does not satisfy the constraint,
-     * raising an exception if this is the case.
-     * \return The reach and the epsilon values. */
-    virtual std::pair<HybridGridTreeSet,HybridFloatVector> lower_chain_reach_and_epsilon(
-            const HybridImageSet& initial_set,
-            const HybridConstraintSet& constraint_set,
-            const HybridGridTreeSet& reachability_restriction) const;
 
     //@}
 
@@ -191,9 +180,18 @@ class HybridReachabilityAnalyser
             const HybridBoxes& domain,
             const Set<Identifier>& locked_params_ids,
             const HybridGridTreeSet& outer_approx,
+            const HybridConstraintSet& constraint_set,
             int accuracy,
             bool EQUAL_GRID_FOR_ALL_LOCATIONS,
             Semantics semantics);
+
+    /*! \brief Produces the starting cells from either the \a initial_set or the \a constraint_set
+     * , based on the \a direction, and given a \a reachability_restriction. */
+    HybridGridTreeSet initial_cell_set(
+            const HybridImageSet& initial_enclosure_set,
+            const HybridConstraintSet& initial_constraint_set,
+            const HybridGridTreeSet& reachability_restriction,
+            ContinuousEvolutionDirection direction) const;
 
   public:
 
@@ -247,15 +245,15 @@ class HybridReachabilityAnalyser
     SetApproximationType _outer_chain_reach(
     		SystemType& system,
     		const std::list<EnclosureType>& initial_enclosures,
-    		ContinuousEvolutionDirection direction,
-    		const HybridGridTreeSet& reachability_restriction) const;
+    		const HybridGridTreeSet& reachability_restriction,
+    		ContinuousEvolutionDirection direction) const;
 
     /*! \brief Performs outer chain reach calculation, where the constants of the \a system are assumed to be already splitted. */
     SetApproximationType _outer_chain_reach_splitted(
     		const SystemType& system,
     		const std::list<EnclosureType>& initial_enclosures,
-    		ContinuousEvolutionDirection direction,
-    		const HybridGridTreeSet& reachability_restriction) const;
+    		const HybridGridTreeSet& reachability_restriction,
+    		ContinuousEvolutionDirection direction) const;
 
     /*! \brief Pushes into \a result_enclosures the enclosures from \a reachCells.
      * \details Ignores enclosures that lie outside the domain.
@@ -320,8 +318,7 @@ class HybridReachabilityAnalyser
     std::pair<HybridGridTreeSet,HybridFloatVector> _lower_chain_reach_and_epsilon(
     		const SystemType& system,
     		const HybridImageSet& initial_set,
-			const HybridConstraintSet& constraint_set,
-			const HybridGridTreeSet& reachability_restriction) const;
+    		const HybridGridTreeSet& reachability_restriction) const;
 
     /*! \brief Filters \a final_enclosures into \a initial_enclosures.
      * \details The procedure prunes a percentage of the enclosures based on \a adjoined_evolve_sizes and \a superposed_evolve_sizes. */

@@ -269,49 +269,10 @@ void compute_reachable_sets()
 
     // Compute over-approximation to infinite-time chain-reachable set using upper semantics.
     std::cout << "Computing chain reach set... " << std::flush;
-    HybridGridTreeSet chain_reach_set = analyser.chain_reach(initial_set);
+    HybridGridTreeSet chain_reach_set = analyser.outer_chain_reach(initial_set);
     std::cout << "done." << std::endl;
     plot("tutorial-chain_reach.png",Box(2, 0.0,1.0, 14.0,21.0), Colour(0.0,0.5,1.0), chain_reach_set);
 }
-
-
-
-void compute_reachable_sets_with_serialisation(const HybridReachabilityAnalyser& analyser)
-{
-    // Define the initial set
-    HybridImageSet initial_set;
-    DiscreteLocation heater_off(2);
-    Box initial_box(2, 0.0,0.015625, 16.0,16.0625);
-    initial_set[heater_off]=initial_box;
-
-
-    // Compute the reach set for times between tlower and tupper.
-    // The intermediate set is stored to an archive file and used to build the initial set for the reach step
-    // Note that because of peculiarities in the Boost serialization library,
-    // the object to be serialized must be declared const.
-    Float tlower=0.25; Float tupper=0.75;
-    HybridTime transient_time(tlower,4);
-    HybridTime recurrent_time(tupper-tlower,16);
-
-    const HybridGridTreeSet upper_intermediate_set = analyser.upper_evolve(initial_set,transient_time);
-    plot("tutorial-upper_intermediate.png",Box(2, 0.0,1.0, 14.0,18.0), Colour(0.0,0.5,1.0), upper_intermediate_set);
-
-    std::ofstream output_file_stream("tutorial-transient.txt");
-    text_oarchive output_archive(output_file_stream);
-    output_archive << upper_intermediate_set;
-    output_file_stream.close();
-
-    HybridGridTreeSet rebuilt_upper_intermediate_set;
-
-    std::ifstream input_file_stream("tutorial-transient.txt");
-    text_iarchive input_archive(input_file_stream);
-    input_archive >> rebuilt_upper_intermediate_set;
-    input_file_stream.close();
-
-    HybridGridTreeSet upper_recurrent_set = analyser.upper_reach(initial_set,recurrent_time);
-    plot("tutorial-upper_recurrent.png",Box(2, 0.0,1.0, 14.0,18.0), Colour(0.0,0.5,1.0), upper_recurrent_set);
-}
-
 
 
 

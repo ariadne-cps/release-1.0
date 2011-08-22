@@ -184,8 +184,16 @@ class DiscretisedEvolutionSettings {
     IntType maximum_grid_height;
 
     //! \brief Set the allowed bounding domain for chain reachability computations.
-	//! \details Defaults to an unbounded box. Since it is also used to tune the evolver, it could be necessary to refine it.
+	//! \details Defaults to an unbounded box. Since it is also used to tune the evolver, it could be necessary to provide an explicit bounded value for it.
     HybridBoxes domain_bounds;
+
+    //! \brief Set the constraint set for reachability.
+    //! \details Used for early termination of lower chain reachability. An empty constraint set implies no constraint at all.
+    HybridConstraintSet constraint_set;
+
+    //! \brief Set the restriction for reachability.
+    //! \details Assumed as not used if NULL. On the contrary, an empty reachability restriction would restrict any set to the empty set.
+    boost::shared_ptr<HybridGridTreeSet> reachability_restriction;
 
     //! \brief The grid to use.
     boost::shared_ptr<HybridGrid> grid;
@@ -266,6 +274,8 @@ DiscretisedEvolutionSettings::DiscretisedEvolutionSettings(const SystemType& sys
       maximum_grid_depth(6),
       maximum_grid_height(16),
       domain_bounds(unbounded_hybrid_boxes(sys.state_space())),
+      constraint_set(),
+      reachability_restriction(),
       grid(new HybridGrid(sys.state_space())),
       splitting_constants_target_ratio(0.1),
 	  enable_lower_pruning(true)

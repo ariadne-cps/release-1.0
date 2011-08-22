@@ -173,14 +173,15 @@ class TestReachabilityAnalysis
         cout << "Computing chain reachable set" << endl;
         DiscreteLocation loc(1);
         HybridBoxes bounding_boxes
-            =Ariadne::bounding_boxes(analyser.system().state_space(),bound);
+            =Ariadne::bounding_boxes(build_system().state_space(),bound);
         Box bounding_box=bounding_boxes[loc];
 
         analyser.verbosity=0;
         analyser.settings().transient_time=4.0;
         analyser.settings().lock_to_grid_time=1.0;
+        analyser.settings().domain_bounds = bounding_boxes;
         cout << analyser.settings();
-        HybridGridTreeSet chain_reach_set=analyser.chain_reach(initial_set,bounding_boxes);
+        HybridGridTreeSet chain_reach_set=analyser.outer_chain_reach(initial_set);
         plot("test_reachability_analyser-map_chain_reach.png",bounding_box,chain_reach_set[loc],initial_set[loc]);
     }
   

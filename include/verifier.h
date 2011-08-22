@@ -174,15 +174,6 @@ class Verifier
 			const unsigned int& accuracy,
 			const RealParameterSet& params) const;
 
-    /*! \brief Returns the new initial grid tree set for a chain reach. */
-    HybridGridTreeSet _reachability_refinement_starting_set(
-            const HybridReachabilityAnalyser& analyser,
-    		SystemType& system,
-    		const HybridImageSet& initial_set,
-    		const HybridConstraintSet& constraint_set,
-    		const HybridGridTreeSet& reachability_restriction,
-    		ContinuousEvolutionDirection direction) const;
-
 	/*! \brief Prove (once, i.e. for a given grid depth) that the reachable set of \a system starting in \a initial_set
 	 * does definitely DOES NOT respect the \a safety_constraint.
 	 * \details The \a params are substituted into the system. */
@@ -288,6 +279,7 @@ class Verifier
             const VerificationInput& verInput,
             const Set<Identifier>& locked_params_ids,
             const HybridGridTreeSet& outer_approx,
+            const HybridConstraintSet& constraint_set,
             int accuracy,
             bool EQUAL_GRID_FOR_ALL_LOCATIONS,
             Semantics semantics) const;
