@@ -34,7 +34,7 @@ namespace Ariadne {
 const unsigned int VERIFIER_CHILD_OFFSET = 5;
 
 Verifier::Verifier() :
-			_settings(new VerificationSettings())
+			_settings(new VerifierSettings())
 {
     this->charcode = "v";
     this->child_tab_offset = VERIFIER_CHILD_OFFSET;
@@ -713,6 +713,29 @@ _plot_dominance(
 	plot(_plot_dirpath,filename,reach);
 }
 
+
+VerifierSettings::VerifierSettings() :
+        plot_results(false),
+        time_limit_for_outcome(10),
+        maximum_parameter_depth(3),
+        use_param_midpoints_for_proving(false),
+        use_param_midpoints_for_disproving(true),
+        enable_backward_refinement_for_testing_inclusion(true)
+{ }
+
+std::ostream&
+operator<<(std::ostream& os, const VerifierSettings& s)
+{
+    os << "VerificationSettings"
+       << "(\n  plot_results=" << s.plot_results
+       << ",\n  time_limit_for_outcome" << s.time_limit_for_outcome
+       << ",\n  maximum_parameter_depth=" << s.maximum_parameter_depth
+       << ",\n  use_param_midpoints_for_proving=" << s.use_param_midpoints_for_proving
+       << ",\n  use_param_midpoints_for_disproving=" << s.use_param_midpoints_for_disproving
+       << ",\n  enable_backward_refinement_for_testing_inclusion=" << s.enable_backward_refinement_for_testing_inclusion
+       << "\n)\n";
+    return os;
+}
 
 std::list<RealParameterSet>
 maximally_split_parameters(

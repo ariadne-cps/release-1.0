@@ -34,10 +34,7 @@
 
 namespace Ariadne {
 
-// Keep this value in sync with the maximum verbosity level on the Verifier methods
-const unsigned verifier_max_verbosity_level_used = 6;
-
-class HybridReachabilityAnalyser;
+class VerifierSettings;
 
 enum DominanceSystem { DOMINATING_SYSTEM, DOMINATED_SYSTEM };
 
@@ -48,6 +45,7 @@ class Verifier
   public:
 
     typedef HybridAutomatonInterface SystemType;
+    typedef VerifierSettings SettingsType;
     typedef ReachabilityAnalyserInterface<SystemType>::SetApproximationType SetApproximationType;
 
   private:
@@ -56,7 +54,7 @@ class Verifier
     typedef boost::shared_ptr<SetApproximationType> SetApproximationPtrType;
 
   private:
-    boost::shared_ptr< VerificationSettings > _settings;
+    boost::shared_ptr<SettingsType> _settings;
     mutable std::string _plot_dirpath;
 
 	/*! \brief "Stateless" fields for holding outer approximations between successive internal calls. */
@@ -85,13 +83,10 @@ class Verifier
     //@{
     //! \name Methods to set and get the settings controlling the verification
 
-    const VerificationSettings& settings() const { return *this->_settings; }
-    VerificationSettings& settings() { return *this->_settings; }
-    //@}
+    const VerifierSettings& settings() const { return *this->_settings; }
+    VerifierSettings& settings() { return *this->_settings; }
 
-    //! \brief Overrides the Loggable method.
-    //! \details Necessary to percolate to the internal analyser.
-    void set_verbosity(int verbosity);
+    //@}
 
     //@{
     //! \name Safety methods
@@ -292,6 +287,54 @@ class Verifier
 	//@}
 
 };
+
+
+//! \brief Settings for controlling the verification flow.
+class VerifierSettings {
+
+    friend class Verifier;
+
+  public:
+    typedef uint UnsignedIntType;
+    typedef double RealType;
+
+  private:
+
+    //! \brief Default constructor gives reasonable values.
+    VerifierSettings();
+
+
+  public:
+    /*! \brief Whether the analysis results must be plotted. */
+    bool plot_results;
+
+    /*! \brief The time (in seconds) under which a verification outcome should be obtained.
+     * \details The verifier would stop iterative refinement (yielding indeterminate) as soon as
+     * it surpasses this value. */
+    uint time_limit_for_outcome;
+
+    /*! \brief The maximum depth of parameter range splitting.
+     * \details A value of zero means that the parameter space is not splitted at all. The total verification time
+     * in this case is multiplied by 2^(number_of_parameters * maximum_parameter_depth). */
+    uint maximum_parameter_depth;
+
+    /*! \brief Whether to substitute midpoints of parameter boxes when proving.
+     * \details Defaults to false. A value of true would not yield a formal result for the parameter box
+     * but would be useful for quick pre-analysis. */
+    bool use_param_midpoints_for_proving;
+
+    /*! \brief Whether to substitute midpoints of parameter boxes when disproving.
+     * \details Defaults to true. Indeed, if we use a value of false and successfully disprove, we gain no additional insight.
+     * Choosing false has the benefit of exploring the whole parameter box, but the drawback of possibly be unable to successfully disprove at all
+     * due to error radii. */
+    bool use_param_midpoints_for_disproving;
+
+    /*/ \brief Enable backward refinement of reachability when testing inclusion in a constraint.
+     * \details The refinement itself is done only after a reachability restriction is available. */
+    bool enable_backward_refinement_for_testing_inclusion;
+};
+
+std::ostream& operator<<(std::ostream& os, const VerifierSettings& s);
 
 /*! \brief Splits the parameters to the maximum based on the \a tolerance
  *  \details The \a numIntervalsPerParam is the number of intervals to split for each parameter.

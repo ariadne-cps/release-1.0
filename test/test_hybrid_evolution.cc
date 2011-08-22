@@ -33,7 +33,6 @@
 #include "box.h"
 #include "zonotope.h"
 #include "list_set.h"
-#include "settings.h"
 #include "orbit.h"
 #include "hybrid_time.h"
 #include "hybrid_set.h"

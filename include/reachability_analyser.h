@@ -51,6 +51,7 @@ namespace Ariadne {
 template<class ES> class Orbit;
 
 class DiscreteLocation;
+class HybridReachabilityAnalyserSettings;
 
 template<class BS> class HybridBasicSet;
 typedef HybridBasicSet<Box> HybridBox;
@@ -67,27 +68,19 @@ class HybridGridTreeSet;
 template<class ES> class HybridListSet;
 template<class ES> class HybridDiscretiser;
 
-// Keep this value in sync with the maximum verbosity level on the Analyser methods
-const unsigned analyser_max_verbosity_level_used = 7;
-
-/*! \brief A class for performing reachability analysis on a hybrid system-
+/*! \brief A class for performing reachability analysis on a hybrid system
  */
 class HybridReachabilityAnalyser
     : public ReachabilityAnalyserInterface<HybridAutomatonInterface>
 {
   public:
-    typedef DiscretisedEvolutionSettings EvolutionSettingsType;
-    //typedef ReachabilityAnalyserInterface<HybridAutomatonInterface>::SystemType SystemType;
-    //typedef ReachabilityAnalyserInterface<HybridAutomatonInterface>::StateSpaceType StateSpaceType;
-    //typedef ReachabilityAnalyserInterface<HybridAutomatonInterface>::TimeType TimeType;
-    //typedef ReachabilityAnalyserInterface<HybridAutomatonInterface>::SetApproximationType SetApproximationType;
-    //typedef ReachabilityAnalyserInterface<HybridAutomatonInterface>::SetApproximationPtrType SetApproximationPtrType;
+    typedef HybridReachabilityAnalyserSettings SettingsType;
     typedef ImageSetHybridEvolver::EnclosureType EnclosureType;
     typedef ImageSetHybridEvolver::ContinuousEnclosureType ContinuousEnclosureType;
   private:
     typedef boost::shared_ptr<EvolverInterface<SystemType,EnclosureType> > EvolverPtrType;
   private:
-    boost::shared_ptr< EvolutionSettingsType > _settings;
+    boost::shared_ptr< SettingsType > _settings;
     boost::shared_ptr< SystemType > _system;
   public:
     //@{
@@ -106,9 +99,9 @@ class HybridReachabilityAnalyser
     //@{ 
     //! \name Methods to set and get the settings controlling the accuracy
     /*! \brief The settings controlling the accuracy. */
-    const EvolutionSettingsType& settings() const { return *this->_settings; }
+    const SettingsType& settings() const { return *this->_settings; }
     /*! \brief A reference to the settings controlling the accuracy. */
-    EvolutionSettingsType& settings() { return *this->_settings; }
+    SettingsType& settings() { return *this->_settings; }
     //@}
   
     //@{
@@ -318,6 +311,88 @@ class HybridReachabilityAnalyser
     		SystemType& system,
     		float tolerance) const;
 };
+
+
+//! \brief Settings for controlling the accuracy of discretised evolution methods and reachability analysis.
+class HybridReachabilityAnalyserSettings {
+    friend class HybridReachabilityAnalyser;
+  public:
+    typedef int IntType;
+    typedef uint UnsignedIntType;
+    typedef double RealType;
+    typedef HybridAutomatonInterface SystemType;
+
+  private:
+
+    //! \brief Default constructor based on a system.
+    HybridReachabilityAnalyserSettings(const SystemType& sys);
+
+  public:
+
+    //! \brief The time after which an upper evolution or reachability analysis routine
+    //! may approximate computed sets on a grid, in order to use previously cached
+    //! integration results for the grid.
+    //! \details
+    //! Increasing this parameter improves the accuracy of the computations.
+    //! Setting this parameter too low usually results in meaningless computations.
+    //! As a rule of thumb, a typical system trajectory should move at least four
+    //! times the grid size between locking to the grid. <br>
+    //! For forced oscillators, this parameter should be set to the forcing time,
+    //! or a multiple or fraction thereof.
+    //! <br>
+    //! This parameter is only used for continuous-time computation.
+    RealType lock_to_grid_time;
+
+    //! \brief The time after which an evolver may approximate computed sets on a grid,
+    //! in order to use previously cached results for the grid.
+    //! \details
+    //! Increasing this parameter may improve the accuracy of the computations.
+    //! If there is recurrence in the system, then this parameter should be set to
+    //! the average recurrence time, if known.
+    //!  <br>
+    //! This parameter is only used for discrete-time computation.
+    UnsignedIntType lock_to_grid_steps;
+
+    //! \brief Set the depth used for approximation on a grid for computations using upper semantics.
+    //! \details
+    //! Increasing this value increases the accuracy of the computation.
+    //!  <br>
+    //! This parameter is only used in upper_evolve(), upper_reach() and chain_reach() routines.
+    IntType maximum_grid_depth;
+
+    //! \brief Set the allowed bounding domain for chain reachability computations.
+    //! \details Defaults to an unbounded box. Since it is also used to tune the evolver, it could be necessary to provide an explicit bounded value for it.
+    HybridBoxes domain_bounds;
+
+    //! \brief Set the constraint set for reachability.
+    //! \details Used for early termination of lower chain reachability. An empty constraint set implies no constraint at all.
+    HybridConstraintSet constraint_set;
+
+    //! \brief Set the restriction for reachability.
+    //! \details Applied only to the chain reach routines. Assumed as not used if not assigned.
+    //! (while, on the contrary, an empty reachable set would restrict any set to the empty set).
+    boost::shared_ptr<HybridGridTreeSet> reachability_restriction;
+
+    //! \brief The grid to use.
+    HybridGrid grid;
+
+    //! \brief The parameters that must not be automatically split inside a system.
+    Set<Identifier> locked_parameters_ids;
+
+    //! \brief The target ratio of derivatives width to obtain when splitting constants.
+    RealType splitting_constants_target_ratio;
+
+    //! \brief Enable the pruning of the trajectories when too large (false by default).
+    //! \details The pruning is done probabilistically.
+    //! <br>
+    //! This parameter is used only under lower semantics.
+    bool enable_lower_pruning;
+
+};
+
+
+std::ostream& operator<<(std::ostream& os, const HybridReachabilityAnalyserSettings& s);
+
 
 /*! \brief Gets the minimum allowed widths of the cells of the \a grid under \a maximum_grid_depth */
 HybridFloatVector min_cell_widths(

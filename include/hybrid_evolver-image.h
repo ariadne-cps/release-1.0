@@ -42,7 +42,6 @@
 #include "hybrid_automaton.h"
 #include "evolver_interface.h"
 #include "evolver_base.h"
-#include "settings.h"
 
 namespace Ariadne {
 
@@ -52,14 +51,12 @@ class VectorTaylorFunction;
 class TaylorSet;
 class HybridAutomatonInterface;
 template<class ES> class Orbit;
-
 class EvolutionSettings;
 class TaylorModel;
 template<class MDL> class CalculusInterface;
-
 class HybridTime;
-
 class DiscreteEvent;
+class ImageSetHybridEvolverSettings;
 
 /*! \brief A class for computing the evolution of a hybrid system.
  *
@@ -79,7 +76,7 @@ class ImageSetHybridEvolver
     typedef TaylorSet FlowSetModelType;
     typedef TaylorSet SetModelType;
   public:
-    typedef EnclosedEvolutionSettings EvolutionSettingsType;
+    typedef ImageSetHybridEvolverSettings SettingsType;
     typedef HybridAutomatonInterface::TimeType TimeType;
     typedef int IntegerType;
     typedef uint AccuracyType;
@@ -107,9 +104,9 @@ class ImageSetHybridEvolver
     //! \name Settings controlling the evolution.
 
     //! \brief A reference to the settings controlling the evolution.
-    EvolutionSettingsType& settings() { return *this->_settings; }
+    SettingsType& settings() { return *this->_settings; }
 	//! \brief A constant reference to the settings controlling the evolution.
-    const EvolutionSettingsType& settings() const { return *this->_settings; }
+    const SettingsType& settings() const { return *this->_settings; }
 
 	//! \brief Modifies the settings, given some metrics.
 	void tune_settings(
@@ -277,9 +274,45 @@ class ImageSetHybridEvolver
     static const DiscreteEvent blocking_event;
 
  private:
-    boost::shared_ptr< EvolutionSettingsType > _settings;
+    boost::shared_ptr< SettingsType > _settings;
     boost::shared_ptr< CalculusInterface<TaylorModel> > _toolbox;
 };
+
+
+//! \brief Settings for controlling the accuracy of evolution methods on enclosure sets.
+class ImageSetHybridEvolverSettings {
+    friend class ImageSetHybridEvolver;
+  public:
+    typedef uint UnsignedIntType;
+    typedef double RealType;
+    typedef HybridAutomatonInterface SystemType;
+
+  protected:
+
+    //! \brief Default constructor gives reasonable values.
+    ImageSetHybridEvolverSettings(const SystemType& sys);
+
+  public:
+
+    //! \brief The maximum allowable step size for integration, different for each location.
+    //! Decreasing the values increases the accuracy of the computation.
+    std::map<DiscreteLocation,RealType> hybrid_maximum_step_size;
+
+    //! \brief The maximum allowable cell of a basic set during integration.
+    //! Decreasing the volume of the cell increases the accuracy of the computation of an over-approximation.
+    Vector<RealType> maximum_enclosure_cell;
+
+    //! \brief Enable subdivision of basic sets (false by default).
+    bool enable_subdivisions;
+
+    //! \brief Terminate evolution if basic sets became too large (true by default).
+    //! \details In the case of upper semantics, if true and no subdivisions are present, the set is put into the final sets. In the case of lower semantics, the set is discarded.
+    bool enable_premature_termination_on_enclosure_size;
+};
+
+
+std::ostream& operator<<(std::ostream& os, const ImageSetHybridEvolverSettings& s);
+
 
 /*! \brief Whether a box \a set_bounds under a given \a dynamic positively crosses an \a activation. */
 tribool positively_crossing(const Box& set_bounds,

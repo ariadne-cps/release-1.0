@@ -30,7 +30,6 @@
 #include "hybrid_time.h"
 #include "hybrid_set.h"
 #include "hybrid_automaton.h"
-#include "settings.h"
 #include "hybrid_evolver.h"
 #include "reachability_analyser.h"
 #include "graphics.h"
@@ -178,7 +177,6 @@ class TestReachabilityAnalysis
 
         analyser.verbosity=0;
         analyser.settings().domain_bounds = bounding_boxes;
-        cout << analyser.settings();
         HybridGridTreeSet chain_reach_set=analyser.outer_chain_reach(initial_set);
         plot("test_reachability_analyser-map_chain_reach.png",bounding_box,chain_reach_set[loc],initial_set[loc]);
     }

@@ -33,7 +33,6 @@
 #include "taylor_model.h"
 #include "orbit.h"
 #include "taylor_calculus.h"
-#include "settings.h"
 
 #include "logging.h"
 
@@ -68,8 +67,6 @@ void append(V& v, const C& c)
 
 namespace Ariadne {
 
-const unsigned int IMAGESET_EVOLVER_CHILD_OFFSET = 4;
-
 void wait_for_keypress() {
     std::string str;
     getline(std::cin,str);
@@ -92,11 +89,11 @@ typedef ScalarFunction RealScalarFunction;
 
 ImageSetHybridEvolver::ImageSetHybridEvolver(const SystemType& system)
     : EvolverBase(system),
-      _settings(new EvolutionSettingsType(system)),
+      _settings(new SettingsType(system)),
       _toolbox(new TaylorCalculus())
 {
     this->charcode = "e";
-    this->child_tab_offset = IMAGESET_EVOLVER_CHILD_OFFSET;
+    this->child_tab_offset = 4;
 }
 
 
@@ -1015,6 +1012,32 @@ _add_models_subdivisions_time(std::list< HybridTimedSetType >& working_sets,
     array< TimedSetModelType > subdivisions=_toolbox->subdivide(initial_timed_set_model,nd);
     _add_subdivisions(working_sets,subdivisions,initial_location,initial_events,nd);
 }
+
+
+ImageSetHybridEvolverSettings::ImageSetHybridEvolverSettings(const SystemType& sys)
+    : maximum_enclosure_cell(Vector<RealType>(sys.state_space().begin()->second,2.0)),
+      enable_subdivisions(false),
+      enable_premature_termination_on_enclosure_size(true)
+{
+    HybridSpace hspace(sys.state_space());
+    for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
+        hybrid_maximum_step_size[hs_it->first] = 1.0;
+    }
+}
+
+
+std::ostream&
+operator<<(std::ostream& os, const ImageSetHybridEvolverSettings& s)
+{
+    os << "ContinuousEvolutionSettings"
+       << ",\n  hybrid_maximum_step_size=" << s.hybrid_maximum_step_size
+       << ",\n  maximum_enclosure_cell=" << s.maximum_enclosure_cell
+       << ",\n  enable_subdivisions=" << s.enable_subdivisions
+       << ",\n  enable_premature_termination_on_enclosure_size=" << s.enable_premature_termination_on_enclosure_size
+       << "\n)\n";
+    return os;
+}
+
 
 Vector<Float>
 getMaximumEnclosureCell(

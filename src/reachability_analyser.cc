@@ -50,7 +50,6 @@
 #include "hybrid_time.h"
 #include "hybrid_automaton.h"
 
-#include "settings.h"
 #include "evolver_interface.h"
 #include "taylor_calculus.h"
 
@@ -64,8 +63,6 @@
 
 namespace Ariadne {
 
-const unsigned int ANALYSER_CHILD_OFFSET = 4;
-
 HybridReachabilityAnalyser::
 ~HybridReachabilityAnalyser()
 {
@@ -73,12 +70,12 @@ HybridReachabilityAnalyser::
 
 HybridReachabilityAnalyser::
 HybridReachabilityAnalyser(const HybridAutomatonInterface& system)
-	: _settings(new EvolutionSettingsType(system))
+	: _settings(new SettingsType(system))
 	, _system(system.clone())
 	, free_cores(0)
 {
     this->charcode = "a";
-    this->child_tab_offset = ANALYSER_CHILD_OFFSET;
+    this->child_tab_offset = 4;
 }
 
 
@@ -977,6 +974,36 @@ _getSplitParametersIntervalsSet(
 	ARIADNE_LOG(2,"Split factors: " << split_factors << ", total size: " << result.size());
 
 	return result;
+}
+
+
+HybridReachabilityAnalyserSettings::HybridReachabilityAnalyserSettings(const SystemType& sys)
+    : lock_to_grid_time(1.0),
+      lock_to_grid_steps(1),
+      maximum_grid_depth(6),
+      domain_bounds(unbounded_hybrid_boxes(sys.state_space())),
+      constraint_set(),
+      reachability_restriction(),
+      grid(HybridGrid(sys.state_space())),
+      splitting_constants_target_ratio(0.1),
+      enable_lower_pruning(true)
+{
+}
+
+
+std::ostream&
+operator<<(std::ostream& os, const HybridReachabilityAnalyserSettings& s)
+{
+    os << "DiscreteEvolutionSettings"
+       << "(\n  lock_to_grid_steps=" << s.lock_to_grid_steps
+       << ",\n  lock_to_grid_time=" << s.lock_to_grid_time
+       << ",\n  maximum_grid_depth=" << s.maximum_grid_depth
+       << ",\n  bounding_domain=" << s.domain_bounds
+       << ",\n  grid=" << s.grid
+       << ",\n  splitting_constants_target_ratio=" << s.splitting_constants_target_ratio
+       << ",\n  enable_lower_pruning=" << s.enable_lower_pruning
+       << "\n)\n";
+    return os;
 }
 
 

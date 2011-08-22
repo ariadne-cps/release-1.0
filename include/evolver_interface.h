@@ -28,8 +28,8 @@
 #ifndef ARIADNE_EVOLVER_INTERFACE_H
 #define ARIADNE_EVOLVER_INTERFACE_H
 
-#include "settings.h"
 #include "logging.h"
+#include "hybrid_set.h"
 
 namespace Ariadne {
 
@@ -57,7 +57,6 @@ class EvolverInterface :
     typedef ES EnclosureType;
     typedef typename SystemType::TimeType TimeType;
     typedef ListSet<EnclosureType> EnclosureListType;
-	typedef EnclosedEvolutionSettings EvolutionSettingsType;
 
     //! \brief Virtual destructor. 
     virtual ~EvolverInterface() {};
