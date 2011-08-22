@@ -327,7 +327,7 @@ int main()
     /// Computes the system evolution
 
     /// Creates a HybridEvolver object
-    HybridEvolver evolver;
+    HybridEvolver evolver(balls);
     evolver.verbosity = VERBOSITY;
 
     /// Sets the evolution parameters
@@ -343,7 +343,7 @@ int main()
     HybridTime evol_limits(EVOL_TIME,EVOL_TRANS);
  
     std::cout << "Computing orbit... " << std::flush;
-    HybridEvolver::OrbitType orbit = evolver.orbit(balls,initial_enclosure,evol_limits,UPPER_SEMANTICS);
+    HybridEvolver::OrbitType orbit = evolver.orbit(initial_enclosure,evol_limits,UPPER_SEMANTICS);
 
     std::cout << std::endl << "Orbit.final.size()="<<orbit.final().size()<<std::endl;
 
@@ -370,7 +370,7 @@ int main()
     int MAX_GRID_DEPTH = 12;
 
     /// Creates a ReachabilityAnalyser object
-    HybridReachabilityAnalyser analyser(evolver);
+    HybridReachabilityAnalyser analyser(balls);
     analyser.verbosity = 1;
     analyser.parameters().lock_to_grid_time = LOCK_TO_GRID_TIME;
     analyser.parameters().maximum_grid_depth= MAX_GRID_DEPTH;
@@ -385,7 +385,7 @@ int main()
     // These functions compute over-approximations to the evolved and reachable sets. Subdivision is used
     // as necessary to keep the local errors reasonable. The accumulated global error may be very large.
     std::cout << "Computing upper reach set... " << std::flush;
-    HybridGridTreeSet* upper_reach_set_ptr = analyser.upper_reach(balls,initial_set,limits);
+    HybridGridTreeSet* upper_reach_set_ptr = analyser.upper_reach(initial_set,limits);
 
     /// Plots the reachability results
     plot("2balls-upper_reach", xaxis, yaxis, numVariables, bounding_box, Colour(0.0,0.5,1.0), *upper_reach_set_ptr, MAX_GRID_DEPTH);

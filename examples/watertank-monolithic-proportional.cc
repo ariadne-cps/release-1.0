@@ -22,16 +22,15 @@
  */
 
 #include "ariadne.h"
-#include "taylor_calculus.h"
 #include "examples.h"
 
 using namespace Ariadne;
 
 int main(int argc,char *argv[]) 
 {
-	int verifierVerbosity = 1;
+	int verb = 1;
 	if (argc > 1)
-		verifierVerbosity = atoi(argv[1]);
+		verb = atoi(argv[1]);
 
 	// The system
 	HybridAutomaton system = Ariadne::getWatertankMonolithicProportional();
@@ -62,13 +61,8 @@ int main(int argc,char *argv[])
 
 	/// Verification
 
-	TaylorCalculus outer_integrator(2,2,1e-4);
-	TaylorCalculus lower_integrator(4,6,1e-10);
-	ImageSetHybridEvolver evolver(outer_integrator,lower_integrator);
-	HybridReachabilityAnalyser analyser(evolver);
-	Verifier verifier(analyser);
-	verifier.settings().enable_backward_refinement_for_testing_inclusion = true;
-	verifier.verbosity = verifierVerbosity;
+	Verifier verifier;
+	verifier.verbosity = verb;
 	verifier.settings().plot_results = true;
 
 	/// Analysis parameters

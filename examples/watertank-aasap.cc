@@ -27,9 +27,9 @@ using namespace Ariadne;
 
 int main(int argc,char *argv[])
 {
-	int verifierVerbosity = 1;
+	int verb = 1;
 	if (argc > 1)
-		verifierVerbosity = atoi(argv[1]);
+		verb = atoi(argv[1]);
 
     /// Set the system parameters
 	RealConstant a("a",0.02);
@@ -239,12 +239,8 @@ int main(int argc,char *argv[])
 
 	/// Verification
 
-	// Create an evolver and analyser objects, then set their verbosity
-	HybridEvolver evolver;
-	HybridReachabilityAnalyser analyser(evolver);
-	analyser.free_cores = 0;
-	Verifier verifier(analyser);
-	verifier.verbosity = verifierVerbosity;
+	Verifier verifier;
+	verifier.verbosity = verb;
 
 	SafetyVerificationInput verInfo(system, initial_set, domain, safety_constraint);
     verifier.safety(verInfo);

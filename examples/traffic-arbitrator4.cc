@@ -29,9 +29,9 @@ using namespace Ariadne;
 
 int main(int argc,char *argv[])
 {
-	int thisVerbosity = 1;
+	int verb = 1;
 	if (argc > 1)
-		thisVerbosity = atoi(argv[1]);
+		verb = atoi(argv[1]);
 
 	HybridAutomaton system("traffic-arbitrator4");
 
@@ -201,10 +201,8 @@ int main(int argc,char *argv[])
     HybridConstraintSet safety_constraint(system.state_space(),ConstraintSet(identity,codomain));
 
     /// Verification
-
-    HybridReachabilityAnalyser analyser(system);
-    Verifier verifier(analyser);
-    verifier.set_verbosity(thisVerbosity);
+    Verifier verifier;
+    verifier.verbosity = verb;
     verifier.settings().plot_results = true;
 
     SafetyVerificationInput verInfo(system, initial_set, domain, safety_constraint);

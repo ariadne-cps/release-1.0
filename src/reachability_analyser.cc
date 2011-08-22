@@ -81,7 +81,7 @@ HybridReachabilityAnalyser(const HybridAutomatonInterface& system)
     this->child_tab_offset = ANALYSER_CHILD_OFFSET;
 }
 
-HybridReachabilityAnalyser::EvolverType
+HybridReachabilityAnalyser::EvolverPtrType
 HybridReachabilityAnalyser::
 _get_tuned_evolver(
         const HybridAutomatonInterface& sys,
@@ -91,31 +91,42 @@ _get_tuned_evolver(
 {
     const HybridGrid& grid = *this->settings().grid;
 
-    EvolverType evolver(new ImageSetHybridEvolver(sys));
-    evolver->set_verbosity(this->verbosity - this->child_tab_offset);
-    evolver->set_tab_offset(this->tab_offset + this->child_tab_offset);
+    EvolverPtrType evolver(new ImageSetHybridEvolver(sys));
+    evolver->verbosity = this->verbosity - this->child_tab_offset;
+    evolver->tab_offset = this->tab_offset + this->child_tab_offset;
     evolver->tune_settings(grid,getHybridMaximumAbsoluteDerivatives(sys,reachability_restriction,_settings->domain_bounds),accuracy,semantics);
-
     return evolver;
 }
 
 
 void
 HybridReachabilityAnalyser::
-choose_initial_settings(
+tune_settings(
         const SystemType& system,
         const HybridBoxes& domain,
-        const Set<Identifier>& locked_params_ids)
+        const Set<Identifier>& locked_params_ids,
+        const HybridGridTreeSet& outer_approx,
+        int accuracy,
+        bool EQUAL_GRID_FOR_ALL_LOCATIONS,
+        Semantics semantics)
 {
-    ARIADNE_LOG(1,"Choosing the initial settings...");
+    _settings->maximum_grid_depth = accuracy;
 
     _settings->domain_bounds = domain;
-    ARIADNE_LOG(2, "Domain: " << domain);
+    ARIADNE_LOG(1, "Domain: " << domain);
     _settings->lock_to_grid_time = getLockToGridTime(system,domain);
-    ARIADNE_LOG(2, "Lock to grid time: " << _settings->lock_to_grid_time);
+    ARIADNE_LOG(1, "Lock to grid time: " << _settings->lock_to_grid_time);
     _settings->locked_parameters_ids = locked_params_ids;
-    ARIADNE_LOG(2, "Locked parameters IDs: " << locked_params_ids);
+    ARIADNE_LOG(1, "Locked parameters IDs: " << locked_params_ids);
+
+    ARIADNE_LOG(1, "Derivatives evaluation source: " << (outer_approx.empty() ? "Domain box" : "Outer approximation"));
+    HybridFloatVector hmad = getHybridMaximumAbsoluteDerivatives(system,outer_approx,domain);
+    ARIADNE_LOG(1, "Derivatives bounds: " << hmad);
+    _settings->grid = boost::shared_ptr<HybridGrid>(
+            new HybridGrid(getHybridGrid(hmad,domain,EQUAL_GRID_FOR_ALL_LOCATIONS)));
+    ARIADNE_LOG(1, "Grid lengths: " << _settings->grid->lengths());
 }
+
 
 void
 HybridReachabilityAnalyser::
@@ -167,7 +178,7 @@ _upper_reach_evolve(
 
 	const HybridGrid& grid = *_settings->grid;
 
-	const EvolverType& evolver = _get_tuned_evolver(sys,reachability_restriction,accuracy,UPPER_SEMANTICS);
+	const EvolverPtrType& evolver = _get_tuned_evolver(sys,reachability_restriction,accuracy,UPPER_SEMANTICS);
 	UpperReachEvolveWorker worker(evolver,initial_enclosures,time,
 			grid,accuracy,enable_premature_termination_on_blocking_event,direction,concurrency);
 	result = worker.get_result();
@@ -214,7 +225,7 @@ lower_reach_evolve(
 
     list<EnclosureType> initial_enclosures = enclosures_from_split_domain_midpoints(initial_set,min_cell_widths(grid,accuracy));
 
-    const EvolverType& evolver = _get_tuned_evolver(*_system,reachability_restriction,accuracy,LOWER_SEMANTICS);
+    const EvolverPtrType& evolver = _get_tuned_evolver(*_system,reachability_restriction,accuracy,LOWER_SEMANTICS);
 	ARIADNE_LOG(3,"Computing evolution...");
     for (list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); encl_it++) {
         Orbit<EnclosureType> orbit = evolver->orbit(*encl_it,time,LOWER_SEMANTICS);
@@ -291,7 +302,7 @@ upper_reach_evolve(
     ARIADNE_LOG(3,"Computing initial evolution...");
     initial.adjoin_outer_approximation(initial_set,accuracy);
 
-    const EvolverType& evolver = _get_tuned_evolver(*_system,reachability_restriction,accuracy,UPPER_SEMANTICS);
+    const EvolverPtrType& evolver = _get_tuned_evolver(*_system,reachability_restriction,accuracy,UPPER_SEMANTICS);
     std::list<EnclosureType> initial_enclosures = cells_to_smallest_enclosures(initial,accuracy);
     for (std::list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); ++encl_it) {
         Orbit<EnclosureType> orbit = evolver->orbit(*encl_it,hybrid_lock_to_grid_time,UPPER_SEMANTICS);
@@ -367,7 +378,7 @@ chain_reach(const HybridImageSet& initial_set) const
 	ARIADNE_LOG(3,"Computing transient evolution...");
     initial.adjoin_outer_approximation(initial_set,accuracy);
 
-    const EvolverType& evolver = _get_tuned_evolver(*_system,reachability_restriction,accuracy,UPPER_SEMANTICS);
+    const EvolverPtrType& evolver = _get_tuned_evolver(*_system,reachability_restriction,accuracy,UPPER_SEMANTICS);
 
     std::list<EnclosureType> initial_enclosures = cells_to_smallest_enclosures(initial,accuracy);
     for (std::list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); ++encl_it) {
@@ -828,7 +839,7 @@ _lower_chain_reach_and_epsilon(
 
     ARIADNE_LOG(2,"Computing recurrent evolution...");
 
-    const EvolverType& evolver = _get_tuned_evolver(system,reachability_restriction,accuracy,LOWER_SEMANTICS);
+    const EvolverPtrType& evolver = _get_tuned_evolver(system,reachability_restriction,accuracy,LOWER_SEMANTICS);
 
     uint i=0;
     while (!initial_enclosures.empty()) {
@@ -1541,6 +1552,7 @@ getHybridMaximumAbsoluteDerivatives(
 
 		// If the reached region for the location exists and is not empty, check its cells, otherwise use the whole domain
 		if (outer_approx_constraint.has_location(loc) && !outer_approx_constraint[loc].empty()) {
+
 			// Get the GridTreeSet
 			GridTreeSet reach = outer_approx_constraint[loc];
 			// For each of its hybrid cells

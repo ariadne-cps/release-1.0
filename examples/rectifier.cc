@@ -217,7 +217,7 @@ int main()
     /// Compute the system evolution
 
     /// Create a HybridEvolver object
-    HybridEvolver evolver;
+    HybridEvolver evolver(rectifier);
     evolver.verbosity = 0;
 
     /// Set the evolution parameters
@@ -267,7 +267,7 @@ int main()
     std::cout << "done." << std::endl;
 */
     /// Create a ReachabilityAnalyser object
-    HybridReachabilityAnalyser analyser(evolver);
+    HybridReachabilityAnalyser analyser(rectifier);
     analyser.settings().lock_to_grid_time = LOCK_TOGRID_TIME;
     analyser.settings().maximum_grid_depth= MAX_GRID_DEPTH;
     Grid grid(Vector<Float>(3, 0.25/dp[1], 1.0, 0.5));
@@ -281,7 +281,7 @@ int main()
     HybridTime reach_time(TIME_LIMIT,TRAN_LIMIT);
 
     std::cout << "Computing upper reach set... " << std::endl << std::flush;
-    HybridGridTreeSet reach = analyser.upper_reach(rectifier,initial_set,reach_time);
+    HybridGridTreeSet reach = analyser.upper_reach(initial_set,reach_time);
     std::cout << "done." << std::endl;
 
     plot("rectifier_reach_t_vin", 0, 1, 3, graphic_box, Colour(0.0,0.5,1.0), reach, -1);

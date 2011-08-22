@@ -48,17 +48,15 @@ namespace Ariadne {
   
 class Loggable {
 
-  protected:
-    mutable std::string charcode;
+  public:
     mutable int verbosity;
     mutable unsigned tab_offset; // The tabbing offset for logging on this class (set by a parent class)
+  protected:
     mutable unsigned child_tab_offset; // The additional offset required to activate logging on child loggable classes
+    mutable std::string charcode;
   public:
-    Loggable() : charcode(""),verbosity(0),tab_offset(0),child_tab_offset(0) { }
+    Loggable() : verbosity(0),tab_offset(0),child_tab_offset(0),charcode("") { }
 
-    virtual void set_code(char code) { this->charcode = code; }
-    virtual void set_verbosity(int verbosity) { this->verbosity = verbosity; }
-    virtual void set_tab_offset(int offset) { this->tab_offset = offset; }
 };
 
 // Global log output file

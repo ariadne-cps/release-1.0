@@ -23,7 +23,6 @@
 
 #include "ariadne.h"
 #include "function.h"
-#include "taylor_calculus.h"
 #include "examples.h"
 
 using namespace Ariadne;
@@ -106,11 +105,7 @@ int main(int argc,char *argv[])
 
 	/// Verification
 
-	TaylorCalculus outer_integrator(2,2,1e-4);
-	TaylorCalculus lower_integrator(2,2,1e-4);
-	ImageSetHybridEvolver evolver(outer_integrator,lower_integrator);
-	HybridReachabilityAnalyser analyser(evolver);
-	Verifier verifier(analyser);
+	Verifier verifier;
 	verifier.settings().enable_backward_refinement_for_testing_inclusion = true;
 	verifier.settings().maximum_parameter_depth = 2;
 	verifier.settings().plot_results = false;

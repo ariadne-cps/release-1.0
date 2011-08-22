@@ -51,6 +51,10 @@ class Verifier
 
   private:
 
+    typedef boost::shared_ptr<HybridReachabilityAnalyser> AnalyserPtrType;
+
+  private:
+
     /*! \brief Holds the cached result of an outer approximation of a system. */
     struct OuterApproximationCache
     {
@@ -67,6 +71,7 @@ class Verifier
     };
 
   private:
+    mutable boost::shared_ptr< SystemType > _system;
     mutable boost::shared_ptr< HybridReachabilityAnalyser > _analyser;
     boost::shared_ptr< VerificationSettings > _settings;
     mutable std::string _plot_dirpath;
@@ -92,9 +97,8 @@ class Verifier
     /*! \brief Virtual destructor */
     virtual ~Verifier();
 
-    /*! \brief Construct from a method for evolving basic sets.
-     *  \details Explicitly allocates one analyser. */
-    Verifier(const HybridReachabilityAnalyser& analyser);
+    /*! \brief Default constructor. */
+    Verifier();
 
     //@}
 
@@ -219,15 +223,6 @@ class Verifier
 	//@{
 	//! \name Dominance methods
 
-	/*! \brief Choose the settings for the next dominance iteration, given a bundle of information around a system and a set of constants
-	 * that must be ignore when choosing the splitting factors of the system. */
-	void _choose_dominance_settings(
-			const DominanceVerificationInput& systemBundle,
-			const Set<Identifier>& locked_params,
-			const HybridGridTreeSet& domain_reach,
-			const HybridGridTreeSet& constraint_reach,
-			Semantics semantics) const;
-
 	/**
 	 * \brief Performs dominance checking with \a constant substituted into the \a dominating system.
 	 * \details Verifies if the \a dominating system dominates the \a dominated system.
@@ -258,52 +253,50 @@ class Verifier
 	bool _dominance_proving_once(
 			DominanceVerificationInput& dominating,
 			DominanceVerificationInput& dominated,
-			const RealParameterSet& params) const;
+			const RealParameterSet& params,
+			const unsigned int& accuracy) const;
 
 	/*! \brief Performs the disproving part of dominance checking.
 	 * \details Tries disproving only once, in respect to the current grid depth. */
 	bool _dominance_disproving_once(
 			DominanceVerificationInput& dominating,
 			DominanceVerificationInput& dominated,
-			const RealParameterSet& params) const;
+			const RealParameterSet& params,
+			const unsigned int& accuracy) const;
 
 	/*! \brief Gets the flattened lower reach and the epsilon of the \a dominanceSystem type. */
 	std::pair<GridTreeSet,Vector<Float> > _dominance_flattened_lower_reach_and_epsilon(
-			DominanceVerificationInput& verInfo,
+			DominanceVerificationInput& verInput,
 			const RealParameterSet& params,
-			DominanceSystem dominanceSystem) const;
+			DominanceSystem dominanceSystem,
+			const unsigned int& accuracy) const;
 
 	/*! \brief Gets the flattened outer reach of the \a dominanceSystem type. */
 	GridTreeSet _dominance_flattened_outer_reach(
 			DominanceVerificationInput& verInput,
 			const RealParameterSet& params,
-			DominanceSystem dominanceSystem) const;
+			DominanceSystem dominanceSystem,
+			const unsigned int& accuracy) const;
 
 	//@}
 
 	//@{
 	//! \name Other helper methods
 
-	/*! \brief Resets cached information. */
-	void _reset_safety_settings() const;
+    /*! \brief Obtains an analyser from the verification input, already tuned in respect to the other arguments. */
+    AnalyserPtrType _get_tuned_analyser(
+            const VerificationInput& verInput,
+            const Set<Identifier>& locked_params_ids,
+            const HybridGridTreeSet& outer_approx,
+            int accuracy,
+            bool EQUAL_GRID_FOR_ALL_LOCATIONS,
+            Semantics semantics) const;
 
-	/*! \brief Resets cached information. */
-	void _reset_dominance_settings() const;
+	/*! \brief Resets cached verification state information, for safety. */
+	void _reset_safety_state() const;
 
-	/*! \brief Obtains a coarse outer approximation and a reachability restriction of the \a system using
-	 * only the information on the \a domain.
-	 */
-	std::pair<HybridGridTreeSet,HybridGridTreeSet> _get_coarse_outer_approximation_and_reachability_restriction(
-			const SystemType& system,
-			const HybridBoxes& domain,
-			bool equal_grid_for_all_locations) const;
-
-	/*! \brief Tune the settings for the next iterative verification step. */
-	void _tune_iterative_step_settings(
-			const SystemType& system,
-			const HybridGridTreeSet& hgts_domain,
-			bool equal_grid_for_all_locations,
-			Semantics semantics) const;
+	/*! \brief Resets cached verification state information, for dominance. */
+	void _reset_dominance_state() const;
 
 	/*! \brief Updates with \a reach the outer approximation or the reachability restriction.
 	 * \details Which field is set depends on the current state of such variables: if no coarse outer
@@ -320,6 +313,7 @@ class Verifier
 	void _plot_dominance(
 			const HybridGridTreeSet& reach,
 			DominanceSystem dominanceSystem,
+			int accuracy,
 			Semantics semantics) const;
 
 	//@}

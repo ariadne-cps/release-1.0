@@ -22,16 +22,15 @@
  */
 
 #include "ariadne.h"
-#include "taylor_calculus.h"
 #include "watertank-compositional-hysteresis.h"
 
 using namespace Ariadne;
 
 int main(int argc,char *argv[])
 {
-	int verifierVerbosity = 1;
+	int verb = 1;
 	if (argc > 1)
-		verifierVerbosity = atoi(argv[1]);
+		verb = atoi(argv[1]);
 
 	HybridIOAutomaton system = Ariadne::getWatertankCompositionalHysteresis();
 
@@ -59,12 +58,8 @@ int main(int argc,char *argv[])
 
 	/// Verification
 
-	TaylorCalculus outer_integrator(2,2,1e-4);
-	TaylorCalculus lower_integrator(2,2,1e-4);
-	ImageSetHybridEvolver evolver(system,outer_integrator,lower_integrator);
-	HybridReachabilityAnalyser analyser(evolver);
-	Verifier verifier(analyser);
-	verifier.verbosity = verifierVerbosity;
+	Verifier verifier;
+	verifier.verbosity = verb;
 	verifier.settings().maximum_parameter_depth = 3;
 	verifier.settings().plot_results = true;
 

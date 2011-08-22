@@ -22,7 +22,6 @@
  */
 
 #include "ariadne.h"
-#include "taylor_calculus.h"
 #include "examples.h"
 
 using namespace Ariadne;
@@ -31,9 +30,9 @@ typedef ImageSetHybridEvolver::EnclosureListType EnclosureListType;
 
 int main(int argc,char *argv[]) 
 {
-	int verifierVerbosity = 1;
+	int verb = 1;
 	if (argc > 1)
-		verifierVerbosity = atoi(argv[1]);
+		verb = atoi(argv[1]);
 
 	// The system
 	HybridAutomaton system = getWatertankNonlinearMonolithicProportional();
@@ -66,14 +65,8 @@ int main(int argc,char *argv[])
 
 	/// Verification
 
-	// Create an evolver and analyser objects, then set their verbosity
-
-	TaylorCalculus outer_integrator(2,2,1e-4);
-	TaylorCalculus lower_integrator(4,6,1e-10);
-	ImageSetHybridEvolver evolver(outer_integrator,lower_integrator);
-	HybridReachabilityAnalyser analyser(evolver);
-	Verifier verifier(analyser);
-	verifier.verbosity = verifierVerbosity;
+	Verifier verifier;
+	verifier.verbosity = verb;
 	verifier.settings().maximum_parameter_depth = 5;
 	verifier.settings().plot_results = true;
 

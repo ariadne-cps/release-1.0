@@ -23,15 +23,14 @@
 
 #include "ariadne.h"
 #include "examples.h"
-#include "taylor_calculus.h"
 
 using namespace Ariadne;
 
 int main(int argc,char *argv[])
 {
-	int verifierVerbosity = 1;
+	int verb = 1;
 	if (argc > 1)
-		verifierVerbosity = atoi(argv[1]);
+		verb = atoi(argv[1]);
 
 	// The systems
 	HybridAutomaton system_hy = Ariadne::getWatertankNonlinearMonolithicHysteresis();
@@ -58,12 +57,9 @@ int main(int argc,char *argv[])
 	DominanceVerificationInput hysteresis(system_hy,initial_hy,domain_hy,projection_hy);
 	DominanceVerificationInput proportional(system_pr,initial_pr,domain_pr,projection_pr);
 
-	TaylorCalculus outer_integrator(2,2,1e-4);
-	TaylorCalculus lower_integrator(4,6,1e-10);
-	ImageSetHybridEvolver evolver(outer_integrator,lower_integrator);
-	HybridReachabilityAnalyser analyser(evolver);
-	Verifier verifier(analyser);
-	verifier.verbosity = verifierVerbosity;
+	// Verification
+	Verifier verifier;
+	verifier.verbosity = verb;
 	verifier.settings().maximum_parameter_depth = 5;
 
 	// The parametric dominance parameters

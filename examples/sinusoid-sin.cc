@@ -106,7 +106,7 @@ int main()
     /// Compute the system evolution
 
     /// Create a HybridEvolver object
-    HybridEvolver evolver;
+    HybridEvolver evolver(sinusoid);
 
     /// Set the evolution parameters
     evolver.settings().maximum_enclosure_cell = Vector<Float>(2,0.5);
@@ -128,7 +128,7 @@ int main()
     HybridTime evolution_time(3*pi<Float>(),4);
 
     std::cout << "Computing orbit... " << std::flush;
-    OrbitType orbit = evolver.orbit(sinusoid,initial_enclosure,evolution_time,LOWER_SEMANTICS);
+    OrbitType orbit = evolver.orbit(initial_enclosure,evolution_time,LOWER_SEMANTICS);
     std::cout << "done." << std::endl << orbit << std::endl << orbit.reach() << std::endl;
 
     //std::cout << "Orbit="<<orbit<<std::endl;

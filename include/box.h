@@ -242,7 +242,7 @@ class Box
 Box make_box(const std::string& str);
 
 /** \brief Creates an unbounded box of dimension \a n */
-Box unbounded_box(const int& n);
+Box unbounded_box(unsigned n);
 
 /** \brief Provides a closed box that includes both \a box1 and \a box2.
  * \details The box is not enlarged to include the boxes in its interior. */

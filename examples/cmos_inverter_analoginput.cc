@@ -336,7 +336,7 @@ int main()
     /// Compute the system evolution
 
     /// Create a HybridEvolver object
-    HybridEvolver evolver;
+    HybridEvolver evolver(inverter);
     evolver.verbosity = VERBOSITY;
 
     /// Set the evolution parameters
@@ -358,7 +358,7 @@ int main()
     HybridTime evolution_time(EVOL_TIME,EVOL_TRANS);
 
     std::cout << "Computing orbit... " << std::flush;
-    OrbitType orbit = evolver.orbit(inverter,initial_enclosure,evolution_time,UPPER_SEMANTICS);
+    OrbitType orbit = evolver.orbit(initial_enclosure,evolution_time,UPPER_SEMANTICS);
     std::cout << "done." << std::endl;
 
     std::cout << "Orbit.final="<<orbit.final().size()<<std::endl;

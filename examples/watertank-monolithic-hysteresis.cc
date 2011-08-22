@@ -29,9 +29,9 @@ using namespace Ariadne;
 
 int main(int argc,char *argv[])
 {
-	int verifierVerbosity = 1;
+	int verb = 1;
 	if (argc > 1)
-		verifierVerbosity = atoi(argv[1]);
+		verb = atoi(argv[1]);
 
 	// The system
 	HybridAutomaton system = Ariadne::getWatertankMonolithicHysteresis();
@@ -64,9 +64,8 @@ int main(int argc,char *argv[])
 
 	/// Verification
 
-	HybridReachabilityAnalyser analyser(system);
-	Verifier verifier(analyser);
-	verifier.set_verbosity(verifierVerbosity);
+	Verifier verifier;
+	verifier.verbosity = verb;
 	verifier.settings().maximum_parameter_depth = 3;
 	verifier.settings().time_limit_for_outcome = 10;
 	verifier.settings().plot_results = false;

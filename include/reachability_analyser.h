@@ -84,7 +84,7 @@ class HybridReachabilityAnalyser
     typedef HybridEvolver::EnclosureType EnclosureType;
     typedef HybridEvolver::ContinuousEnclosureType ContinuousEnclosureType;
   private:
-    typedef boost::shared_ptr<EvolverInterface<HybridAutomatonInterface,EnclosureType> > EvolverType;
+    typedef boost::shared_ptr<EvolverInterface<HybridAutomatonInterface,EnclosureType> > EvolverPtrType;
   private:
     boost::shared_ptr< DiscretisedEvolutionSettings > _settings;
     boost::shared_ptr< HybridAutomatonInterface > _system;
@@ -185,11 +185,15 @@ class HybridReachabilityAnalyser
 
     //@}
 
-    /*! \brief Chooses the initial evolution settings. */
-    void choose_initial_settings(
+    /*! \brief Tune the settings. */
+    void tune_settings(
             const SystemType& system,
             const HybridBoxes& domain,
-            const Set<Identifier>& locked_params);
+            const Set<Identifier>& locked_params_ids,
+            const HybridGridTreeSet& outer_approx,
+            int accuracy,
+            bool EQUAL_GRID_FOR_ALL_LOCATIONS,
+            Semantics semantics);
 
   public:
 
@@ -217,7 +221,7 @@ class HybridReachabilityAnalyser
     		string name_prefix) const;
 
     /*! \brief Obtains an evolver from the system, already tuned in respect to a restriction, accuracy and semantics */
-    EvolverType _get_tuned_evolver(
+    EvolverPtrType _get_tuned_evolver(
             const SystemType& sys,
             const HybridGridTreeSet& reachability_restriction,
             int accuracy,

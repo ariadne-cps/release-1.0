@@ -184,8 +184,7 @@ class DiscretisedEvolutionSettings {
     IntType maximum_grid_height;
 
     //! \brief Set the allowed bounding domain for chain reachability computations.
-    //! <br>
-	//! This parameters is only used in the chain_reach() routines.
+	//! \details Defaults to an unbounded box. Since it is also used to tune the evolver, it could be necessary to refine it.
     HybridBoxes domain_bounds;
 
     //! \brief The grid to use.
@@ -266,10 +265,12 @@ DiscretisedEvolutionSettings::DiscretisedEvolutionSettings(const SystemType& sys
       initial_grid_density(8),
       maximum_grid_depth(6),
       maximum_grid_height(16),
+      domain_bounds(unbounded_hybrid_boxes(sys.state_space())),
       grid(new HybridGrid(sys.state_space())),
       splitting_constants_target_ratio(0.1),
 	  enable_lower_pruning(true)
-{ }
+{
+}
 
 inline
 VerificationSettings::VerificationSettings() :

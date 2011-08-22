@@ -109,7 +109,7 @@ int main()
 
     /// Create a HybridEvolver object
     /// Set the evolution parameters
-    HybridEvolver evolver;
+    HybridEvolver evolver(ecoli_system);
     evolver.settings().maximum_enclosure_cell = Vector<Float>(4,0.25);
     evolver.settings().hybrid_maximum_step_size[starvation_mode] = 0.25;
     std::cout <<  evolver.settings() << std::endl;
@@ -128,13 +128,13 @@ int main()
     HybridTime zero_time(0.0,1);
 
     std::cout << "Computing orbit... " << std::flush;
-    OrbitType orbit = evolver.orbit(ecoli_system,initial_enclosure,evolution_time,UPPER_SEMANTICS);
+    OrbitType orbit = evolver.orbit(initial_enclosure,evolution_time,UPPER_SEMANTICS);
     std::cout << "done.\n" << std::endl;
     plot("ecoli-orbit.png", projection, bounding_box, turquoise, orbit);
 
 
     /// Create a ReachabilityAnalyser object
-    HybridReachabilityAnalyser analyser(evolver);
+    HybridReachabilityAnalyser analyser(ecoli_system);
     analyser.settings().lock_to_grid_time=lock_to_grid_time;
     analyser.settings().initial_grid_depth=18;
     analyser.settings().maximum_grid_depth=18;
@@ -143,10 +143,10 @@ int main()
     HybridImageSet initial_set;
     initial_box=Vector<Float>(initial_state)+Vector<Interval>(4,Interval(-1,1)*0.025);
     initial_set[starvation_mode]=initial_box;
-    HybridGridTreeSet upper_initial_set = analyser.upper_reach(ecoli_system,initial_set,zero_time);
+    HybridGridTreeSet upper_initial_set = analyser.upper_reach(initial_set,zero_time);
     std::cout << "Computing reachable and evolved set... " << std::flush;
     HybridGridTreeSet upper_evolve_set, upper_reach_set;
-    make_lpair(upper_reach_set,upper_evolve_set)= analyser.upper_reach_evolve(ecoli_system,initial_set,reachability_time);
+    make_lpair(upper_reach_set,upper_evolve_set)= analyser.upper_reach_evolve(initial_set,reachability_time);
     std::cout << "done.\n" << std::endl;
 
     plot("ecoli-initial.png", projection, bounding_box, turquoise, upper_initial_set);

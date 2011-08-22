@@ -167,8 +167,10 @@ HybridEvolver create_evolver()
 }
 
 
-void compute_evolution(const HybridEvolver& evolver)
+void compute_evolution()
 {
+    HybridEvolver evolver=create_evolver();
+
     // Redefine the two discrete states
     DiscreteLocation heater_on(1);
     DiscreteLocation heater_off(2);
@@ -214,10 +216,10 @@ void compute_evolution(const HybridEvolver& evolver)
 }
 
 
-void compute_reachable_sets(const HybridEvolver& evolver)
+void compute_reachable_sets()
 {
     // Create a ReachabilityAnalyser object
-    HybridReachabilityAnalyser analyser(evolver);
+    HybridReachabilityAnalyser analyser(create_heating_system());
     analyser.settings().initial_grid_density=10;
     analyser.settings().initial_grid_depth=12;
     analyser.settings().maximum_grid_depth=12;
@@ -235,12 +237,12 @@ void compute_reachable_sets(const HybridEvolver& evolver)
 
     // Compute lower-approximation to finite-time evolved set using lower-semantics.
     std::cout << "Computing lower evolve set... " << std::flush;
-    HybridGridTreeSet lower_evolve_set = analyser.lower_evolve(evolver.system(),initial_set,reach_time);
+    HybridGridTreeSet lower_evolve_set = analyser.lower_evolve(initial_set,reach_time);
     std::cout << "done." << std::endl;
 
     // Compute lower-approximation to finite-time reachable set using lower-semantics.
     std::cout << "Computing lower reach set... " << std::flush;
-    HybridGridTreeSet lower_reach_set = analyser.lower_reach(evolver.system(),initial_set,reach_time);
+    HybridGridTreeSet lower_reach_set = analyser.lower_reach(initial_set,reach_time);
     std::cout << "done." << std::endl;
 
     plot("tutorial-lower_reach_evolve.png",Box(2, 0.0,1.0, 14.0,21.0),
@@ -252,12 +254,12 @@ void compute_reachable_sets(const HybridEvolver& evolver)
     // Subdivision is used as necessary to keep the local errors reasonable.
     // The accumulated global error may be very large.
     std::cout << "Computing upper evolve set... " << std::flush;
-    HybridGridTreeSet upper_evolve_set = analyser.upper_evolve(evolver.system(),initial_set,reach_time);
+    HybridGridTreeSet upper_evolve_set = analyser.upper_evolve(initial_set,reach_time);
     std::cout << "done." << std::endl;
 
     // Compute over-approximation to finite-time reachable set using upper semantics.
     std::cout << "Computing upper reach set... " << std::flush;
-    HybridGridTreeSet upper_reach_set = analyser.upper_reach(evolver.system(),initial_set,reach_time);
+    HybridGridTreeSet upper_reach_set = analyser.upper_reach(initial_set,reach_time);
     std::cout << "done." << std::endl;
 
     plot("tutorial-upper_reach_evolve.png",Box(2, 0.0,1.0, 14.0,21.0),
@@ -267,7 +269,7 @@ void compute_reachable_sets(const HybridEvolver& evolver)
 
     // Compute over-approximation to infinite-time chain-reachable set using upper semantics.
     std::cout << "Computing chain reach set... " << std::flush;
-    HybridGridTreeSet chain_reach_set = analyser.chain_reach(evolver.system(),initial_set);
+    HybridGridTreeSet chain_reach_set = analyser.chain_reach(initial_set);
     std::cout << "done." << std::endl;
     plot("tutorial-chain_reach.png",Box(2, 0.0,1.0, 14.0,21.0), Colour(0.0,0.5,1.0), chain_reach_set);
 }
@@ -291,7 +293,7 @@ void compute_reachable_sets_with_serialisation(const HybridReachabilityAnalyser&
     HybridTime transient_time(tlower,4);
     HybridTime recurrent_time(tupper-tlower,16);
 
-    const HybridGridTreeSet upper_intermediate_set = analyser.upper_evolve(analyser.system(),initial_set,transient_time);
+    const HybridGridTreeSet upper_intermediate_set = analyser.upper_evolve(initial_set,transient_time);
     plot("tutorial-upper_intermediate.png",Box(2, 0.0,1.0, 14.0,18.0), Colour(0.0,0.5,1.0), upper_intermediate_set);
 
     std::ofstream output_file_stream("tutorial-transient.txt");
@@ -306,7 +308,7 @@ void compute_reachable_sets_with_serialisation(const HybridReachabilityAnalyser&
     input_archive >> rebuilt_upper_intermediate_set;
     input_file_stream.close();
 
-    HybridGridTreeSet upper_recurrent_set = analyser.upper_reach(analyser.system(),initial_set,recurrent_time);
+    HybridGridTreeSet upper_recurrent_set = analyser.upper_reach(initial_set,recurrent_time);
     plot("tutorial-upper_recurrent.png",Box(2, 0.0,1.0, 14.0,18.0), Colour(0.0,0.5,1.0), upper_recurrent_set);
 }
 
@@ -316,9 +318,8 @@ void compute_reachable_sets_with_serialisation(const HybridReachabilityAnalyser&
 int main()
 {
     // Create the evolver class
-    HybridEvolver evolver=create_evolver();
 
     // Compute the system evolution
-    compute_evolution(evolver);
-    compute_reachable_sets(evolver);
+    compute_evolution();
+    compute_reachable_sets();
 }

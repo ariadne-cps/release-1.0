@@ -59,18 +59,7 @@ class TestReachabilityAnalysis
   public:
     static HybridReachabilityAnalyser build_analyser()
     {
-        Grid grid(2);
-        HybridEvolver evolver(build_system());
-        evolver.verbosity=0;
-
-        evolver.settings().hybrid_maximum_step_size[1]=0.25;
-        evolver.settings().maximum_enclosure_cell=Vector<Float>(2,0.5);
-
-        DiscretisedEvolutionSettings settings;
-        settings.maximum_grid_depth=2;
-        settings.lock_to_grid_time=4.0;
-
-        HybridReachabilityAnalyser analyser(settings,evolver);
+        HybridReachabilityAnalyser analyser(build_system());
         cout << "Done building analyser\n";
         return analyser;
     }
@@ -147,9 +136,9 @@ class TestReachabilityAnalysis
         analyser.verbosity=0;
         analyser.settings().domain_bounds[loc] = bounding_box;
         cout << "Computing timed evolve set" << endl;
-        HybridGridTreeSet hybrid_lower_evolve=analyser.lower_evolve(analyser.system(),initial_set,reach_time);
+        HybridGridTreeSet hybrid_lower_evolve=analyser.lower_evolve(initial_set,reach_time);
         cout << "Computing timed reachable set" << endl;
-        HybridGridTreeSet hybrid_lower_reach=analyser.lower_reach(analyser.system(),initial_set,reach_time);
+        HybridGridTreeSet hybrid_lower_reach=analyser.lower_reach(initial_set,reach_time);
         GridTreeSet& lower_evolve=hybrid_lower_evolve[loc];
         GridTreeSet& lower_reach=hybrid_lower_reach[loc];
         cout << "Evolved to " << lower_evolve.size() << " cells " << endl << endl;
@@ -164,10 +153,10 @@ class TestReachabilityAnalysis
         cout << "Computing timed reachable set" << endl;
         DiscreteLocation loc(1);
         Box bounding_box(2,bound);
-        analyser.verbosity=0;
-        HybridGridTreeSet upper_evolve_set=analyser.upper_evolve(analyser.system(),initial_set,reach_time);
+        analyser.settings().domain_bounds[loc] = Box(2,-10.0,10.0,-10.0,10.0);
+        HybridGridTreeSet upper_evolve_set=analyser.upper_evolve(initial_set,reach_time);
         cout << "upper_evolve_set="<<upper_evolve_set<<std::endl;
-        HybridGridTreeSet upper_reach_set=analyser.upper_reach(analyser.system(),initial_set,reach_time);
+        HybridGridTreeSet upper_reach_set=analyser.upper_reach(initial_set,reach_time);
         cout << "upper_reach_set="<<upper_reach_set<<std::endl;
  
         const GridTreeSet& upper_evolve=upper_evolve_set[loc];
@@ -191,7 +180,7 @@ class TestReachabilityAnalysis
         analyser.settings().transient_time=4.0;
         analyser.settings().lock_to_grid_time=1.0;
         cout << analyser.settings();
-        HybridGridTreeSet chain_reach_set=analyser.chain_reach(analyser.system(),initial_set,bounding_boxes);
+        HybridGridTreeSet chain_reach_set=analyser.chain_reach(initial_set,bounding_boxes);
         plot("test_reachability_analyser-map_chain_reach.png",bounding_box,chain_reach_set[loc],initial_set[loc]);
     }
   

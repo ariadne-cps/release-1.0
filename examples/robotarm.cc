@@ -374,18 +374,17 @@ int main(int argc, char** argv)
         step_size = atof(argv[3]);  // read step size from the arguments        
     Vector<Float> enclosure_cell(spc.dimension(),1.0);
 
-    EvolutionSettings parameters;
-    parameters.maximum_enclosure_cell=enclosure_cell;
+    // Set up the evaluators
+    HybridEvolver evolver(system);
+    evolver.verbosity = 1;
+
+    evolver.settings().maximum_enclosure_cell=enclosure_cell;
     HybridSpace hspace = system.state_space();
     for (HybridSpace::locations_const_iterator loc_it = hspace.locations_begin(); loc_it != hspace.locations_end(); loc_it++)
-    	parameters.hybrid_maximum_step_size[loc_it->first]=step_size;
-    parameters.enable_premature_termination_on_enclosure_size=true;
+        evolver.settings().hybrid_maximum_step_size[loc_it->first]=step_size;
+    evolver.settings().enable_premature_termination_on_enclosure_size=true;
 
-    std::cout << "Evolution parameters:" << parameters << std::endl;
-
-    // Set up the evaluators
-    HybridEvolver evolver(parameters);
-    evolver.verbosity = 1;
+    std::cout << "Evolution settings:" << evolver.settings() << std::endl;
     
     // Define the initial box
     //
@@ -435,7 +434,7 @@ int main(int argc, char** argv)
     Semantics semantics=UPPER_SEMANTICS;
 
     // Compute the reachable sets
-    Orbit<HybridEnclosureType> orbit = evolver.orbit(system,initial_set,HybridTime(time,steps),semantics);
+    Orbit<HybridEnclosureType> orbit = evolver.orbit(initial_set,HybridTime(time,steps),semantics);
     cout << std::endl;
     
     Box bbox = orbit.reach().bounding_box();

@@ -166,7 +166,7 @@ Box make_box(const std::string& str)
     return Box(vec.size(),&vec[0]);
 }
 
-Box unbounded_box(const int& n)
+Box unbounded_box(unsigned n)
 {
 	static const Interval unbounded_int(-std::numeric_limits<Float>::infinity(),std::numeric_limits<Float>::infinity());
 

@@ -1071,6 +1071,8 @@ getHybridMaximumStepSize(
 			if (hfv_it->second[i] > 0)
 				mss = max(mss,hgrid[hfv_it->first].lengths()[i]/(1 << maximum_grid_depth)/hfv_it->second[i]);
 
+		ARIADNE_ASSERT_MSG(mss > 0, "Error: the computed maximum step size for location " << hfv_it->first << " is zero.");
+
 		// Inserts the value (twice the value since the maximum enclosure is set as ~2 the grid cell)
 		hmss.insert(std::pair<DiscreteLocation,Float>(hfv_it->first,coefficient*mss));
 	}
