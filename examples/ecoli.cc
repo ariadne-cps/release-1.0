@@ -136,7 +136,6 @@ int main()
     /// Create a ReachabilityAnalyser object
     HybridReachabilityAnalyser analyser(ecoli_system);
     analyser.settings().lock_to_grid_time=lock_to_grid_time;
-    analyser.settings().initial_grid_depth=18;
     analyser.settings().maximum_grid_depth=18;
     std::cout<<"Discrete evolution parameters="<<analyser.settings()<<"\n";
 

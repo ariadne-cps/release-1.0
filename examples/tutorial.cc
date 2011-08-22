@@ -220,8 +220,6 @@ void compute_reachable_sets()
 {
     // Create a ReachabilityAnalyser object
     HybridReachabilityAnalyser analyser(create_heating_system());
-    analyser.settings().initial_grid_density=10;
-    analyser.settings().initial_grid_depth=12;
     analyser.settings().maximum_grid_depth=12;
 
     //*(analyser.settings().grid)=HybridGrid(heating_system.state_space());

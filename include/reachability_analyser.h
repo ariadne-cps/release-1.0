@@ -56,7 +56,6 @@ template<class BS> class HybridBasicSet;
 typedef HybridBasicSet<Box> HybridBox;
 typedef std::map<DiscreteLocation,Vector<Float> > HybridFloatVector;
 typedef std::map<Identifier,int> ParameterIdIntMap;
-typedef HybridAutomatonInterface SystemType;
 typedef HybridEvolver::EnclosureType EnclosureType;
 typedef HybridEvolver::ContinuousEnclosureType ContinuousEnclosureType;
 typedef boost::shared_ptr<HybridGridTreeSet> HybridGridTreeSetPtr;
@@ -74,21 +73,22 @@ const unsigned analyser_max_verbosity_level_used = 7;
 /*! \brief A class for performing reachability analysis on a hybrid system-
  */
 class HybridReachabilityAnalyser
-    : public Loggable
+    : public ReachabilityAnalyserInterface<HybridAutomatonInterface>
 {
   public:
     typedef DiscretisedEvolutionSettings EvolutionSettingsType;
-    typedef HybridAutomatonInterface SystemType;
-    typedef SystemType::StateSpaceType StateSpaceType;
-    typedef SystemType::TimeType TimeType;
-    typedef HybridGridTreeSet SetApproximationType;
-    typedef HybridEvolver::EnclosureType EnclosureType;
-    typedef HybridEvolver::ContinuousEnclosureType ContinuousEnclosureType;
+    //typedef ReachabilityAnalyserInterface<HybridAutomatonInterface>::SystemType SystemType;
+    //typedef ReachabilityAnalyserInterface<HybridAutomatonInterface>::StateSpaceType StateSpaceType;
+    //typedef ReachabilityAnalyserInterface<HybridAutomatonInterface>::TimeType TimeType;
+    //typedef ReachabilityAnalyserInterface<HybridAutomatonInterface>::SetApproximationType SetApproximationType;
+    //typedef ReachabilityAnalyserInterface<HybridAutomatonInterface>::SetApproximationPtrType SetApproximationPtrType;
+    typedef ImageSetHybridEvolver::EnclosureType EnclosureType;
+    typedef ImageSetHybridEvolver::ContinuousEnclosureType ContinuousEnclosureType;
   private:
-    typedef boost::shared_ptr<EvolverInterface<HybridAutomatonInterface,EnclosureType> > EvolverPtrType;
+    typedef boost::shared_ptr<EvolverInterface<SystemType,EnclosureType> > EvolverPtrType;
   private:
-    boost::shared_ptr< DiscretisedEvolutionSettings > _settings;
-    boost::shared_ptr< HybridAutomatonInterface > _system;
+    boost::shared_ptr< EvolutionSettingsType > _settings;
+    boost::shared_ptr< SystemType > _system;
   public:
     //@{
     //! \name Constructors and destructors
@@ -96,7 +96,7 @@ class HybridReachabilityAnalyser
     /*! \brief Virtual destructor */
     virtual ~HybridReachabilityAnalyser();
 
-    HybridReachabilityAnalyser(const HybridAutomatonInterface& system);
+    HybridReachabilityAnalyser(const SystemType& system);
 
     /*! \brief Make a dynamically-allocated copy. */
     virtual HybridReachabilityAnalyser* clone() const { return new HybridReachabilityAnalyser(*this); }
@@ -152,34 +152,32 @@ class HybridReachabilityAnalyser
 			ContinuousEvolutionDirection direction = DIRECTION_FORWARD) const;
 
     virtual SetApproximationType outer_chain_reach(
-    		const HybridGridTreeSet& initial_set,
+    		const SetApproximationType& initial_set,
     		ContinuousEvolutionDirection direction = DIRECTION_FORWARD) const;
 
     /*! \brief Compute the epsilon lower bounds of \a system starting in \a initial_set.
      * \return The reach and the epsilon values. */
-    virtual std::pair<HybridGridTreeSet,HybridFloatVector> lower_chain_reach_and_epsilon(
+    virtual std::pair<SetApproximationType,HybridFloatVector> lower_chain_reach_and_epsilon(
             const HybridImageSet& initial_set) const;
 
     //@}
 
     /*! \brief Tune the settings. */
-    void tune_settings(
-            const SystemType& system,
+    virtual void tune_settings(
             const HybridBoxes& domain,
             const Set<Identifier>& locked_params_ids,
-            const HybridGridTreeSetPtr& reach_outer_approx,
-            const HybridGridTreeSetPtr& reach_restriction,
+            const SetApproximationPtrType& reach_outer_approx,
+            const SetApproximationPtrType& reach_restriction,
             const HybridConstraintSet& constraint_set,
-            int accuracy,
             bool EQUAL_GRID_FOR_ALL_LOCATIONS,
+            int accuracy,
             Semantics semantics);
 
-    /*! \brief Produces the starting cells from either the \a initial_set or the \a constraint_set
-     * , based on the \a direction, and given a \a reachability_restriction. */
-    HybridGridTreeSet initial_cell_set(
-            const HybridImageSet& initial_enclosure_set,
-            const HybridConstraintSet& initial_constraint_set,
-            ContinuousEvolutionDirection direction) const;
+    /*! \brief Produces the starting cells from an enclosure set. */
+    virtual SetApproximationType initial_cells_set(const HybridImageSet& initial_enclosure_set) const;
+
+    /*! \brief Produces the starting cells from a constraint set. */
+    virtual SetApproximationType initial_cells_set(const HybridConstraintSet& initial_constraint_set) const;
 
   public:
 
@@ -343,7 +341,7 @@ list<EnclosureType> enclosures_from_split_domain_midpoints(
  * @return A split factor for each non-singleton parameter name of the \a system.
  */
 ParameterIdIntMap getSplitFactorsOfParameters(
-		SystemType& system,
+		HybridReachabilityAnalyser::SystemType& system,
 		const Set<Identifier>& locked_params_ids,
 		const Float& targetRatioPerc,
 		const HybridBoxes& bounding_domain);
@@ -352,7 +350,7 @@ ParameterIdIntMap getSplitFactorsOfParameters(
  * relative reduction of derivative widths compared to some \a referenceWidths.
  */
 RealParameter getBestParameterToSplit(
-		SystemType& system,
+        HybridReachabilityAnalyser::SystemType& system,
 		const RealParameterSet& working_parameters,
 		const HybridFloatVector& referenceWidths,
 		const HybridBoxes& domain);
@@ -361,13 +359,13 @@ RealParameter getBestParameterToSplit(
  * are stored in \a referenceWidths and the \f$ w \f$ values are obtained from the \a system.
  */
 Float getMaxDerivativeWidthRatio(
-		const SystemType& system,
+		const HybridReachabilityAnalyser::SystemType& system,
 		const HybridFloatVector& referenceWidths,
 		const HybridBoxes& domain);
 
 /*! \brief Helper function to get the widths of the derivatives from the \a system */
 HybridFloatVector getDerivativeWidths(
-		const SystemType& system,
+		const HybridReachabilityAnalyser::SystemType& system,
 		const HybridBoxes& domain);
 
 /*! \brief Gets the set of all the midpoints of the split intervals in \a intervals_set. */
@@ -422,14 +420,14 @@ Grid getGrid(
 	the domain width of the location, moving at the maximum absolute derivative.
 	ASSUMPTION: the continuous variables are preserved in order and quantity between discrete states. */
 Float getLockToGridTime(
-		const SystemType& system,
+		const HybridReachabilityAnalyser::SystemType& system,
 		const HybridBoxes& domain);
 
 /*! \brief Get the hybrid maximum absolute derivatives of \system given a previously computed outer approximation
  *  \a outer_approximation and a domain \a domain_constraint.
  * \details ASSUMPTION: the continuous variables are preserved in order and quantity between discrete states. */
 HybridFloatVector getHybridMaximumAbsoluteDerivatives(
-		const SystemType& system,
+		const HybridReachabilityAnalyser::SystemType& system,
 		const HybridGridTreeSetPtr& outer_approximation,
 		const HybridBoxes& domain_constraint);
 

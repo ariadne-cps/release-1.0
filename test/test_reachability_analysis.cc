@@ -177,8 +177,6 @@ class TestReachabilityAnalysis
         Box bounding_box=bounding_boxes[loc];
 
         analyser.verbosity=0;
-        analyser.settings().transient_time=4.0;
-        analyser.settings().lock_to_grid_time=1.0;
         analyser.settings().domain_bounds = bounding_boxes;
         cout << analyser.settings();
         HybridGridTreeSet chain_reach_set=analyser.outer_chain_reach(initial_set);

@@ -159,8 +159,8 @@ _safety_proving_once(
     ARIADNE_LOG(4,"Creating the analyser...");
 
     const bool EQUAL_GRID_FOR_ALL_LOCATIONS = false;
-    AnalyserPtrType analyser = _get_tuned_analyser(verInput,parameters_identifiers(params),
-            _safety_coarse_outer_approximation,_safety_reachability_restriction,safety_constraint,accuracy,EQUAL_GRID_FOR_ALL_LOCATIONS,UPPER_SEMANTICS);
+    AnalyserPtrType analyser = _get_tuned_analyser(verInput,parameters_identifiers(params),_safety_coarse_outer_approximation,
+            _safety_reachability_restriction,safety_constraint,EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,UPPER_SEMANTICS);
 
 	ARIADNE_LOG(5, "Using reachability restriction: " << tribool_pretty_print(tribool(_safety_reachability_restriction)));
 
@@ -185,7 +185,7 @@ _safety_proving_once(
 
 		if (_safety_reachability_restriction && _settings->enable_backward_refinement_for_testing_inclusion) {
 
-			HybridGridTreeSet backward_initial = analyser->initial_cell_set(initial_set,safety_constraint,DIRECTION_BACKWARD);
+			HybridGridTreeSet backward_initial = analyser->initial_cells_set(safety_constraint);
 
 			if (backward_initial.empty()) {
 				ARIADNE_LOG(4, "The initial cell set for backward reachability is empty.");
@@ -212,7 +212,7 @@ _safety_proving_once(
 
 		HybridGridTreeSet forward_initial;
 		if (_safety_reachability_restriction) {
-            forward_initial = analyser->initial_cell_set(initial_set,safety_constraint,DIRECTION_FORWARD);
+            forward_initial = analyser->initial_cells_set(initial_set);
 		} else {
 			forward_initial.adjoin_outer_approximation(initial_set,accuracy);
 			forward_initial.mince(accuracy);
@@ -288,7 +288,7 @@ _safety_disproving_once(
 
     const bool EQUAL_GRID_FOR_ALL_LOCATIONS = false;
     AnalyserPtrType analyser = _get_tuned_analyser(verInput,parameters_identifiers(params),_safety_coarse_outer_approximation,
-            _safety_reachability_restriction,safety_constraint,accuracy,EQUAL_GRID_FOR_ALL_LOCATIONS,LOWER_SEMANTICS);
+            _safety_reachability_restriction,safety_constraint,EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,LOWER_SEMANTICS);
 
     ARIADNE_LOG(5, "Using reachability restriction: " << tribool_pretty_print(tribool(_safety_reachability_restriction)));
 
@@ -544,7 +544,7 @@ _dominance_flattened_lower_reach_and_epsilon(
 
     const bool EQUAL_GRID_FOR_ALL_LOCATIONS = true;
     AnalyserPtrType analyser = _get_tuned_analyser(verInput,locked_params_ids,outer_approximation,
-            reachability_restriction,dominance_constraint,accuracy,EQUAL_GRID_FOR_ALL_LOCATIONS,LOWER_SEMANTICS);
+            reachability_restriction,dominance_constraint,EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,LOWER_SEMANTICS);
 
 	ARIADNE_LOG(5, "Using reachability restriction: " << tribool_pretty_print(tribool(reachability_restriction)));
 
@@ -594,7 +594,7 @@ _dominance_flattened_outer_reach(
 
     const bool EQUAL_GRID_FOR_ALL_LOCATIONS = true;
     AnalyserPtrType analyser = _get_tuned_analyser(verInput,locked_params_ids,outer_approximation,
-            reachability_restriction,dominance_constraint,accuracy,EQUAL_GRID_FOR_ALL_LOCATIONS,UPPER_SEMANTICS);
+            reachability_restriction,dominance_constraint,EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,UPPER_SEMANTICS);
 
     ARIADNE_LOG(5, "Using reachability restriction: " << tribool_pretty_print(tribool(reachability_restriction)));
 
@@ -622,8 +622,8 @@ _get_tuned_analyser(
         const HybridGridTreeSetPtr& outer_approx,
         const HybridGridTreeSetPtr& reachability_restriction,
         const HybridConstraintSet& constraint_set,
-        int accuracy,
         bool EQUAL_GRID_FOR_ALL_LOCATIONS,
+        int accuracy,
         Semantics semantics) const
 {
     const SystemType& sys = verInput.getSystem();
@@ -634,8 +634,8 @@ _get_tuned_analyser(
     analyser->verbosity = this->verbosity - this->child_tab_offset;
     analyser->tab_offset = this->tab_offset + this->child_tab_offset;
 
-    analyser->tune_settings(sys,domain,locked_params_ids,outer_approx,reachability_restriction,
-            constraint_set,accuracy,EQUAL_GRID_FOR_ALL_LOCATIONS,semantics);
+    analyser->tune_settings(domain,locked_params_ids,outer_approx,reachability_restriction,
+            constraint_set,EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,semantics);
 
     return analyser;
 }

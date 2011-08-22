@@ -48,24 +48,26 @@ class Verifier
   public:
 
     typedef HybridAutomatonInterface SystemType;
+    typedef ReachabilityAnalyserInterface<SystemType>::SetApproximationType SetApproximationType;
 
   private:
 
-    typedef boost::shared_ptr<HybridReachabilityAnalyser> AnalyserPtrType;
+    typedef boost::shared_ptr<ReachabilityAnalyserInterface<SystemType> > AnalyserPtrType;
+    typedef boost::shared_ptr<SetApproximationType> SetApproximationPtrType;
 
   private:
     boost::shared_ptr< VerificationSettings > _settings;
     mutable std::string _plot_dirpath;
 
 	/*! \brief "Stateless" fields for holding outer approximations between successive internal calls. */
-	mutable HybridGridTreeSetPtr _safety_coarse_outer_approximation;
-	mutable HybridGridTreeSetPtr _dominating_coarse_outer_approximation;
-	mutable HybridGridTreeSetPtr _dominated_coarse_outer_approximation;
+	mutable SetApproximationPtrType _safety_coarse_outer_approximation;
+	mutable SetApproximationPtrType _dominating_coarse_outer_approximation;
+	mutable SetApproximationPtrType _dominated_coarse_outer_approximation;
 
 	/*! \brief "Stateless" fields for holding reachability restrictions between successive internal calls. */
-	mutable HybridGridTreeSetPtr _safety_reachability_restriction;
-	mutable HybridGridTreeSetPtr _dominating_reachability_restriction;
-	mutable HybridGridTreeSetPtr _dominated_reachability_restriction;
+	mutable SetApproximationPtrType _safety_reachability_restriction;
+	mutable SetApproximationPtrType _dominating_reachability_restriction;
+	mutable SetApproximationPtrType _dominated_reachability_restriction;
 
   public:
 
@@ -256,11 +258,11 @@ class Verifier
     AnalyserPtrType _get_tuned_analyser(
             const VerificationInput& verInput,
             const Set<Identifier>& locked_params_ids,
-            const HybridGridTreeSetPtr& outer_approximation,
-            const HybridGridTreeSetPtr& reachability_restriction,
+            const SetApproximationPtrType& outer_approximation,
+            const SetApproximationPtrType& reachability_restriction,
             const HybridConstraintSet& constraint_set,
-            int accuracy,
             bool EQUAL_GRID_FOR_ALL_LOCATIONS,
+            int accuracy,
             Semantics semantics) const;
 
 	/*! \brief Resets cached verification state information, for safety. */
@@ -273,16 +275,16 @@ class Verifier
 	 * \details Which field is set depends on the current state of such variables: if no coarse outer
 	 * approximation is set, then it is set, otherwise the reachability restriction is set (updated).
 	 */
-	void _update_safety_cached_reachability_with(const HybridGridTreeSet& reach) const;
+	void _update_safety_cached_reachability_with(const SetApproximationType& reach) const;
 
 	// Reached region plotting methods
 	void _plot_dirpath_init(std::string basename) const;
 	void _plot_reach(
-			const HybridGridTreeSet& reach,
+			const SetApproximationType& reach,
 			string base_filename,
 			int accuracy) const;
 	void _plot_dominance(
-			const HybridGridTreeSet& reach,
+			const SetApproximationType& reach,
 			DominanceSystem dominanceSystem,
 			int accuracy,
 			Semantics semantics) const;

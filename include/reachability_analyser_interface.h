@@ -32,18 +32,15 @@
 
 #include "set_interface.h"
 #include "hybrid_set_interface.h"
+#include "logging.h"
 
 namespace Ariadne {
 
-
-
-template<class SYS> class ReachabilityAnalyserInterface;
-
-/*! \brief Interface for computing (chain) reachable sets of a dynamic system.
- *
- * \sa \link Ariadne::EvolverInterface \c EvolverInterface<SYS,ES> \endlink
+/*! \brief Interface for computing reachable sets of a dynamic system.
  */
-template<class SYS> class ReachabilityAnalyserInterface {
+template<class SYS> class ReachabilityAnalyserInterface
+    : public Loggable
+{
   public:  
     //! \brief The type of the system.
     typedef SYS SystemType;
@@ -51,50 +48,92 @@ template<class SYS> class ReachabilityAnalyserInterface {
     typedef typename SystemType::TimeType TimeType;
     //! \brief The type used to describe the state space of the system evolution.
     typedef typename SystemType::StateSpaceType StateSpaceType;
-    //! \brief The type used to describe the interface for overt sets in the state space, which are used as initial sets for lower reachability analysis.
-    typedef typename StateSpaceType::OvertSetInterfaceType OvertSetInterfaceType;
-    //! \brief The type used to describe the interface for compact sets in the state space, which are used as initial sets for upper reachability analysis.
-    typedef typename StateSpaceType::CompactSetInterfaceType CompactSetInterfaceType;
-    //! \brief The type used to describe the interface for located sets in the state space, which are used as initial sets for verification.
-    typedef typename StateSpaceType::LocatedSetInterfaceType LocatedSetInterfaceType;
-    //! \brief The type used to describe the interface for regular sets in the state space, which are used as safe sets for verification.
-    typedef typename StateSpaceType::RegularSetInterfaceType RegularSetInterfaceType;
-    //! \brief The type used to describe the interface for bounded sets in the state space.
-    typedef typename StateSpaceType::BoundedSetInterfaceType BoundedSetInterfaceType;
     //! \brief The type used to describe the type used for concrete approximations to sets.
     typedef typename StateSpaceType::SetApproximationType SetApproximationType;
+    //! \brief The type used to pass around references to set approximations.
+    typedef typename boost::shared_ptr<SetApproximationType> SetApproximationPtrType;
   public:
     //! \brief Virtual destructor.
     virtual ~ReachabilityAnalyserInterface() { }
     
     //@{
     //! \name Evaluation of maps on abstract sets
+
+    //! \name Evaluation of systems on abstract sets
+    /*! \brief Compute a lower-approximation to the set obtained by evolving \a system for \a time starting in \a initial_set. */
+    virtual SetApproximationType lower_evolve(
+            const HybridImageSet& initial_set,
+            const TimeType& time) const = 0;
+
+    /*! \brief Compute a lower-approximation to the reachable set of \a system starting in \a initial_set up to \a time (discrete part only). */
+    virtual SetApproximationType lower_reach(
+            const HybridImageSet& initial_set,
+            const TimeType& time) const = 0;
+
+    /*! \brief Compute a lower-approximation to the reachable and evolved sets of \a system starting in \a initial_set up to \a time. */
+    virtual std::pair<SetApproximationType,SetApproximationType> lower_reach_evolve(
+            const HybridImageSet& initial_set,
+            const TimeType& time) const = 0;
+
+    /*! \brief Compute an approximation to the set obtained by iterating \a time times \a system starting in \a initial_set. */
+    virtual SetApproximationType upper_evolve(
+            const HybridImageSet& initial_set,
+            const TimeType& time) const = 0;
+
+    /*! \brief Compute an approximation to the reachable set of \a system starting in \a initial_set iterating at most \a time times. */
+    virtual SetApproximationType upper_reach(
+            const HybridImageSet& initial_set,
+            const TimeType& timeType) const = 0;
+
+    /*! \brief Compute an approximation to the reachable and evolved sets of \a system starting in \a initial_set iterating at most \a time times. */
+    virtual std::pair<SetApproximationType,SetApproximationType> upper_reach_evolve(
+            const HybridImageSet& initial_set,
+            const TimeType& time) const = 0;
+
+    /*! \brief Compute an outer-approximation to the chain-reachable set of \a system starting in \a initial_set with a given \a direction, using
+     * upper semantics.
+     * \return The reach set. */
+    virtual SetApproximationType outer_chain_reach(
+            const HybridImageSet& initial_set,
+            ContinuousEvolutionDirection direction = DIRECTION_FORWARD) const = 0;
+
+    virtual SetApproximationType outer_chain_reach(
+            const SetApproximationType& initial_set,
+            ContinuousEvolutionDirection direction = DIRECTION_FORWARD) const = 0;
+
+    /*! \brief Compute the epsilon lower bounds of \a system starting in \a initial_set.
+     * \return The reach and the epsilon values. */
+    virtual std::pair<SetApproximationType,HybridFloatVector> lower_chain_reach_and_epsilon(
+            const HybridImageSet& initial_set) const = 0;
+
+    //@}
     
-    //! \brief Compute an approximation to the set obtained by iterating \a steps times \a system starting in \a initial_set.
-    virtual SetApproximationType 
-    lower_evolve(const OvertSetInterfaceType& initial_set,
-                 const TimeType& steps) const = 0;
+    //@{
+    //! \name Tuning and utilities
     
-    //! \brief Compute an approximation to the reachable set of \a system starting in \a initial_set iterating at most \a steps times.
-    virtual SetApproximationType
-    lower_reach(const OvertSetInterfaceType& initial_set,
-                const TimeType& steps) const = 0;
-    
-    //! \brief Compute an approximation to the set obtained by iterating \a steps times \a system starting in \a initial_set.
-    virtual SetApproximationType
-    upper_evolve(const CompactSetInterfaceType& initial_set,
-                 const TimeType& steps) const = 0;
-    
-    //! \brief Compute an approximation to the reachable set 
-    //! of \a system starting in \a initial_set iterating at most \a steps times.
-    virtual SetApproximationType
-    upper_reach(const CompactSetInterfaceType& initial_set,
-                const TimeType& steps) const = 0;
-    
-    //! \brief Compute an outer-approximation to the chain-reachable set 
-    //! of \a system starting in \a initial_set.
-    virtual SetApproximationType
-    outer_chain_reach(const CompactSetInterfaceType& initial_set) const = 0;
+    /*! \brief Tune the settings.
+     * \details Much of the arguments do not need to be defined, being either empty or null.
+     * The \a domain represents the region where the evolution should be constrained.
+     * The \a locked_params_ids are parameters for which the system should not be split.
+     * The \a reach_outer_approx is an outer approximation for the reachability of the system.
+     * The \a reach_restriction is a restriction that must be applied to the reached regions obtained.
+     */
+    virtual void tune_settings(
+            const HybridBoxes& domain,
+            const Set<Identifier>& locked_params_ids,
+            const SetApproximationPtrType& reach_outer_approx,
+            const SetApproximationPtrType& reach_restriction,
+            const HybridConstraintSet& constraint_set,
+            bool EQUAL_GRID_FOR_ALL_LOCATIONS,
+            int accuracy,
+            Semantics semantics) = 0;
+
+    /*! \brief Produce the starting cells from an enclosure set. */
+    virtual SetApproximationType initial_cells_set(const HybridImageSet& initial_enclosure_set) const = 0;
+
+    /*! \brief Produce the starting cells from a constraint set. */
+    virtual SetApproximationType initial_cells_set(const HybridConstraintSet& initial_constraint_set) const = 0;
+
     //@}
     
 };

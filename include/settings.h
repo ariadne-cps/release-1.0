@@ -89,37 +89,6 @@ class DiscretisedEvolutionSettings {
 
   public:
 
-    //! \brief The time after which infinite-time upper-evolution routines
-    //! may approximate computed sets on a grid. 
-    //! \details
-    //! This value should be set to the time after which the transient
-    //! behaviour has mostly died out. If there are no transients (i.e. the system evolves
-    //! for a certain time and then stops), then this parameter should be set to a value 
-    //! slightly higher than the maximum running time.
-    //! <br> 
-    //! Setting this value to the time at which transients die out can improve the
-    //! speed and accuracy of the computations. 
-    //!  <br> 
-    //! This parameter is only used by chain_reach routine.
-    RealType transient_time;
-
-    //! \brief The number of discrete steps after which infinite-time upper evolution 
-    //! routines may approximate computed sets on the grid. 
-    //! \details
-    //! Note that the transients are assumed to have died out after <em>either</em> 
-    //! transient_time or transient_steps has been reached. 
-    //! <br> 
-    //! For example, if a hybrid system makes at most three steps before settling down
-    //! into its limiting behaviour, then this parameter should be set to three. 
-    //! <br> 
-    //! Setting this value to the number of steps at which transients die out can improve the
-    //! speed and accuracy of the computations. 
-    //! <br> 
-    //! This parameter is only used by chain_reach() routine.
-    //! \sa #transient_time
-    UnsignedIntType transient_steps;
-    // (See the #transient_time parameter.) 
-
     //! \brief The time after which an upper evolution or reachability analysis routine
     //! may approximate computed sets on a grid, in order to use previously cached 
     //! integration results for the grid. 
@@ -144,44 +113,12 @@ class DiscretisedEvolutionSettings {
     //! This parameter is only used for discrete-time computation.
     UnsignedIntType lock_to_grid_steps;
 
-    //! \brief Set the depth used for approximation on a grid for the initial set in computations using lower semantics.
-    //! \details
-    //! Setting this value to \a d will on a grid with lengths \a l will result in the use of initial boxes
-    //! with sides of length \f$l/2^{d}\f$.
-    //! If the initial set is an open set, then this parameter may be unused; instead the initial sets are points,
-    //! spaced according to the initial_grid_density.
-    //!  <br> 
-    //! Increasing this value increases the accuracy of the computation of lower evolution.
-    //!  <br> 
-    //! This parameter is only used in the lower_evolve() and lower_reach() routines.
-    IntType initial_grid_depth;
-
-    //! \brief Set the density of initial values on a grid for the initial set in computations using lower semantics.
-    //! \details
-    //! Setting this value to \a g will on a grid with lengths \a l will result in the use of one initial box
-    //! (one simulation) for each cell of size \f$l/2^g\f$. If the #initial_grid_depth parameter is higher, then
-    //! the initial sets will be smaller than the specified cell. 
-    //!  <br> 
-    //! Increasing this value increases the number of initial sets used in the computation of lower_evolve() and lower_reach().
-    //! and decreases their spacing.
-    //!  <br> 
-    //! This parameter is only used in the lower_evolve() and lower_reach() routines.
-    //! \internal Pieter: I don't like the name of this parameter very much, any other suggestions?
-    IntType initial_grid_density;
-
     //! \brief Set the depth used for approximation on a grid for computations using upper semantics.
     //! \details
     //! Increasing this value increases the accuracy of the computation. 
     //!  <br> 
     //! This parameter is only used in upper_evolve(), upper_reach() and chain_reach() routines.
     IntType maximum_grid_depth;
-
-    //! \brief Set the maximum height used for approximation on a grid for chain reachability computations.
-    //! \details
-    //! Increasing this value increases domain over which computation is performed. 
-    //!  <br> 
-    //! This parameter is only used in the chain_reach() routine.
-    IntType maximum_grid_height;
 
     //! \brief Set the allowed bounding domain for chain reachability computations.
 	//! \details Defaults to an unbounded box. Since it is also used to tune the evolver, it could be necessary to provide an explicit bounded value for it.
@@ -197,7 +134,7 @@ class DiscretisedEvolutionSettings {
     boost::shared_ptr<HybridGridTreeSet> reachability_restriction;
 
     //! \brief The grid to use.
-    boost::shared_ptr<HybridGrid> grid;
+    HybridGrid grid;
 
     //! \brief The parameters that must not be automatically split inside a system.
     Set<Identifier> locked_parameters_ids;
@@ -266,18 +203,13 @@ EnclosedEvolutionSettings::EnclosedEvolutionSettings(const SystemType& sys)
 
 inline
 DiscretisedEvolutionSettings::DiscretisedEvolutionSettings(const SystemType& sys)
-    : transient_time(0.0),
-      transient_steps(0),
-      lock_to_grid_time(1.0),
+    : lock_to_grid_time(1.0),
       lock_to_grid_steps(1),
-      initial_grid_depth(10),
-      initial_grid_density(8),
       maximum_grid_depth(6),
-      maximum_grid_height(16),
       domain_bounds(unbounded_hybrid_boxes(sys.state_space())),
       constraint_set(),
       reachability_restriction(),
-      grid(new HybridGrid(sys.state_space())),
+      grid(HybridGrid(sys.state_space())),
       splitting_constants_target_ratio(0.1),
 	  enable_lower_pruning(true)
 {
@@ -315,16 +247,9 @@ operator<<(std::ostream& os, const DiscretisedEvolutionSettings& s)
     os << "DiscreteEvolutionSettings"
        << "(\n  lock_to_grid_steps=" << s.lock_to_grid_steps
        << ",\n  lock_to_grid_time=" << s.lock_to_grid_time
-
-       << ",\n  transient_time=" << s.transient_time
-       << ",\n  transient_steps=" << s.transient_steps
-
-       << ",\n  initial_grid_depth=" << s.initial_grid_depth
-       << ",\n  initial_grid_density=" << s.initial_grid_density
        << ",\n  maximum_grid_depth=" << s.maximum_grid_depth
-       << ",\n  maximum_grid_height=" << s.maximum_grid_height
        << ",\n  bounding_domain=" << s.domain_bounds
-       << ",\n  grid=" << *s.grid
+       << ",\n  grid=" << s.grid
        << ",\n  splitting_constants_target_ratio=" << s.splitting_constants_target_ratio
        << ",\n  enable_lower_pruning=" << s.enable_lower_pruning
        << "\n)\n";
