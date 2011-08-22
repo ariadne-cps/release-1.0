@@ -192,7 +192,8 @@ class DiscretisedEvolutionSettings {
     HybridConstraintSet constraint_set;
 
     //! \brief Set the restriction for reachability.
-    //! \details Assumed as not used if NULL. On the contrary, an empty reachability restriction would restrict any set to the empty set.
+    //! \details Applied only to the chain reach routines. Assumed as not used if not assigned.
+    //! (while, on the contrary, an empty reachable set would restrict any set to the empty set).
     boost::shared_ptr<HybridGridTreeSet> reachability_restriction;
 
     //! \brief The grid to use.

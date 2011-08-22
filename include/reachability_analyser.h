@@ -59,6 +59,7 @@ typedef std::map<Identifier,int> ParameterIdIntMap;
 typedef HybridAutomatonInterface SystemType;
 typedef HybridEvolver::EnclosureType EnclosureType;
 typedef HybridEvolver::ContinuousEnclosureType ContinuousEnclosureType;
+typedef boost::shared_ptr<HybridGridTreeSet> HybridGridTreeSetPtr;
 
 class HybridGrid;
 class HybridGridCell;
@@ -143,34 +144,21 @@ class HybridReachabilityAnalyser
             const HybridImageSet& initial_set,
             const TimeType& time) const;
 
-    /*! \brief Compute an outer-approximation to the chain-reachable set of \a system starting in \a initial_set, using upper semantics.
-     * \return The reach set. */
-    virtual SetApproximationType outer_chain_reach(
-            const HybridImageSet& initial_set) const;
-
     /*! \brief Compute an outer-approximation to the chain-reachable set of \a system starting in \a initial_set with a given \a direction, using
      * upper semantics.
      * \return The reach set. */
     virtual SetApproximationType outer_chain_reach(
 			const HybridImageSet& initial_set,
-			const HybridGridTreeSet& reachability_restriction,
-			ContinuousEvolutionDirection direction) const;
+			ContinuousEvolutionDirection direction = DIRECTION_FORWARD) const;
 
     virtual SetApproximationType outer_chain_reach(
     		const HybridGridTreeSet& initial_set,
-    		const HybridGridTreeSet& reachability_restriction,
-    		ContinuousEvolutionDirection direction) const;
+    		ContinuousEvolutionDirection direction = DIRECTION_FORWARD) const;
 
     /*! \brief Compute the epsilon lower bounds of \a system starting in \a initial_set.
      * \return The reach and the epsilon values. */
     virtual std::pair<HybridGridTreeSet,HybridFloatVector> lower_chain_reach_and_epsilon(
             const HybridImageSet& initial_set) const;
-
-    /*! \brief Compute the epsilon lower bounds of \a system starting in \a initial_set.
-     * \return The reach and the epsilon values. */
-    virtual std::pair<HybridGridTreeSet,HybridFloatVector> lower_chain_reach_and_epsilon(
-			const HybridImageSet& initial_set,
-			const HybridGridTreeSet& reachability_restriction) const;
 
     //@}
 
@@ -179,7 +167,8 @@ class HybridReachabilityAnalyser
             const SystemType& system,
             const HybridBoxes& domain,
             const Set<Identifier>& locked_params_ids,
-            const HybridGridTreeSet& outer_approx,
+            const HybridGridTreeSetPtr& reach_outer_approx,
+            const HybridGridTreeSetPtr& reach_restriction,
             const HybridConstraintSet& constraint_set,
             int accuracy,
             bool EQUAL_GRID_FOR_ALL_LOCATIONS,
@@ -190,7 +179,6 @@ class HybridReachabilityAnalyser
     HybridGridTreeSet initial_cell_set(
             const HybridImageSet& initial_enclosure_set,
             const HybridConstraintSet& initial_constraint_set,
-            const HybridGridTreeSet& reachability_restriction,
             ContinuousEvolutionDirection direction) const;
 
   public:
@@ -218,10 +206,9 @@ class HybridReachabilityAnalyser
     		string plot_dirpath,
     		string name_prefix) const;
 
-    /*! \brief Obtains an evolver from the system, already tuned in respect to a restriction, accuracy and semantics */
+    /*! \brief Obtains an evolver from the system, already tuned in respect to accuracy and semantics */
     EvolverPtrType _get_tuned_evolver(
             const SystemType& sys,
-            const HybridGridTreeSet& reachability_restriction,
             int accuracy,
             Semantics semantics) const;
 
@@ -229,14 +216,12 @@ class HybridReachabilityAnalyser
     		const SystemType& sys,
     		const GTS& set,
     		const T& time,
-    		const HybridGridTreeSet& reachability_restriction,
     		const int accuracy) const;
 
     std::pair<GTS,GTS> _upper_reach_evolve(
     		const SystemType& sys,
     		const list<EnclosureType>& initial_enclosures,
     		const T& time,
-    		const HybridGridTreeSet& reachability_restriction,
     		bool enable_premature_termination_on_blocking_event,
     		ContinuousEvolutionDirection direction,
     		int accuracy) const;
@@ -245,14 +230,12 @@ class HybridReachabilityAnalyser
     SetApproximationType _outer_chain_reach(
     		SystemType& system,
     		const std::list<EnclosureType>& initial_enclosures,
-    		const HybridGridTreeSet& reachability_restriction,
     		ContinuousEvolutionDirection direction) const;
 
     /*! \brief Performs outer chain reach calculation, where the constants of the \a system are assumed to be already splitted. */
     SetApproximationType _outer_chain_reach_splitted(
     		const SystemType& system,
     		const std::list<EnclosureType>& initial_enclosures,
-    		const HybridGridTreeSet& reachability_restriction,
     		ContinuousEvolutionDirection direction) const;
 
     /*! \brief Pushes into \a result_enclosures the enclosures from \a reachCells.
@@ -268,8 +251,7 @@ class HybridReachabilityAnalyser
     void _outer_chain_reach_backward_pushSourceCells(
     		const SystemType& system,
     		const HybridGridTreeSet& reachCells,
-    		std::list<EnclosureType>& result_enclosures,
-    		HybridGridTreeSet sourceCellsOverapprox) const;
+    		std::list<EnclosureType>& result_enclosures) const;
 
     /*! \brief Checks whether a box \a bx is outside any invariant from \a invariants. */
     bool _outer_chain_reach_isOutsideInvariants(
@@ -317,8 +299,7 @@ class HybridReachabilityAnalyser
      * for the current lower reach, an exception is raised. */
     std::pair<HybridGridTreeSet,HybridFloatVector> _lower_chain_reach_and_epsilon(
     		const SystemType& system,
-    		const HybridImageSet& initial_set,
-    		const HybridGridTreeSet& reachability_restriction) const;
+    		const HybridImageSet& initial_set) const;
 
     /*! \brief Filters \a final_enclosures into \a initial_enclosures.
      * \details The procedure prunes a percentage of the enclosures based on \a adjoined_evolve_sizes and \a superposed_evolve_sizes. */
@@ -445,11 +426,11 @@ Float getLockToGridTime(
 		const HybridBoxes& domain);
 
 /*! \brief Get the hybrid maximum absolute derivatives of \system given a previously computed outer approximation
- *  \a outer_approx_constraint and a domain \a domain_constraint.
+ *  \a outer_approximation and a domain \a domain_constraint.
  * \details ASSUMPTION: the continuous variables are preserved in order and quantity between discrete states. */
 HybridFloatVector getHybridMaximumAbsoluteDerivatives(
 		const SystemType& system,
-		const HybridGridTreeSet& outer_approx_constraint,
+		const HybridGridTreeSetPtr& outer_approximation,
 		const HybridBoxes& domain_constraint);
 
 /*! \brief Checks whether \a new_restriction is equal to \a old_restriction.

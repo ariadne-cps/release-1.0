@@ -54,40 +54,18 @@ class Verifier
     typedef boost::shared_ptr<HybridReachabilityAnalyser> AnalyserPtrType;
 
   private:
-
-    /*! \brief Holds the cached result of an outer approximation of a system. */
-    struct OuterApproximationCache
-    {
-      private:
-    	bool _is_set;
-    	HybridGridTreeSet _value;
-      public:
-    	OuterApproximationCache() : _is_set(false), _value(HybridGridTreeSet()) {}
-    	virtual ~OuterApproximationCache() {}
-    	bool is_set() const { return _is_set; }
-    	HybridGridTreeSet get() const { return _value; }
-    	void set(const HybridGridTreeSet& hgts) { ARIADNE_ASSERT(!_is_set); _is_set = true; _value = hgts; }
-    	void reset() { _is_set = false; _value = HybridGridTreeSet(); }
-    };
-
-  private:
-    mutable boost::shared_ptr< SystemType > _system;
-    mutable boost::shared_ptr< HybridReachabilityAnalyser > _analyser;
     boost::shared_ptr< VerificationSettings > _settings;
     mutable std::string _plot_dirpath;
 
-	/*! \brief Fields for caching outer approximations obtained during safety or dominance methods.
-	 * \details Their presence is useful to refine the derivatives and consequently the grid on successive iterations. Set to mutable since their value is
-	 * valid only transitively during one (iterative) verification method, therefore they do not add external state to the verifier. */
-	mutable boost::shared_ptr< OuterApproximationCache > _safety_coarse_outer_approximation;
-	mutable boost::shared_ptr< OuterApproximationCache > _dominating_coarse_outer_approximation;
-	mutable boost::shared_ptr< OuterApproximationCache > _dominated_coarse_outer_approximation;
+	/*! \brief "Stateless" fields for holding outer approximations between successive internal calls. */
+	mutable HybridGridTreeSetPtr _safety_coarse_outer_approximation;
+	mutable HybridGridTreeSetPtr _dominating_coarse_outer_approximation;
+	mutable HybridGridTreeSetPtr _dominated_coarse_outer_approximation;
 
-	/*! \brief Fields for holding the reachability restriction for reachability analyses.
-	 * \details The latter two are mandatory since an analyser alternatively works on the dominating and dominated systems. */
-	mutable HybridGridTreeSet _safety_reachability_restriction;
-	mutable HybridGridTreeSet _dominating_reachability_restriction;
-	mutable HybridGridTreeSet _dominated_reachability_restriction;
+	/*! \brief "Stateless" fields for holding reachability restrictions between successive internal calls. */
+	mutable HybridGridTreeSetPtr _safety_reachability_restriction;
+	mutable HybridGridTreeSetPtr _dominating_reachability_restriction;
+	mutable HybridGridTreeSetPtr _dominated_reachability_restriction;
 
   public:
 
@@ -278,7 +256,8 @@ class Verifier
     AnalyserPtrType _get_tuned_analyser(
             const VerificationInput& verInput,
             const Set<Identifier>& locked_params_ids,
-            const HybridGridTreeSet& outer_approx,
+            const HybridGridTreeSetPtr& outer_approximation,
+            const HybridGridTreeSetPtr& reachability_restriction,
             const HybridConstraintSet& constraint_set,
             int accuracy,
             bool EQUAL_GRID_FOR_ALL_LOCATIONS,
