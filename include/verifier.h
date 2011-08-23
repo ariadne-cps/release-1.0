@@ -69,6 +69,11 @@ class Verifier
 
   public:
 
+    // The number of logical cores that should be free from computation.
+    unsigned free_cores;
+
+  public:
+
     //@{
     //! \name Constructors and destructors
 
@@ -258,6 +263,7 @@ class Verifier
             const HybridConstraintSet& constraint_set,
             bool EQUAL_GRID_FOR_ALL_LOCATIONS,
             int accuracy,
+            unsigned ADD_TAB_OFFSET,
             Semantics semantics) const;
 
 	/*! \brief Resets cached verification state information, for safety. */

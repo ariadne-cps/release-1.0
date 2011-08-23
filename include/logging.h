@@ -1,7 +1,7 @@
 /***************************************************************************
  *            logging.h
  *
- *  Copyright  2007-8  Alberto Casagrande, Pieter Collins
+ *  Copyright  2007-11  Alberto Casagrande, Pieter Collins, Luca Geretti
  *
  ****************************************************************************/
 
@@ -32,6 +32,7 @@
 #include <fstream>
 #include <string>
 
+// (Placeholder constants required for compilation)
 static const std::string charcode="";
 static const int verbosity=0;
 static const unsigned tab_offset=0;
@@ -52,10 +53,9 @@ class Loggable {
     mutable int verbosity;
     mutable unsigned tab_offset; // The tabbing offset for logging on this class (set by a parent class)
   protected:
-    mutable unsigned child_tab_offset; // The additional offset required to activate logging on child loggable classes
     mutable std::string charcode;
   public:
-    Loggable() : verbosity(0),tab_offset(0),child_tab_offset(0),charcode("") { }
+    Loggable() : verbosity(0),tab_offset(0),charcode("") { }
 
 };
 

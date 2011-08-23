@@ -30,14 +30,12 @@
 
 namespace Ariadne {
 
+Verifier::Verifier()
+    : _settings(new VerifierSettings())
+    , free_cores(0)
 
-const unsigned int VERIFIER_CHILD_OFFSET = 5;
-
-Verifier::Verifier() :
-			_settings(new VerifierSettings())
 {
     this->charcode = "v";
-    this->child_tab_offset = VERIFIER_CHILD_OFFSET;
 }
 
 
@@ -147,6 +145,7 @@ _safety_proving_once(
 		const RealParameterSet& params) const
 {
     const bool EQUAL_GRID_FOR_ALL_LOCATIONS = false;
+    const unsigned ANALYSER_TAB_OFFSET = 5;
 
 	bool result;
 
@@ -180,8 +179,9 @@ _safety_proving_once(
 
 		    ARIADNE_LOG(5,"Creating the analyser for backward reachability...");
 
-		    AnalyserPtrType analyser = _get_tuned_analyser(verInput,parameters_identifiers(params),_safety_coarse_outer_approximation,
-		            _safety_reachability_restriction,safety_constraint,EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,UPPER_SEMANTICS);
+		    AnalyserPtrType analyser = _get_tuned_analyser(verInput,parameters_identifiers(params),
+		            _safety_coarse_outer_approximation,_safety_reachability_restriction,safety_constraint,
+		            EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,ANALYSER_TAB_OFFSET,UPPER_SEMANTICS);
 
 			HybridGridTreeSet backward_initial = analyser->initial_cells_set(safety_constraint);
 
@@ -210,8 +210,9 @@ _safety_proving_once(
 
         ARIADNE_LOG(5,"Creating the analyser for forward reachability...");
 
-        AnalyserPtrType analyser = _get_tuned_analyser(verInput,parameters_identifiers(params),_safety_coarse_outer_approximation,
-                _safety_reachability_restriction,safety_constraint,EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,UPPER_SEMANTICS);
+        AnalyserPtrType analyser = _get_tuned_analyser(verInput,parameters_identifiers(params),
+                _safety_coarse_outer_approximation,_safety_reachability_restriction,safety_constraint,
+                EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,ANALYSER_TAB_OFFSET,UPPER_SEMANTICS);
 
 		HybridGridTreeSet forward_initial;
 		if (_safety_reachability_restriction) {
@@ -295,6 +296,9 @@ _safety_disproving_once(
         const unsigned int& accuracy,
 		const RealParameterSet& params) const
 {
+    const bool EQUAL_GRID_FOR_ALL_LOCATIONS = false;
+    const unsigned ANALYSER_TAB_OFFSET = 5;
+
 	bool result = false;
 
     SystemType& sys = verInput.getSystem();
@@ -309,9 +313,10 @@ _safety_disproving_once(
 
     ARIADNE_LOG(5,"Creating the analyser for forward reachability...");
 
-    const bool EQUAL_GRID_FOR_ALL_LOCATIONS = false;
-    AnalyserPtrType analyser = _get_tuned_analyser(verInput,parameters_identifiers(params),_safety_coarse_outer_approximation,
-            _dominating_reachability_restriction,safety_constraint,EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,LOWER_SEMANTICS);
+
+    AnalyserPtrType analyser = _get_tuned_analyser(verInput,parameters_identifiers(params),
+            _safety_coarse_outer_approximation,_dominating_reachability_restriction,safety_constraint,
+            EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,ANALYSER_TAB_OFFSET,LOWER_SEMANTICS);
 
 	try {
 
@@ -554,6 +559,9 @@ _dominance_flattened_lower_reach_and_epsilon(
 		DominanceSystem dominanceSystem,
 		const unsigned int& accuracy) const
 {
+    const bool EQUAL_GRID_FOR_ALL_LOCATIONS = true;
+    const unsigned ANALYSER_TAB_OFFSET = 4;
+
 	string descriptor = (dominanceSystem == DOMINATING_SYSTEM ? "dominating" : "dominated");
 	HybridGridTreeSetPtr& outer_approximation = (dominanceSystem == DOMINATING_SYSTEM ?
 			_dominating_coarse_outer_approximation : _dominated_coarse_outer_approximation);
@@ -564,11 +572,9 @@ _dominance_flattened_lower_reach_and_epsilon(
 
 	ARIADNE_LOG(4,"Creating the analyser for the " << descriptor << " system...");
 
-    const bool EQUAL_GRID_FOR_ALL_LOCATIONS = true;
-    AnalyserPtrType analyser = _get_tuned_analyser(verInput,locked_params_ids,outer_approximation,
-            reachability_restriction,dominance_constraint,EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,LOWER_SEMANTICS);
-
-	ARIADNE_LOG(5, "Using reachability restriction: " << tribool_pretty_print(tribool(reachability_restriction)));
+    AnalyserPtrType analyser = _get_tuned_analyser(verInput,locked_params_ids,
+            outer_approximation,reachability_restriction,dominance_constraint,
+            EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,ANALYSER_TAB_OFFSET,LOWER_SEMANTICS);
 
 	ARIADNE_LOG(4,"Getting its lower reached region...");
 
@@ -604,6 +610,9 @@ _dominance_flattened_outer_reach(
 		DominanceSystem dominanceSystem,
 		const unsigned int& accuracy) const
 {
+    const bool EQUAL_GRID_FOR_ALL_LOCATIONS = true;
+    const unsigned ANALYSER_TAB_OFFSET = 4;
+
 	string descriptor = (dominanceSystem == DOMINATING_SYSTEM ? "dominating" : "dominated");
 	HybridGridTreeSetPtr& outer_approximation = (dominanceSystem == DOMINATING_SYSTEM ?
 			_dominating_coarse_outer_approximation : _dominated_coarse_outer_approximation);
@@ -614,11 +623,10 @@ _dominance_flattened_outer_reach(
 
     ARIADNE_LOG(4,"Creating the analyser for the " << descriptor << " system...");
 
-    const bool EQUAL_GRID_FOR_ALL_LOCATIONS = true;
-    AnalyserPtrType analyser = _get_tuned_analyser(verInput,locked_params_ids,outer_approximation,
-            reachability_restriction,dominance_constraint,EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,UPPER_SEMANTICS);
 
-    ARIADNE_LOG(5, "Using reachability restriction: " << tribool_pretty_print(tribool(reachability_restriction)));
+    AnalyserPtrType analyser = _get_tuned_analyser(verInput,locked_params_ids,
+            outer_approximation,reachability_restriction,dominance_constraint,
+            EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,ANALYSER_TAB_OFFSET,UPPER_SEMANTICS);
 
 	ARIADNE_LOG(4,"Getting its outer reached region...");
 
@@ -642,6 +650,7 @@ _get_tuned_analyser(
         const HybridConstraintSet& constraint_set,
         bool EQUAL_GRID_FOR_ALL_LOCATIONS,
         int accuracy,
+        unsigned ADD_TAB_OFFSET,
         Semantics semantics) const
 {
     const SystemType& sys = verInput.getSystem();
@@ -649,11 +658,11 @@ _get_tuned_analyser(
 
     AnalyserPtrType analyser(new HybridReachabilityAnalyser(sys));
 
-    analyser->verbosity = this->verbosity - this->child_tab_offset;
-    analyser->tab_offset = this->tab_offset + this->child_tab_offset;
+    analyser->verbosity = this->verbosity - ADD_TAB_OFFSET;
+    analyser->tab_offset = this->tab_offset + ADD_TAB_OFFSET;
 
     analyser->tune_settings(domain,locked_params_ids,outer_approx,reachability_restriction,
-            constraint_set,EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,semantics);
+            constraint_set,EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,this->free_cores,semantics);
 
     return analyser;
 }

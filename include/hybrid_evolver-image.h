@@ -109,10 +109,11 @@ class ImageSetHybridEvolver
     const SettingsType& settings() const { return *this->_settings; }
 
 	//! \brief Modifies the settings, given some metrics.
-	void tune_settings(
+	virtual void tune_settings(
 			const HybridGrid& grid,
 			const HybridFloatVector& hmad,
 			AccuracyType accuracy,
+			unsigned free_cores,
 			Semantics semantics);
 
     //@}
@@ -273,9 +274,14 @@ class ImageSetHybridEvolver
     static const DiscreteEvent finishing_event;
     static const DiscreteEvent blocking_event;
 
- private:
+  private:
     boost::shared_ptr< SettingsType > _settings;
     boost::shared_ptr< CalculusInterface<TaylorModel> > _toolbox;
+
+  public:
+
+    // The number of logical cores that should be free from computation.
+    unsigned free_cores;
 };
 
 

@@ -83,6 +83,10 @@ class HybridReachabilityAnalyser
     boost::shared_ptr< SettingsType > _settings;
     boost::shared_ptr< SystemType > _system;
   public:
+
+    // The reduction in the number of logical cores used in multithreading (down from the maximum concurrency of the machine) (zero by default)
+    uint free_cores;
+  public:
     //@{
     //! \name Constructors and destructors
 
@@ -164,6 +168,7 @@ class HybridReachabilityAnalyser
             const HybridConstraintSet& constraint_set,
             bool EQUAL_GRID_FOR_ALL_LOCATIONS,
             int accuracy,
+            unsigned free_cores,
             Semantics semantics);
 
     /*! \brief Produces the starting cells from an enclosure set. */
@@ -171,11 +176,6 @@ class HybridReachabilityAnalyser
 
     /*! \brief Produces the starting cells from a constraint set. */
     virtual SetApproximationType initial_cells_set(const HybridConstraintSet& initial_constraint_set) const;
-
-  public:
-
-	// The reduction in the number of logical cores used in multithreading (down from the maximum concurrency of the machine) (zero by default)
-	uint free_cores;
   
   public:
 
@@ -201,6 +201,7 @@ class HybridReachabilityAnalyser
     EvolverPtrType _get_tuned_evolver(
             const SystemType& sys,
             int accuracy,
+            unsigned ADD_TAB_OFFSET,
             Semantics semantics) const;
 
     std::pair<GTS,GTS> _upper_reach_evolve(

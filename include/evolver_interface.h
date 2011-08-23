@@ -75,6 +75,7 @@ class EvolverInterface :
 			const HybridGrid& grid,
 			const HybridFloatVector& hmad,
 			AccuracyType accuracy,
+			unsigned free_cores,
 			Semantics semantics) = 0;
 
   public:

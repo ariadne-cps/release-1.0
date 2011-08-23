@@ -126,6 +126,7 @@ template<class SYS> class ReachabilityAnalyserInterface
             const HybridConstraintSet& constraint_set,
             bool EQUAL_GRID_FOR_ALL_LOCATIONS,
             int accuracy,
+            unsigned free_cores,
             Semantics semantics) = 0;
 
     /*! \brief Produce the starting cells from an enclosure set. */

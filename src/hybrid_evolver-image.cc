@@ -88,12 +88,12 @@ typedef VectorFunction RealVectorFunction;
 typedef ScalarFunction RealScalarFunction;
 
 ImageSetHybridEvolver::ImageSetHybridEvolver(const SystemType& system)
-    : EvolverBase(system),
-      _settings(new SettingsType(system)),
-      _toolbox(new TaylorCalculus())
+    : EvolverBase(system)
+    , _settings(new SettingsType(system))
+    , _toolbox(new TaylorCalculus())
+    , free_cores(0)
 {
     this->charcode = "e";
-    this->child_tab_offset = 4;
 }
 
 
@@ -103,8 +103,11 @@ tune_settings(
 		const HybridGrid& grid,
 		const HybridFloatVector& hmad,
 		AccuracyType accuracy,
+		unsigned free_cores,
 		Semantics semantics)
 {
+    this->free_cores = free_cores;
+
     ARIADNE_LOG(1, "Tuning settings for evolution...");
 	this->_settings->maximum_enclosure_cell = getMaximumEnclosureCell(grid,accuracy);
 	ARIADNE_LOG(2, "Maximum enclosure cell: " << this->_settings->maximum_enclosure_cell);

@@ -75,7 +75,6 @@ HybridReachabilityAnalyser(const HybridAutomatonInterface& system)
 	, free_cores(0)
 {
     this->charcode = "a";
-    this->child_tab_offset = 4;
 }
 
 
@@ -84,17 +83,18 @@ HybridReachabilityAnalyser::
 _get_tuned_evolver(
         const HybridAutomatonInterface& sys,
         int accuracy,
+        unsigned ADD_TAB_OFFSET,
         Semantics semantics) const
 {
     EvolverPtrType evolver(new ImageSetHybridEvolver(sys));
 
-    evolver->verbosity = this->verbosity - this->child_tab_offset;
-    evolver->tab_offset = this->tab_offset + this->child_tab_offset;
+    evolver->verbosity = this->verbosity - ADD_TAB_OFFSET;
+    evolver->tab_offset = this->tab_offset + ADD_TAB_OFFSET;
 
     HybridFloatVector hmad = getHybridMaximumAbsoluteDerivatives(sys,
             _settings->reachability_restriction,_settings->domain_bounds);
 
-    evolver->tune_settings(_settings->grid,hmad,accuracy,semantics);
+    evolver->tune_settings(_settings->grid,hmad,accuracy,this->free_cores,semantics);
 
     return evolver;
 }
@@ -110,10 +110,12 @@ tune_settings(
         const HybridConstraintSet& constraint_set,
         bool EQUAL_GRID_FOR_ALL_LOCATIONS,
         int accuracy,
+        unsigned free_cores,
         Semantics semantics)
 {
-    _settings->maximum_grid_depth = accuracy;
+    this->free_cores = free_cores;
 
+    _settings->maximum_grid_depth = accuracy;
     _settings->reachability_restriction = reachability_restriction;
 
     _settings->domain_bounds = domain;
@@ -207,6 +209,8 @@ _upper_reach_evolve(
         ContinuousEvolutionDirection direction,
         int accuracy) const
 {
+    const unsigned EVOLVER_TAB_OFFSET = 4;
+
 	std::pair<GTS,GTS> result;
 	GTS& reach = result.first;
 	GTS& evolve = result.second;
@@ -218,7 +222,7 @@ _upper_reach_evolve(
 
 	const HybridGrid& grid = _settings->grid;
 
-	const EvolverPtrType& evolver = _get_tuned_evolver(sys,accuracy,UPPER_SEMANTICS);
+	const EvolverPtrType& evolver = _get_tuned_evolver(sys,accuracy,EVOLVER_TAB_OFFSET,UPPER_SEMANTICS);
 	UpperReachEvolveWorker worker(evolver,initial_enclosures,time,
 			grid,accuracy,enable_premature_termination_on_blocking_event,direction,concurrency);
 	result = worker.get_result();
@@ -256,6 +260,8 @@ lower_reach_evolve(
         const HybridImageSet& initial_set,
         const TimeType& time) const
 {
+    const unsigned EVOLVER_TAB_OFFSET = 3;
+
     ARIADNE_LOG(2,"HybridReachabilityAnalyser::lower_reach_evolve(...)");
 
     HybridGrid grid = _settings->grid;
@@ -267,7 +273,7 @@ lower_reach_evolve(
 
     list<EnclosureType> initial_enclosures = enclosures_from_split_domain_midpoints(initial_set,min_cell_widths(grid,accuracy));
 
-    const EvolverPtrType& evolver = _get_tuned_evolver(*_system,accuracy,LOWER_SEMANTICS);
+    const EvolverPtrType& evolver = _get_tuned_evolver(*_system,accuracy,EVOLVER_TAB_OFFSET,LOWER_SEMANTICS);
 	ARIADNE_LOG(3,"Computing evolution...");
     for (list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); encl_it++) {
         Orbit<EnclosureType> orbit = evolver->orbit(*encl_it,time,LOWER_SEMANTICS);
@@ -283,8 +289,8 @@ lower_reach_evolve(
     reach.recombine();
     evolve.recombine();
 
-    ARIADNE_LOG(4,"Reach size = " << reach.size());
-    ARIADNE_LOG(4,"Final size = " << evolve.size());
+    ARIADNE_LOG(3,"Reach size = " << reach.size());
+    ARIADNE_LOG(3,"Final size = " << evolve.size());
 
     return make_pair(reach,evolve);
 }
@@ -327,6 +333,8 @@ upper_reach_evolve(
         const HybridImageSet& initial_set,
         const TimeType& time) const
 {
+    const unsigned EVOLVER_TAB_OFFSET = 3;
+
     ARIADNE_LOG(2,"HybridReachabilityAnalyser::upper_reach_evolve(system,set,time)");
     ARIADNE_LOG(3,"initial_set="<<initial_set);
 
@@ -353,7 +361,7 @@ upper_reach_evolve(
     ARIADNE_LOG(3,"Computing initial evolution...");
     initial.adjoin_outer_approximation(initial_set,accuracy);
 
-    const EvolverPtrType& evolver = _get_tuned_evolver(*_system,accuracy,UPPER_SEMANTICS);
+    const EvolverPtrType& evolver = _get_tuned_evolver(*_system,accuracy,EVOLVER_TAB_OFFSET,UPPER_SEMANTICS);
     std::list<EnclosureType> initial_enclosures = cells_to_smallest_enclosures(initial,accuracy);
     for (std::list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); ++encl_it) {
         Orbit<EnclosureType> orbit = evolver->orbit(*encl_it,hybrid_lock_to_grid_time,UPPER_SEMANTICS);
@@ -768,6 +776,8 @@ _lower_chain_reach_and_epsilon(
 		const SystemType& system,
 		const HybridImageSet& initial_set) const
 {
+    const unsigned EVOLVER_TAB_OFFSET = 3;
+
 	typedef std::list<EnclosureType> EL;
 	typedef std::map<DiscreteLocation,uint> HUM;
 
@@ -794,7 +804,7 @@ _lower_chain_reach_and_epsilon(
 
     ARIADNE_LOG(2,"Computing recurrent evolution...");
 
-    const EvolverPtrType& evolver = _get_tuned_evolver(system,accuracy,LOWER_SEMANTICS);
+    const EvolverPtrType& evolver = _get_tuned_evolver(system,accuracy,EVOLVER_TAB_OFFSET,LOWER_SEMANTICS);
 
     uint i=0;
     while (!initial_enclosures.empty()) {
