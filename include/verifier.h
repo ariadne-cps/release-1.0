@@ -263,6 +263,8 @@ class Verifier
 	/*! \brief Resets cached verification state information, for safety. */
 	void _reset_safety_state() const;
 
+	void _show_safety_state() const;
+
 	/*! \brief Resets cached verification state information, for dominance. */
 	void _reset_dominance_state() const;
 
@@ -271,6 +273,15 @@ class Verifier
 	 * approximation is set, then it is set, otherwise the reachability restriction is set (updated).
 	 */
 	void _update_safety_cached_reachability_with(const SetApproximationType& reach) const;
+
+    /*! \brief Updates with \a reach the \a outer_approximation or the \a reachability_restriction.
+     * \details Which field is set depends on the current state of such variables: if no coarse outer
+     * approximation is set, then it is set, otherwise the reachability restriction is set (updated).
+     */
+	void _update_dominance_cached_reachability_with(
+	        const HybridGridTreeSet& reach,
+	        SetApproximationPtrType& outer_approximation,
+	        SetApproximationPtrType& reachability_restriction) const;
 
 	// Reached region plotting methods
 	void _plot_dirpath_init(std::string basename) const;

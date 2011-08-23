@@ -70,8 +70,8 @@ int main(int argc,char *argv[])
 	verifier.settings().time_limit_for_outcome = 10;
 	verifier.settings().plot_results = false;
 
-	SafetyVerificationInput verInfo(system, initial_set, domain, safety_constraint);
+	SafetyVerificationInput verInput(system, initial_set, domain, safety_constraint);
 
-	std::list<ParametricOutcome> results = verifier.parametric_safety(verInfo, parameters);
+	std::list<ParametricOutcome> results = verifier.parametric_safety(verInput, parameters);
 	draw(system.name(),results);
 }

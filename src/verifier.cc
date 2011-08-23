@@ -146,6 +146,8 @@ _safety_proving_once(
 		const unsigned int& accuracy,
 		const RealParameterSet& params) const
 {
+    const bool EQUAL_GRID_FOR_ALL_LOCATIONS = false;
+
 	bool result;
 
 	SystemType& sys = verInput.getSystem();
@@ -155,14 +157,6 @@ _safety_proving_once(
 	RealParameterSet original_params = sys.parameters();
 
 	sys.substitute_all(params,_settings->use_param_midpoints_for_proving);
-
-    ARIADNE_LOG(4,"Creating the analyser...");
-
-    const bool EQUAL_GRID_FOR_ALL_LOCATIONS = false;
-    AnalyserPtrType analyser = _get_tuned_analyser(verInput,parameters_identifiers(params),_safety_coarse_outer_approximation,
-            _safety_reachability_restriction,safety_constraint,EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,UPPER_SEMANTICS);
-
-	ARIADNE_LOG(5, "Using reachability restriction: " << tribool_pretty_print(tribool(_safety_reachability_restriction)));
 
 	ARIADNE_LOG(4,"Performing outer reachability analysis...");
 
@@ -182,8 +176,12 @@ _safety_proving_once(
 		8. If F = B, return FALSE;
 
 		*/
-
 		if (_safety_reachability_restriction && _settings->enable_backward_refinement_for_testing_inclusion) {
+
+		    ARIADNE_LOG(5,"Creating the analyser for backward reachability...");
+
+		    AnalyserPtrType analyser = _get_tuned_analyser(verInput,parameters_identifiers(params),_safety_coarse_outer_approximation,
+		            _safety_reachability_restriction,safety_constraint,EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,UPPER_SEMANTICS);
 
 			HybridGridTreeSet backward_initial = analyser->initial_cells_set(safety_constraint);
 
@@ -199,7 +197,7 @@ _safety_proving_once(
 
 			ARIADNE_LOG(5,"Retrieving backward reachability...");
 
-			HybridGridTreeSet backward_reach = analyser->outer_chain_reach(backward_initial,DIRECTION_BACKWARD);
+		    HybridGridTreeSet backward_reach = analyser->outer_chain_reach(backward_initial,DIRECTION_BACKWARD);
 
 			_safety_reachability_restriction.reset(backward_reach.clone());
 
@@ -209,6 +207,11 @@ _safety_proving_once(
 				_plot_reach(backward_reach,"backward",accuracy);
 
 		}
+
+        ARIADNE_LOG(5,"Creating the analyser for forward reachability...");
+
+        AnalyserPtrType analyser = _get_tuned_analyser(verInput,parameters_identifiers(params),_safety_coarse_outer_approximation,
+                _safety_reachability_restriction,safety_constraint,EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,UPPER_SEMANTICS);
 
 		HybridGridTreeSet forward_initial;
 		if (_safety_reachability_restriction) {
@@ -260,12 +263,30 @@ void
 Verifier::
 _update_safety_cached_reachability_with(const HybridGridTreeSet& reach) const
 {
-	if (_safety_coarse_outer_approximation)
+	if (_safety_coarse_outer_approximation) {
+        ARIADNE_LOG(5,"Setting the reachability restriction cache.");
 		_safety_reachability_restriction.reset(reach.clone());
-	else
+	} else {
+        ARIADNE_LOG(5,"Setting the outer approximation cache.");
 		_safety_coarse_outer_approximation.reset(reach.clone());
+	}
 }
 
+void
+Verifier::
+_update_dominance_cached_reachability_with(
+        const HybridGridTreeSet& reach,
+        SetApproximationPtrType& outer_approximation,
+        SetApproximationPtrType& reachability_restriction) const
+{
+    if (outer_approximation) {
+        ARIADNE_LOG(4,"Setting its reachability restriction cache.");
+        reachability_restriction.reset(reach.clone());
+    } else {
+        ARIADNE_LOG(4,"Setting its outer approximation cache.");
+        outer_approximation.reset(reach.clone());
+    }
+}
 
 bool
 Verifier::
@@ -284,17 +305,18 @@ _safety_disproving_once(
 
 	sys.substitute_all(params,_settings->use_param_midpoints_for_disproving);
 
-    ARIADNE_LOG(4,"Creating the analyser...");
+	ARIADNE_LOG(4,"Performing lower reachability analysis...");
+
+    ARIADNE_LOG(5,"Creating the analyser for forward reachability...");
 
     const bool EQUAL_GRID_FOR_ALL_LOCATIONS = false;
     AnalyserPtrType analyser = _get_tuned_analyser(verInput,parameters_identifiers(params),_safety_coarse_outer_approximation,
-            _safety_reachability_restriction,safety_constraint,EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,LOWER_SEMANTICS);
-
-    ARIADNE_LOG(5, "Using reachability restriction: " << tribool_pretty_print(tribool(_safety_reachability_restriction)));
-
-	ARIADNE_LOG(4,"Performing lower reachability analysis...");
+            _dominating_reachability_restriction,safety_constraint,EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,LOWER_SEMANTICS);
 
 	try {
+
+	    ARIADNE_LOG(5,"Retrieving forward reachability...");
+
 		HybridGridTreeSet reach;
 		HybridFloatVector epsilon;
 		make_lpair<HybridGridTreeSet,HybridFloatVector>(reach,epsilon) = analyser->lower_chain_reach_and_epsilon(initial_set);
@@ -602,11 +624,7 @@ _dominance_flattened_outer_reach(
 
 	HybridGridTreeSet reach = analyser->outer_chain_reach(verInput.getInitialSet(),DIRECTION_FORWARD);
 
-	if (outer_approximation) {
-	    reachability_restriction.reset(reach.clone());
-	} else {
-	    outer_approximation.reset(reach.clone());
-	}
+	_update_dominance_cached_reachability_with(reach,outer_approximation,reachability_restriction);
 
 	if (_settings->plot_results)
 		_plot_dominance(reach,dominanceSystem,accuracy,UPPER_SEMANTICS);

@@ -114,7 +114,7 @@ tune_settings(
 {
     _settings->maximum_grid_depth = accuracy;
 
-    _settings->reachability_restriction.reset(reachability_restriction.get());
+    _settings->reachability_restriction = reachability_restriction;
 
     _settings->domain_bounds = domain;
     ARIADNE_LOG(1, "Domain: " << domain);
@@ -125,7 +125,7 @@ tune_settings(
     _settings->locked_parameters_ids = locked_params_ids;
     ARIADNE_LOG(1, "Locked parameters IDs: " << locked_params_ids);
 
-    ARIADNE_LOG(1, "Derivatives evaluation source: " << (outer_approximation ? "Domain box" : "Outer approximation"));
+    ARIADNE_LOG(1, "Derivatives evaluation source: " << (outer_approximation ? "Outer approximation" : "Domain box"));
     HybridFloatVector hmad = getHybridMaximumAbsoluteDerivatives(*_system,outer_approximation,domain);
     ARIADNE_LOG(1, "Derivatives bounds: " << hmad);
     _settings->grid = HybridGrid(getHybridGrid(hmad,domain,EQUAL_GRID_FOR_ALL_LOCATIONS));
@@ -157,8 +157,9 @@ initial_cells_set(const HybridImageSet& initial_enclosure_set) const
 
     result.adjoin_outer_approximation(initial_enclosure_set,accuracy);
     result.mince(accuracy);
-    if (_settings->reachability_restriction)
+    if (_settings->reachability_restriction) {
         result.restrict(*_settings->reachability_restriction);
+    }
 
     return result;
 }
