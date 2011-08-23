@@ -219,7 +219,6 @@ class HybridReachabilityAnalyser
 
     /*! \brief Performs outer chain reach calculation. */
     SetApproximationType _outer_chain_reach(
-    		SystemType& system,
     		const std::list<EnclosureType>& initial_enclosures,
     		ContinuousEvolutionDirection direction) const;
 

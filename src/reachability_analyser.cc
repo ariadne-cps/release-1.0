@@ -404,7 +404,7 @@ outer_chain_reach(
     initial.adjoin_outer_approximation(initial_set,_settings->maximum_grid_depth);
     std::list<EnclosureType> initial_enclosures = cells_to_smallest_enclosures(initial,_settings->maximum_grid_depth);
 
-	return _outer_chain_reach(*_system,initial_enclosures,direction);
+	return _outer_chain_reach(initial_enclosures,direction);
 }
 
 
@@ -418,45 +418,43 @@ outer_chain_reach(
 
     std::list<EnclosureType> initial_enclosures = cells_to_smallest_enclosures(initial,_settings->maximum_grid_depth);
 
-	return _outer_chain_reach(*_system,initial_enclosures,direction);
+	return _outer_chain_reach(initial_enclosures,direction);
 }
 
 
 HybridReachabilityAnalyser::SetApproximationType
 HybridReachabilityAnalyser::
-_outer_chain_reach(
-		SystemType& sys,
-		const std::list<EnclosureType>& initial_enclosures,
+_outer_chain_reach(const std::list<EnclosureType>& initial_enclosures,
 		ContinuousEvolutionDirection direction) const
 {
 	HybridGridTreeSet reach;
 
-	RealParameterSet original_parameters = sys.nonsingleton_parameters();
+	RealParameterSet original_parameters = _system->nonsingleton_parameters();
 
-	std::list<RealParameterSet> split_intervals_set = _getSplitParametersIntervalsSet(sys,_settings->splitting_constants_target_ratio);
+	std::list<RealParameterSet> split_intervals_set = _getSplitParametersIntervalsSet(*_system,_settings->splitting_constants_target_ratio);
 
 	try {
 		uint i = 0;
 		for (std::list<RealParameterSet>::const_iterator set_it = split_intervals_set.begin(); set_it != split_intervals_set.end(); ++set_it) {
 			ARIADNE_LOG(1,"Split parameters set #" << ++i << " : " << *set_it);
 
-			sys.substitute_all(*set_it);
+			_system->substitute_all(*set_it);
 
-			HybridGridTreeSet local_reach = _outer_chain_reach_splitted(sys,initial_enclosures,direction);
+			HybridGridTreeSet local_reach = _outer_chain_reach_splitted(*_system,initial_enclosures,direction);
 
 			reach.adjoin(local_reach);
 		}
 	} catch (ReachOutOfDomainException ex) {
-		sys.substitute_all(original_parameters);
+		_system->substitute_all(original_parameters);
 		throw ex;
 	} catch (ReachUnsatisfiesConstraintException ex) {
-		sys.substitute_all(original_parameters);
+	    _system->substitute_all(original_parameters);
 		throw ex;
 	}
 
-	sys.substitute_all(original_parameters);
+	_system->substitute_all(original_parameters);
 
-	ARIADNE_ASSERT_MSG(!reach.empty(),"The outer chain reachability of " << sys.name() << " is empty: check the initial set.");
+	ARIADNE_ASSERT_MSG(!reach.empty(),"The outer chain reachability of " << _system->name() << " is empty: check the initial set.");
 
 	return reach;
 }
@@ -919,13 +917,12 @@ lower_chain_reach_and_epsilon(const HybridImageSet& initial_set) const
 														++set_it) {
 			ARIADNE_LOG(1,"Split parameters set #" << ++i << " : " << *set_it);
 
-			boost::shared_ptr<SystemType> local_sys(_system->clone());
-			local_sys->substitute_all(*set_it);
+			_system->substitute_all(*set_it);
 
 			HybridGridTreeSet local_reach(grid);
 			HybridFloatVector local_epsilon;
 			make_lpair<HybridGridTreeSet,HybridFloatVector>(local_reach,local_epsilon) =
-					_lower_chain_reach_and_epsilon(*local_sys,initial_set);
+					_lower_chain_reach_and_epsilon(*_system,initial_set);
 
 			reach.adjoin(local_reach);
 			epsilon = max_elementwise(epsilon,local_epsilon);
@@ -937,6 +934,8 @@ lower_chain_reach_and_epsilon(const HybridImageSet& initial_set) const
 		_system->substitute_all(original_parameters);
 		throw ex;
 	}
+
+    _system->substitute_all(original_parameters);
 
 	return std::pair<HybridGridTreeSet,HybridFloatVector>(reach,epsilon);
 }
