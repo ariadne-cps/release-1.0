@@ -113,25 +113,27 @@ tune_settings(
         unsigned free_cores,
         Semantics semantics)
 {
+    ARIADNE_LOG(1, "Tuning...");
+
     this->free_cores = free_cores;
 
     _settings->maximum_grid_depth = accuracy;
     _settings->reachability_restriction = reachability_restriction;
 
     _settings->domain_bounds = domain;
-    ARIADNE_LOG(1, "Domain: " << domain);
+    ARIADNE_LOG(2, "Domain: " << domain);
     _settings->constraint_set = constraint_set;
-    ARIADNE_LOG(1, "Constraint set: " << constraint_set);
+    ARIADNE_LOG(2, "Constraint set: " << constraint_set);
     _settings->lock_to_grid_time = getLockToGridTime(*_system,domain);
-    ARIADNE_LOG(1, "Lock to grid time: " << _settings->lock_to_grid_time);
+    ARIADNE_LOG(2, "Lock to grid time: " << _settings->lock_to_grid_time);
     _settings->locked_parameters_ids = locked_params_ids;
-    ARIADNE_LOG(1, "Locked parameters IDs: " << locked_params_ids);
+    ARIADNE_LOG(2, "Locked parameters IDs: " << locked_params_ids);
 
-    ARIADNE_LOG(1, "Derivatives evaluation source: " << (outer_approximation ? "Outer approximation" : "Domain box"));
+    ARIADNE_LOG(2, "Derivatives evaluation source: " << (outer_approximation ? "Outer approximation" : "Domain box"));
     HybridFloatVector hmad = getHybridMaximumAbsoluteDerivatives(*_system,outer_approximation,domain);
-    ARIADNE_LOG(1, "Derivatives bounds: " << hmad);
+    ARIADNE_LOG(2, "Derivatives bounds: " << hmad);
     _settings->grid = HybridGrid(getHybridGrid(hmad,domain,EQUAL_GRID_FOR_ALL_LOCATIONS));
-    ARIADNE_LOG(1, "Grid lengths: " << _settings->grid.lengths());
+    ARIADNE_LOG(2, "Grid lengths: " << _settings->grid.lengths());
 }
 
 
@@ -444,7 +446,7 @@ _outer_chain_reach(const std::list<EnclosureType>& initial_enclosures,
 	try {
 		uint i = 0;
 		for (std::list<RealParameterSet>::const_iterator set_it = split_intervals_set.begin(); set_it != split_intervals_set.end(); ++set_it) {
-			ARIADNE_LOG(1,"Split parameters set #" << ++i << " : " << *set_it);
+			ARIADNE_LOG(1,"Split parameters set #" << ++i << "/" << split_intervals_set.size() << " : " << *set_it);
 
 			_system->substitute_all(*set_it);
 
@@ -925,7 +927,7 @@ lower_chain_reach_and_epsilon(const HybridImageSet& initial_set) const
 		for (std::list<RealParameterSet>::const_iterator set_it = split_midpoints_set.begin();
 														set_it != split_midpoints_set.end();
 														++set_it) {
-			ARIADNE_LOG(1,"Split parameters set #" << ++i << " : " << *set_it);
+			ARIADNE_LOG(1,"Split parameters set #" << ++i << "/" << split_midpoints_set.size() << " : " << *set_it);
 
 			_system->substitute_all(*set_it);
 
@@ -981,7 +983,7 @@ _getSplitParametersIntervalsSet(
 	std::vector<RealParameter>::iterator initial_row_it = initial_col_it->begin();
 	fillSplitSet(split_intervals_set,initial_col_it,initial_row_it,initial_combination,result);
 
-	ARIADNE_LOG(2,"Split factors: " << split_factors << ", total size: " << result.size());
+	ARIADNE_LOG(2,"Split factors: " << split_factors);
 
 	return result;
 }

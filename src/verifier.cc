@@ -144,14 +144,9 @@ _safety_proving_once(
 		const unsigned int& accuracy,
 		const RealParameterSet& params) const
 {
-    const bool EQUAL_GRID_FOR_ALL_LOCATIONS = false;
-    const unsigned ANALYSER_TAB_OFFSET = 5;
-
 	bool result;
 
 	SystemType& sys = verInput.getSystem();
-	const HybridImageSet& initial_set = verInput.getInitialSet();
-	const HybridConstraintSet& safety_constraint = verInput.getSafetyConstraint();
 
 	RealParameterSet original_params = sys.parameters();
 
@@ -161,102 +156,121 @@ _safety_proving_once(
 
 	try {
 
-		ARIADNE_LOG(5, "Parameters: " << sys.parameters());
+		if (_settings->enable_backward_refinement_for_safety_proving && _safety_reachability_restriction)
+		    _safety_proving_once_backward_refinement(verInput,accuracy,params);
 
-		/* Given the initial set I, forward reachability F, and unsafe region U:
-
-		1. Evaluate the final unsafe set H = F ∩ U ; if H = ∅, return TRUE;
-		2. If the accuracy is over the maximum, return FALSE;
-		3. Obtain the backward reachability B under the constraint set F;
-		4. If B = F, return FALSE;
-		5. Evaluate the new initial set I = B ∩ I; if I = ∅, return TRUE;
-		6. If the accuracy is over the maximum, return FALSE;
-		7. Starting from I, obtain the forward reachability F under the constraint set B;
-		8. If F = B, return FALSE;
-
-		*/
-		if (_safety_reachability_restriction && _settings->enable_backward_refinement_for_testing_inclusion) {
-
-		    ARIADNE_LOG(5,"Creating the analyser for backward reachability...");
-
-		    AnalyserPtrType analyser = _get_tuned_analyser(verInput,parameters_identifiers(params),
-		            _safety_coarse_outer_approximation,_safety_reachability_restriction,safety_constraint,
-		            EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,ANALYSER_TAB_OFFSET,UPPER_SEMANTICS);
-
-			HybridGridTreeSet backward_initial = analyser->initial_cells_set(safety_constraint);
-
-			if (backward_initial.empty()) {
-				ARIADNE_LOG(4, "The initial cell set for backward reachability is empty.");
-				sys.substitute_all(original_params);
-				return true;
-			} else {
-	            ARIADNE_LOG(5,"Backward initial set size: " << backward_initial.size());
-	            if (_settings->plot_results)
-	                _plot_reach(backward_initial,"final",accuracy);
-			}
-
-			ARIADNE_LOG(5,"Retrieving backward reachability...");
-
-		    HybridGridTreeSet backward_reach = analyser->outer_chain_reach(backward_initial,DIRECTION_BACKWARD);
-
-			_safety_reachability_restriction.reset(backward_reach.clone());
-
-			ARIADNE_LOG(6,"Reachability size: " << backward_reach.size());
-
-			if (_settings->plot_results)
-				_plot_reach(backward_reach,"backward",accuracy);
-
-		}
-
-        ARIADNE_LOG(5,"Creating the analyser for forward reachability...");
-
-        AnalyserPtrType analyser = _get_tuned_analyser(verInput,parameters_identifiers(params),
-                _safety_coarse_outer_approximation,_safety_reachability_restriction,safety_constraint,
-                EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,ANALYSER_TAB_OFFSET,UPPER_SEMANTICS);
-
-		HybridGridTreeSet forward_initial;
-		if (_safety_reachability_restriction) {
-            forward_initial = analyser->initial_cells_set(initial_set);
-		} else {
-			forward_initial.adjoin_outer_approximation(initial_set,accuracy);
-			forward_initial.mince(accuracy);
-		}
-
-		if (forward_initial.empty()) {
-			ARIADNE_LOG(4, "The initial cell set for forward reachability is empty.");
-			sys.substitute_all(original_params);
-			return true;
-		} else {
-            ARIADNE_LOG(5,"Forward initial set size: " << forward_initial.size());
-            if (_settings->plot_results)
-                _plot_reach(forward_initial,"initial",accuracy);
-        }
-
-		ARIADNE_LOG(5,"Retrieving forward reachability...");
-
-		HybridGridTreeSet forward_reach = analyser->outer_chain_reach(forward_initial,DIRECTION_FORWARD);
-
-		ARIADNE_LOG(6,"Reachability size: " << forward_reach.size());
-
-		if (_settings->plot_results)
-			_plot_reach(forward_reach,"forward",accuracy);
-
-		_update_safety_cached_reachability_with(forward_reach);
-
-		// Additional simplified check, also useful when only forward reachability is available
-		result = definitely(covers(safety_constraint,forward_reach));
+		result = _safety_proving_once_forward_analysis(verInput,accuracy,params);
 
 	} catch (ReachOutOfDomainException ex) {
-		ARIADNE_LOG(4, "The outer reached region is partially out of the domain (skipped).");
+		ARIADNE_LOG(5, "The outer reached region is partially out of the domain (skipped).");
 		result = false;
 	} catch (ReachUnsatisfiesConstraintException ex) {
-		ARIADNE_LOG(4, "The outer reached region is not inside the safe region (skipped).");
+		ARIADNE_LOG(5, "The outer reached region is not inside the safe region (skipped).");
 		result = false;
-	}
+	} catch (EmptyInitialCellSetException ex) {
+        ARIADNE_LOG(5, ex.what());
+        result = true;
+    }
 
 	sys.substitute_all(original_params);
 
+    ARIADNE_LOG(4, (result ? "Proved." : "Not proved.") );
+
 	return result;
+}
+
+void
+Verifier::
+_safety_proving_once_backward_refinement(
+        SafetyVerificationInput& verInput,
+        const unsigned int& accuracy,
+        const RealParameterSet& params) const
+{
+    const bool EQUAL_GRID_FOR_ALL_LOCATIONS = false;
+    const unsigned ANALYSER_TAB_OFFSET = 5;
+
+    const HybridConstraintSet& safety_constraint = verInput.getSafetyConstraint();
+
+    ARIADNE_LOG(5,"Creating the analyser for backward reachability...");
+
+    AnalyserPtrType analyser = _get_tuned_analyser(verInput,parameters_identifiers(params),
+            _safety_coarse_outer_approximation,_safety_reachability_restriction,safety_constraint,
+            EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,ANALYSER_TAB_OFFSET,UPPER_SEMANTICS);
+
+    ARIADNE_LOG(5,"Computing the initial set...");
+
+    HybridGridTreeSet backward_initial = analyser->initial_cells_set(safety_constraint);
+
+    if (backward_initial.empty()) {
+        throw EmptyInitialCellSetException("The initial cell set for backward reachability is empty (skipped).");
+    } else {
+        ARIADNE_LOG(6,"Backward initial set size: " << backward_initial.size());
+        if (_settings->plot_results)
+            _plot_reach(backward_initial,"final",accuracy);
+    }
+
+    ARIADNE_LOG(5,"Retrieving backward reachability...");
+
+    HybridGridTreeSet backward_reach = analyser->outer_chain_reach(backward_initial,DIRECTION_BACKWARD);
+
+    _safety_reachability_restriction.reset(backward_reach.clone());
+
+    ARIADNE_LOG(6,"Reachability size: " << backward_reach.size());
+
+    if (_settings->plot_results)
+        _plot_reach(backward_reach,"backward",accuracy);
+}
+
+
+bool
+Verifier::
+_safety_proving_once_forward_analysis(
+        SafetyVerificationInput& verInput,
+        const unsigned int& accuracy,
+        const RealParameterSet& params) const
+{
+    const bool EQUAL_GRID_FOR_ALL_LOCATIONS = false;
+    const unsigned ANALYSER_TAB_OFFSET = 5;
+
+    const HybridImageSet& initial_set = verInput.getInitialSet();
+    const HybridConstraintSet& safety_constraint = verInput.getSafetyConstraint();
+
+    ARIADNE_LOG(5,"Creating the analyser for forward reachability...");
+
+    AnalyserPtrType analyser = _get_tuned_analyser(verInput,parameters_identifiers(params),
+            _safety_coarse_outer_approximation,_safety_reachability_restriction,safety_constraint,
+            EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,ANALYSER_TAB_OFFSET,UPPER_SEMANTICS);
+
+    ARIADNE_LOG(5,"Computing the initial set...");
+
+    HybridGridTreeSet forward_initial;
+    if (_safety_reachability_restriction) {
+        forward_initial = analyser->initial_cells_set(initial_set);
+    } else {
+        forward_initial.adjoin_outer_approximation(initial_set,accuracy);
+        forward_initial.mince(accuracy);
+    }
+
+    if (forward_initial.empty()) {
+        throw EmptyInitialCellSetException("The initial cell set for forward reachability is empty (skipped).");
+    } else {
+        ARIADNE_LOG(6,"Forward initial set size: " << forward_initial.size());
+        if (_settings->plot_results)
+            _plot_reach(forward_initial,"initial",accuracy);
+    }
+
+    ARIADNE_LOG(5,"Retrieving forward reachability...");
+
+    HybridGridTreeSet forward_reach = analyser->outer_chain_reach(forward_initial,DIRECTION_FORWARD);
+
+    ARIADNE_LOG(6,"Reachability size: " << forward_reach.size());
+
+    if (_settings->plot_results)
+        _plot_reach(forward_reach,"forward",accuracy);
+
+    _update_safety_cached_reachability_with(forward_reach);
+
+    return definitely(covers(safety_constraint,forward_reach));
 }
 
 
@@ -312,7 +326,6 @@ _safety_disproving_once(
 	ARIADNE_LOG(4,"Performing lower reachability analysis...");
 
     ARIADNE_LOG(5,"Creating the analyser for forward reachability...");
-
 
     AnalyserPtrType analyser = _get_tuned_analyser(verInput,parameters_identifiers(params),
             _safety_coarse_outer_approximation,_dominating_reachability_restriction,safety_constraint,
@@ -747,7 +760,7 @@ VerifierSettings::VerifierSettings() :
         maximum_parameter_depth(3),
         use_param_midpoints_for_proving(false),
         use_param_midpoints_for_disproving(true),
-        enable_backward_refinement_for_testing_inclusion(true)
+        enable_backward_refinement_for_safety_proving(true)
 { }
 
 std::ostream&
@@ -759,7 +772,7 @@ operator<<(std::ostream& os, const VerifierSettings& s)
        << ",\n  maximum_parameter_depth=" << s.maximum_parameter_depth
        << ",\n  use_param_midpoints_for_proving=" << s.use_param_midpoints_for_proving
        << ",\n  use_param_midpoints_for_disproving=" << s.use_param_midpoints_for_disproving
-       << ",\n  enable_backward_refinement_for_testing_inclusion=" << s.enable_backward_refinement_for_testing_inclusion
+       << ",\n  enable_backward_refinement_for_safety_proving=" << s.enable_backward_refinement_for_safety_proving
        << "\n)\n";
     return os;
 }

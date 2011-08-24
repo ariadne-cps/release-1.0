@@ -189,6 +189,18 @@ class Verifier
 			SafetyVerificationInput& verInput,
 			const RealParameterSet& params) const;
 
+	/*! \brief Performs backward refinement of the safety reachability restriction. */
+	void _safety_proving_once_backward_refinement(
+	        SafetyVerificationInput& verInput,
+	        const unsigned int& accuracy,
+	        const RealParameterSet& params) const;
+
+	/*! \brief Performs forward analysis for safety proving. */
+	bool _safety_proving_once_forward_analysis(
+	        SafetyVerificationInput& verInput,
+	        const unsigned int& accuracy,
+	        const RealParameterSet& params) const;
+
 	//@}
 
 	//@{
@@ -346,9 +358,9 @@ class VerifierSettings {
      * due to error radii. */
     bool use_param_midpoints_for_disproving;
 
-    /*/ \brief Enable backward refinement of reachability when testing inclusion in a constraint.
+    /*/ \brief Enable backward refinement of reachability when safety proving.
      * \details The refinement itself is done only after a reachability restriction is available. */
-    bool enable_backward_refinement_for_testing_inclusion;
+    bool enable_backward_refinement_for_safety_proving;
 };
 
 std::ostream& operator<<(std::ostream& os, const VerifierSettings& s);
