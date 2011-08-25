@@ -636,7 +636,6 @@ _dominance_flattened_outer_reach(
 
     ARIADNE_LOG(4,"Creating the analyser for the " << descriptor << " system...");
 
-
     AnalyserPtrType analyser = _get_tuned_analyser(verInput,locked_params_ids,
             outer_approximation,reachability_restriction,dominance_constraint,
             EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,ANALYSER_TAB_OFFSET,UPPER_SEMANTICS);

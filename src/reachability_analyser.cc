@@ -983,7 +983,10 @@ _getSplitParameterSetList() const
         } else {
             discretised_domain.adjoin_outer_approximation(_settings->domain_bounds,accuracy);
         }
-        discretised_domain.mince(accuracy);
+        /* We recombine since large cells lie in the center of the region (at least when the tree set represents a
+         * reachability restriction), and in that region we usually are not interested in having very fine evolution.
+         * This solution accomodates a more reasonable computation time for the split calculation. */
+        discretised_domain.recombine();
 
         Float initial_score = _getDerivativeWidthsScore(hmad,discretised_domain);
 
@@ -1120,7 +1123,7 @@ _updateSplitParameterSetLists(
 
     ARIADNE_LOG(3,"Best result: " << best_param_id << " " << best_interval << " with scores " << best_scores);
 
-    Float ratio = (previous_score-max(best_scores.first,best_scores.second))/initial_score/working_parameter_set.size();
+    Float ratio = (previous_score-max(best_scores.first,best_scores.second))/initial_score;
     ARIADNE_LOG(3,"Current ratio: " << ratio);
 
     if (ratio > _settings->splitting_parameters_target_ratio) {

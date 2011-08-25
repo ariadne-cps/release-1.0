@@ -1052,13 +1052,9 @@ getMaximumEnclosureCell(
 	// the overapproximation error due to discretization is minimized
 	static const double RATIO = 1.9;
 
-	// Gets the size of the continuous space
 	const uint css = hgrid.locations_begin()->second.lengths().size();
 
-	// Initializes the result
 	Vector<Float> result(css);
-
-	// For each location and dimension of the space
 	for (HybridGrid::locations_const_iterator hg_it = hgrid.locations_begin(); hg_it != hgrid.locations_end(); hg_it++) {
 		ARIADNE_ASSERT_MSG(hg_it->second.lengths().size() == css,
 				"The maximum enclosure cell is obtained under the assumption that the continuous state space dimension is the same for all locations.");
@@ -1082,24 +1078,23 @@ getHybridMaximumStepSize(
 	// urgent transitions in one step. For lower semantics we prefer to have a finer result.
 	Float coefficient = (semantics == UPPER_SEMANTICS ? 2.0 : 1.0);
 
-	// Initialize the hybrid maximum step size
 	std::map<DiscreteLocation,Float> hmss;
 
-	// For each couple DiscreteLocation,Vector<Float>
 	for (HybridFloatVector::const_iterator hfv_it = hmad.begin(); hfv_it != hmad.end(); hfv_it++)
 	{
 		const uint dim = hfv_it->second.size();
-		// Initializes the maximum step size
-		Float mss = 0.0;
 		// For each dimension of the space, if the derivative is not zero,
 		// evaluates the ratio between the minimum cell length and the derivative itself
+		Float mss = 0.0;
 		for (uint i=0;i<dim;i++)
 			if (hfv_it->second[i] > 0)
 				mss = max(mss,hgrid[hfv_it->first].lengths()[i]/(1 << maximum_grid_depth)/hfv_it->second[i]);
 
-		ARIADNE_ASSERT_MSG(mss > 0, "Error: the computed maximum step size for location " << hfv_it->first << " is zero.");
+		// If the step size is still zero, it means that the derivatives are zero on each dimension. Hence we can
+		// use any large value we want.
+		if (mss == 0)
+		   mss = std::numeric_limits<Float>::infinity();
 
-		// Inserts the value (twice the value since the maximum enclosure is set as ~2 the grid cell)
 		hmss.insert(std::pair<DiscreteLocation,Float>(hfv_it->first,coefficient*mss));
 	}
 
