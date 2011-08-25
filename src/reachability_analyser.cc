@@ -113,7 +113,7 @@ tune_settings(
         unsigned free_cores,
         Semantics semantics)
 {
-    ARIADNE_LOG(1, "Tuning...");
+    ARIADNE_LOG(1, "Tuning settings for analysis...");
 
     this->free_cores = free_cores;
 
@@ -441,12 +441,14 @@ _outer_chain_reach(const std::list<EnclosureType>& initial_enclosures,
 
 	RealParameterSet original_parameters = _system->nonsingleton_parameters();
 
-	std::list<RealParameterSet> split_intervals_set = _getSplitParametersIntervalsSet(*_system,_settings->splitting_constants_target_ratio);
+	ARIADNE_LOG(2,"Splitting the nonsingleton nonlocked parameter set...");
+
+	std::list<RealParameterSet> split_parameter_set_list = _getSplitParameterSetList();
 
 	try {
 		uint i = 0;
-		for (std::list<RealParameterSet>::const_iterator set_it = split_intervals_set.begin(); set_it != split_intervals_set.end(); ++set_it) {
-			ARIADNE_LOG(1,"Split parameters set #" << ++i << "/" << split_intervals_set.size() << " : " << *set_it);
+		for (std::list<RealParameterSet>::const_iterator set_it = split_parameter_set_list.begin(); set_it != split_parameter_set_list.end(); ++set_it) {
+			ARIADNE_LOG(1,"Split parameter set #" << ++i << "/" << split_parameter_set_list.size() << " : " << *set_it);
 
 			_system->substitute_all(*set_it);
 
@@ -906,11 +908,11 @@ std::pair<HybridGridTreeSet,HybridFloatVector>
 HybridReachabilityAnalyser::
 lower_chain_reach_and_epsilon(const HybridImageSet& initial_set) const
 {
-    ARIADNE_LOG(1,"Performing lower chain reach with epsilon...");
-
 	HybridGrid grid = _settings->grid;
 	HybridGridTreeSet reach(grid);
 	HybridSpace state_space = _system->state_space();
+
+    ARIADNE_LOG(1,"Performing lower chain reach with epsilon...");
 
 	HybridFloatVector epsilon;
 	for (HybridSpace::const_iterator hs_it = state_space.begin(); hs_it != state_space.end(); ++hs_it)
@@ -918,16 +920,18 @@ lower_chain_reach_and_epsilon(const HybridImageSet& initial_set) const
 
 	RealParameterSet original_parameters = _system->nonsingleton_parameters();
 
-	std::list<RealParameterSet> split_intervals_set = _getSplitParametersIntervalsSet(*_system,_settings->splitting_constants_target_ratio);
-	std::list<RealParameterSet> split_midpoints_set = getSplitParametersMidpointsSet(split_intervals_set);
+	ARIADNE_LOG(2,"Splitting the nonsingleton nonlocked parameter set...");
+
+	std::list<RealParameterSet> split_parameter_set_list = _getSplitParameterSetList();
+	std::list<RealParameterSet> split_midpoint_set_list = getMidpointsSet(split_parameter_set_list);
 
 	try {
 
 		uint i = 0;
-		for (std::list<RealParameterSet>::const_iterator set_it = split_midpoints_set.begin();
-														set_it != split_midpoints_set.end();
+		for (std::list<RealParameterSet>::const_iterator set_it = split_midpoint_set_list.begin();
+														set_it != split_midpoint_set_list.end();
 														++set_it) {
-			ARIADNE_LOG(1,"Split parameters set #" << ++i << "/" << split_midpoints_set.size() << " : " << *set_it);
+			ARIADNE_LOG(1,"Split parameters set #" << ++i << "/" << split_midpoint_set_list.size() << " : " << *set_it);
 
 			_system->substitute_all(*set_it);
 
@@ -955,37 +959,194 @@ lower_chain_reach_and_epsilon(const HybridImageSet& initial_set) const
 
 std::list<RealParameterSet>
 HybridReachabilityAnalyser::
-_getSplitParametersIntervalsSet(
-		SystemType& system,
-		float tolerance) const
+_getSplitParameterSetList() const
 {
-	const Set<Identifier>& locked_params_ids = _settings->locked_parameters_ids;
-	const HybridBoxes& domain = _settings->domain_bounds;
+    std::list<RealParameterSet> result_parameter_set_list;
 
-	const ParameterIdIntMap split_factors = getSplitFactorsOfParameters(system,locked_params_ids,tolerance,domain);
+    std::list<std::pair<Float,RealParameterSet> > working_scored_parameter_set_list;
 
-	std::list<RealParameterSet> result;
+    const int& accuracy = _settings->maximum_grid_depth;
 
-	if (split_factors.empty()) {
-		result.push_back(system.nonsingleton_parameters());
-		return result;
-	}
+    RealParameterSet initial_parameter_set = _system->nonsingleton_parameters();
+    remove_nonlocked_parameters(initial_parameter_set,_settings->locked_parameters_ids);
 
-	// Creates a vector for all the interval splits (i.e. a jagged matrix)
-	std::vector<std::vector<RealParameter> > split_intervals_set(split_factors.size());
-	uint i=0;
-	for (ParameterIdIntMap::const_iterator factor_it = split_factors.begin();factor_it != split_factors.end();++factor_it)
-		split_intervals_set[i++] = split_reordered(RealParameter(factor_it->first,system.parameter_value(factor_it->first)), factor_it->second);
+    HybridFloatVector hmad = getHybridMaximumAbsoluteDerivatives(*_system,
+            _settings->reachability_restriction,_settings->domain_bounds);
 
-	// Generates all the possible split combinations
-	RealParameterSet initial_combination;
-	std::vector<std::vector<RealParameter> >::iterator initial_col_it = split_intervals_set.begin();
-	std::vector<RealParameter>::iterator initial_row_it = initial_col_it->begin();
-	fillSplitSet(split_intervals_set,initial_col_it,initial_row_it,initial_combination,result);
+    ARIADNE_LOG(2,"hmad: " << hmad);
 
-	ARIADNE_LOG(2,"Split factors: " << split_factors);
+    if (!initial_parameter_set.empty()) {
 
-	return result;
+        HybridGridTreeSet discretised_domain(_settings->grid);
+        if (_settings->reachability_restriction) {
+            discretised_domain.adjoin(*_settings->reachability_restriction);
+        } else {
+            discretised_domain.adjoin_outer_approximation(_settings->domain_bounds,accuracy);
+        }
+        discretised_domain.mince(accuracy);
+
+        Float initial_score = _getDerivativeWidthsScore(hmad,discretised_domain);
+
+        ARIADNE_LOG(2,"Initial score: " << initial_score);
+
+        working_scored_parameter_set_list.push_back(std::pair<Float,RealParameterSet>(initial_score,initial_parameter_set));
+
+        do {
+            _updateSplitParameterSetLists(working_scored_parameter_set_list,result_parameter_set_list,
+                    initial_score,hmad,discretised_domain);
+
+            ARIADNE_LOG(3,"Working scored parameter set list size = " << working_scored_parameter_set_list.size());
+            ARIADNE_LOG(3,"Result parameter set list size = " << result_parameter_set_list.size());
+        } while (working_scored_parameter_set_list.size() > 0);
+
+    }
+
+	return result_parameter_set_list;
+}
+
+
+Float
+HybridReachabilityAnalyser::
+_getDerivativeWidthsScore(
+        const HybridFloatVector& hmad,
+        const HybridGridTreeSet& discretised_domain) const
+{
+    Float result = 0;
+
+    // Reads: \sum_{cells} \sum_{dim} der_widths(cell_loc,dim)/hmad(cell_loc,dim), under hmad(cell_loc,dim) > 0
+
+    for (HybridGridTreeSet::const_iterator cell_it = discretised_domain.begin();
+            cell_it != discretised_domain.end(); ++cell_it) {
+        const DiscreteLocation& loc = cell_it->box().first;
+        const Box& cell_bx = cell_it->box().second;
+
+        Vector<Float> der_widths = getDerivativeWidths(*_system,loc,cell_bx);
+        Vector<Float> mad = hmad.find(loc)->second;
+
+        for (unsigned i=0; i < cell_bx.size(); ++i) {
+            if (mad[i] > 0) {
+                result += der_widths[i]/mad[i];
+            }
+        }
+    }
+
+    return result/discretised_domain.size();
+}
+
+
+std::pair<Float,Float>
+HybridReachabilityAnalyser::
+_getSplitDerivativeWidthsScores(
+        const RealParameter& param,
+        const HybridFloatVector& hmad,
+        const HybridGridTreeSet& discretised_domain) const
+{
+    const Interval& param_val = param.value();
+
+    Float left_result = 0;
+    Float right_result = 0;
+
+    for (HybridGridTreeSet::const_iterator cell_it = discretised_domain.begin();
+            cell_it != discretised_domain.end(); ++cell_it) {
+        const DiscreteLocation& loc = cell_it->box().first;
+        const Box& cell_bx = cell_it->box().second;
+        const Vector<Float>& mad = hmad.find(loc)->second;
+
+        Interval left_half_val = Interval(param_val.lower(),param_val.midpoint());
+        _system->substitute(RealParameter(param.name(),left_half_val));
+        Vector<Float> left_der_widths = getDerivativeWidths(*_system,loc,cell_bx);
+        Interval right_half_val = Interval(param_val.midpoint(),param_val.upper());
+        _system->substitute(RealParameter(param.name(),right_half_val));
+        Vector<Float> right_der_widths = getDerivativeWidths(*_system,loc,cell_bx);
+        _system->substitute(param);
+
+        ARIADNE_LOG(5,"Cell " << cell_it->box() << ": " << left_der_widths << ", " << right_der_widths);
+
+        for (unsigned i=0; i < cell_bx.size(); ++i) {
+            if (mad[i] > 0) {
+                left_result += left_der_widths[i]/mad[i];
+                right_result += right_der_widths[i]/mad[i];
+            }
+        }
+    }
+
+    return std::pair<Float,Float>(left_result/discretised_domain.size(),right_result/discretised_domain.size());
+}
+
+
+void
+HybridReachabilityAnalyser::
+_updateSplitParameterSetLists(
+        std::list<std::pair<Float,RealParameterSet> >& working_scored_parameter_set_list,
+        std::list<RealParameterSet>& result_parameter_set_list,
+        const Float& initial_score,
+        const HybridFloatVector& hmad,
+        const HybridGridTreeSet& discretised_domain) const
+{
+    std::pair<Float,RealParameterSet> working_scored_parameter_set = working_scored_parameter_set_list.back();
+    working_scored_parameter_set_list.pop_back();
+
+    const Float& previous_score = working_scored_parameter_set.first;
+    const RealParameterSet& working_parameter_set = working_scored_parameter_set.second;
+
+    ARIADNE_LOG(3,"Previous score: " << previous_score);
+    ARIADNE_LOG(3,"Working parameter set: " << working_parameter_set);
+
+    RealParameterSet original_parameter_set = _system->nonsingleton_parameters();
+
+    _system->substitute_all(working_parameter_set);
+
+    Identifier best_param_id = "";
+    Interval best_interval;
+    std::pair<Float,Float> best_scores(std::numeric_limits<Float>::infinity(),std::numeric_limits<Float>::infinity());
+
+    for (RealParameterSet::const_iterator param_it = working_parameter_set.begin();
+            param_it != working_parameter_set.end(); ++param_it) {
+
+        ARIADNE_LOG(4,"Parameter " << *param_it);
+
+        std::pair<Float,Float> local_scores = _getSplitDerivativeWidthsScores(*param_it,hmad,discretised_domain);
+
+        ARIADNE_LOG(4,"Scores: " << local_scores);
+
+        if (max(local_scores.first,local_scores.second) < max(best_scores.first,best_scores.second)) {
+            best_scores = local_scores;
+            best_param_id = param_it->name();
+            best_interval = param_it->value();
+        }
+    }
+
+    _system->substitute_all(original_parameter_set);
+
+    ARIADNE_LOG(3,"Best result: " << best_param_id << " " << best_interval << " with scores " << best_scores);
+
+    Float ratio = (previous_score-max(best_scores.first,best_scores.second))/initial_score/working_parameter_set.size();
+    ARIADNE_LOG(3,"Current ratio: " << ratio);
+
+    if (ratio > _settings->splitting_parameters_target_ratio) {
+
+        RealParameterSet new_parameters_left, new_parameters_right;
+        for (RealParameterSet::const_iterator param_it = working_parameter_set.begin();
+                param_it != working_parameter_set.end(); ++param_it) {
+            if (param_it->name() != best_param_id) {
+                new_parameters_left.insert(*param_it);
+                new_parameters_right.insert(*param_it);
+            } else {
+                new_parameters_left.insert(RealParameter(best_param_id,Interval(best_interval.lower(),best_interval.midpoint())));
+                new_parameters_right.insert(RealParameter(best_param_id,Interval(best_interval.midpoint(),best_interval.upper())));
+            }
+        }
+
+        ARIADNE_LOG(3,"New parameters left: " << new_parameters_left);
+        ARIADNE_LOG(3,"New parameters right: " << new_parameters_right);
+
+        working_scored_parameter_set_list.push_front(std::pair<Float,RealParameterSet>(best_scores.first,new_parameters_left));
+        working_scored_parameter_set_list.push_front(std::pair<Float,RealParameterSet>(best_scores.second,new_parameters_right));
+    } else {
+        result_parameter_set_list.push_back(working_parameter_set);
+    }
+
+    //getchar();
 }
 
 
@@ -997,7 +1158,7 @@ HybridReachabilityAnalyserSettings::HybridReachabilityAnalyserSettings(const Sys
       constraint_set(),
       reachability_restriction(),
       grid(HybridGrid(sys.state_space())),
-      splitting_constants_target_ratio(0.1),
+      splitting_parameters_target_ratio(0.05),
       enable_lower_pruning(true)
 {
 }
@@ -1012,7 +1173,7 @@ operator<<(std::ostream& os, const HybridReachabilityAnalyserSettings& s)
        << ",\n  maximum_grid_depth=" << s.maximum_grid_depth
        << ",\n  bounding_domain=" << s.domain_bounds
        << ",\n  grid=" << s.grid
-       << ",\n  splitting_constants_target_ratio=" << s.splitting_constants_target_ratio
+       << ",\n  splitting_constants_target_ratio=" << s.splitting_parameters_target_ratio
        << ",\n  enable_lower_pruning=" << s.enable_lower_pruning
        << "\n)\n";
     return os;
@@ -1029,6 +1190,25 @@ HybridFloatVector min_cell_widths(
 		result.insert(std::pair<DiscreteLocation,Vector<Float> >(grid_it->first,grid_it->second.lengths()/(1 << maximum_grid_depth)));
 
 	return result;
+}
+
+void
+remove_nonlocked_parameters(
+        RealParameterSet& params,
+        const Set<Identifier>& locked_params_ids)
+{
+    for (Set<Identifier>::const_iterator locked_parameter_it = locked_params_ids.begin();
+                                         locked_parameter_it != locked_params_ids.end();
+                                         ++locked_parameter_it) {
+        for (RealParameterSet::iterator param_it = params.begin();
+                                             param_it != params.end();
+                                             ++param_it) {
+            if (*locked_parameter_it == param_it->name()) {
+                params.erase(param_it);
+                break;
+            }
+        }
+    }
 }
 
 
@@ -1096,123 +1276,6 @@ list<EnclosureType> enclosures_of_domains_midpoints(
 }
 
 
-ParameterIdIntMap
-getSplitFactorsOfParameters(
-        HybridReachabilityAnalyser::SystemType& sys,
-		const Set<Identifier>& locked_params_ids,
-		const Float& targetRatioPerc,
-		const HybridBoxes& bounding_domain)
-{
-	/*! Procedure:
-	 * 1) Get the derivatives bounds for the system with constants set as their intervals
-	 * 2) Get the derivatives bounds for the system with constants set as their midpoints
-	 * 3) Get the maximum ratio from this bounds sets and set the target ratio as a fraction of this value
-	 * 4) While the ratio is greater than the target ratio:
- 	 *	 a) For each non-singleton accessible constant
- 	 *	   i) Get the derivatives bounds for the system where the range of the chosen constant has been halved
- 	 *	   ii) Update the best ratio
- 	 *	 b) Increase the factor of the constant having the best ratio and update the system accordingly by halving the range of the constant
-	 */
-
-	// A lower threshold for the maximum ratio, in order to ignore cases where the ratios are too low: in that case,
-	// splitting would have no effect and the procedure would not converge
-	const float& maxRatioThreshold = 1e-8;
-
-	ParameterIdIntMap result;
-
-	RealParameterSet working_parameters = sys.nonsingleton_parameters();
-
-	// Remove the locked constants
-	for (Set<Identifier>::const_iterator locked_parameter_it = locked_params_ids.begin();
-										 locked_parameter_it != locked_params_ids.end();
-										 ++locked_parameter_it) {
-		for (RealParameterSet::iterator working_parameter_it = working_parameters.begin();
-											 working_parameter_it != working_parameters.end();
-											 ++working_parameter_it) {
-			if (*locked_parameter_it == working_parameter_it->name()) {
-				working_parameters.erase(working_parameter_it);
-				break;
-			}
-		}
-	}
-
-	if (working_parameters.empty())
-		return result;
-
-	// Initializes the result and sets the system with the midpoints of the corresponding intervals
-	for (RealParameterSet::const_iterator parameter_it = working_parameters.begin();
-												 parameter_it != working_parameters.end();
-												 ++parameter_it) {
-			result.insert(std::pair<Identifier,int>(parameter_it->name(),1));
-			sys.substitute(RealParameter(parameter_it->name(),parameter_it->value().midpoint()));
-	}
-
-	// Gets the derivative widths corresponding to all accessible constants having midpoint value
-	HybridFloatVector mid_der_widths = getDerivativeWidths(sys, bounding_domain);
-	// Restores the system to the original values
-	sys.substitute_all(working_parameters);
-
-	// While the ratio is sufficiently high, gets the best constant and substitutes half its interval into the system
-	// If the maximum ratio is zero, then no constant affects the derivatives and splitting them would neither be necessary nor correct
-	// given the current unfair implementation of _getBestConstantToSplit
-	Float maxRatio = getMaxDerivativeWidthRatio(sys, mid_der_widths, bounding_domain);
-
-	if (maxRatio > maxRatioThreshold) {
-		Float ratio = maxRatio;
-
-		while (ratio > targetRatioPerc*maxRatio) {
-			RealParameter bestParameter = getBestParameterToSplit(sys, working_parameters, mid_der_widths, bounding_domain);
-
-			Interval originalInterval = bestParameter.value();
-			Float quarterIntervalWidth = originalInterval.width()/4;
-			Interval halvedInterval = Interval(originalInterval.midpoint()-quarterIntervalWidth,
-											   originalInterval.midpoint()+quarterIntervalWidth);
-
-			sys.substitute(RealParameter(bestParameter.name(),Real(halvedInterval)));
-			result[bestParameter.name()]++;
-			ratio = getMaxDerivativeWidthRatio(sys, mid_der_widths, bounding_domain);
-		}
-
-		sys.substitute_all(working_parameters);
-	}
-
-	return result;
-}
-
-RealParameter
-getBestParameterToSplit(
-        HybridReachabilityAnalyser::SystemType& system,
-		const RealParameterSet& working_constants,
-		const HybridFloatVector& referenceWidths,
-		const HybridBoxes& bounding_domain)
-{
-	RealParameter result = *working_constants.begin();
-	Float bestLocalRatio = std::numeric_limits<Float>::infinity();
-
-	for (RealParameterSet::const_iterator param_it = working_constants.begin();
-												 param_it != working_constants.end();
-												 ++param_it) {
-		// Modifies the system in order to have the range of the original given constant halved
-		Real originalValue = system.parameter_value(param_it->name());
-
-		Float quarterIntervalWidth = originalValue.width()/4;
-		Interval halvedInterval = Interval(param_it->value().midpoint()-quarterIntervalWidth,
-										   param_it->value().midpoint()+quarterIntervalWidth);
-		system.substitute(RealParameter(param_it->name(),Real(halvedInterval)));
-
-		Float localRatio = getMaxDerivativeWidthRatio(system,referenceWidths,bounding_domain);
-		if (localRatio < bestLocalRatio) {
-			bestLocalRatio = localRatio;
-			result = RealParameter(param_it->name(),originalValue);
-		}
-
-		// Restores the related parameter to its original value
-		system.substitute(RealParameter(param_it->name(),originalValue));
-	}
-
-	return result;
-}
-
 void
 pushSplitTargetEnclosures(
 		std::list<EnclosureType>& initial_enclosures,
@@ -1247,7 +1310,7 @@ pushSplitTargetEnclosures(
 
 
 HybridFloatVector
-getDerivativeWidths(
+getHybridDerivativeWidths(
 		const HybridReachabilityAnalyser::SystemType& system,
 		const HybridBoxes& bounding_domain)
 {
@@ -1258,103 +1321,34 @@ getDerivativeWidths(
 	HybridFloatVector result;
 
 	for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); hs_it++) {
-
 		const DiscreteLocation& loc = hs_it->first;
-		const uint dim = hs_it->second;
-
-		Vector<Interval> der = system.dynamic_function(loc)(bounding_domain.find(loc)->second);
-
-		Vector<Float> der_widths(dim);
-		for (uint i=0;i<dim;i++)
-			der_widths[i] = der[i].width();
-
-		result.insert(pair<DiscreteLocation,Vector<Float> >(loc,der_widths));
+		const Box& bx = bounding_domain.find(loc)->second;
+		result.insert(pair<DiscreteLocation,Vector<Float> >(loc,getDerivativeWidths(system,loc,bx)));
 	}
 
 	return result;
 }
 
-Float
-getMaxDerivativeWidthRatio(
-		const HybridReachabilityAnalyser::SystemType& system,
-		const HybridFloatVector& referenceWidths,
-		const HybridBoxes& bounding_domain)
+Vector<Float>
+getDerivativeWidths(
+        const HybridReachabilityAnalyser::SystemType& system,
+        const DiscreteLocation& loc,
+        const Box& bx)
 {
-	const HybridSpace hspace = system.state_space();
+    const uint dim = bx.size();
 
-	ARIADNE_ASSERT_MSG(bounding_domain.size() == hspace.size(), "The bounding domain must match the state space.");
+    Vector<Interval> der = system.dynamic_function(loc)(bx);
 
-	Float result = 0;
+    Vector<Float> result(dim);
+    for (uint i=0;i<dim;i++)
+        result[i] = der[i].width();
 
-	for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); hs_it++) {
-
-		const DiscreteLocation& loc = hs_it->first;
-		const uint dim = hs_it->second;
-
-		Vector<Interval> der = system.dynamic_function(loc)(bounding_domain.find(loc)->second);
-
-		for (uint i=0; i<dim; ++i) {
-			Float referenceWidth = referenceWidths.find(loc)->second[i];
-			if (referenceWidth != 0)
-				result = max(result,(der[i].width()-referenceWidth)/referenceWidth);
-		}
-	}
-
-	return result;
+    return result;
 }
 
-/*! \brief Splits a RealParameter \a param into \a numParts parts.
- * \details Orders the subintervals by putting the second leftmost subinterval up to the rightmost, followed by the leftmost.
- * This reordering is performed in order to have both the parameter extremes on one side, so that a splitted system would use them first. */
-std::vector<RealParameter>
-split_reordered(
-		const RealParameter& param,
-		uint numParts)
-{
-	Interval bounds;
-	Float lower, upper;
-
-	std::vector<RealParameter> result(numParts,param);
-
-	String name = param.name();
-	Float intervalWidth = param.value().width();
-
-	// Puts the first element
-	lower = param.value().lower();
-	upper = param.value().lower() + intervalWidth/numParts;
-	result[numParts-1] = RealParameter(name,Interval(lower,upper));
-	// Puts the last to the second element, in inverse order
-	for (uint i=numParts;i>1;--i) {
-		lower = param.value().lower() + intervalWidth*(i-1)/numParts;
-		upper = param.value().lower() + intervalWidth*i/numParts;
-		result[i-2] = RealParameter(name,Interval(lower,upper));
-	}
-
-	return result;
-}
-
-void fillSplitSet(
-		const std::vector<std::vector<RealParameter> >& src,
-		std::vector<std::vector<RealParameter> >::iterator col_it,
-		std::vector<RealParameter>::iterator row_it,
-		RealParameterSet s,
-		std::list<RealParameterSet>& dest)
-{
-	if (col_it != src.end() && row_it != col_it->end()) {
-		fillSplitSet(src,col_it,row_it+1,s,dest);
-		s.insert(*row_it);
-		col_it++;
-		row_it = col_it->begin();
-
-		if (col_it != src.end())
-			fillSplitSet(src,col_it,row_it,s,dest);
-		else
-			dest.push_back(s);
-	}
-}
 
 std::list<RealParameterSet>
-getSplitParametersMidpointsSet(const std::list<RealParameterSet>& intervals_set)
+getMidpointsSet(const std::list<RealParameterSet>& intervals_set)
 {
 	std::list<RealParameterSet> result;
 
@@ -1368,6 +1362,7 @@ getSplitParametersMidpointsSet(const std::list<RealParameterSet>& intervals_set)
 
 	return result;
 }
+
 
 HybridGrid
 getHybridGrid(

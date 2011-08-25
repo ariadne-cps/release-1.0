@@ -47,6 +47,8 @@
 #include "parametric.h"
 
 namespace Ariadne {
+
+enum SplittingHalf { LEFT_HALF, RIGHT_HALF };
  
 template<class ES> class Orbit;
 
@@ -81,7 +83,7 @@ class HybridReachabilityAnalyser
     typedef boost::shared_ptr<EvolverInterface<SystemType,EnclosureType> > EvolverPtrType;
   private:
     boost::shared_ptr< SettingsType > _settings;
-    boost::shared_ptr< SystemType > _system;
+    mutable boost::shared_ptr< SystemType > _system;
   public:
 
     // The reduction in the number of logical cores used in multithreading (down from the maximum concurrency of the machine) (zero by default)
@@ -301,15 +303,39 @@ class HybridReachabilityAnalyser
     		const std::map<DiscreteLocation,uint>& superposed_evolve_sizes,
     		bool use_domain_checking) const;
 
-    /*! \brief Gets the set of all the split intervals from the parameters of the \a system with a given \a tolerance.
-     *  \details The calculation is performed over the domain with a splitting limit controlled by the \a tolerance, excluding
-     *  those parameters present in the locked_parameters.
-     *  Orders the list elements by first picking the leftmost subintervals, followed by the rightmost and then
-     *  all the remaining from right to left. If no parameters to split are available, returns the original parameters.
+    /*! \brief Gets the set of all the split intervals from the parameters of the system.*/
+    std::list<RealParameterSet> _getSplitParameterSetList() const;
+
+    /*! \brief Gets the maximum score corresponding to the derivative widths with no splitting. */
+    Float _getDerivativeWidthsScore(
+            const HybridFloatVector& hmad,
+            const HybridGridTreeSet& discretised_domain) const;
+
+    /*! \brief Gets the scores corresponding to the derivative widths with \a param splitted. */
+    std::pair<Float,Float> _getSplitDerivativeWidthsScores(
+            const RealParameter& param,
+            const HybridFloatVector& hmad,
+            const HybridGridTreeSet& discretised_domain) const;
+
+    /*! \brief Updates the set \a working_scored_parameter_set_list by splitting onto the "best" parameter, or updates \a result_parameter_set_list if no splitting is possible. */
+    /*! \details The \a hmad are the maximum derivative values with no splitting applied, hence they stay constant for successive calls of
+     * this method. The \a discretised_domain is used to evaluate the derivatives in different cells of the discretised domain.
      */
-    std::list<RealParameterSet> _getSplitParametersIntervalsSet(
-    		SystemType& system,
-    		float tolerance) const;
+    void _updateSplitParameterSetLists(
+            std::list<std::pair<Float,RealParameterSet> >& working_scored_parameter_set_list,
+            std::list<RealParameterSet>& result_parameter_set_list,
+            const Float& initial_score,
+            const HybridFloatVector& hmad,
+            const HybridGridTreeSet& discretised_domain) const;
+
+    /*! \brief Gets the ratio of derivative widths when substituting the given \a half of \a param.
+     * \details The \a max_der_widths and mid_der_widths are the the maximum derivative widths with no splitting applied, and
+     * the derivative widths for the midpoint of some parameter set (\a param included). */
+    Float _getDerivativeWidthsRatio(
+            const RealParameter& param,
+            SplittingHalf half,
+            const HybridFloatVector& max_der_widths,
+            const HybridFloatVector& mid_der_widths) const;
 };
 
 
@@ -379,10 +405,10 @@ class HybridReachabilityAnalyserSettings {
     //! \brief The parameters that must not be automatically split inside a system.
     Set<Identifier> locked_parameters_ids;
 
-    //! \brief The target ratio of derivatives width to obtain when splitting constants.
-    RealType splitting_constants_target_ratio;
+    //! \brief The target ratio of derivatives widthd to obtain when splitting parameters (must be > 0).
+    RealType splitting_parameters_target_ratio;
 
-    //! \brief Enable the pruning of the trajectories when too large (false by default).
+    //! \brief Enable the pruning of the trajectories when too large.
     //! \details The pruning is done probabilistically.
     //! <br>
     //! This parameter is used only under lower semantics.
@@ -399,65 +425,30 @@ HybridFloatVector min_cell_widths(
 		const HybridGrid& grid,
 		int maximum_grid_depth);
 
+/*! \brief Removes from \a params those parameters having identifier in \a locked_params_ids. */
+void remove_nonlocked_parameters(
+        RealParameterSet& params,
+        const Set<Identifier>& locked_params_ids);
+
 /*! \brief Generates a list of hybrid enclosures from the domain midpoints of a splitting of \a img_set,
  * where the image of each part has bounding box widths lower than the corresponding \a max_cell_widths */
 list<EnclosureType> enclosures_from_split_domain_midpoints(
 		const HybridImageSet img_set,
 		const HybridFloatVector max_cell_widths);
 
-/*! \brief Gets for each non-singleton parameter the factor determining the number of chunks its interval should be split into.
- *
- * \details Splits until the deviation of the derivatives is reasonably low in respect to the deviation calculated at the midpoint. This
- * limit value is expressed as a percentage using \a targetRatioPerc.
- *
- * @param system The system to get the parameters from.
- * @param targetRatioPerc The derivative widths ratio percentage to reach before termination.
- *
- * @return A split factor for each non-singleton parameter name of the \a system.
- */
-ParameterIdIntMap getSplitFactorsOfParameters(
-		HybridReachabilityAnalyser::SystemType& system,
-		const Set<Identifier>& locked_params_ids,
-		const Float& targetRatioPerc,
-		const HybridBoxes& bounding_domain);
-
-/*! \brief Gets the best parameter among the \a working_parameters of the \a system to split, in terms of
- * relative reduction of derivative widths compared to some \a referenceWidths.
- */
-RealParameter getBestParameterToSplit(
-        HybridReachabilityAnalyser::SystemType& system,
-		const RealParameterSet& working_parameters,
-		const HybridFloatVector& referenceWidths,
-		const HybridBoxes& domain);
-
-/*! \brief Helper function to get the maximum value of the derivative width ratio \f$ (w-w^r)/w_r \f$, where the \f$ w^r \f$ values
- * are stored in \a referenceWidths and the \f$ w \f$ values are obtained from the \a system.
- */
-Float getMaxDerivativeWidthRatio(
-		const HybridReachabilityAnalyser::SystemType& system,
-		const HybridFloatVector& referenceWidths,
-		const HybridBoxes& domain);
-
-/*! \brief Helper function to get the widths of the derivatives from the \a system */
-HybridFloatVector getDerivativeWidths(
+/*! \brief Helper function to get the hybrid widths of the derivatives from the \a system. */
+HybridFloatVector getHybridDerivativeWidths(
 		const HybridReachabilityAnalyser::SystemType& system,
 		const HybridBoxes& domain);
+
+/*! \brief Helper function to get the widths of the derivatives from the \a system in a given location. */
+Vector<Float> getDerivativeWidths(
+        const HybridReachabilityAnalyser::SystemType& system,
+        const DiscreteLocation& loc,
+        const Box& bx);
 
 /*! \brief Gets the set of all the midpoints of the split intervals in \a intervals_set. */
-std::list<RealParameterSet> getSplitParametersMidpointsSet(const std::list<RealParameterSet>& intervals_set);
-
-/*! \brief Splits the constant \a con into \a numParts parts. */
-std::vector<RealParameter> split_reordered(
-		const RealParameter& con,
-		uint numParts);
-
-/*! \brief Creates a set \a dest of all the possible combinations of split values from \a src. */
-void fillSplitSet(
-		const std::vector<std::vector<RealParameter> >& src,
-		std::vector<std::vector<RealParameter> >::iterator col_it,
-		std::vector<RealParameter>::iterator row_it,
-		RealParameterSet s,
-		std::list<RealParameterSet>& dest);
+std::list<RealParameterSet> getMidpointsSet(const std::list<RealParameterSet>& intervals_set);
 
 /*! \brief Splits \a target_encl for location \a target_loc, storing the result in \a initial_enclosures.
  * \details The function is recursive.

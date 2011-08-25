@@ -67,7 +67,7 @@ int main(int argc,char *argv[])
 	Verifier verifier;
 	verifier.verbosity = verb;
 	verifier.settings().maximum_parameter_depth = 3;
-	verifier.settings().time_limit_for_outcome = 10;
+	verifier.settings().time_limit_for_outcome = 20;
 	verifier.settings().plot_results = false;
 
 	SafetyVerificationInput verInput(system, initial_set, domain, safety_constraint);

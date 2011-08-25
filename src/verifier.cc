@@ -328,7 +328,7 @@ _safety_disproving_once(
     ARIADNE_LOG(5,"Creating the analyser for forward reachability...");
 
     AnalyserPtrType analyser = _get_tuned_analyser(verInput,parameters_identifiers(params),
-            _safety_coarse_outer_approximation,_dominating_reachability_restriction,safety_constraint,
+            _safety_coarse_outer_approximation,_safety_reachability_restriction,safety_constraint,
             EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,ANALYSER_TAB_OFFSET,LOWER_SEMANTICS);
 
 	try {
