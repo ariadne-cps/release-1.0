@@ -458,7 +458,7 @@ Verifier::_dominance(
 {
 	ARIADNE_ASSERT(dominating.getProjection().size() == dominated.getProjection().size());
 
-	ARIADNE_LOG(1, "Dominance checking...");
+	ARIADNE_LOG(2, "Dominance checking...");
 
 	if (_settings->plot_results)
 		_plot_dirpath_init(dominating.getSystem().name() + "&" + dominated.getSystem().name());
@@ -471,17 +471,17 @@ Verifier::_dominance(
 		ARIADNE_LOG(2, "Accuracy " << accuracy);
 
 		if (_dominance_proving_once(dominating, dominated, params, accuracy)) {
-			ARIADNE_LOG(3, "Dominates.");
+			ARIADNE_LOG(2, "Dominates.");
 			return true;
 		}
 
 		if (_dominance_disproving_once(dominating, dominated, params, accuracy)) {
-			ARIADNE_LOG(3, "Does not dominate.");
+			ARIADNE_LOG(2, "Does not dominate.");
 			return false;
 		}
     }
 
-	ARIADNE_LOG(3, "Indeterminate.");
+	ARIADNE_LOG(2, "Indeterminate.");
 	return indeterminate;
 }
 

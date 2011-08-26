@@ -131,9 +131,15 @@ tune_settings(
 
     ARIADNE_LOG(2, "Derivatives evaluation source: " << (outer_approximation ? "Outer approximation" : "Domain box"));
     HybridFloatVector hmad = getHybridMaximumAbsoluteDerivatives(*_system,outer_approximation,domain);
+    ARIADNE_LOG(2, "System parameters: " << dynamic_cast<HybridAutomaton&>(*_system).parameters());
     ARIADNE_LOG(2, "Derivatives bounds: " << hmad);
     _settings->grid = HybridGrid(getHybridGrid(hmad,domain,EQUAL_GRID_FOR_ALL_LOCATIONS));
     ARIADNE_LOG(2, "Grid lengths: " << _settings->grid.lengths());
+
+    // Checking for grid and reachability restriction grid equality is required for upper semantics only
+    if (reachability_restriction && semantics == UPPER_SEMANTICS)
+        ARIADNE_ASSERT_MSG(_settings->grid == reachability_restriction->grid(),
+            "For upper semantics, the analyser grid and the reachability restriction grid must match.");
 }
 
 
@@ -973,14 +979,16 @@ _getSplitParameterSetList() const
     HybridFloatVector hmad = getHybridMaximumAbsoluteDerivatives(*_system,
             _settings->reachability_restriction,_settings->domain_bounds);
 
-    ARIADNE_LOG(2,"hmad: " << hmad);
+    ARIADNE_LOG(2,"Hybrid Maximum Absolute Derivatives: " << hmad);
 
     if (!initial_parameter_set.empty()) {
 
-        HybridGridTreeSet discretised_domain(_settings->grid);
+        HybridGridTreeSet discretised_domain;
         if (_settings->reachability_restriction) {
+            ARIADNE_LOG(2,"Creating the discretised domain from the reachability restriction...");
             discretised_domain.adjoin(*_settings->reachability_restriction);
         } else {
+            ARIADNE_LOG(2,"Creating the discretised domain from the bounding domain...");
             discretised_domain.adjoin_outer_approximation(_settings->domain_bounds,accuracy);
         }
         /* We recombine since large cells lie in the center of the region (at least when the tree set represents a
@@ -990,7 +998,8 @@ _getSplitParameterSetList() const
 
         Float initial_score = _getDerivativeWidthsScore(hmad,discretised_domain);
 
-        ARIADNE_LOG(2,"Initial score: " << initial_score);
+        ARIADNE_LOG(2,"Discretised domain size: " << discretised_domain.size());
+        ARIADNE_LOG(2,"Evaluating split sets...");
 
         working_scored_parameter_set_list.push_back(std::pair<Float,RealParameterSet>(initial_score,initial_parameter_set));
 
@@ -1002,6 +1011,7 @@ _getSplitParameterSetList() const
             ARIADNE_LOG(3,"Result parameter set list size = " << result_parameter_set_list.size());
         } while (working_scored_parameter_set_list.size() > 0);
 
+        ARIADNE_LOG(2,"Final parameter set list size: " << result_parameter_set_list.size());
     }
 
 	return result_parameter_set_list;

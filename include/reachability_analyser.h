@@ -395,8 +395,9 @@ class HybridReachabilityAnalyserSettings {
     HybridConstraintSet constraint_set;
 
     //! \brief Set the restriction for reachability.
-    //! \details Applied only to the chain reach routines. Assumed as not used if not assigned.
-    //! (while, on the contrary, an empty reachable set would restrict any set to the empty set).
+    //! \details Be aware that such restriction is used for upper semantics strictly (tree set intersection), while for
+    //! lower semantics the bounding boxes of the cells are employed instead. This permits to have different grids for different semantics.
+    //! Hence, the analyser grid must match the reachability restriction grid for upper semantics only.
     boost::shared_ptr<HybridGridTreeSet> reachability_restriction;
 
     //! \brief The grid to use.
