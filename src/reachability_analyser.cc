@@ -1011,8 +1011,12 @@ _getSplitParameterSetList() const
             ARIADNE_LOG(3,"Result parameter set list size = " << result_parameter_set_list.size());
         } while (working_scored_parameter_set_list.size() > 0);
 
-        ARIADNE_LOG(2,"Final parameter set list size: " << result_parameter_set_list.size());
+    } else {
+        // We add the empty set, since not splitting or having no splittable parameters is the same
+        result_parameter_set_list.push_back(initial_parameter_set);
     }
+
+    ARIADNE_LOG(2,"Final parameter set list size: " << result_parameter_set_list.size());
 
 	return result_parameter_set_list;
 }
