@@ -219,6 +219,8 @@ private:
 
     void _compute() 
     {
+        const Float accuracy_divider = 1 << _accuracy;
+
         while (true) {
 			_inp_mutex.lock();
 
@@ -247,7 +249,7 @@ private:
 			    // Update the epsilon
 				for (ELS::const_iterator encl_it = current_reach_enclosures.begin(); encl_it != current_reach_enclosures.end(); ++encl_it) {
 					Vector<Float> encl_widths = encl_it->second.bounding_box().widths();
-					Vector<Float> minimum_cell_lengths = _grid[encl_it->first].lengths()/(1<<_accuracy);
+					Vector<Float> minimum_cell_lengths = _grid[encl_it->first].lengths()/accuracy_divider;
 					_epsilon[encl_it->first] = max_elementwise(_epsilon[encl_it->first],minimum_cell_lengths);
 				}
 

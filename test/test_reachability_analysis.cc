@@ -132,7 +132,6 @@ class TestReachabilityAnalysis
 
         DiscreteLocation loc(1);
         Box bounding_box(2,bound);
-        analyser.verbosity=0;
         analyser.settings().domain_bounds[loc] = bounding_box;
         cout << "Computing timed evolve set" << endl;
         HybridGridTreeSet hybrid_lower_evolve=analyser.lower_evolve(initial_set,reach_time);
@@ -152,7 +151,7 @@ class TestReachabilityAnalysis
         cout << "Computing timed reachable set" << endl;
         DiscreteLocation loc(1);
         Box bounding_box(2,bound);
-        analyser.settings().domain_bounds[loc] = Box(2,-10.0,10.0,-10.0,10.0);
+        analyser.settings().domain_bounds[loc] = bounding_box;
         HybridGridTreeSet upper_evolve_set=analyser.upper_evolve(initial_set,reach_time);
         cout << "upper_evolve_set="<<upper_evolve_set<<std::endl;
         HybridGridTreeSet upper_reach_set=analyser.upper_reach(initial_set,reach_time);
@@ -175,8 +174,7 @@ class TestReachabilityAnalysis
             =Ariadne::bounding_boxes(build_system().state_space(),bound);
         Box bounding_box=bounding_boxes[loc];
 
-        analyser.verbosity=0;
-        analyser.settings().domain_bounds = bounding_boxes;
+        analyser.settings().domain_bounds[loc] = bounding_box;
         HybridGridTreeSet chain_reach_set=analyser.outer_chain_reach(initial_set);
         plot("test_reachability_analyser-map_chain_reach.png",bounding_box,chain_reach_set[loc],initial_set[loc]);
     }

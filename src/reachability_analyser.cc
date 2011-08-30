@@ -641,7 +641,7 @@ _outer_chain_reach_forward_pushTargetEnclosures(
 		std::list<EnclosureType>& result_enclosures,
 		bool use_domain_checking) const
 {
-    long numCellDivisions = (1<<_settings->maximum_grid_depth);
+    Float numCellDivisions = (1<<_settings->maximum_grid_depth);
 
 	ARIADNE_LOG(5,"Checking transitions...");
 
@@ -900,7 +900,7 @@ _filter_enclosures(
 		 * otherwise, push indiscriminately.
 		 */
 		if (_settings->enable_lower_pruning) {
-			Float coverage_ratio = (Float)adjoined_evolve_sizes.find(loc)->second/(Float)superposed_evolve_sizes.find(loc)->second;
+			Float coverage_ratio = (Float)adjoined_evolve_sizes.find(loc)->second/((Float)superposed_evolve_sizes.find(loc)->second);
 
 			if (initial_enclosures.size() <= 2 || rand() < 2*coverage_ratio*RAND_MAX)
 				initial_enclosures.push_back(encl);
@@ -1047,7 +1047,7 @@ _getDerivativeWidthsScore(
         }
     }
 
-    return result/discretised_domain.size();
+    return result/((Float)discretised_domain.size());
 }
 
 
@@ -1059,6 +1059,7 @@ _getSplitDerivativeWidthsScores(
         const HybridGridTreeSet& discretised_domain) const
 {
     const Interval& param_val = param.value();
+    const Float discretised_domain_size = discretised_domain.size();
 
     Float left_result = 0;
     Float right_result = 0;
@@ -1087,7 +1088,7 @@ _getSplitDerivativeWidthsScores(
         }
     }
 
-    return std::pair<Float,Float>(left_result/discretised_domain.size(),right_result/discretised_domain.size());
+    return std::pair<Float,Float>(left_result/discretised_domain_size,right_result/discretised_domain_size);
 }
 
 
@@ -1162,8 +1163,6 @@ _updateSplitParameterSetLists(
     } else {
         result_parameter_set_list.push_back(working_parameter_set);
     }
-
-    //getchar();
 }
 
 
@@ -1201,10 +1200,12 @@ HybridFloatVector min_cell_widths(
 		const HybridGrid& grid,
 		int maximum_grid_depth)
 {
+    const Float divider = 1 << maximum_grid_depth;
+
 	HybridFloatVector result;
 
 	for (HybridGrid::const_iterator grid_it = grid.begin(); grid_it != grid.end(); ++grid_it)
-		result.insert(std::pair<DiscreteLocation,Vector<Float> >(grid_it->first,grid_it->second.lengths()/(1 << maximum_grid_depth)));
+		result.insert(std::pair<DiscreteLocation,Vector<Float> >(grid_it->first,grid_it->second.lengths()/divider));
 
 	return result;
 }

@@ -1051,6 +1051,7 @@ getMaximumEnclosureCell(
 	// NOTE: it is preferable to have the ratio slightly lesser than an integer multiple of the grid cell, so that
 	// the overapproximation error due to discretization is minimized
 	static const double RATIO = 1.9;
+	const Float divider = (1<<maximum_grid_depth);
 
 	const uint css = hgrid.locations_begin()->second.lengths().size();
 
@@ -1063,7 +1064,7 @@ getMaximumEnclosureCell(
 				result[i] = hg_it->second.lengths()[i];
 	}
 
-	return RATIO*result/(1<<maximum_grid_depth);
+	return RATIO*result/divider;
 }
 
 
@@ -1074,6 +1075,8 @@ getHybridMaximumStepSize(
 		int maximum_grid_depth,
 		Semantics semantics)
 {
+    const Float divider = (1<<maximum_grid_depth);
+
 	// We choose a coefficient for upper semantics such that an enclosure at maximum size is able to cross
 	// urgent transitions in one step. For lower semantics we prefer to have a finer result.
 	Float coefficient = (semantics == UPPER_SEMANTICS ? 2.0 : 1.0);
@@ -1088,7 +1091,7 @@ getHybridMaximumStepSize(
 		Float mss = 0.0;
 		for (uint i=0;i<dim;i++)
 			if (hfv_it->second[i] > 0)
-				mss = max(mss,hgrid[hfv_it->first].lengths()[i]/(1 << maximum_grid_depth)/hfv_it->second[i]);
+				mss = max(mss,hgrid[hfv_it->first].lengths()[i]/divider/hfv_it->second[i]);
 
 		// If the step size is still zero, it means that the derivatives are zero on each dimension. Hence we can
 		// use any large value we want.
