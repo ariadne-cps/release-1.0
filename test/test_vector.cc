@@ -47,6 +47,7 @@ void
 TestVector::test() 
 {
     ARIADNE_TEST_CALL(test_concept());
+    ARIADNE_TEST_CALL(test_misc());
 }
 
 void
@@ -104,134 +105,124 @@ TestVector::test_misc()
     int n=3;
     Float vptr[3]={-4.0,3.0,1.0};
     Float x=1.5;
-
+    
+    // Test constructors for Vector<Float>
     Vector<Float> v0;
-    cout << "v0.size()=" << v0.size() << endl;
-    cout << "v0=" << flush; cout << v0 << endl;
+    ARIADNE_TEST_EQUAL(v0.size(),0);
     Vector<Float> v1(n,vptr);
-    cout << "v1=" << v1 << endl;
+    ARIADNE_TEST_EQUAL(v1.size(),n);
     Vector<Float> v2=Vector<Float>("[2.375,4.25,-1.25]");
-    cout << "v2=" << v2 << endl;
-    cout << "norm(v1)=" << norm(v1) << "  norm(v2)=" << norm(v2) << endl;
-    assert(norm(v1)==4);
-    assert(norm(v2)==4.25);
+    ARIADNE_TEST_EQUAL(norm(v1),4);
+    ARIADNE_TEST_EQUAL(norm(v2),4.25);
 
     Vector<Float> v3(1);
-    cout << "v3=" << v3 << endl;
+    ARIADNE_TEST_EQUAL(v3.size(),1);
+    ARIADNE_TEST_EQUAL(v3,Vector<Float>("[0.0]"));
     Vector<Float> v4=v2;
-    cout << "v4=" << v4 << endl;
-    cout << endl;
+    ARIADNE_TEST_EQUAL(v4,v2);
     
+    // Test arithmetic operators for Vector<Float>
     Vector<Float> vf0;
     v1=Vector<Float>("[0.25,-1.5]");
     v2=Vector<Float>("[-0.5,2.25]");
     vf0=-v1;
-    cout << vf0 << " = -" << v1 << endl;
-    vf0=Vector<Float>(v1)+v2;
-    cout << vf0 << " = " << v1 << " + " << v2 << endl;
-    vf0=Vector<Float>(v1)-v2;
-    cout << vf0 << " = " << v1 << " - " << v2 << endl;
-    vf0=x*Vector<Float>(v2);
-    cout << vf0 << " = " << x << " * " << v2 << endl;
+    ARIADNE_TEST_EQUAL(vf0,Vector<Float>("[-0.25,1.5]"));    
+    vf0=v1+v2;
+    ARIADNE_TEST_EQUAL(vf0,Vector<Float>("[-0.25,0.75]"));    
+    vf0=v1-v2;
+    ARIADNE_TEST_EQUAL(vf0,Vector<Float>("[0.75,-3.75]"));    
+    vf0=x*v2;
+    ARIADNE_TEST_EQUAL(vf0,Vector<Float>("[-0.75,3.375]"));    
     vf0=Vector<Float>(v1)*x;
-    cout << vf0 << " = " << v1 << " * " << x << endl;
-    vf0=Vector<Float>(v1)/x;
-    cout << vf0 << " = " << v1 << " / " << x << endl;
-    cout << endl;
+    ARIADNE_TEST_EQUAL(vf0,Vector<Float>("[0.375,-2.25]"));
+    x = 2.0;
+    vf0=v1/x;
+    ARIADNE_TEST_EQUAL(vf0,Vector<Float>("[0.125,-0.75]"));    
+    // Test addition and multiplication with Integers
+    int i = 2;
+    vf0=v1*i;
+    ARIADNE_TEST_EQUAL(vf0,Vector<Float>("[0.5,-3.0]"));    
+    vf0=i*v2;
+    ARIADNE_TEST_EQUAL(vf0,Vector<Float>("[-1.0,4.5]"));    
+    vf0=v1/i;
+    ARIADNE_TEST_EQUAL(vf0,Vector<Float>("[0.125,-0.75]"));    
   
+    // Test Vector<Interval>
     Vector< Interval > iv1=Vector<Interval>("[[0.984375,1.015625],[2.25,2.375],[4.0,4.375],[-0.03125,0.015625]]");
-    cout << "iv1=" << iv1 << endl;
-    cout << "norm(iv1)=" << norm(iv1) << endl;
-    cout << "norm(iv1).upper()=" << norm(iv1).upper() << endl;
+    ARIADNE_TEST_EQUAL(iv1,Vector<Interval>("[[0.984375,1.015625],[2.25,2.375],[4.0,4.375],[-0.03125,0.015625]]"));
+    ARIADNE_TEST_EQUAL(norm(iv1).lower(),4.0);
+    ARIADNE_TEST_EQUAL(norm(iv1).upper(),4.375);
 
     Vector< Interval > iv2=Vector<Interval>("[[-1,1],[-1,1]]");
-    cout << "iv2=" << iv2 << endl;
+    ARIADNE_TEST_EQUAL(iv2,Vector<Interval>("[[-1,1],[-1,1]]"));
     Vector< Interval > iv3(3);
-    cout << "iv3=" << iv3 << endl;
+    ARIADNE_TEST_EQUAL(iv3,Vector<Interval>("[[0,0],[0,0],[0,0]]"));
     iv3=Vector<Interval>("[[4.25,4.25],[2.375,2.375]]");
-    cout << "iv3=" << iv3 << endl;
+    ARIADNE_TEST_EQUAL(iv3,Vector<Interval>("[[4.25,4.25],[2.375,2.375]]"));
     Interval ix=Interval(-2,1);
  
     Vector< Interval > iv0;
-    cout << "iv0=" << iv0 << endl;
     iv1=iv0;
-    cout << "iv1=" << iv1 << endl;
+    ARIADNE_TEST_EQUAL(iv1,iv0);
     iv1=iv2;
-    cout << "iv1=" << iv1 << endl;
-    cout << endl;
-
-    Interval ix2=iv2(0);
-    Interval ix3=iv3(0);
-    Interval ix1=ix2+ix3;
-    ix1=ix2+ix3;
+    ARIADNE_TEST_EQUAL(iv1,iv2);
   
-    cout << "iv2=" << iv2 << ", iv3=" << iv3 << endl;
+
     iv1=iv2+iv3;
-    cout << iv1 << " = " << iv2 << " + " << iv3 << endl;
+    ARIADNE_TEST_EQUAL(iv1,Vector<Interval>("[[3.25,5.25],[1.375,3.375]]"));  
     iv1=iv2-iv3;
-    cout << iv1 << " = " << iv2 << " - " << iv3 << endl;
+    ARIADNE_TEST_EQUAL(iv1,Vector<Interval>("[[-5.25,-3.25],[-3.375,-1.375]]"));  
     iv1=ix*iv3;
-    cout << iv1 << " = " << ix << " * " << iv3 << endl;
+    ARIADNE_TEST_EQUAL(iv1,Vector<Interval>("[[-8.5,4.25],[-4.75,2.375]]"));  
     iv1=iv2*ix;
-    cout << iv1 << " = " << iv2 << " * " << ix << endl;
+    ARIADNE_TEST_EQUAL(iv1,Vector<Interval>("[[-2,2],[-2,2]]"));  
     ix=Interval(1,2);
     iv1=iv2/ix;
-    cout << iv1 << " = " << iv2 << " / " << ix << endl;
-    cout << endl;
-   
+    ARIADNE_TEST_EQUAL(iv1,iv2);  
+
     v1==Vector<Float>("[-1.25,0.75]");
     iv0=iv1+v1;
-    cout << iv0 << " = " << iv1 << " + " << v1 << endl;
+    ARIADNE_TEST_EQUAL(iv0,Vector<Interval>("[[-0.75,1.25],[-2.5,-0.5]]"));
     iv0=v1+iv1;
-    cout << iv0 << " = " << v1 << " + " << iv1 << endl;
+    ARIADNE_TEST_EQUAL(iv0,Vector<Interval>("[[-0.75,1.25],[-2.5,-0.5]]"));
     iv0=iv1-v1;
-    cout << iv0 << " = " << iv1 << " - " << v1 << endl;
+    ARIADNE_TEST_EQUAL(iv0,Vector<Interval>("[[-1.25,0.75],[0.5,2.5]]"));
     iv0=v1-iv1;
-    cout << iv0 << " = " << v1 << " - " << iv1 << endl;
+    ARIADNE_TEST_EQUAL(iv0,Vector<Interval>("[[-0.75,1.25],[-2.5,-0.5]]"));
     iv0=x*iv1;
-    cout << iv0 << " = " << x << " * " << iv1 << endl;
+    ARIADNE_TEST_EQUAL(iv0,Vector<Interval>("[[-2,2],[-2,2]]"));
     iv0=ix*v1;
-    cout << iv0 << " = " << ix << " * " << v1 << endl;
+    ARIADNE_TEST_EQUAL(iv0,Vector<Interval>("[[0.25,0.5],[-3,-1.5]]"));
     iv0=iv1*x;
-    cout << iv0 << " = " << iv1 << " * " << x << endl;
+    ARIADNE_TEST_EQUAL(iv0,Vector<Interval>("[[-2,2],[-2,2]]"));
     iv0=v1*ix;
-    cout << iv0 << " = " << v1 << " * " << ix << endl;
+    ARIADNE_TEST_EQUAL(iv0,Vector<Interval>("[[0.25,0.5],[-3,-1.5]]"));
     iv0=iv1/x;
-    cout << iv0 << " = " << iv1 << " / " << x << endl;
+    ARIADNE_TEST_EQUAL(iv0,Vector<Interval>("[[-0.5,0.5],[-0.5,0.5]]"));
     iv0=v1/ix;
-    cout << iv0 << " = " << v1 << " / " << ix << endl;
+    ARIADNE_TEST_EQUAL(iv0,Vector<Interval>("[[0.125,0.25],[-1.5,-0.75]]"));
+    // Test addition and multiplication with Integers
+    iv1=Vector<Interval>("[[-0.25,0.25],[-3.0,1.5]]");
+    iv0=iv1*i;
+    ARIADNE_TEST_EQUAL(iv0,Vector<Interval>("[[-0.5,0.5],[-6.0,3.0]]"));
+    iv1=Vector<Interval>("[[-2,2],[-0.75,1.25]]");
+    iv0=i*iv1;
+    ARIADNE_TEST_EQUAL(iv0,Vector<Interval>("[[-4.0,4.0],[-1.5,2.5]]"));
+    iv0=iv0/i;
+    ARIADNE_TEST_EQUAL(iv0,iv1);
 
+
+/*
     iv0=v1;
     iv0/=ix;
     iv0=Vector<Interval>("[2,1]");
     iv1=Vector<Interval>("[0,1]");
-    /*
-      ARIADNE_TEST_ASSERT( (iv0+=Vector<Interval>("[0,1]")) == Vector<Interval>("[2,2]") );
-      ARIADNE_TEST_ASSERT( (iv0-=Vector<Interval>("[0,1]")) == Vector<Interval>("[2,1]") );
-      ARIADNE_TEST_ASSERT( (iv0*=2) == Vector<Interval>("[4,2]") );
-      ARIADNE_TEST_ASSERT( (iv0/=4) == Vector<Interval>("[1,0.5]") );
-    */
+    ARIADNE_TEST_EQUAL( (iv0+=iv1), Vector<Interval>("[2,2]") );
+//    ARIADNE_TEST_ASSERT( (iv0-=Vector<Interval>("[0,1]")) == Vector<Interval>("[2,1]") );
+//    ARIADNE_TEST_ASSERT( (iv0*=2) == Vector<Interval>("[4,2]") );
+//    ARIADNE_TEST_ASSERT( (iv0/=4) == Vector<Interval>("[1,0.5]") );
 
-    /*
-      cout << "test_vector_slice" << endl;
-      v1=Vector<Float>("[-1.25,0.75,-0.5,-4.25,2.375]");
-      cout << v1 << endl;
-      VectorSlice<Float> vs1(2,v1.begin()+2,2);
-      cout << vs1 << endl;
-      VectorSlice<Float> vs2(2,v1.begin(),3);
-      cout << vs2 << endl;
-  
-      iv1=vs1+vs2;
-      cout << iv1 << endl;
-      iv1=vs1-vs2;
-      cout << iv1 << endl;
-      iv1=x*vs1;
-      cout << iv1 << endl;
-      iv1=vs1*x;
-      cout << iv1 << endl;
-      iv1=vs1/x;
-      cout << iv1 << endl;
-    */
+*/
 
 }
 

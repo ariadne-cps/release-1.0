@@ -85,20 +85,41 @@ Vector<Interval> operator*(const Float& s, const Vector<Interval>& v)
   return v*s;
 }
 
-Vector<Interval> operator*(const Vector<Float>& v, const Interval& s)
+Vector<Interval> operator*(const Vector<Interval>& v, const int& s)
 {
-  Vector<Interval> result(v.size());
-
-  for (size_t i=0; i<result.size(); i++)
-    result[i]=v[i]*s;
-
-  return result;
+  return v*Interval(s);
 }
 
-Vector<Interval> operator*(const Interval& s, const Vector<Float>& v)
+Vector<Interval> operator*(const int& s, const Vector<Interval>& v)
 {
   return v*s;
 }
+
+Vector<Interval> operator/(const Vector<Interval>& v, const Float& s)
+{
+  return v/Interval(s);
+}
+
+Vector<Interval> operator/(const Vector<Interval>& v, const int& s)
+{
+  return v/Interval(s);
+}
+
+Vector<Float> operator*(const Vector<Float>& v, const int& s)
+{
+  return v*Float(s);
+}
+
+Vector<Float> operator*(const int& s, const Vector<Float>& v)
+{
+  return v*s;
+}
+
+Vector<Float> operator/(const Vector<Float>& v, const int& s)
+{
+  return v/Float(s);
+}
+
 
 bool contains(const Vector<Interval>& v1, const Vector<Float>& v2)
 {

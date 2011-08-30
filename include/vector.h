@@ -184,13 +184,19 @@ typedef ublas::range Range;
 inline Range range(uint start, uint stop) { return Range(start,stop); }
 inline Slice slice(uint size, uint start, uint stride) { return Slice(size,start,stride); }
 
-
 Vector<Interval> operator*(const Vector<Interval>& v, const Float& s);
 Vector<Interval> operator*(const Float& s, const Vector<Interval>& v);
 
-Vector<Interval> operator*(const Vector<Float>& v, const Interval& s);
-Vector<Interval> operator*(const Interval& s, const Vector<Float>& v);
+Vector<Interval> operator*(const Vector<Interval>& v, const int& s);
+Vector<Interval> operator*(const int& s, const Vector<Interval>& v);
 
+Vector<Interval> operator/(const Vector<Interval>& v, const int& s);
+Vector<Interval> operator/(const Vector<Interval>& v, const Float& s);
+
+Vector<Float> operator*(const Vector<Float>& v, const int& s);
+Vector<Float> operator*(const int& s, const Vector<Float>& v);
+
+Vector<Float> operator/(const Vector<Float>& v, const int& s);
 
 template<class X>
 Vector<X> operator*(const Vector<Float>& v, const X& s)
