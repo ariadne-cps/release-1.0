@@ -191,7 +191,7 @@ Vector<Interval> operator*(const Float& s, const Vector<Interval>& v);
 Vector<Interval> operator*(const Vector<Float>& v, const Interval& s);
 Vector<Interval> operator*(const Interval& s, const Vector<Float>& v);
 
-/*
+
 template<class X>
 Vector<X> operator*(const Vector<Float>& v, const X& s)
 {
@@ -208,7 +208,19 @@ Vector<X> operator*(const X& s, const Vector<Float>& v)
 {
   return v*s;
 }
-*/
+
+template<class X>
+Vector<X> operator/(const Vector<Float>& v, const X& s)
+{
+  Vector<X> result(v.size());
+
+  for (size_t i=0; i<result.size(); i++)
+    result[i]=v[i]/s;
+
+  return result;
+}
+
+
 
 template<class X>
 Vector<X> operator+(const Vector<X>& v)

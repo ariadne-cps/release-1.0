@@ -106,7 +106,7 @@ int main(int argc,char *argv[])
 	/// Verification
 
 	Verifier verifier;
-	verifier.settings().enable_backward_refinement_for_testing_inclusion = true;
+	verifier.settings().enable_backward_refinement_for_safety_proving = true;
 	verifier.settings().maximum_parameter_depth = 2;
 	verifier.settings().plot_results = false;
 

@@ -88,7 +88,7 @@ typedef VectorFunction RealVectorFunction;
 typedef ScalarFunction RealScalarFunction;
 
 ImageSetHybridEvolver::ImageSetHybridEvolver(const SystemType& system)
-    : EvolverBase(system)
+    : EvolverBase<SystemType,HybridTaylorSet>(system)
     , _settings(new SettingsType(system))
     , _toolbox(new TaylorCalculus())
     , free_cores(0)
