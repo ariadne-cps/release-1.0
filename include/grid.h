@@ -118,6 +118,7 @@ class Grid {
     Vector<Float> point(const array<double>& a) const;
     Vector<Interval> box(const array<double>& l, const array<double>& u) const;
     Vector<Interval> box(const GridCell& cell) const;
+    Box primary_cell() const;
   private:
     // Create new data
     void _create(const Vector<Float>& o, const Vector<Float>& l);

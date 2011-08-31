@@ -242,6 +242,16 @@ Vector<Interval> Grid::box(const array<double>& lower, const array<double>& uppe
     return res;
 }
 
+Box Grid::primary_cell() const
+{
+    Box res(this->dimension());
+    for(size_type i=0; i!=res.size(); ++i) {
+        res[i]=Interval(_data._origin[i],
+                        _data._origin[i]+this->_data._lengths[i]);
+    }
+    return res;
+}
+
 Grid project_down(const Grid& original_grid, const Vector<uint>& indices)
 {
 	uint original_space_size = original_grid.dimension();

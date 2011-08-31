@@ -121,6 +121,13 @@ AC_CHECK_LIB([$lib],[main],[ARIADNE_NONPKGCONFIG_LIBS="$ARIADNE_NONPKGCONFIG_LIB
 lib=boost_thread-mt
 AC_CHECK_LIB([$lib],[main],[ARIADNE_NONPKGCONFIG_LIBS="$ARIADNE_NONPKGCONFIG_LIBS -l$lib"],[AC_MSG_ERROR([Boost thread library is missing. You must install the Boost C++ libraries.])])
 
+# Check for Buddy BDD library header (required)
+AC_CHECK_HEADER([bdd.h],,[AC_MSG_ERROR([Buddy BDD library development files are missing. You must install them.])])
+
+# Check for Buddy BDD library (required)
+lib=bdd
+AC_CHECK_LIB([$lib],[main],[ARIADNE_NONPKGCONFIG_LIBS="$ARIADNE_NONPKGCONFIG_LIBS -l$lib"],[AC_MSG_ERROR([Buddy BDD library is missing. You must install it.])])
+
 # Check for Doxygen (optional)
 AC_PATH_PROG(DOXYGEN, doxygen)
 if test -f "${DOXYGEN}"; then

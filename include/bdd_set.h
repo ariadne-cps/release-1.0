@@ -1,0 +1,484 @@
+/***************************************************************************
+ *            bdd_set.h
+ *
+ *  Copyright  2011  Davide Bresolin
+ *            davide.bresolin@univr.it
+ *
+ ****************************************************************************/
+
+/*
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Library General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Templece Place - Suite 330, Boston, MA 02111-1307, USA.
+ */
+
+/*! \file bdd_set.h
+ *  \brief Implicit representation of %BDDTreeSets using Binary Decision Diagrams.
+ */
+
+#ifndef ARIADNE_BDD_SET_H
+#define ARIADNE_BDD_SET_H
+
+#include <iostream>
+#include <string>
+
+#include <boost/iterator/iterator_facade.hpp>
+#include <boost/shared_ptr.hpp>
+
+#include "tribool.h"
+
+#include "box.h"
+#include "list_set.h"
+
+#include "numeric.h"
+
+#include "set_interface.h"
+#include "taylor_set.h"
+#include "function_set.h"
+
+#include "grid.h"
+#include "graphics_interface.h"
+
+#include "bdd.h"
+
+using namespace std;
+using namespace Ariadne;
+
+namespace Ariadne {
+
+/*Some type definitions*/
+typedef std::vector<bool> BooleanArray;
+typedef array<int> IndexArray;
+typedef array<unsigned int> SizeArray;
+
+typedef unsigned short dimension_type;
+
+/*Some pre-declarations*/
+class Grid;
+// class BDDCell;
+class BDDTreeSet;
+
+class BDDTreeConstIterator;
+
+/*Declarations of classes in other files*/
+template<class BS> class ListSet;
+
+// std::ostream& operator<<(std::ostream& os, const BDDCell& cell);
+// std::ostream& operator<<(std::ostream& os, const BDDTreeCursor& treecursor);
+std::ostream& operator<<(std::ostream& os, const BDDTreeSet& set);
+
+// bool subset(const BDDCell& cell, const BDDTreeSet& set);
+// bool overlap(const BDDCell& cell, const BDDTreeSet& set);
+bool subset(const BDDTreeSet& set1, const BDDTreeSet& set2);
+bool superset(const BDDTreeSet& set1, const BDDTreeSet& set2);
+bool disjoint(const BDDTreeSet& set1, const BDDTreeSet& set2);
+bool overlap(const BDDTreeSet& set1, const BDDTreeSet& set2);
+
+BDDTreeSet join(const BDDTreeSet& set1, const BDDTreeSet& set2);
+BDDTreeSet intersection(const BDDTreeSet& set1, const BDDTreeSet& set2);
+BDDTreeSet difference(const BDDTreeSet& set1, const BDDTreeSet& set2);
+
+BDDTreeSet outer_approximation(const Box& box, const Grid& grid, const uint subdiv);
+BDDTreeSet outer_approximation(const CompactSetInterface& set, const Grid& grid, const uint subdiv);
+BDDTreeSet outer_approximation(const CompactSetInterface& set, const uint subdiv);
+template<class BS> BDDTreeSet outer_approximation(const ListSet<BS>& set, const uint subdiv);
+BDDTreeSet inner_approximation(const OpenSetInterface& set, const Grid& grid, const uint height, const uint subdiv);
+
+// TO DO: Implement serialization
+// template<class A> void serialize(A& archive, const BDDTreeSet& set, const uint version);
+
+/*! \brief The BDDTreeSet class that represents a set of cells on a variable size grid.
+ * The cells can be enabled or disabled (on/off), indicating whether they belong to the set or not.
+ *
+ * A Binary Decision Diagram (BDDs) is used to represent the set in a symbolic way. Every cell 
+ * is identified by a path from the root of the BDD. Going down one level in the BDD correspond
+ * to splitting the cell into two subcells on one dimension. The false branch is the subcell with
+ * smaller values, while the true branch is the subcell with greater values.
+ *
+ * The size of the cells is determined by the PrimaryCell, that is not necessarily the root of the
+ * BDD. In general, is an internal cell of the BDD.
+ * 
+ * TO DO: improve description.
+ */
+class BDDTreeSet : public DrawableInterface {
+  private:
+    Grid _grid;
+    uint _primary_cell_depth;
+    bdd _bdd;
+  public:
+    /*! \brief A short name for the constant iterator */
+    typedef BDDTreeConstIterator const_iterator;
+
+    //@{
+    //! \name Constructors
+
+    /*! \brief Create a %BDDTreeSet based on zero dimensions.
+     *  This constructor is needed to use the Boost Serialization library.
+     */
+    BDDTreeSet( );
+
+    /*! \brief The copy constructor.
+     */
+    BDDTreeSet( const BDDTreeSet & set );
+
+    /*! A simple constructor that creates the [0, 1]*...*[0, 1] cell in the
+     *  \a dimension - dimensional space, with primary cell depth = 0. 
+     * If enable == true then the cell is enabled.
+     */
+    explicit BDDTreeSet( const uint dimension, const bool enable = false );
+
+    /*! \brief Construct a set with cells based on \a grid. 
+     * If enable == true then the primary cell is enabled.
+     */
+    explicit BDDTreeSet( const Grid& grid, const bool enable = false  );
+
+    /*! \brief Construct an empty tree. The \a domain is used to define depth of the primary cell
+     * so that the root of the BDD covers it.
+     */
+    explicit BDDTreeSet( const Grid& grid, const Box & domain );
+
+    //@}
+
+    //@{
+    //! \name Cloning/Copying/Assignment
+
+    /*! \brief The copy assignment operator, which copies all the data
+     *  including the paving tree if necessary.
+     */
+    BDDTreeSet& operator=( const BDDTreeSet & set );
+
+    /*! \brief Return a copy of the %BDDTreeSet.
+     */
+    BDDTreeSet* clone() const;
+
+    //@}
+
+    /*! \brief Destructor, removes all the dynamically allocated data.
+     */
+    virtual ~BDDTreeSet();
+
+    //@{
+    //! \name Properties
+
+    /*! \brief True if the set is empty. */
+    bool empty() const;
+
+    /*! \brief The Binary Decision Diagram representing the enabled cells. */
+    bdd enabled_cells() const;
+
+    /*! \brief The number of activated cells in the set. */
+    size_t size() const;
+
+    /*! \brief The dimension of the set. */
+    uint dimension() const;
+
+    /*! \brief Returns a constant reference to the underlying grid. */
+    const Grid& grid() const;
+
+    /*! The depth of the BDD, that is the maximum length of a path from the root to a leaf.
+     */
+    uint depth() const;
+
+    /*! The primary cell depth of the BDD, that is the length of the path connecting the root to
+     *  the primary cell.
+     */
+    uint primary_cell_depth() const;
+
+    /*! The measure (area, volume) of the set in Euclidean space. */
+    double measure() const;
+
+    /*! \brief Returns the %Box corresponding to the primary cell of this \a BDDTreeSet
+     */
+    Box primary_cell() const;
+
+    /*! \brief Computes a bounding box for a %BDDTreeSet. */
+    Box bounding_box() const;
+
+    /*! \brief Allows to test if two BDDTreeSet are equal. The method returns true if
+     * the grids are equal and the BBDs are equal.
+     */
+    bool operator==(const BDDTreeSet& anotherBDDTreeSet) const;
+
+    //@}
+
+    //@{
+    //! \name Geometric Predicates
+    
+    /*! \brief Tests if a %BDDTreeSet \a set1 is a subset of \a set2. */
+    bool subset( const BDDTreeSet& set1, const BDDTreeSet& set2 );
+
+    /*! \brief Tests if a %BDDTreeSet \a set1 is a superset of \a set2. */
+    bool superset( const BDDTreeSet& set1, const BDDTreeSet& set2 );
+
+    /*! \brief Tests if two %BDDTreeSets are disjoint.
+     */
+    bool disjoint( const BDDTreeSet& set1, const BDDTreeSet& set2 );
+
+    /*! \brief Tests if two %BDDTreeSets overlap.
+     */
+    bool overlap( const BDDTreeSet& set1, const BDDTreeSet& set2 );
+
+    /*! \brief Tests if a %BDDTreeSet is a subset of a box. */
+    tribool subset( const Box& box ) const;
+
+    /*! \brief Tests if a %BDDTreeSet is a superset of a box. */
+    tribool superset( const Box& box ) const;
+
+    /*! \brief Tests if (the closure of) a %BDDTreeSet is disjoint from a box. */
+    tribool disjoint( const Box& box  ) const;
+
+    /*! \brief Tests if a %BDDTreeSet overlaps a box. */
+    tribool overlaps( const Box& box ) const;
+
+    //@}
+
+    //@{
+    //! \name Geometric Operations
+
+    /*! \brief Clears the set (makes empty set on same grid). */
+    void clear( );
+
+    /*! \brief Join (make union of) two %BDDTreeSet. */
+    BDDTreeSet join( const BDDTreeSet& set1, const BDDTreeSet& set2 );
+
+    /*! \brief The intersection of two %BDDTreeSet. 
+     */
+    BDDTreeSet intersection( const BDDTreeSet& set1, const BDDTreeSet& set2 );
+
+    /*! \brief The difference of two %BDDTreeSet. (Results in set1 minus set2) */
+    BDDTreeSet difference( const BDDTreeSet& set1, const BDDTreeSet& set2 );
+
+    /*! \brief Adjoin (make inplace union with) another %BDDTreeSet. */
+    void adjoin( const BDDTreeSet& set );
+
+    /*! \brief Restrict to (make inplace intersection with) another %BDDTreeSet. */
+    void restrict( const BDDTreeSet& set );
+
+    /*! \brief Remove cells in another %BDDTreeSet. */
+    void remove( const BDDTreeSet& set );
+
+    /*! \brief Restrict to the subset of cells with height (at most) \a height. */
+    void restrict_to_height( const uint height );
+
+    //@}
+
+    //@{
+    //! \name Geometric Approximation
+
+    /*! \brief Adjoin an over approximation of a box, computing to the given depth:
+     *   \a subdiv -- defines, how many subdivisions in each dimension from the level of
+     *   the primary cell we should make to get the proper cells for outer approximating \a set.
+     *   \pre The box must have nonempty interior.
+     */
+    void adjoin_over_approximation( const Box& box, const uint subdiv );
+
+    /*! \brief Adjoin an outer approximation of a given set, computing to the given depth.
+     */
+    void adjoin_outer_approximation( const CompactSetInterface& set, const uint subdiv );
+
+    /*! \brief Adjoin a lower approximation to a given set, computing to the given height and depth:
+     *   \a subdiv -- defines, how many subdivisions in each dimension from the level of the
+     *   zero cell we should make to get the proper cells for outer approximating \a set.
+     *   A lower approximation comprises all cells intersecting a given set.
+     */
+    void adjoin_lower_approximation( const OvertSetInterface& set, const uint height, const uint subdiv );
+
+    /*! \brief Adjoin a lower approximation to a given set restricted to the given bounding box,
+     *   computing to the given depth: \a subdiv -- defines, how many subdivisions in each
+     *   dimension from the level of the zero cell we should make to get the proper cells for outer
+     *   approximating \a set. A lower approximation comprises all cells intersecting a given set.
+     */
+    void adjoin_lower_approximation( const OvertSetInterface& set, const Box& bounding_box, const uint subdiv );
+
+    /*! \brief Adjoin a lower approximation to a given set, computing to the given depth
+     *   \a subdiv -- defines, how many subdivisions in each dimension from the level of the
+     *   zero cell we should make to get the proper cells for outer approximating \a set.
+     *   A lower approximation comprises all cells intersecting a given set.
+     */
+    void adjoin_lower_approximation( const LocatedSetInterface& set, const uint subdiv );
+
+    /*! \brief Adjoin an inner approximation to a given set, computing to the given height and depth:
+     *   \a subdiv -- defines, how many subdivisions in each dimension from the level of the
+     *   zero cell we should make to get the proper cells for outer approximating \a set.
+     *   An inner approximation comprises all cells that are sub-cells of the given set.
+     */
+    void adjoin_inner_approximation( const OpenSetInterface& set, const uint height, const uint subdiv );
+
+    /*! \brief Adjoin an inner approximation to a given set restricted to the given bounding box,
+     *   computing to the given depth: \a subdiv -- defines, how many subdivisions in each
+     *   dimension from the level of the zero cell we should make to get the proper cells for outer
+     *   approximating \a set. An inner approximation comprises all cells that are sub-cells of
+     *   the given set.
+     */
+    void adjoin_inner_approximation( const OpenSetInterface& set, const Box& bounding_box, const uint subdiv );
+
+    //@}
+
+    //@{
+    //! \name Iterators
+
+    /*! \brief A constant iterator through the enabled leaf nodes of the subpaving. */
+    const_iterator begin() const;
+
+    /*! \brief A constant iterator to the end of the enabled leaf nodes of the subpaving. */
+    const_iterator end() const;
+
+    //@}
+
+    //@{
+    //! \name Conversions
+
+    /*! \brief Convert to a list of ordinary boxes, unrelated to the grid. */
+    operator ListSet<Box>() const;
+
+    //@}
+
+    //@}
+    //! \name Input/Output
+
+    /*! \brief Draw on a two-dimensional canvas. */
+    void draw(CanvasInterface& canvas) const;
+
+    /*! \brief Write to an output stream. */
+    std::ostream& write(std::ostream& os) const;
+
+    /*! \brief Import the content from the file \a filename.
+     */
+    void import_from_file(const char*& filename);
+
+    /*! \brief Export the tree to the file \a filename (without appending).
+	 */
+    void export_to_file(const char*& filename);
+
+    //@}
+
+};
+
+
+/*! \brief This class allows to iterate through the enabled leaf nodes of BDDTreeSet.
+ * The return objects for this iterator are constant Boxes.
+ */
+class BDDTreeConstIterator : public boost::iterator_facade< BDDTreeConstIterator, Box const, boost::forward_traversal_tag > {
+  private:
+    /*! \brief When set to true indicates that this is the "end iterator" */
+    bool _is_in_end_state;
+
+    friend class boost::iterator_core_access;
+
+    //@{
+    //! \name Iterator Specific
+
+    void increment();
+
+    /*! \brief Returns true if:
+     * both iterators are in the "end iterator" state
+     * both iterators are NOT in the "end iterator" state
+     * and they point to the same node of the same sub paving
+     */
+    bool equal( BDDTreeConstIterator const & theOtherIterator) const;
+
+    Box const& dereference() const;
+
+    //@}
+
+    //@{
+    //! \name Local
+
+    /*! \brief Allows to navigate to the first (\a firstLast==true ),
+     * last (\a firstLast==false) enabled leaf of the sub paving
+     * Returns true if the node was successfully found. If nothing is
+     * found then the cursor should be in the root node again.
+     */
+    bool navigate_to(bool firstLast);
+
+    /*! \brief A recursive search function, that looks for the next enabled leaf in the tree.
+     *  The search is performed from left to right. (Is used for forward iteration)
+     */
+    void find_next_enabled_leaf();
+
+    //@}
+
+  public:
+    //@{
+    //! \name Constructors
+
+    /*! \brief Default constructor constructs an invalid iterator.
+     */
+    BDDTreeConstIterator();
+
+    /*! \brief The constructor that accepts the %BDDTreeSet \a set to iterate on
+     * The paramereter \a firstLastNone indicates whether we want to position the iterator
+     * on the first enabled leaf node (firstLastNone == true) or the last one (firstLastNone == false)
+     * or we are constructing the "end iterator" that does not point anywhere.
+     */
+    explicit BDDTreeConstIterator( const BDDTreeSet * set, const tribool firstLastNone );
+
+    /*! \brief The copy constructor.
+     */
+    BDDTreeConstIterator( const BDDTreeConstIterator& iter );
+
+    //@}
+
+    /*! \brief The assignment operator.
+     */
+    BDDTreeConstIterator & operator=( const BDDTreeConstIterator& gridPavingIter );
+
+
+    /*! Destructor.
+     */
+    ~BDDTreeConstIterator();
+
+};
+
+
+template<class A> void serialize(A& archive, Ariadne::BDDTreeSet& set, const unsigned int version) {
+    ARIADNE_NOT_IMPLEMENTED;
+}
+
+
+//! \brief Whether \a cons_set is disjoint from \a bdd_set.
+tribool disjoint(const ConstraintSet& cons_set, const BDDTreeSet& bdd_set);
+//! \brief Whether \a cons_set overlaps with \a bdd_set.
+tribool overlaps(const ConstraintSet& cons_set, const BDDTreeSet& bdd_set);
+//! \brief Whether \a cons_set covers \a bdd_set.
+tribool covers(const ConstraintSet& cons_set, const BDDTreeSet& bdd_set);
+
+//! \brief Evaluates \a bdd_set on \a cons_set in order to obtain (a superset of) the overlapping cells.
+//! \details The result is a subset of the cells of \a bdd_set. As such, the cells are not manipulated (i.e., by mincing
+//! or recombining) in any way.
+BDDTreeSet possibly_overlapping_cells(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set);
+//! \brief Applies \a cons_set to \a bdd_set in order to obtain the definitely covered cells.
+//! \details The result is a subset of the cells of \a bdd_set. As such, the cells are not manipulated (i.e., by mincing
+//! or recombining) in any way.
+BDDTreeSet definitely_covered_cells(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set);
+
+//! \brief Evaluates the codomain of \a func applied on the cells of \a bdd_set, each widened by \a eps.
+Box eps_codomain(const BDDTreeSet& bdd_set, const Vector<Float> eps, const VectorFunction& func);
+
+//! \brief Projects \a bdd_set using the given \a indices.
+BDDTreeSet project_down(const BDDTreeSet& bdd_set, const Vector<uint>& indices);
+
+//! \brief Check whether \a covering_set covers \a covered_set with a tolerance of \a eps.
+//! \details Since the cell boxes of \a covered_set, enlarged of \a eps, are checked against \a covering_set,
+//! the two sets can feature different grids.
+tribool covers(const BDDTreeSet& covering_set, const BDDTreeSet& covered_set, const Vector<Float>& eps);
+
+//! \brief Check whether \a covering_set covers \a covered_set with a tolerance of \a eps.
+//! \details Since the cell boxes of \a covered_set are checked against an overapproximation (using \a accuracy) of the
+//! epsilon-enlargement of \a covering_set, the two sets can feature different grids.
+tribool inside(const BDDTreeSet& covered_set, const BDDTreeSet& covering_set, const Vector<Float>& eps, int accuracy);
+
+} // namespace Ariadne
+
+#endif /* ARIADNE_BDD_SET_H */
+
