@@ -35,6 +35,8 @@
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/shared_ptr.hpp>
 
+#include <bdd.h>
+
 #include "tribool.h"
 
 #include "box.h"
@@ -48,8 +50,6 @@
 
 #include "grid.h"
 #include "graphics_interface.h"
-
-#include "bdd.h"
 
 using namespace std;
 using namespace Ariadne;
@@ -67,7 +67,6 @@ typedef unsigned short dimension_type;
 class Grid;
 // class BDDCell;
 class BDDTreeSet;
-
 class BDDTreeConstIterator;
 
 /*Declarations of classes in other files*/
@@ -111,10 +110,11 @@ BDDTreeSet inner_approximation(const OpenSetInterface& set, const Grid& grid, co
  * TO DO: improve description.
  */
 class BDDTreeSet : public DrawableInterface {
-  private:
+  protected:
     Grid _grid;
     uint _primary_cell_depth;
     bdd _bdd;
+    
   public:
     /*! \brief A short name for the constant iterator */
     typedef BDDTreeConstIterator const_iterator;
@@ -173,9 +173,6 @@ class BDDTreeSet : public DrawableInterface {
     /*! \brief True if the set is empty. */
     bool empty() const;
 
-    /*! \brief The Binary Decision Diagram representing the enabled cells. */
-    bdd enabled_cells() const;
-
     /*! \brief The number of activated cells in the set. */
     size_t size() const;
 
@@ -184,10 +181,6 @@ class BDDTreeSet : public DrawableInterface {
 
     /*! \brief Returns a constant reference to the underlying grid. */
     const Grid& grid() const;
-
-    /*! The depth of the BDD, that is the maximum length of a path from the root to a leaf.
-     */
-    uint depth() const;
 
     /*! The primary cell depth of the BDD, that is the length of the path connecting the root to
      *  the primary cell.

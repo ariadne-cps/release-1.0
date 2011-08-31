@@ -22,6 +22,8 @@
  *  Foundation, Inc., 59 Templece Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#include <bdd.h>
+
 #include "bdd_set.h"
 
 namespace Ariadne {
@@ -30,7 +32,7 @@ typedef size_t size_type;
 
 /********************************** Utility functions **********************************/
 
-// Test if BuDDy has been initalized. If not, initialize it.
+// Test if BuDDy has been initialized. If not, initialize it.
 void _initialize_bddlib() {
     if(!bdd_isrunning()) {
         // Set the initial nodenum and cachesize of a medium sized load.
@@ -67,6 +69,31 @@ uint _minimum_primary_cell_depth(const Grid& grid, const Box& box) {
     return i;
 }
 
+// Compute the size of the root cell from the grid and the depth of the primary cell
+Box _compute_root_cell(const Grid& grid, uint depth) {
+    // raise an error if dimension is zero
+    ARIADNE_ASSERT(grid.dimension() != 0);
+    // start with the primary cell
+    Box cell = grid.primary_cell();
+    uint dim = grid.dimension();
+    uint i = 0;
+    uint p = 0;
+    // enlarge the cell until depth is reached
+    for(uint d = 0; d < depth; ++d) {
+        // compute the dimension to increase
+        i = (i + dim - 1) % dim;
+        // determine if this is an odd or even instance of the increase
+        p = (depth / dim) % 2;
+        if(p == 0) {    // positive instance: extend to the right
+            cell[i] = cell[i] + Interval(0.0,cell[i].width());
+        } else {        // negative instance: extend to the left
+            cell[i] = cell[i] - Interval(0.0,cell[i].width());
+        }
+    }
+    
+    return cell;
+}
+
 /************************************* BDDTreeSet **************************************/
 
 BDDTreeSet::BDDTreeSet( )
@@ -80,7 +107,7 @@ BDDTreeSet::BDDTreeSet( )
 BDDTreeSet::BDDTreeSet( const BDDTreeSet & set )
     : _grid(set.grid())
     , _primary_cell_depth(set.primary_cell_depth())
-    , _bdd(set.enabled_cells())
+    , _bdd(set._bdd)
 {
 }
 
@@ -117,31 +144,60 @@ BDDTreeSet::BDDTreeSet( const Grid& grid, const Box & domain )
     _primary_cell_depth = _minimum_primary_cell_depth(grid, domain);
 }
 
+BDDTreeSet& BDDTreeSet::operator=( const BDDTreeSet & set ) {
+    //Dereference the old bdd and substitute with the new one
+    if(this != &set) {
+        this->_grid = set.grid();
+        this->_primary_cell_depth = set.primary_cell_depth();
+        this->_bdd = set._bdd;
+    }
+    return *this;
+}
+
+BDDTreeSet* BDDTreeSet::clone() const {
+    return new BDDTreeSet( *this );
+}
+
+BDDTreeSet::~BDDTreeSet() {
+    
+}
+
+bool BDDTreeSet::empty() const {
+    // A zero dimension set is always empty
+    if(this->dimension() == 0) return true;
+    // otherwise, the set is empty iff the BDD is the constant false
+    return (this->_bdd == bddfalse);
+}
+
+size_t BDDTreeSet::size() const {
+    ARIADNE_NOT_IMPLEMENTED;
+}
+
+uint BDDTreeSet::dimension() const {
+    return this->_grid.dimension();
+}
+
+const Grid& BDDTreeSet::grid() const {
+    return this->_grid;
+}
+
+uint BDDTreeSet::primary_cell_depth() const {
+    return this->_primary_cell_depth;
+}
+
+double BDDTreeSet::measure() const {
+    ARIADNE_NOT_IMPLEMENTED;    
+}
+
+Box BDDTreeSet::primary_cell() const {
+    return this->_grid.primary_cell();
+}
+
+Box BDDTreeSet::bounding_box() const {
+    return _compute_root_cell(this->grid(), this->primary_cell_depth());
+}
+
 /*
-    BDDTreeSet& operator=( const BDDTreeSet & set );
-
-    BDDTreeSet* clone() const;
-
-    virtual ~BDDTreeSet();
-
-    bool empty() const;
-
-    size_t size() const;
-
-    uint dimension() const;
-
-    const Grid& grid() const;
-
-    uint depth() const;
-
-    uint primary_cell_depth() const;
-
-    double measure() const;
-
-    Box primary_cell() const;
-
-    Box bounding_box() const;
-
     bool operator==(const BDDTreeSet& anotherBDDTreeSet) const;
 
     bool subset( const BDDTreeSet& set1, const BDDTreeSet& set2 );
