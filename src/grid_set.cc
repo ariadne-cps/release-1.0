@@ -119,12 +119,29 @@ void Grid::set_origin(const Vector<Float>& origin)
     this->_data._origin=origin;
 }
 
+void Grid::set_origin_coordinate(uint i, Float o)
+{
+    if(i >= this->_data._origin.size()) {
+        throw IncompatibleSizes(ARIADNE_PRETTY_FUNCTION);
+    }
+    this->_data._origin[i]=o;
+}
+
+
 void Grid::set_lengths(const Vector<Float>& lengths)
 {
     if(lengths.size() != this->_data._lengths.size()) {
         throw IncompatibleSizes(ARIADNE_PRETTY_FUNCTION);
     }
     this->_data._lengths=lengths;
+}
+
+void Grid::set_length(uint i, Float l)
+{
+    if(i >= this->_data._lengths.size()) {
+        throw IncompatibleSizes(ARIADNE_PRETTY_FUNCTION);
+    }
+    this->_data._lengths[i]=l;
 }
 
 
@@ -225,9 +242,21 @@ Vector<Float> Grid::point(const array<int>& a) const
 
 Vector<Float> Grid::point(const array<double>& a) const
 {
+    ARIADNE_ASSERT(a.size() == this->dimension());
     Vector<float> res(a.size());
     for(size_type i=0; i!=res.size(); ++i) {
         res[i]=this->_data._origin[i]+this->_data._lengths[i]*a[i];
+    }
+    return res;
+}
+
+Vector<Interval> Grid::cell(const array<int>& a) const
+{
+    ARIADNE_ASSERT(a.size() == this->dimension());
+    Vector<Interval> res(a.size());
+    for(size_type i=0; i!=res.size(); ++i) {
+        res[i]=Interval(this->_data._origin[i]+this->_data._lengths[i]*a[i],
+                        this->_data._origin[i]+this->_data._lengths[i]*(a[i]+1));
     }
     return res;
 }

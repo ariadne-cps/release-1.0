@@ -35,6 +35,7 @@ check_PROGRAMS = \
 	test_function \
 	test_function_set \
 	test_grid_set \
+	test_bdd_set \
 	test_hybrid_set \
 	test_hybrid_io_automaton \
 	test_hybrid_evolution \
@@ -74,6 +75,7 @@ test_taylor_set_SOURCES=test_taylor_set.cc
 test_function_SOURCES=test_function.cc
 test_function_set_SOURCES=test_function_set.cc
 test_grid_set_SOURCES=test_grid_set.cc
+test_bdd_set_SOURCES=test_bdd_set.cc
 test_hybrid_io_automaton_SOURCES=test_hybrid_io_automaton.cc
 test_hybrid_set_SOURCES=test_hybrid_set.cc
 test_hybrid_evolution_SOURCES=test_hybrid_evolution.cc

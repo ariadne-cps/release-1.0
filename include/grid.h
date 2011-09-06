@@ -96,8 +96,14 @@ class Grid {
     //! Set the origin of the grid.
     void set_origin(const Vector<Float>& origin);
 
+    //! Set the \a i-th coordinate of the origin
+    void set_origin_coordinate(uint i, Float o);
+
     //! Set the  strides between successive integer points.
     void set_lengths(const Vector<Float>& lenghts);
+
+    //! Set the \a i-th component of the lenghts
+    void set_length(uint i, Float l);
 
     //! Write to an output stream.
     friend std::ostream& operator<<(std::ostream& os, const Grid& g);
@@ -118,6 +124,7 @@ class Grid {
     Vector<Float> point(const array<double>& a) const;
     Vector<Interval> box(const array<double>& l, const array<double>& u) const;
     Vector<Interval> box(const GridCell& cell) const;
+    Vector<Interval> cell(const array<int>& a) const;
     Box primary_cell() const;
   private:
     // Create new data
