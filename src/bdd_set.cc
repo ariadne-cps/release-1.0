@@ -386,8 +386,8 @@ bool subset( const BDDTreeSet& set1, const BDDTreeSet& set2 ) {
     // Equalize the height of the two sets.
     set3.increase_height(set4.root_cell_height());
     set4.increase_height(set3.root_cell_height());
-    // since set3 and set4 have the same root_cell, we have that set3 is a subset of set4 
-    // iff (1) they have the same root_cell_coordinatesset, AND
+    // since set3 and set4 have the same root_cell_height, we have that set3 is a subset of set4 
+    // iff (1) they have the same root_cell_coordinates, AND
     //     (2) set3.enabled_cells() implies set4.enabled_cells() as boolean functions.
     if(set3.root_cell_coordinates() != set4.root_cell_coordinates())
         return false;
@@ -398,11 +398,36 @@ bool superset( const BDDTreeSet& set1, const BDDTreeSet& set2 ) {
     return subset(set2, set1);
 }
 
+bool disjoint( const BDDTreeSet& set1, const BDDTreeSet& set2 ) {
+    // two sets are disjoint iff they do not overlap
+    return !overlap(set1, set2);
+}
+
+bool overlap( const BDDTreeSet& set1, const BDDTreeSet& set2 ) {
+    // raise an error if the current set is zero dimensional
+    ARIADNE_ASSERT_MSG(set1.dimension() != 0, "Cannot test for overlapping of zero-dimensional sets.");
+    
+    // set2 must be based on the same grid of the current set
+    ARIADNE_ASSERT_MSG(set1.grid() == set2.grid(),
+        "Disjointness can be tested only for BDDTreeSets based on the same grid.");
+
+    // If set1 is empty the test is true iff set2 is empty as well
+    if(set1.empty()) return set2.empty();
+    // Make copies of set1 and set2 that can be modified.
+    BDDTreeSet set3 = set1;
+    BDDTreeSet set4 = set2;
+    // Equalize the height of the two sets.
+    set3.increase_height(set4.root_cell_height());
+    set4.increase_height(set3.root_cell_height());
+    // since set3 and set4 have the same root_cell_height, we have that set3 overlaps set4 
+    // iff (1) they have the same root_cell_coordinates, AND
+    //     (2) (set3.enabled_cells() AND set4.enabled_cells()) is not the constant false.
+    if(set3.root_cell_coordinates() != set4.root_cell_coordinates())
+        return false;
+    return (bdd_and(set3.enabled_cells(), set4.enabled_cells()) != bddfalse);    
+}
+
 /*
-    bool disjoint( const BDDTreeSet& set2 );
-
-    bool overlap( const BDDTreeSet& set2 );
-
     tribool subset( const Box& box ) const;
 
     tribool superset( const Box& box ) const;

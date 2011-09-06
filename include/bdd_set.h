@@ -80,8 +80,8 @@ std::ostream& operator<<(std::ostream& os, const BDDTreeSet& set);
 // // bool overlap(const BDDCell& cell, const BDDTreeSet& set);
 bool subset(const BDDTreeSet& set1, const BDDTreeSet& set2);
 bool superset(const BDDTreeSet& set1, const BDDTreeSet& set2);
-// bool disjoint(const BDDTreeSet& set1, const BDDTreeSet& set2);
-// bool overlap(const BDDTreeSet& set1, const BDDTreeSet& set2);
+bool disjoint(const BDDTreeSet& set1, const BDDTreeSet& set2);
+bool overlap(const BDDTreeSet& set1, const BDDTreeSet& set2);
 // 
 // BDDTreeSet join(const BDDTreeSet& set1, const BDDTreeSet& set2);
 // BDDTreeSet intersection(const BDDTreeSet& set1, const BDDTreeSet& set2);
@@ -221,11 +221,11 @@ class BDDTreeSet : public DrawableInterface {
 
     /*! \brief Tests if two %BDDTreeSets are disjoint.
      */
-//    bool disjoint( const BDDTreeSet& set1, const BDDTreeSet& set2 );
+    friend bool disjoint( const BDDTreeSet& set1, const BDDTreeSet& set2 );
 
     /*! \brief Tests if two %BDDTreeSets overlap.
      */
-//    bool overlap( const BDDTreeSet& set1, const BDDTreeSet& set2 );
+    friend bool overlap( const BDDTreeSet& set1, const BDDTreeSet& set2 );
 
     /*! \brief Tests if a %BDDTreeSet is a subset of a box. */
 //    tribool subset( const Box& box ) const;
