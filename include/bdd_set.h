@@ -228,7 +228,7 @@ class BDDTreeSet : public DrawableInterface {
     friend bool overlap( const BDDTreeSet& set1, const BDDTreeSet& set2 );
 
     /*! \brief Tests if a %BDDTreeSet is a subset of a box. */
-//    tribool subset( const Box& box ) const;
+    tribool subset( const Box& box ) const ;
 
     /*! \brief Tests if a %BDDTreeSet is a superset of a box. */
 //    tribool superset( const Box& box ) const;

@@ -243,6 +243,36 @@ void _equalize_root_cell(BDDTreeSet& set1, BDDTreeSet& set2) {
     set2.increase_height(mch);    
 }
 
+// Test whether the a BDDTreeSet based on root_cell and enabled_cells, where the root variable is root_var
+// is a subset of Box. 
+tribool _subset(const Box& root_cell, const bdd& enabled_cells, int root_var, uint splitting_coordinate, const Box& box) {
+    // std::cout << "_subset(" << root_cell << ", " << enabled_cells << ", " 
+    //           << root_var << ", " << splitting_coordinate << ", " << box << ")" << std::endl;
+    // if the set is empty, return true
+    if(enabled_cells == bddfalse) return true;
+    // if the root cell is a subset of box, return true
+    if(root_cell.subset(box)) return true;
+    // if the bdd is the constant true, return false
+    if(enabled_cells == bddtrue) return false;
+    
+    // Split the root cell and repeat recursively on the two subcells
+    std::pair<Box,Box> subcells = root_cell.split(splitting_coordinate);  
+    bdd right_branch, left_branch;
+    // if the variable labelling the root of the bdd is not root_var, do not split the bdd
+    if(bdd_var(enabled_cells) != root_var) {
+        left_branch = enabled_cells;
+        right_branch = enabled_cells;
+    } else {
+        left_branch = bdd_low(enabled_cells);
+        right_branch = bdd_high(enabled_cells);
+    }
+    
+    int dim = root_cell.dimension();
+    if(!_subset(subcells.first, left_branch, root_var+1, (splitting_coordinate+1) % dim, box))
+        return false;
+    return _subset(subcells.second, right_branch, root_var+1, (splitting_coordinate+1) % dim, box);
+}
+
 /************************************* BDDTreeSet **************************************/
 
 BDDTreeSet::BDDTreeSet( )
@@ -427,14 +457,70 @@ bool overlap( const BDDTreeSet& set1, const BDDTreeSet& set2 ) {
     return (bdd_and(set3.enabled_cells(), set4.enabled_cells()) != bddfalse);    
 }
 
+
+tribool BDDTreeSet::subset( const Box& box ) const {
+    // raise an error if the current set is zero dimensional
+    ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot test for subset of a zero-dimensional set.");
+    
+    // the box and the set must have the same dimension
+    ARIADNE_ASSERT_MSG(this->dimension() == box.dimension(), "Box and set must have the same dimension.");
+
+    // compute the first splitting coordinate
+    uint dim = this->dimension();
+    uint height = this->root_cell_height();
+    uint splitting_coordinate;
+    if(height == 0) {
+        splitting_coordinate = 0;
+    } else {
+        splitting_coordinate = (dim - 1) - ((height-1) % dim);
+    }
+    return _subset(this->root_cell(), this->enabled_cells(), 0, splitting_coordinate, box);        
+}
+
 /*
-    tribool subset( const Box& box ) const;
 
-    tribool superset( const Box& box ) const;
+tribool superset( const Box& box ) const {
+    // raise an error if the current set is zero dimensional
+    ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot test for superset of a zero-dimensional set.");
+    
+    // the box and the set must have the same dimension
+    ARIADNE_ASSERT_MSG(this->dimension() == box.dimension(), "Box and set must have the same dimension.");
+    
+    // compute the first splitting coordinate
+    uint dim = this->dimension();
+    uint height = this->root_cell_height();
+    uint splitting_coordinate = (dim - 1) - (height % dim);
+    return _superset(this->root_cell(), this->enabled_cells(), 0, spliting_coordinate, box);        
+}
 
-    tribool disjoint( const Box& box  ) const;
+tribool disjoint( const Box& box  ) const {
+    // raise an error if the current set is zero dimensional
+    ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot test for disjoint of a zero-dimensional set.");
+    
+    // the box and the set must have the same dimension
+    ARIADNE_ASSERT_MSG(this->dimension() == box.dimension(), "Box and set must have the same dimension.");
+    
+    // compute the first splitting coordinate
+    uint dim = this->dimension();
+    uint height = this->root_cell_height();
+    uint splitting_coordinate = (dim - 1) - (height % dim);
+    return _disjoint(this->root_cell(), this->enabled_cells(), 0, spliting_coordinate, box);        
+}
 
-    tribool overlaps( const Box& box ) const;
+tribool overlaps( const Box& box ) const {
+    // raise an error if the current set is zero dimensional
+    ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot test for overlaps of a zero-dimensional set.");
+    
+    // the box and the set must have the same dimension
+    ARIADNE_ASSERT_MSG(this->dimension() == box.dimension(), "Box and set must have the same dimension.");
+    
+    // compute the first splitting coordinate
+    uint dim = this->dimension();
+    uint height = this->root_cell_height();
+    uint splitting_coordinate = (dim - 1) - (height % dim);
+    return _overlaps(this->root_cell(), this->enabled_cells(), 0, spliting_coordinate, box);        
+}
+
 
     void clear( );
 */
