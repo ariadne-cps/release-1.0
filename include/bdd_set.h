@@ -83,9 +83,9 @@ bool superset(const BDDTreeSet& set1, const BDDTreeSet& set2);
 bool disjoint(const BDDTreeSet& set1, const BDDTreeSet& set2);
 bool overlap(const BDDTreeSet& set1, const BDDTreeSet& set2);
 // 
-// BDDTreeSet join(const BDDTreeSet& set1, const BDDTreeSet& set2);
-// BDDTreeSet intersection(const BDDTreeSet& set1, const BDDTreeSet& set2);
-// BDDTreeSet difference(const BDDTreeSet& set1, const BDDTreeSet& set2);
+BDDTreeSet join(const BDDTreeSet& set1, const BDDTreeSet& set2);
+BDDTreeSet intersection(const BDDTreeSet& set1, const BDDTreeSet& set2);
+BDDTreeSet difference(const BDDTreeSet& set1, const BDDTreeSet& set2);
 // 
 // BDDTreeSet outer_approximation(const Box& box, const Grid& grid, const uint subdiv);
 // BDDTreeSet outer_approximation(const CompactSetInterface& set, const Grid& grid, const uint subdiv);
@@ -245,7 +245,7 @@ class BDDTreeSet : public DrawableInterface {
     //! \name Geometric Operations
 
     /*! \brief Clears the set (makes empty set on same grid). */
-//    void clear( );
+    void clear( );
 
     /*! \brief Minimize the height of the set so that the root cell is the minimal cell covering the set.
      *  Returns the new root_cell_height.
@@ -258,26 +258,23 @@ class BDDTreeSet : public DrawableInterface {
     int increase_height(uint new_height);
 
     /*! \brief Join (make union of) two %BDDTreeSet. */
-//    BDDTreeSet join( const BDDTreeSet& set1, const BDDTreeSet& set2 );
+    friend BDDTreeSet join( const BDDTreeSet& set1, const BDDTreeSet& set2 );
 
     /*! \brief The intersection of two %BDDTreeSet. 
      */
-//    BDDTreeSet intersection( const BDDTreeSet& set1, const BDDTreeSet& set2 );
+    friend BDDTreeSet intersection( const BDDTreeSet& set1, const BDDTreeSet& set2 );
 
     /*! \brief The difference of two %BDDTreeSet. (Results in set1 minus set2) */
-//    BDDTreeSet difference( const BDDTreeSet& set1, const BDDTreeSet& set2 );
+    friend BDDTreeSet difference( const BDDTreeSet& set1, const BDDTreeSet& set2 );
 
     /*! \brief Adjoin (make inplace union with) another %BDDTreeSet. */
-//    void adjoin( const BDDTreeSet& set );
+    void adjoin( const BDDTreeSet& set );
 
     /*! \brief Restrict to (make inplace intersection with) another %BDDTreeSet. */
-//    void restrict( const BDDTreeSet& set );
+    void restrict( const BDDTreeSet& set );
 
     /*! \brief Remove cells in another %BDDTreeSet. */
-//    void remove( const BDDTreeSet& set );
-
-    /*! \brief Restrict to the subset of cells with height (at most) \a height. */
-//    void restrict_to_height( const uint height );
+    void remove( const BDDTreeSet& set );
 
     //@}
 

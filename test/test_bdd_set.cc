@@ -243,11 +243,26 @@ void test_predicates() {
 
 void test_operations() {
     ARIADNE_PRINT_TEST_COMMENT("Testing operations.");
-    // Test minimize_height
+    
+    // Test clear
     BDDTreeSet set0;
+    // test clearing of a zero-dimensional set
+    set0.clear();
+    ARIADNE_TEST_ASSERT(set0.empty());
+    // test clearing of a non-empty set
+    BDDTreeSet set1(Grid(3, 1.25), 2, array<int>(3, 1,1,1), bdd_ithvar(1));
+    ARIADNE_TEST_ASSERT(!set1.empty());
+    set1.clear();
+    ARIADNE_TEST_ASSERT(set1.empty());
+    ARIADNE_TEST_EQUAL(set1.grid(), Grid(3, 1.25));
+    ARIADNE_TEST_EQUAL(set1.root_cell_height(), 0);
+    ARIADNE_TEST_EQUAL(set1.root_cell_coordinates(), array<int>(3, 0,0,0));
+    ARIADNE_TEST_EQUAL(set1.enabled_cells(), bddfalse);
+    
+    // Test minimize_height
     // raise an error if the set is zero dimensional
     ARIADNE_TEST_FAIL(set0.minimize_height());
-    BDDTreeSet set1(Grid(3), true);
+    set1 = BDDTreeSet(Grid(3), true);
     BDDTreeSet set2 = set1;
     // No changes if the height is zero.
     ARIADNE_TEST_CHECK(set1.minimize_height(), 0);
@@ -267,6 +282,13 @@ void test_operations() {
     // Test increase height
     // raise an error if the set is zero dimensional
     ARIADNE_TEST_FAIL(set0.increase_height(5));
+    // increase is the opposite of minimze
+    ARIADNE_TEST_CHECK(set1.increase_height(4), 4);
+    ARIADNE_TEST_EQUAL(set1, set2);
+    // if the new height is smaller than the current one the set is not changed
+    ARIADNE_TEST_EQUAL(set1.increase_height(1), 4);
+    ARIADNE_TEST_EQUAL(set1, set2);
+    // test with arbitrary sets    
     BDDTreeSet set3 = BDDTreeSet(2, true);
     ARIADNE_TEST_CHECK(set3.increase_height(5), 5);
     ARIADNE_TEST_EQUAL(set3.grid(),Grid(2));
@@ -275,13 +297,158 @@ void test_operations() {
     ARIADNE_TEST_EQUAL(set3.root_cell(), Box(2, -2.0,2.0, -2.0,6.0));
     enabled_cells = bdd_nithvar(0) & bdd_ithvar(1) & bdd_ithvar(2) & bdd_nithvar(3) & bdd_nithvar(4);
     ARIADNE_TEST_EQUAL(set3.enabled_cells(), enabled_cells);
+    set3 = BDDTreeSet(Grid(2), 0, array<int>(2, -1,-1), bddtrue);
+    ARIADNE_TEST_CHECK(set3.increase_height(6), 6);
+    ARIADNE_TEST_EQUAL(set3.grid(),Grid(2));
+    ARIADNE_TEST_EQUAL(set3.root_cell_height(), 6);
+    ARIADNE_TEST_EQUAL(set3.root_cell_coordinates(), array<int>(2, 0,0));
+    ARIADNE_TEST_EQUAL(set3.root_cell(), Box(2, -2.0,6.0, -2.0,6.0));
+    enabled_cells = bdd_nithvar(0) & bdd_nithvar(1) & bdd_nithvar(2) & 
+                    bdd_nithvar(3) & bdd_ithvar(4) & bdd_ithvar(5);
+    ARIADNE_TEST_EQUAL(set3.enabled_cells(), enabled_cells);
     
-    ARIADNE_TEST_CHECK(set1.increase_height(4), 4);
+    // Test join
+    // raise an error if one of the two sets is zero dimensional
+    ARIADNE_TEST_FAIL(set0.adjoin(set1));
+    ARIADNE_TEST_FAIL(join(set1, set0));
+    // raise an error if the two sets have different dimension
+    set2 = BDDTreeSet(Grid(2));
+    ARIADNE_TEST_FAIL(set1.adjoin(set2));
+    ARIADNE_TEST_FAIL(join(set1, set2));
+    
+    // joining an empty set do not change the set, except for minimization
+    enabled_cells = bdd_ithvar(0) & bdd_nithvar(1) & (bdd_ithvar(3) | bdd_ithvar(4));    
+    set1 = BDDTreeSet(Grid(3), 4, array<int>(3, 1,1,1), enabled_cells);
+    set2 = BDDTreeSet(Grid(3), false);
+    set3 = join(set1, set2);
+    ARIADNE_TEST_ASSERT(set1 != set3);
+    set1.minimize_height();
+    ARIADNE_TEST_EQUAL(set1, set3);
+    set2.adjoin(set1);
     ARIADNE_TEST_EQUAL(set1, set2);
-    // if the new height is smaller than the current one the set is not changed
-    ARIADNE_TEST_EQUAL(set1.increase_height(1), 4);
+    
+    // test join of nonempty sets with the same root cell
+    set1 = BDDTreeSet(Grid(3), 2, array<int>(3, 1,1,1), enabled_cells);
+    bdd enabled_cells2 = bdd_nithvar(0) | (bdd_nithvar(1) & bdd_nithvar(3));
+    set2 = BDDTreeSet(Grid(3), 2, array<int>(3, 1,1,1), enabled_cells2);
+    set3 = join(set1, set2);
+    ARIADNE_TEST_EQUAL(set3.grid(), set1.grid());
+    ARIADNE_TEST_EQUAL(set3.root_cell_height(), set1.root_cell_height());
+    ARIADNE_TEST_EQUAL(set3.root_cell_coordinates(), set1.root_cell_coordinates());
+    ARIADNE_TEST_EQUAL(set3.enabled_cells(), (enabled_cells | enabled_cells2));
+    
+    // test join of nonempty sets with different root cell
+    enabled_cells = bdd_nithvar(0) | (bdd_nithvar(1) & bdd_nithvar(3));
+    set1 = BDDTreeSet(Grid(2), 3, array<int>(2, 1,1), enabled_cells);
+    set2 = BDDTreeSet(Grid(2), 0, array<int>(2, -1,-1), bddtrue);
+    set3 = join(set1, set2);
+    ARIADNE_TEST_EQUAL(set3.grid(), set1.grid());
+    ARIADNE_TEST_EQUAL(set3.root_cell_height(), 6);
+    ARIADNE_TEST_EQUAL(set3.root_cell_coordinates(), array<int>(2, 0,0));
+    enabled_cells = ( bdd_ithvar(0) & bdd_ithvar(1) & bdd_nithvar(2) &
+                      (bdd_nithvar(3) | (bdd_nithvar(4) & bdd_nithvar(6))) )
+                    |
+                    ( bdd_nithvar(0) & bdd_nithvar(1) & bdd_nithvar(2) &
+                      bdd_nithvar(3) & bdd_ithvar(4) & bdd_ithvar(5) ) ;
+    ARIADNE_TEST_EQUAL(set3.enabled_cells(), enabled_cells);
+ 
+    // Test Intersection
+    // raise an error if one of the two sets is zero dimensional
+    ARIADNE_TEST_FAIL(set0.restrict(set1));
+    ARIADNE_TEST_FAIL(intersection(set1, set0));
+    // raise an error if the two sets have different dimension
+    set2 = BDDTreeSet(Grid(4));
+    ARIADNE_TEST_FAIL(set1.restrict(set2));
+    ARIADNE_TEST_FAIL(intersection(set1, set2));
+    
+    // Intersection with an empty set make the set empty
+    enabled_cells = bdd_ithvar(0) & bdd_nithvar(1) & (bdd_ithvar(3) | bdd_ithvar(4));    
+    set1 = BDDTreeSet(Grid(3), 4, array<int>(3, 1,1,1), enabled_cells);
+    set2 = BDDTreeSet(Grid(3), false);
+    set3 = intersection(set1, set2);
+    ARIADNE_TEST_ASSERT(set3.empty());
+
+    // intersection with a superset set do not change the set, except for minimization
+    set2 = BDDTreeSet(Grid(3), 4, array<int>(3, 1,1,1), bddtrue);
+    set3 = intersection(set1, set2);
+    ARIADNE_TEST_ASSERT(set1 != set3);
+    set1.minimize_height();
+    ARIADNE_TEST_EQUAL(set1, set3);
+    set2.restrict(set1);
     ARIADNE_TEST_EQUAL(set1, set2);
-        
+    
+    // test intersection of nonempty sets with the same root cell
+    enabled_cells = bdd_ithvar(1) | (bdd_nithvar(1) & bdd_nithvar(3));
+    set1 = BDDTreeSet(Grid(3), 2, array<int>(3, 1,1,1), enabled_cells);
+    enabled_cells2 = bdd_nithvar(0) | (bdd_nithvar(1) & bdd_nithvar(3));
+    set2 = BDDTreeSet(Grid(3), 2, array<int>(3, 1,1,1), enabled_cells2);
+    set3 = intersection(set1, set2);
+    ARIADNE_TEST_EQUAL(set3.grid(), set1.grid());
+    ARIADNE_TEST_EQUAL(set3.root_cell_height(), set1.root_cell_height());
+    ARIADNE_TEST_EQUAL(set3.root_cell_coordinates(), set1.root_cell_coordinates());
+    ARIADNE_TEST_EQUAL(set3.enabled_cells(), (enabled_cells & enabled_cells2));
+    
+    // intersection of nonempty sets with disjoint root cells must be empty
+    enabled_cells = bdd_nithvar(0) | (bdd_nithvar(1) & bdd_nithvar(3));
+    set1 = BDDTreeSet(Grid(2), 3, array<int>(2, 1,1), enabled_cells);
+    set2 = BDDTreeSet(Grid(2), 0, array<int>(2, -1,-1), bddtrue);
+    set3 = intersection(set1, set2);
+    ARIADNE_TEST_ASSERT(set3.empty());
+    
+    // test intersection of partially overlapping sets
+    set2 = BDDTreeSet(Grid(2), 1, array<int>(2, 2,2), bddtrue);
+    set3 = intersection(set1, set2);
+    ARIADNE_TEST_EQUAL(set3.grid(), set1.grid());
+    ARIADNE_TEST_EQUAL(set3.root_cell_height(), 1);
+    ARIADNE_TEST_EQUAL(set3.root_cell_coordinates(), array<int>(2, 2,2));
+    ARIADNE_TEST_EQUAL(set3.enabled_cells(), bdd_nithvar(1));
+
+    // Test Difference
+    // raise an error if one of the two sets is zero dimensional
+    ARIADNE_TEST_FAIL(set0.remove(set1));
+    ARIADNE_TEST_FAIL(difference(set1, set0));
+    // raise an error if the two sets have different dimension
+    set2 = BDDTreeSet(Grid(4));
+    ARIADNE_TEST_FAIL(set1.remove(set2));
+    ARIADNE_TEST_FAIL(difference(set1, set2));
+
+    // difference with an empty set do not change the set, except for minimization    
+    enabled_cells = bdd_ithvar(0) & bdd_nithvar(1) & (bdd_ithvar(3) | bdd_ithvar(4));    
+    set1 = BDDTreeSet(Grid(3), 4, array<int>(3, 1,1,1), enabled_cells);
+    set2 = BDDTreeSet(Grid(3), false);
+    set3 = difference(set1, set2);
+    ARIADNE_TEST_ASSERT(set1 != set3);
+    set1.minimize_height();
+    ARIADNE_TEST_EQUAL(set1, set3);
+    set1.remove(set2);
+    ARIADNE_TEST_EQUAL(set1, set3);
+    
+    // test difference of nonempty sets with the same root cell
+    enabled_cells = bdd_ithvar(0) | (bdd_nithvar(0) & bdd_nithvar(3));
+    set1 = BDDTreeSet(Grid(3), 2, array<int>(3, 1,1,1), enabled_cells);
+    enabled_cells2 = (bdd_nithvar(1) & bdd_nithvar(3));
+    set2 = BDDTreeSet(Grid(3), 2, array<int>(3, 1,1,1), enabled_cells2);
+    set3 = difference(set1, set2);
+    ARIADNE_TEST_EQUAL(set3.grid(), set1.grid());
+    ARIADNE_TEST_EQUAL(set3.root_cell_height(), set1.root_cell_height());
+    ARIADNE_TEST_EQUAL(set3.root_cell_coordinates(), set1.root_cell_coordinates());
+    ARIADNE_TEST_EQUAL(set3.enabled_cells(), bdd_apply(enabled_cells, enabled_cells2, bddop_diff));
+    
+    // difference with a nonempty sets with disjoint root cell do no change the set
+    enabled_cells = bdd_nithvar(0) | (bdd_nithvar(1) & bdd_nithvar(3));
+    set1 = BDDTreeSet(Grid(2), 3, array<int>(2, 1,1), enabled_cells);
+    set2 = BDDTreeSet(Grid(2), 0, array<int>(2, -1,-1), bddtrue);
+    set3 = difference(set1, set2);
+    ARIADNE_TEST_EQUAL(set3, set1);
+    
+    // test difference of partially overlapping sets
+    set2 = BDDTreeSet(Grid(2), 1, array<int>(2, 2,2), bddtrue);
+    set3 = difference(set1, set2);
+    ARIADNE_TEST_EQUAL(set3.grid(), set1.grid());
+    ARIADNE_TEST_EQUAL(set3.root_cell_height(), 2);
+    ARIADNE_TEST_EQUAL(set3.root_cell_coordinates(), array<int>(2, 1,1));
+    ARIADNE_TEST_EQUAL(set3.enabled_cells(), bddtrue);
+ 
 }
 
 int main() {

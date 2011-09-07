@@ -107,6 +107,8 @@ size_t _enabled_cells_number(const bdd& b, int level) {
 // only one shift of variable (of index n) at the end is needed.
 int _minimize_height(bdd& b, uint& root_cell_height, array<int>& root_cell_coordinates, int root_var) 
 {
+    // std::cout << "_minimize_height(" <<  b << ", " << root_cell_height << ", " 
+    //           << root_cell_coordinates << ", " << root_var << ")" << std::endl;
     // if the height is zero do not decrease height
     if(root_cell_height == 0) return -root_var;
     // if the b is TRUE or FALSE do not decrease height
@@ -144,7 +146,7 @@ int _minimize_height(bdd& b, uint& root_cell_height, array<int>& root_cell_coord
 int _increase_height(bdd& b, uint& root_cell_height, array<int>& root_cell_coordinates, uint new_height) 
 {
     // std::cout << "_increase_height(" << b << ", " << root_cell_height << ", " << root_cell_coordinates
-    //          << ", " << new_height << ")" << std::endl;
+    //           << ", " << new_height << ")" << std::endl;
     // if the new height is equal or smaller than the current one do nothing
     if(root_cell_height >= new_height) return root_cell_height;
 
@@ -155,7 +157,7 @@ int _increase_height(bdd& b, uint& root_cell_height, array<int>& root_cell_coord
     uint i = (dim - 1) - (root_cell_height % dim);
     // If the current height is an "odd" one, the origin of the grid is shifted
     // shift the i-th coordinate accordingly
-    if((root_cell_height / dim) % 2 == 1) {
+    if(((root_cell_height / dim) % 2) == 1) {
         root_cell_coordinates[i]++;
     }
     // Increase the root_cell_height by 1
@@ -168,7 +170,11 @@ int _increase_height(bdd& b, uint& root_cell_height, array<int>& root_cell_coord
     } else {    // right child
         b = bdd_ithvar(root_var) & b;
     }
-    // half the i-th coordinate
+    // half the i-th coordinate: the correct expression would be
+    //      floor(root_cell_coordinate[i] / 2)
+    // NOTE THAT floor(-1 / 2) = floor (-0.5) = -1, while -1 / 2 = 0 (integer division)
+    // so, if the coordinate is negative, decrease it before halving
+    if(root_cell_coordinates[i] < 0) root_cell_coordinates[i]--;
     root_cell_coordinates[i] = root_cell_coordinates[i] / 2;
     
     // recursive call
@@ -190,7 +196,7 @@ void _shift_variables(bdd& b, int n) {
     if(varnum == 0) return;
     // Check consistency of the shift index
     // std::cout << "Variable support: [" << oldvars[0] << " .. " << oldvars[varnum-1] << "]" << std::endl;
-    ARIADNE_ASSERT_MSG(oldvars[0] + n > 0, "Wrong shift index: negative variable number.")
+    ARIADNE_ASSERT_MSG(oldvars[0] + n >= 0, "Wrong shift index: negative variable number.")
     // Add new vars if necessary
     if(oldvars[varnum-1] + n >= bdd_varnum()) {
         ARIADNE_ASSERT_MSG(bdd_setvarnum(oldvars[varnum-1] + n + 1) == 0, 
@@ -232,9 +238,11 @@ void _equalize_root_cell(BDDTreeSet& set1, BDDTreeSet& set2) {
     while(rcc1 != rcc2) {
         // determine which dimension to merge 
         uint i = (dim - 1) - (mch % dim);
-        // half the i-th coordinates
-        rcc1[i] = rcc1[i] / 2;
-        rcc2[i] = rcc2[i] / 2;
+        // compute the parity of the merge
+        uint p = (mch / dim) % 2;
+        // half the i-th cooridnate
+        rcc1[i] = (rcc1[i] + p) / 2;
+        rcc2[i] = (rcc2[i] + p) / 2;
         // Increase the mch by 1
         mch++;        
     }
@@ -604,9 +612,12 @@ tribool BDDTreeSet::overlaps( const Box& box ) const {
     return !this->disjoint(box);        
 }
 
-/*
-    void clear( );
-*/
+void BDDTreeSet::clear( ) {
+    this->_root_cell_height = 0;
+    this->_root_cell_coordinates.fill(0);
+    this->_bdd = bddfalse;
+}
+
 
 int BDDTreeSet::minimize_height() {
     // Raise an error if the set is zero-dimensional
@@ -641,20 +652,74 @@ int BDDTreeSet::increase_height(uint new_height) {
 }
 
 
+BDDTreeSet join( const BDDTreeSet& set1, const BDDTreeSet& set2 ) {
+    BDDTreeSet res(set1);
+    res.adjoin(set2);
+    return res;
+}
+
+BDDTreeSet intersection( const BDDTreeSet& set1, const BDDTreeSet& set2 ) {
+    BDDTreeSet res(set1);
+    res.restrict(set2);
+    return res;
+}
+
+BDDTreeSet difference( const BDDTreeSet& set1, const BDDTreeSet& set2 ) {
+    BDDTreeSet res(set1);
+    res.remove(set2);
+    return res;
+}
+
+void BDDTreeSet::adjoin( const BDDTreeSet& set ) {
+    // raise an error if the current set is zero-dimensional
+    ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot adjoin a BDDTeeSet to a zero-dimensional one.");
+    // the two sets must have the same grid
+    ARIADNE_ASSERT_MSG(this->grid() == set.grid(), "Cannot adjoin a BDDTeeSet with a different grid.");
+    
+    // Make a copy of set that can be modified
+    BDDTreeSet set2 = set;
+    // Equalize the root cell of the two sets
+    _equalize_root_cell(*this, set2);
+    // Since the two sets have the same root cell, their union is the logical OR of the BDDs
+    this->_bdd = bdd_or(this->_bdd, set2._bdd);
+    // Minimize the height of the result
+    this->minimize_height();
+}
+
+
+void BDDTreeSet::restrict( const BDDTreeSet& set ) {
+    // raise an error if the current set is zero-dimensional
+    ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot restrict a zero-dimensional BDDTeeSet.");
+    // the two sets must have the same grid
+    ARIADNE_ASSERT_MSG(this->grid() == set.grid(), "Cannot intersect a BDDTeeSet with a different grid.");
+    
+    // Make a copy of set that can be modified
+    BDDTreeSet set2 = set;
+    // Equalize the root cell of the two sets
+    _equalize_root_cell(*this, set2);
+    // Since the two sets have the same root cell, their intersection is the logical AND of the BDDs
+    this->_bdd = bdd_and(this->_bdd, set2._bdd);
+    // Minimize the height of the result
+    this->minimize_height();
+}
+
+void BDDTreeSet::remove( const BDDTreeSet& set ) {
+    // raise an error if the current set is zero-dimensional
+    ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot remove from a zero-dimensional BDDTeeSet.");
+    // the two sets must have the same grid
+    ARIADNE_ASSERT_MSG(this->grid() == set.grid(), "Cannot remove a BDDTeeSet with a different grid.");
+    
+    // Make a copy of set that can be modified
+    BDDTreeSet set2 = set;
+    // Equalize the root cell of the two sets
+    _equalize_root_cell(*this, set2);
+    // Since the two sets have the same root cell, their difference is the logical "difference" of the BDDs
+    this->_bdd = bdd_apply(this->_bdd, set2._bdd, bddop_diff);
+    // Minimize the height of the result
+    this->minimize_height();
+}
+
 /*
-    BDDTreeSet join( const BDDTreeSet& set1, const BDDTreeSet& set2 );
-
-    BDDTreeSet intersection( const BDDTreeSet& set1, const BDDTreeSet& set2 );
-
-    BDDTreeSet difference( const BDDTreeSet& set1, const BDDTreeSet& set2 );
-
-    void adjoin( const BDDTreeSet& set );
-
-    void restrict( const BDDTreeSet& set );
-
-    void remove( const BDDTreeSet& set );
-
-    void restrict_to_height( const uint height );
 
     void adjoin_over_approximation( const Box& box, const uint subdiv );
 
