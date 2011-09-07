@@ -196,7 +196,49 @@ void test_predicates() {
     Box bx2(2, 2.25,5.0, 4.75,6.5);
     ARIADNE_TEST_ASSERT(definitely(set2.subset(bx1)));
     ARIADNE_TEST_ASSERT(!possibly(set2.subset(bx2)));
-       
+
+    // Test superset with a Box
+    // testing w.r.t. a zero-dimensional set should raise an error
+    ARIADNE_TEST_FAIL(set0.superset(Box(2, 0.0,1.0, 0.0,1.0)));
+     // testing w.rt. to a box with different dimension should raise an error
+    ARIADNE_TEST_FAIL(set1.superset(Box(3)));
+    // check test with an empty set or empty box
+    set1 = BDDTreeSet(Grid(2), false);
+    ARIADNE_TEST_ASSERT(!possibly(set1.superset(Box(2, 0.0,1.0, 0.0,1.0))));
+    ARIADNE_TEST_ASSERT(definitely(set2.superset(ebx)));
+    // test with a general set
+    enabled_cells = bdd_ithvar(0) & bdd_nithvar(1) & (bdd_ithvar(3) | bdd_ithvar(4));    
+    set2 = BDDTreeSet(Grid(2), 3, array<int>(2, 1,1), enabled_cells);
+    bx1 = Box(2, 2.25,5.0, 4.25,6.5);
+    bx2 = Box(2, 2.6,2.9, 4.1,5.9);
+    ARIADNE_TEST_ASSERT(!possibly(set2.superset(bx1)));
+    ARIADNE_TEST_ASSERT(definitely(set2.superset(bx2)));
+
+    // Test disjoint and overlap with a Box
+    // testing w.r.t. a zero-dimensional set or box should raise an error
+    ARIADNE_TEST_FAIL(set0.disjoint(Box(2, 0.0,1.0, 0.0,1.0)));
+    ARIADNE_TEST_FAIL(set1.disjoint(Box(0)));
+    ARIADNE_TEST_FAIL(set0.overlaps(Box(2, 0.0,1.0, 0.0,1.0)));
+    ARIADNE_TEST_FAIL(set1.overlaps(Box(0)));
+     // testing w.rt. to a box with different dimension should raise an error
+    ARIADNE_TEST_FAIL(set1.disjoint(Box(3)));
+    ARIADNE_TEST_FAIL(set1.overlaps(Box(3)));
+    // check test with an empty set or empty box
+    set1 = BDDTreeSet(Grid(2), false);
+    ARIADNE_TEST_ASSERT(definitely(set1.disjoint(Box(2, 0.0,1.0, 0.0,1.0))));
+    ARIADNE_TEST_ASSERT(!possibly(set1.overlaps(Box(2, 0.0,1.0, 0.0,1.0))));
+    ebx = Box::empty_box(2);
+    ARIADNE_TEST_ASSERT(definitely(set2.disjoint(ebx)));
+    ARIADNE_TEST_ASSERT(!possibly(set2.overlaps(ebx)));
+    // test with a general set
+    enabled_cells = bdd_ithvar(0) & bdd_nithvar(1) & (bdd_ithvar(3) | bdd_ithvar(4));    
+    set2 = BDDTreeSet(Grid(2), 3, array<int>(2, 1,1), enabled_cells);
+    bx1 = Box(2, 2.25,5.0, 4.25,6.5);
+    bx2 = Box(2, 1.25,2.25, 1.75,4.25);
+    ARIADNE_TEST_ASSERT(!possibly(set2.disjoint(bx1)));
+    ARIADNE_TEST_ASSERT(definitely(set2.disjoint(bx2)));     
+    ARIADNE_TEST_ASSERT(definitely(set2.overlaps(bx1)));
+    ARIADNE_TEST_ASSERT(!possibly(set2.overlaps(bx2)));     
 }
 
 void test_operations() {

@@ -231,13 +231,13 @@ class BDDTreeSet : public DrawableInterface {
     tribool subset( const Box& box ) const ;
 
     /*! \brief Tests if a %BDDTreeSet is a superset of a box. */
-//    tribool superset( const Box& box ) const;
+    tribool superset( const Box& box ) const;
 
     /*! \brief Tests if (the closure of) a %BDDTreeSet is disjoint from a box. */
-//    tribool disjoint( const Box& box  ) const;
+    tribool disjoint( const Box& box  ) const;
 
     /*! \brief Tests if a %BDDTreeSet overlaps a box. */
-//    tribool overlaps( const Box& box ) const;
+    tribool overlaps( const Box& box ) const;
 
     //@}
 

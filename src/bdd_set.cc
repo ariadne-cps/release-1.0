@@ -245,7 +245,7 @@ void _equalize_root_cell(BDDTreeSet& set1, BDDTreeSet& set2) {
 
 // Test whether the a BDDTreeSet based on root_cell and enabled_cells, where the root variable is root_var
 // is a subset of Box. 
-tribool _subset(const Box& root_cell, const bdd& enabled_cells, int root_var, uint splitting_coordinate, const Box& box) {
+bool _subset(const Box& root_cell, const bdd& enabled_cells, int root_var, uint splitting_coordinate, const Box& box) {
     // std::cout << "_subset(" << root_cell << ", " << enabled_cells << ", " 
     //           << root_var << ", " << splitting_coordinate << ", " << box << ")" << std::endl;
     // if the set is empty, return true
@@ -272,6 +272,81 @@ tribool _subset(const Box& root_cell, const bdd& enabled_cells, int root_var, ui
         return false;
     return _subset(subcells.second, right_branch, root_var+1, (splitting_coordinate+1) % dim, box);
 }
+
+// Test whether the a BDDTreeSet based on root_cell and enabled_cells, where the root variable is root_var
+// is a superset of Box. 
+// WARNING: This procedure assumes that box is not empty and a subset of root_cell.
+bool _superset(const Box& root_cell, const bdd& enabled_cells, int root_var, uint splitting_coordinate, const Box& box) {
+    // std::cout << "_superset(" << root_cell << ", " << enabled_cells << ", " 
+    //            << root_var << ", " << splitting_coordinate << ", " << box << ")" << std::endl;
+    // if the set is empty, return false
+    if(enabled_cells == bddfalse) return false;
+    // if the bdd is the constant true, return true
+    if(enabled_cells == bddtrue) return true;
+    
+    // Split the root cell and the box, and repeat recursively on the two subcells
+    std::pair<Box,Box> subcells = root_cell.split(splitting_coordinate);  
+    Box left_box = box;
+    left_box[splitting_coordinate] = intersection(box[splitting_coordinate], subcells.first[splitting_coordinate]); 
+    // std::cout << "left_box = " << left_box << std::endl;
+    Box right_box = box;
+    right_box[splitting_coordinate] = intersection(box[splitting_coordinate], subcells.second[splitting_coordinate]); 
+    // std::cout << "right_box = " << right_box << std::endl;
+    bdd right_branch, left_branch;
+    // if the variable labelling the root of the bdd is not root_var, do not split the bdd
+    if(bdd_var(enabled_cells) != root_var) {
+        left_branch = enabled_cells;
+        right_branch = enabled_cells;
+    } else {
+        left_branch = bdd_low(enabled_cells);
+        right_branch = bdd_high(enabled_cells);
+    }
+    
+    int dim = root_cell.dimension();
+    // If the left box is not empty, repeat the test on the left branch
+    if(!left_box[splitting_coordinate].empty()) {
+        if(!_superset(subcells.first, left_branch, root_var+1, (splitting_coordinate+1) % dim, left_box)) {
+            return false;
+        }
+    }
+     // If the right box is not empty, repeat the test on the right branch
+    if(!right_box[splitting_coordinate].empty()) {
+        return (_superset(subcells.second, right_branch, root_var+1, (splitting_coordinate+1) % dim, right_box));
+    }
+
+    return true;
+}
+
+// Test whether the a BDDTreeSet based on root_cell and enabled_cells, where the root variable is root_var
+// is a disjoint from Box. 
+bool _disjoint(const Box& root_cell, const bdd& enabled_cells, int root_var, uint splitting_coordinate, const Box& box) {
+    // std::cout << "_disjoint(" << root_cell << ", " << enabled_cells << ", " 
+    //           << root_var << ", " << splitting_coordinate << ", " << box << ")" << std::endl;
+    // if the set is empty, return true
+    if(enabled_cells == bddfalse) return true;
+    // if the root cell is disjoint from box, return true
+    if(root_cell.disjoint(box)) return true;
+    // if the bdd is the constant true, return false
+    if(enabled_cells == bddtrue) return false;
+    
+    // Split the root cell and repeat recursively on the two subcells
+    std::pair<Box,Box> subcells = root_cell.split(splitting_coordinate);  
+    bdd right_branch, left_branch;
+    // if the variable labelling the root of the bdd is not root_var, do not split the bdd
+    if(bdd_var(enabled_cells) != root_var) {
+        left_branch = enabled_cells;
+        right_branch = enabled_cells;
+    } else {
+        left_branch = bdd_low(enabled_cells);
+        right_branch = bdd_high(enabled_cells);
+    }
+    
+    int dim = root_cell.dimension();
+    if(!_disjoint(subcells.first, left_branch, root_var+1, (splitting_coordinate+1) % dim, box))
+        return false;
+    return _disjoint(subcells.second, right_branch, root_var+1, (splitting_coordinate+1) % dim, box);
+}
+
 
 /************************************* BDDTreeSet **************************************/
 
@@ -477,25 +552,38 @@ tribool BDDTreeSet::subset( const Box& box ) const {
     return _subset(this->root_cell(), this->enabled_cells(), 0, splitting_coordinate, box);        
 }
 
-/*
-
-tribool superset( const Box& box ) const {
+tribool BDDTreeSet::superset( const Box& box ) const {
     // raise an error if the current set is zero dimensional
     ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot test for superset of a zero-dimensional set.");
+
+    // If box is empty, the test is true
+    if(box.empty()) return true;
     
     // the box and the set must have the same dimension
     ARIADNE_ASSERT_MSG(this->dimension() == box.dimension(), "Box and set must have the same dimension.");
     
+    // If the box is not a subset of the root cell, the test is false
+    if(!box.subset(this->root_cell())) return false;
+    
     // compute the first splitting coordinate
     uint dim = this->dimension();
     uint height = this->root_cell_height();
-    uint splitting_coordinate = (dim - 1) - (height % dim);
-    return _superset(this->root_cell(), this->enabled_cells(), 0, spliting_coordinate, box);        
+    uint splitting_coordinate;
+    if(height == 0) {
+        splitting_coordinate = 0;
+    } else {
+        splitting_coordinate = (dim - 1) - ((height-1) % dim);
+    }
+    return _superset(this->root_cell(), this->enabled_cells(), 0, splitting_coordinate, box);        
 }
 
-tribool disjoint( const Box& box  ) const {
+
+tribool BDDTreeSet::disjoint( const Box& box  ) const {
     // raise an error if the current set is zero dimensional
     ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot test for disjoint of a zero-dimensional set.");
+
+    // If box is empty, the test is true
+    if(box.empty()) return true;
     
     // the box and the set must have the same dimension
     ARIADNE_ASSERT_MSG(this->dimension() == box.dimension(), "Box and set must have the same dimension.");
@@ -503,25 +591,20 @@ tribool disjoint( const Box& box  ) const {
     // compute the first splitting coordinate
     uint dim = this->dimension();
     uint height = this->root_cell_height();
-    uint splitting_coordinate = (dim - 1) - (height % dim);
-    return _disjoint(this->root_cell(), this->enabled_cells(), 0, spliting_coordinate, box);        
+    uint splitting_coordinate;
+    if(height == 0) {
+        splitting_coordinate = 0;
+    } else {
+        splitting_coordinate = (dim - 1) - ((height-1) % dim);
+    }
+    return _disjoint(this->root_cell(), this->enabled_cells(), 0, splitting_coordinate, box);        
 }
 
-tribool overlaps( const Box& box ) const {
-    // raise an error if the current set is zero dimensional
-    ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot test for overlaps of a zero-dimensional set.");
-    
-    // the box and the set must have the same dimension
-    ARIADNE_ASSERT_MSG(this->dimension() == box.dimension(), "Box and set must have the same dimension.");
-    
-    // compute the first splitting coordinate
-    uint dim = this->dimension();
-    uint height = this->root_cell_height();
-    uint splitting_coordinate = (dim - 1) - (height % dim);
-    return _overlaps(this->root_cell(), this->enabled_cells(), 0, spliting_coordinate, box);        
+tribool BDDTreeSet::overlaps( const Box& box ) const {
+    return !this->disjoint(box);        
 }
 
-
+/*
     void clear( );
 */
 
