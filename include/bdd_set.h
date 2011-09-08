@@ -286,7 +286,7 @@ class BDDTreeSet : public DrawableInterface {
      *   the primary cell we should make to get the proper cells for outer approximating \a set.
      *   \pre The box must have nonempty interior.
      */
-//    void adjoin_over_approximation( const Box& box, const uint subdiv );
+    void adjoin_over_approximation( const Box& box, const uint subdiv );
 
     /*! \brief Adjoin an outer approximation of a given set, computing to the given depth.
      */

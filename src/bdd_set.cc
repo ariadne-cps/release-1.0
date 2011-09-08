@@ -355,6 +355,42 @@ bool _disjoint(const Box& root_cell, const bdd& enabled_cells, int root_var, uin
     return _disjoint(subcells.second, right_branch, root_var+1, (splitting_coordinate+1) % dim, box);
 }
 
+// recursive function that adjoin a box to a bdd with a maximum depth
+bdd _adjoin_over_approximation(const Box& box, const bdd& enabled_cells, const Box& root_cell,
+                               uint depth, uint splitting_coordinate, int root_var)
+{
+    // std::cout << "_adjoin_over_approximation(" << box << ", " << enabled_cells << ", "
+    //           << root_cell << ", " << depth << ", " << splitting_coordinate << ", " << root_var 
+    //           << ")" << std::endl;
+    // if the bdd is the constant true, do nothing
+    if(enabled_cells == bddtrue) return bddtrue;
+    // if the root cell is a subset of box, return the constant true bdd
+    if(root_cell.subset(box)) return bddtrue;
+    // if the root cell is disjoint from the box, do nothing
+    if(root_cell.disjoint(box)) return enabled_cells;
+    // now we can assume that box overlaps the root cell
+    // if the depth is zero, return the constant true bdd
+    if(depth == 0) return bddtrue;
+    
+    // if depth > 0, split the root cell and the bdd, and continue recursively
+    std::pair <Box, Box> split_cells = root_cell.split(splitting_coordinate);
+    bdd right_branch, left_branch;
+    // if the variable labelling the root of the bdd is not root_var, do not split the bdd
+    if(enabled_cells == bddfalse || bdd_var(enabled_cells) != root_var) {
+        // std::cout << "bdd_var is different from root_var, do no split the bdd." << std::endl;
+        left_branch = enabled_cells;
+        right_branch = enabled_cells;
+    } else {
+        // std::cout << "bdd_var is equal to root_var, split the bdd." << std::endl;
+        left_branch = bdd_low(enabled_cells);
+        right_branch = bdd_high(enabled_cells);
+    }
+    left_branch = _adjoin_over_approximation(box, left_branch, split_cells.first, depth - 1,
+                                    (splitting_coordinate + 1) % box.dimension(), root_var + 1);
+    right_branch = _adjoin_over_approximation(box, right_branch, split_cells.second, depth - 1,
+                                    (splitting_coordinate + 1) % box.dimension(), root_var + 1);
+    return (bdd_nithvar(root_var) & left_branch) | (bdd_ithvar(root_var) & right_branch);
+}
 
 /************************************* BDDTreeSet **************************************/
 
@@ -719,10 +755,43 @@ void BDDTreeSet::remove( const BDDTreeSet& set ) {
     this->minimize_height();
 }
 
+void BDDTreeSet::adjoin_over_approximation( const Box& box, const uint subdiv ) {
+    // raise an error if the set is zero dimensional
+    ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot adjoin a box to a zero-dimensional BDDTreeSet.");
+    // raise an error if the dimensions of box and set are different
+    ARIADNE_ASSERT_MSG(this->dimension() == box.dimension(), "Cannot adjoin a box with different dimension.");
+    // raise an error if the box is unbounded
+    ARIADNE_ASSERT_MSG(box.bounded(), "Cannot adjoin an unbounded box.");
+
+    // do nothing if the box is empty
+    if(box.empty()) return;
+    
+    // First step: increase the height of the BDDTreeSet until the box is a subset of the root cell
+    Box root_cell = this->root_cell();
+    uint height = this->root_cell_height();
+    uint dim = this->dimension();
+    int i = 0;
+    while(!box.subset(root_cell)) {
+        // determine which dimension to merge 
+        i = (dim - 1) - (height % dim);
+        // increase height
+        height++;    
+        // if the occurrence of the merge is even, enlarge the cell to the right
+        if((height / dim) % 2 == 1) {
+            root_cell[i] = root_cell[i] - Interval(0.0, root_cell[i].width());
+        } else {    // otherwise, to the left
+            root_cell[i] = root_cell[i] + Interval(0.0, root_cell[i].width());
+        }
+    }
+    this->increase_height(height);
+    
+    // recursive call to worker procedure that computes the new bdd
+    this->_bdd = _adjoin_over_approximation(box, this->enabled_cells(), this->root_cell(), height + dim*subdiv, i, 0);
+    // minimize the result
+    this->minimize_height();
+}   
+
 /*
-
-    void adjoin_over_approximation( const Box& box, const uint subdiv );
-
     void adjoin_outer_approximation( const CompactSetInterface& set, const uint subdiv );
 
     void adjoin_lower_approximation( const OvertSetInterface& set, const uint height, const uint subdiv );
