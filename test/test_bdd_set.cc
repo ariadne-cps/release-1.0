@@ -32,6 +32,12 @@
 
 #include "bdd_set.h"
 #include "logging.h"
+#include "graphics.h"
+#include "zonotope.h"
+#include "formula.h"
+#include "expression.h"
+#include "function_set.h"
+
 
 #include "test.h"
 
@@ -451,8 +457,8 @@ void test_operations() {
  
 }
 
-void test_approximations() {
-    ARIADNE_PRINT_TEST_COMMENT("Testing approximations.");
+void test_box_approximations() {
+    ARIADNE_PRINT_TEST_COMMENT("Testing box approximations.");
 
     // Test adjoin over approximation of a box
 
@@ -551,7 +557,81 @@ void test_approximations() {
 
 }
 
-void test_iterators() {
+void test_set_approximations() {
+    ARIADNE_PRINT_TEST_COMMENT("Testing set approximations.");
+
+    // Test adjoin outer approximation of a set
+/*
+    Zonotope zt0(2);
+    Zonotope zt1(2,2, 0.0,0.5,0.5,0.0, 0.0,0.0,1.0,0.0,0.0);
+    
+    // adjoin to an empty BDDTreeSet
+    set1 = BDDTreeSet(Grid(2), false);
+    set1.increase_height(zt1.bounding_box());
+    ARIADNE_TEST_ASSERT(definitely(subset(zt1.bounding_box(), set1.root_cell())));
+    Box dbox = set1.root_cell();
+    plot("test_bdd_set_zt1",PlanarProjectionMap(2,0,1),dbox,Colour(1,0,1),zt1);
+    plot("test_bdd_set_zt1_bbox",PlanarProjectionMap(2,0,1),dbox,Colour(1,0,1),zt1.bounding_box());
+    
+    ARIADNE_TEST_ASSERT(!definitely(zt1.disjoint(Box(2, 0.0,1.0, 0.0,2.0))));
+    set1.adjoin_outer_approximation(zt1, 1);
+    ARIADNE_TEST_ASSERT(!set1.empty());
+    plot("test_bdd_set_zt1_adjoin",PlanarProjectionMap(2,0,1),dbox,Colour(1,0,1),set1);
+*/
+
+    RealVariable x("x");
+    RealVariable y("y");
+	List<RealVariable> varlist;
+	varlist.append(x);
+	varlist.append(y);
+	RealExpression f_x = 0.5*x + 0.5*y;
+	RealExpression f_y = y;
+	List<RealExpression> expr;
+	expr.append(f_x);
+	expr.append(f_y);
+	VectorFunction f(expr,varlist);
+	Box dom(2, -1.0,1.0, -1.0,1.0);
+	ImageSet is1(dom, f);
+
+    // raise an error if the set is zero-dimensional
+    BDDTreeSet set0;
+    ARIADNE_TEST_FAIL(set0.adjoin_outer_approximation(is1, 1));
+    // raise an error if the dimensions are different
+    BDDTreeSet set1(Grid(4), true);
+    ARIADNE_TEST_FAIL(set1.adjoin_outer_approximation(is1, 1));
+
+    // adjoin to an empty BDDTreeSet
+    set1 = BDDTreeSet(Grid(2), false);
+    set1.increase_height(is1.bounding_box());
+    ARIADNE_TEST_ASSERT(definitely(subset(is1.bounding_box(), set1.root_cell())));
+    Box dbox = set1.root_cell();
+    plot("test_bdd_set_is1",PlanarProjectionMap(2,0,1),dbox,Colour(1,0,1),is1);
+    set1.adjoin_outer_approximation(is1, 3);
+    ARIADNE_TEST_ASSERT(!set1.empty());
+    plot("test_bdd_set_is1_adjoin",PlanarProjectionMap(2,0,1),dbox,Colour(1,0,1),set1);
+    
+    // adjoining an empty set do not change the set
+    Box ebx = Box::empty_box(2);
+    BDDTreeSet set2 = set1;
+    set2.adjoin_outer_approximation(ebx, 5);
+    ARIADNE_TEST_EQUAL(set1, set2);
+    
+    // adjoin to a non-empty BDDTreeSet
+	f_x = -0.25*x - 0.5*y;
+	f_y = y;
+	expr.clear();
+	expr.append(f_x);
+	expr.append(f_y);
+	f = VectorFunction(expr,varlist);
+	ImageSet is2(dom, f);
+    set2.adjoin_outer_approximation(is2, 4);
+    plot("test_bdd_set_is2_adjoin",PlanarProjectionMap(2,0,1),dbox,Colour(1,0,1),set2);
+    ARIADNE_TEST_ASSERT(definitely(subset(set1, set2)));
+    ARIADNE_TEST_ASSERT(!possibly(subset(set2, set1)));
+    	
+}
+
+void test_iterators_conversions_drawing() {
     ARIADNE_PRINT_TEST_COMMENT("Testing iterators.");
     
     // If the set is zero-dimensional an exception must be thrown 
@@ -591,6 +671,18 @@ void test_iterators() {
     // The set contains 4 cells
     ARIADNE_TEST_EQUAL(count, 4);
 
+    // Test conversion to a ListSet of Boxes
+    ListSet<Box> boxlist(2);
+    boxlist.push_back(results[0]);
+    boxlist.push_back(results[1]);
+    boxlist.push_back(results[2]);
+    boxlist.push_back(results[3]);
+    ListSet<Box> reslist = set2;
+    ARIADNE_TEST_EQUAL(reslist, boxlist);
+    
+    // Test drawing
+    plot("test_bdd_set_draw",PlanarProjectionMap(2,0,1),set2.bounding_box(),Colour(1,0,1),set2);
+
 }
 
 int main() {
@@ -599,8 +691,9 @@ int main() {
     test_properties();
     test_predicates();
     test_operations();
-    test_approximations();
-    test_iterators();
+    test_box_approximations();
+    test_set_approximations();
+    test_iterators_conversions_drawing();
     
     return ARIADNE_TEST_FAILURES;
 }

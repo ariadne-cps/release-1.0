@@ -970,7 +970,10 @@ tribool constrained_feasible(const Matrix<X>& A, const Vector<X>& b, const Vecto
 
     tribool fs = _constrained_feasible(A,b,l,u,vt,p,B,x);
     tribool vfs = verify_constrained_feasibility(A,b,l,u,vt);
-    ARIADNE_ASSERT(indeterminate(vfs) || vfs==fs);
+    if(!(indeterminate(vfs) || vfs==fs)) {
+        std::cout << "vfs = " << vfs << ", fs = " << fs << std::endl;
+    }
+    // ARIADNE_ASSERT(indeterminate(vfs) || vfs==fs);
 
     return vfs;
 }

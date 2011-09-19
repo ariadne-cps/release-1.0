@@ -192,6 +192,9 @@ class Box
     //! \brief Returns an enclosing bounding box for the set.
     //! The result is guaranteed to contain the box in its interior.
     virtual Box bounding_box() const {
+        if(this->empty()) {
+            return Box::empty_box(this->dimension());
+        }
         static const Float min(std::numeric_limits<double>::min());
         static const Interval eps(-min,+min);
         return Box((*this)+Vector<Interval>(this->dimension(),eps));

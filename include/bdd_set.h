@@ -259,6 +259,10 @@ class BDDTreeSet : public DrawableInterface {
      */
     int increase_height(uint new_height);
 
+    /*! \brief Increase the root cell until \a box is a subset of the root cell, and returns the new root_cell_height.
+     */
+    int increase_height(const Box& box);
+
     /*! \brief Join (make union of) two %BDDTreeSet. */
     friend BDDTreeSet join( const BDDTreeSet& set1, const BDDTreeSet& set2 );
 
@@ -292,7 +296,7 @@ class BDDTreeSet : public DrawableInterface {
 
     /*! \brief Adjoin an outer approximation of a given set, computing to the given depth.
      */
-//    void adjoin_outer_approximation( const CompactSetInterface& set, const uint subdiv );
+    void adjoin_outer_approximation( const CompactSetInterface& set, const uint subdiv );
 
     /*! \brief Adjoin a lower approximation to a given set, computing to the given height and depth:
      *   \a subdiv -- defines, how many subdivisions in each dimension from the level of the
@@ -347,7 +351,7 @@ class BDDTreeSet : public DrawableInterface {
     //! \name Conversions
 
     /*! \brief Convert to a list of ordinary boxes, unrelated to the grid. */
-//    operator ListSet<Box>() const;
+    operator ListSet<Box>() const;
 
     //@}
 
@@ -358,7 +362,7 @@ class BDDTreeSet : public DrawableInterface {
     void draw(CanvasInterface& canvas) const;
 
     /*! \brief Write to an output stream. */
-//    std::ostream& write(std::ostream& os) const;
+    std::ostream& write(std::ostream& os) const;
 
     /*! \brief Import the content from the file \a filename.
      */
