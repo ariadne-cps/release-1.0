@@ -392,6 +392,94 @@ bdd _adjoin_over_approximation(const Box& box, const bdd& enabled_cells, const B
     return (bdd_nithvar(root_var) & left_branch) | (bdd_ithvar(root_var) & right_branch);
 }
 
+// Function that increments a BDDTreeSet iterator
+void _compute_next_cell(std::vector< PathElement >& path) {
+    // std::cout << "_compute_next_cell( ... )" << std::endl;
+    // if the path is empty, do nothing and return
+    if(path.empty()) {
+        return;
+    }
+    // get the last step of the path
+    PathElement tail = path.back();
+    // std::cout << "  tail = " << tail << std::endl;
+    uint dim = tail.cell.dimension();
+    uint i;
+    // if the status is RIGHT, both child have been already explored, backtrack
+    if(tail.status == PE_RIGHT) {
+        // std::cout << "  status is PE_RIGHT, backtracking." << std::endl;        
+        path.pop_back();
+        _compute_next_cell(path);
+        return;
+    }
+    // if the status is LEFT, explore the right child
+    if(tail.status == PE_LEFT) {
+        // std::cout << "  status is PE_LEFT, explore right child." << std::endl;        
+        // set the status to RIGHT
+        tail.status = PE_RIGHT;
+        path.pop_back();
+        path.push_back(tail);
+        // get the variable labeling the bdd
+        int var = bdd_var(tail.obdd);
+        // if the var labeling the bdd correspond to che current level, get the right child
+        if(var == tail.root_var) {
+            tail.obdd = bdd_high(tail.obdd);
+        }
+        // get splitting coordinate
+        i = tail.split_coordinate;
+        // compute new cell by splitting coordinate i
+        tail.cell[i].set_lower((tail.cell[i].lower() + tail.cell[i].upper())/2.0);
+        // set status to new
+        tail.status = PE_NEW;
+        tail.split_coordinate = (i + 1) % dim;
+        tail.root_var = tail.root_var + 1;
+        // append the new step of the path and continue recursively
+        path.push_back(tail);
+        _compute_next_cell(path);
+        return;
+    }
+    // if the status is NEW, we are exploring the node for the first time
+    // if the bdd is the constant true, we are in a cell: fix the flag to true and return
+    // std::cout << "  status is PE_NEW ";        
+    if(tail.obdd == bddtrue) {
+        // std::cout << "and the current bdd is TRUE, exiting" << std::endl;
+        // set the status to RIGHT
+        tail.status = PE_RIGHT;
+        path.pop_back();
+        path.push_back(tail);
+        return;
+    }
+    // if the bdd is the constant false, backtrack
+    if(tail.obdd == bddfalse) {
+        // std::cout << "and the current bdd is FALSE, backtracking" << std::endl;
+        path.pop_back();
+        _compute_next_cell(path);
+        return;
+    }
+    // the bdd is different from true and false, explore the left child
+    // set the status to left
+    // std::cout << "and the current bdd is neither TRUE nor FALSE, go on" << std::endl;
+    tail.status = PE_LEFT;
+    path.pop_back();
+    path.push_back(tail);
+    // get the variable labeling the bdd
+    int var = bdd_var(tail.obdd);
+    // if the var labeling the bdd correspond to che current level, get the right child
+    if(var == tail.root_var) {
+        tail.obdd = bdd_low(tail.obdd);
+    }
+    // get splitting coordinate
+    i = tail.split_coordinate;
+    // compute new cell by splitting coordinate i
+    tail.cell[i].set_upper((tail.cell[i].lower() + tail.cell[i].upper())/2.0);
+    // set status to new
+    tail.status = PE_NEW;
+    tail.split_coordinate = (i + 1) % dim;
+    tail.root_var = tail.root_var + 1;
+    // append the new step of the path and continue recursively
+    path.push_back(tail);
+    _compute_next_cell(path);
+}
+
 /************************************* BDDTreeSet **************************************/
 
 BDDTreeSet::BDDTreeSet( )
@@ -803,11 +891,16 @@ void BDDTreeSet::adjoin_over_approximation( const Box& box, const uint subdiv ) 
     void adjoin_inner_approximation( const OpenSetInterface& set, const uint height, const uint subdiv );
 
     void adjoin_inner_approximation( const OpenSetInterface& set, const Box& bounding_box, const uint subdiv );
+*/
+BDDTreeSet::const_iterator BDDTreeSet::begin() const {
+    return BDDTreeSet::const_iterator(*this);
+}
 
-    const_iterator begin() const;
+BDDTreeSet::const_iterator BDDTreeSet::end() const {
+    return BDDTreeSet::const_iterator();
+}
 
-    const_iterator end() const;
-
+/*
     BDDTreeSet& operator=( const BDDTreeSet &otherSubset);
 
     operator ListSet<Box>() const;
@@ -826,6 +919,62 @@ void BDDTreeSet::draw(CanvasInterface& canvas) const {
 
 */
 
+
+/********************************** BDDTreeConstIterator **********************************/
+int operator==(const PathElement& a, const PathElement& b) {
+	return (a.obdd == b.obdd) && (a.status == b.status) && (a.cell == b.cell) &&
+	       (a.root_var == a.root_var) && (a.split_coordinate == b.split_coordinate);
+}
+
+
+BDDTreeConstIterator::BDDTreeConstIterator() 
+    : _path()
+{
+}
+
+BDDTreeConstIterator::BDDTreeConstIterator( const BDDTreeSet& set ) 
+{
+    ARIADNE_ASSERT_MSG(set.dimension() != 0, "Cannot create an iterator for a zero-dimensional BDDTreeSet.");
+    PathElement root;
+    root.cell = set.root_cell();
+    root.status = PE_NEW;
+    root.obdd = set.enabled_cells();
+    root.root_var = 0;
+    // compute first splitting coordinate
+    uint height = set.root_cell_height();
+    root.split_coordinate = 0;
+    if(height != 0) {
+        uint dim = set.dimension();
+        root.split_coordinate = (dim - 1) - ((height-1) % dim);
+    }
+    this->_path.push_back(root);
+    _compute_next_cell(this->_path);
+}
+
+BDDTreeConstIterator::BDDTreeConstIterator( const BDDTreeConstIterator& iter )
+    : _path(iter._path)
+{
+}
+
+void BDDTreeConstIterator::increment() {
+    // increment only if the iterator is a valid one
+    if(!this->_path.empty()) {
+        _compute_next_cell(this->_path);
+    }
+}
+
+bool BDDTreeConstIterator::equal( BDDTreeConstIterator const & other ) const {
+    return (this->_path == other._path);
+}
+
+Box const& BDDTreeConstIterator::dereference() const {
+    ARIADNE_ASSERT_MSG(!this->_path.empty(), "Cannot dereference and invalid BDDTreeConstIterator.");
+    PathElement tail = this->_path.back();
+    Box *pCell = new Box(tail.cell);
+    return (*pCell);
+}
+
+
 /********************************** Stream operators **********************************/
 
 std::ostream& operator<<(std::ostream& os, const BDDTreeSet& set) {
@@ -834,6 +983,15 @@ std::ostream& operator<<(std::ostream& os, const BDDTreeSet& set) {
                  ", root cell coordinates: " << set.root_cell_coordinates() <<
                  ", bdd: " << set.enabled_cells() <<" )";
 }
+
+std::ostream& operator<<(std::ostream& os, const PathElement& pe) {
+    return os << "( " << pe.cell << 
+                 ", " << pe.obdd << 
+                 ", " << pe.status <<
+                 ", " << pe.split_coordinate << 
+                 ", " << pe.root_var <<" )";
+}
+
 
 } // namespace Ariadne
 

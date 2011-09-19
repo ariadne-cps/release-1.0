@@ -67,7 +67,8 @@ typedef unsigned short dimension_type;
 class Grid;
 // class BDDCell;
 class BDDTreeSet;
-// class BDDTreeConstIterator;
+class BDDTreeConstIterator;
+struct PathElement;
 
 /*Declarations of classes in other files*/
 template<class BS> class ListSet;
@@ -75,6 +76,7 @@ template<class BS> class ListSet;
 // std::ostream& operator<<(std::ostream& os, const BDDCell& cell);
 // std::ostream& operator<<(std::ostream& os, const BDDTreeCursor& treecursor);
 std::ostream& operator<<(std::ostream& os, const BDDTreeSet& set);
+std::ostream& operator<<(std::ostream& os, const PathElement& pe);
 // 
 // // bool subset(const BDDCell& cell, const BDDTreeSet& set);
 // // bool overlap(const BDDCell& cell, const BDDTreeSet& set);
@@ -122,7 +124,7 @@ class BDDTreeSet : public DrawableInterface {
     
   public:
     /*! \brief A short name for the constant iterator */
-//    typedef BDDTreeConstIterator const_iterator;
+    typedef BDDTreeConstIterator const_iterator;
 
     //@{
     //! \name Constructors
@@ -334,10 +336,10 @@ class BDDTreeSet : public DrawableInterface {
     //! \name Iterators
 
     /*! \brief A constant iterator through the enabled leaf nodes of the subpaving. */
-//    const_iterator begin() const;
+    const_iterator begin() const;
 
     /*! \brief A constant iterator to the end of the enabled leaf nodes of the subpaving. */
-//    const_iterator end() const;
+    const_iterator end() const;
 
     //@}
 
@@ -370,81 +372,64 @@ class BDDTreeSet : public DrawableInterface {
     
 };
 
+// definition of the path element for BDDTreeConstIterator
+enum PEStatus {PE_NEW, PE_LEFT, PE_RIGHT};
+
+struct PathElement {
+    bdd obdd;
+    PEStatus status;
+    Box cell;
+    uint split_coordinate;
+    int root_var;
+};
 
 /*! \brief This class allows to iterate through the enabled leaf nodes of BDDTreeSet.
  * The return objects for this iterator are constant Boxes.
  */
-// class BDDTreeConstIterator : public boost::iterator_facade< BDDTreeConstIterator, Box const, boost::forward_traversal_tag > {
-//   private:
-//     /*! \brief When set to true indicates that this is the "end iterator" */
-//     bool _is_in_end_state;
-// 
-//     friend class boost::iterator_core_access;
-// 
-//     //@{
-//     //! \name Iterator Specific
-// 
-//     void increment();
-// 
-//     /*! \brief Returns true if:
-//      * both iterators are in the "end iterator" state
-//      * both iterators are NOT in the "end iterator" state
-//      * and they point to the same node of the same sub paving
-//      */
-//     bool equal( BDDTreeConstIterator const & theOtherIterator) const;
-// 
-//     Box const& dereference() const;
-// 
-//     //@}
-// 
-//     //@{
-//     //! \name Local
-// 
-//     /*! \brief Allows to navigate to the first (\a firstLast==true ),
-//      * last (\a firstLast==false) enabled leaf of the sub paving
-//      * Returns true if the node was successfully found. If nothing is
-//      * found then the cursor should be in the root node again.
-//      */
-//     bool navigate_to(bool firstLast);
-// 
-//     /*! \brief A recursive search function, that looks for the next enabled leaf in the tree.
-//      *  The search is performed from left to right. (Is used for forward iteration)
-//      */
-//     void find_next_enabled_leaf();
-// 
-//     //@}
-// 
-//   public:
-//     //@{
-//     //! \name Constructors
-// 
-//     /*! \brief Default constructor constructs an invalid iterator.
-//      */
-//     BDDTreeConstIterator();
-// 
-//     /*! \brief The constructor that accepts the %BDDTreeSet \a set to iterate on
-//      * The paramereter \a firstLastNone indicates whether we want to position the iterator
-//      * on the first enabled leaf node (firstLastNone == true) or the last one (firstLastNone == false)
-//      * or we are constructing the "end iterator" that does not point anywhere.
-//      */
-//     explicit BDDTreeConstIterator( const BDDTreeSet * set, const tribool firstLastNone );
-// 
-//     /*! \brief The copy constructor.
-//      */
-//     BDDTreeConstIterator( const BDDTreeConstIterator& iter );
-// 
-//     //@}
-// 
-//     /*! \brief The assignment operator.
-//      */
-//     BDDTreeConstIterator & operator=( const BDDTreeConstIterator& gridPavingIter );
-// 
-// 
-//     /*! Destructor.
-//      */
-//     ~BDDTreeConstIterator();
-// 
-// };
+class BDDTreeConstIterator 
+    : public boost::iterator_facade< 
+          BDDTreeConstIterator
+        , Box const
+        , boost::forward_traversal_tag 
+      > 
+{
+  private:    
+    /*! \brief The path from the root of the current cell */
+    std::vector< PathElement > _path;
+        
+    friend class boost::iterator_core_access;
+
+    //@{
+    //! \name Iterator Specific
+
+    void increment();
+
+    /*! \brief compare two iterators
+     */
+    bool equal( BDDTreeConstIterator const & other ) const;
+
+    Box const& dereference() const;
+
+    //@}
+
+  public:
+    //@{
+    //! \name Constructors
+
+    /*! \brief Default constructor constructs an invalid iterator.
+     */
+    BDDTreeConstIterator();
+
+    /*! \brief The constructor that accepts the %BDDTreeSet \a set to iterate on
+     */
+    explicit BDDTreeConstIterator( const BDDTreeSet& set );
+
+    /*! \brief The copy constructor.
+     */
+    BDDTreeConstIterator( const BDDTreeConstIterator& iter );
+
+    //@}
+};
 
 
 template<class A> void serialize(A& archive, Ariadne::BDDTreeSet& set, const unsigned int version) {

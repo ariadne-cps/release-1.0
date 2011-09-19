@@ -452,6 +452,8 @@ void test_operations() {
 }
 
 void test_approximations() {
+    ARIADNE_PRINT_TEST_COMMENT("Testing approximations.");
+
     // Test adjoin over approximation of a box
 
     // raise an error if the set is zero-dimensional
@@ -549,6 +551,48 @@ void test_approximations() {
 
 }
 
+void test_iterators() {
+    ARIADNE_PRINT_TEST_COMMENT("Testing iterators.");
+    
+    // If the set is zero-dimensional an exception must be thrown 
+    BDDTreeSet set0(0);
+    BDDTreeSet::const_iterator it;
+    ARIADNE_TEST_FAIL(it = set0.begin());
+
+    // Test empty set iterator
+    BDDTreeSet set1(2, false);
+    for(it = set1.begin(); it != set1.end(); it++) {
+        // the set is empty, never enter here
+        ARIADNE_TEST_ASSERT(false);
+    }
+
+    // Test simple one-cell set
+    set1 = BDDTreeSet(2, true);
+    uint count = 0;
+    for(it = set1.begin(); it != set1.end(); it++, count++) {
+        // The set contains only one cell
+        ARIADNE_TEST_EQUAL((*it), Box(2, 0.0,1.0, 0.0,1.0));
+    }
+    ARIADNE_TEST_EQUAL(count, 1);
+
+    // Test complex set
+    bdd enabled_cells = bdd_nithvar(0) & (bdd_ithvar(2) | bdd_ithvar(3));
+    BDDTreeSet set2(Grid(2), 2, array<int>(2, 1,1), enabled_cells);
+    array<Box> results(4);
+    results[0] = Box(2, 2.0,2.5, 2.5,3.0);
+    results[1] = Box(2, 2.5,3.0, 2.0,3.0);
+    results[2] = Box(2, 2.0,2.5, 3.5,4.0);
+    results[3] = Box(2, 2.5,3.0, 3.0,4.0);
+    std::cout << "Start iteration." << std::endl;
+    for(count = 0, it = set2.begin(); it != set2.end(); it++, count++) {
+        std::cout << "Cell " << count << " = " << (*it) <<  std::endl;
+        ARIADNE_TEST_EQUAL((*it), results[count]);
+    }
+    // The set contains 4 cells
+    ARIADNE_TEST_EQUAL(count, 4);
+
+}
+
 int main() {
 
     test_constructors();
@@ -556,6 +600,7 @@ int main() {
     test_predicates();
     test_operations();
     test_approximations();
+    test_iterators();
     
     return ARIADNE_TEST_FAILURES;
 }
