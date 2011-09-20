@@ -392,7 +392,7 @@ bdd _adjoin_over_approximation(const Box& box, const bdd& enabled_cells, const B
     return (bdd_nithvar(root_var) & left_branch) | (bdd_ithvar(root_var) & right_branch);
 }
 
-// recursive function that adjoin a set to a bdd with a maximum depth
+// recursive function that adjoin an outer approximation of set to a bdd with a maximum depth
 bdd _adjoin_outer_approximation(const CompactSetInterface& set, const bdd& enabled_cells, const Box& root_cell,
                                uint depth, uint splitting_coordinate, int root_var)
 {
@@ -432,6 +432,99 @@ bdd _adjoin_outer_approximation(const CompactSetInterface& set, const bdd& enabl
                                     (splitting_coordinate + 1) % set.dimension(), root_var + 1);
     return (bdd_nithvar(root_var) & left_branch) | (bdd_ithvar(root_var) & right_branch);
 }
+
+// recursive function that adjoin a lower approximation of a set to a bdd with a maximum depth
+bdd _adjoin_lower_approximation(const OvertSetInterface& set, const bdd& enabled_cells, const Box& root_cell,
+                               uint depth, uint splitting_coordinate, int root_var)
+{
+    // std::cout << "_adjoin_lower_approximation(" << set << ", " << enabled_cells << ", "
+    //           << root_cell << ", " << depth << ", " << splitting_coordinate << ", " << root_var 
+    //           << ")" << std::endl;
+    // if the bdd is the constant true, do nothing
+    if(enabled_cells == bddtrue) return bddtrue;
+    tribool test = set.overlaps(root_cell);
+    // if the root cell is definitely disjoint from the set, do nothing
+    if(!possibly(test)) {
+        // std::cout << "set is definitley disjoint from the current cell, skipping." << std::endl;
+        return enabled_cells;
+    }
+    // std::cout << "set possibly overlaps the current cell, go on." << std::endl;
+    // if the depth is zero, return the true bdd if the set definitely overlaps the root cell
+    // otherwise, do not mark any new cell
+    if(depth == 0) {
+        if(definitely(test)) {
+            // std::cout << "depth is zero and the set definitely overlaps the current cell, mark it." << std::endl;
+            return bddtrue;
+        } else {
+            // std::cout << "depth is zero but the set possibly do not overlap the current cell, skip it." << std::endl;        
+            return enabled_cells;
+        }
+    }
+    // if depth > 0, split the root cell and the bdd, and continue recursively
+    std::pair <Box, Box> split_cells = root_cell.split(splitting_coordinate);
+    bdd right_branch, left_branch;
+    // if the variable labelling the root of the bdd is not root_var, do not split the bdd
+    if(enabled_cells == bddfalse || bdd_var(enabled_cells) != root_var) {
+        // std::cout << "bdd_var is different from root_var, do no split the bdd." << std::endl;
+        left_branch = enabled_cells;
+        right_branch = enabled_cells;
+    } else {
+        // std::cout << "bdd_var is equal to root_var, split the bdd." << std::endl;
+        left_branch = bdd_low(enabled_cells);
+        right_branch = bdd_high(enabled_cells);
+    }
+    left_branch = _adjoin_lower_approximation(set, left_branch, split_cells.first, depth - 1,
+                                    (splitting_coordinate + 1) % set.dimension(), root_var + 1);
+    right_branch = _adjoin_lower_approximation(set, right_branch, split_cells.second, depth - 1,
+                                    (splitting_coordinate + 1) % set.dimension(), root_var + 1);
+    return (bdd_nithvar(root_var) & left_branch) | (bdd_ithvar(root_var) & right_branch);
+}
+
+// recursive function that adjoin an inner approximation of a set to a bdd with a maximum depth
+bdd _adjoin_inner_approximation(const OpenSetInterface& set, const bdd& enabled_cells, const Box& root_cell,
+                               uint depth, uint splitting_coordinate, int root_var)
+{
+    // std::cout << "_adjoin_outer_approximation(" << set << ", " << enabled_cells << ", "
+    //            << root_cell << ", " << depth << ", " << splitting_coordinate << ", " << root_var 
+    //            << ")" << std::endl;
+    // if the bdd is the constant true, do nothing
+    if(enabled_cells == bddtrue) return bddtrue;
+    // if the set does not overlap the root cell, do nothing
+    if(!possibly(set.overlaps(root_cell))) {
+        // std::cout << "set definitely not overlap the current cell, skipping." << std::endl;
+        return enabled_cells;
+    }
+    // if the set definitely covers the current cell, mark it
+    if(definitely(set.covers(root_cell))) {
+        // std::cout << "set definitely covers the current cell, mark it." << std::endl;
+        return bddtrue;
+    }    
+    // std::cout << "set possibly covers the current cell, go on." << std::endl;
+    // if the depth is zero, do not mark any new cell
+    if(depth == 0) {
+        // std::cout << "depth is zero, skip." << std::endl;
+        return enabled_cells;
+    }
+    // if depth > 0, split the root cell and the bdd, and continue recursively
+    std::pair <Box, Box> split_cells = root_cell.split(splitting_coordinate);
+    bdd right_branch, left_branch;
+    // if the variable labelling the root of the bdd is not root_var, do not split the bdd
+    if(enabled_cells == bddfalse || bdd_var(enabled_cells) != root_var) {
+        // std::cout << "bdd_var is different from root_var, do no split the bdd." << std::endl;
+        left_branch = enabled_cells;
+        right_branch = enabled_cells;
+    } else {
+        // std::cout << "bdd_var is equal to root_var, split the bdd." << std::endl;
+        left_branch = bdd_low(enabled_cells);
+        right_branch = bdd_high(enabled_cells);
+    }
+    left_branch = _adjoin_inner_approximation(set, left_branch, split_cells.first, depth - 1,
+                                    (splitting_coordinate + 1) % set.dimension(), root_var + 1);
+    right_branch = _adjoin_inner_approximation(set, right_branch, split_cells.second, depth - 1,
+                                    (splitting_coordinate + 1) % set.dimension(), root_var + 1);
+    return (bdd_nithvar(root_var) & left_branch) | (bdd_ithvar(root_var) & right_branch);
+}
+
 
 
 // Function that increments a BDDTreeSet iterator
@@ -627,9 +720,7 @@ Box BDDTreeSet::root_cell() const {
 }
 
 
-Box BDDTreeSet::bounding_box() {
-    // minimize the cell height and then return the root_cell
-    this->minimize_height();
+Box BDDTreeSet::bounding_box() const {
     return this->root_cell();
 }
 
@@ -962,17 +1053,88 @@ void BDDTreeSet::adjoin_outer_approximation( const CompactSetInterface& set, con
     this->minimize_height();    
 }
 
-/*
-    void adjoin_lower_approximation( const OvertSetInterface& set, const uint height, const uint subdiv );
+void BDDTreeSet::adjoin_lower_approximation( const OvertSetInterface& set, const uint height, const uint subdiv ) {
+    // std::cout << "BDDTreeSet::adjoin_lower_approximation(" << set << ", " << height << ", " << subdiv << ")" << std::endl;
+    ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot adjoin to a zero-dimensional bdd set.");
+    // the set and the bdd set must have the same dimension
+    ARIADNE_ASSERT_MSG(this->dimension() == set.dimension(), "Cannot adjoin a set with different dimension.");
+    
+    // First step: increase the height of the BDDTreeSet to height * dim
+    uint dim = this->dimension();
+    uint set_height = this->increase_height(height * dim);
 
-    void adjoin_lower_approximation( const OvertSetInterface& set, const Box& bounding_box, const uint subdiv );
+    // determine which dimension to split first 
+    uint i = 0;
+    if(set_height > 0) i = (dim - 1) - ((set_height-1) % dim);    
+    // call to worker procedure that computes the new bdd
+    this->_bdd = _adjoin_lower_approximation(set, this->enabled_cells(), this->root_cell(), set_height + dim*subdiv, i, 0);
+    // minimize the result
+    this->minimize_height();            
+}
 
-    void adjoin_lower_approximation( const LocatedSetInterface& set, const uint subdiv );
+void BDDTreeSet::adjoin_lower_approximation( const OvertSetInterface& set, const Box& bounding_box, const uint subdiv ) {
+    // std::cout << "BDDTreeSet::adjoin_lower_approximation(" << set << ", " << bounding_box << ", " << subdiv << ")" << std::endl;
+    ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot adjoin to a zero-dimensional bdd set.");
+    // the set and the bdd set must have the same dimension
+    ARIADNE_ASSERT_MSG(this->dimension() == set.dimension(), "Cannot adjoin a set with different dimension.");
+    
+    // First step: increase the height of the BDDTreeSet until it covers the bounding_box
+    uint height = this->increase_height(bounding_box);
+    uint dim = this->dimension();
 
-    void adjoin_inner_approximation( const OpenSetInterface& set, const uint height, const uint subdiv );
+    // determine which dimension to split first 
+    uint i = 0;
+    if(height > 0) i = (dim - 1) - ((height-1) % dim);    
+    // call to worker procedure that computes the new bdd
+    this->_bdd = _adjoin_lower_approximation(set, this->enabled_cells(), this->root_cell(), height + dim*subdiv, i, 0);
+    // minimize the result
+    this->minimize_height();    
+}
 
-    void adjoin_inner_approximation( const OpenSetInterface& set, const Box& bounding_box, const uint subdiv );
-*/
+void BDDTreeSet::adjoin_lower_approximation( const LocatedSetInterface& set, const uint subdiv ) {
+    this->adjoin_lower_approximation(set, set.bounding_box(), subdiv);
+}
+
+void BDDTreeSet::adjoin_inner_approximation( const OpenSetInterface& set, const uint height, const uint subdiv ) {
+    // std::cout << "BDDTreeSet::adjoin_inner_approximation(" << set << ", " << height << ", " << subdiv << ")" << std::endl;
+    ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot adjoin to a zero-dimensional bdd set.");
+    // the set and the bdd set must have the same dimension
+    ARIADNE_ASSERT_MSG(this->dimension() == set.dimension(), "Cannot adjoin a set with different dimension.");
+    
+    // First step: increase the height of the BDDTreeSet to height * dim
+    uint dim = this->dimension();
+    uint set_height = this->increase_height(height * dim);
+
+    // determine which dimension to split first 
+    uint i = 0;
+    if(set_height > 0) i = (dim - 1) - ((set_height-1) % dim);    
+    // call to worker procedure that computes the new bdd
+    this->_bdd = _adjoin_inner_approximation(set, this->enabled_cells(), this->root_cell(), set_height + dim*subdiv, i, 0);
+    // minimize the result
+    this->minimize_height();    
+}
+
+void BDDTreeSet::adjoin_inner_approximation( const OpenSetInterface& set, const Box& bounding_box, const uint subdiv ) {
+    // std::cout << "BDDTreeSet::adjoin_inner_approximation(" << set << ", " << bounding_box << ", " << subdiv << ")" << std::endl;
+    ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot adjoin to a zero-dimensional bdd set.");
+    // the set and the bdd set must have the same dimension
+    ARIADNE_ASSERT_MSG(this->dimension() == set.dimension(), "Cannot adjoin a set with different dimension.");
+    
+    // First step: increase the height of the BDDTreeSet until it covers the bounding_box
+    uint height = this->increase_height(bounding_box);
+    uint dim = this->dimension();
+
+    // determine which dimension to split first 
+    uint i = 0;
+    if(height > 0) i = (dim - 1) - ((height-1) % dim);    
+    // call to worker procedure that computes the new bdd
+    this->_bdd = _adjoin_inner_approximation(set, this->enabled_cells(), this->root_cell(), height + dim*subdiv, i, 0);
+    // minimize the result
+    this->minimize_height();    
+}
+
+
+
 BDDTreeSet::const_iterator BDDTreeSet::begin() const {
     return BDDTreeSet::const_iterator(*this);
 }

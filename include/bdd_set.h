@@ -201,7 +201,7 @@ class BDDTreeSet : public DrawableInterface {
     Box root_cell() const;
 
     /*! \brief Computes a bounding box for a %BDDTreeSet. */
-    Box bounding_box();
+    Box bounding_box() const;
 
     /*! \brief Allows to test if two BDDTreeSet are equal. The method returns true if
      * the grids are equal, the root cells have the same coordinate and height, and the BBDs are equal.
@@ -299,32 +299,34 @@ class BDDTreeSet : public DrawableInterface {
     void adjoin_outer_approximation( const CompactSetInterface& set, const uint subdiv );
 
     /*! \brief Adjoin a lower approximation to a given set, computing to the given height and depth:
-     *   \a subdiv -- defines, how many subdivisions in each dimension from the level of the
-     *   zero cell we should make to get the proper cells for outer approximating \a set.
+     *   \a subdiv defines how many subdivisions in each dimension from the level of the
+     *   base grid we should make to get the proper cells for outer approximating \a set.
+     *   \a height defines how many merging in each dimension of the base grid are allowed to
+     *   enlarge the root cell.
      *   A lower approximation comprises all cells intersecting a given set.
      */
-//    void adjoin_lower_approximation( const OvertSetInterface& set, const uint height, const uint subdiv );
+    void adjoin_lower_approximation( const OvertSetInterface& set, const uint height, const uint subdiv );
 
     /*! \brief Adjoin a lower approximation to a given set restricted to the given bounding box,
      *   computing to the given depth: \a subdiv -- defines, how many subdivisions in each
      *   dimension from the level of the zero cell we should make to get the proper cells for outer
      *   approximating \a set. A lower approximation comprises all cells intersecting a given set.
      */
-//    void adjoin_lower_approximation( const OvertSetInterface& set, const Box& bounding_box, const uint subdiv );
+    void adjoin_lower_approximation( const OvertSetInterface& set, const Box& bounding_box, const uint subdiv );
 
     /*! \brief Adjoin a lower approximation to a given set, computing to the given depth
      *   \a subdiv -- defines, how many subdivisions in each dimension from the level of the
      *   zero cell we should make to get the proper cells for outer approximating \a set.
      *   A lower approximation comprises all cells intersecting a given set.
      */
-//    void adjoin_lower_approximation( const LocatedSetInterface& set, const uint subdiv );
+    void adjoin_lower_approximation( const LocatedSetInterface& set, const uint subdiv );
 
     /*! \brief Adjoin an inner approximation to a given set, computing to the given height and depth:
      *   \a subdiv -- defines, how many subdivisions in each dimension from the level of the
      *   zero cell we should make to get the proper cells for outer approximating \a set.
      *   An inner approximation comprises all cells that are sub-cells of the given set.
      */
-//    void adjoin_inner_approximation( const OpenSetInterface& set, const uint height, const uint subdiv );
+    void adjoin_inner_approximation( const OpenSetInterface& set, const uint height, const uint subdiv );
 
     /*! \brief Adjoin an inner approximation to a given set restricted to the given bounding box,
      *   computing to the given depth: \a subdiv -- defines, how many subdivisions in each
@@ -332,7 +334,7 @@ class BDDTreeSet : public DrawableInterface {
      *   approximating \a set. An inner approximation comprises all cells that are sub-cells of
      *   the given set.
      */
-//    void adjoin_inner_approximation( const OpenSetInterface& set, const Box& bounding_box, const uint subdiv );
+    void adjoin_inner_approximation( const OpenSetInterface& set, const Box& bounding_box, const uint subdiv );
 
     //@}
 

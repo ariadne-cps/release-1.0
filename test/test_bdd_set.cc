@@ -110,11 +110,9 @@ void test_properties() {
     ARIADNE_TEST_EQUAL(set2.root_cell(), Box(3, 2.0,4.0, 0.0,2.0, -2.0,2.0));   
     
     // Test bounding box
-    // Note that for set0 and set2 the results are different from the previous call to root_cell
-    // because bounding_box() minimizes the root cell height to compute the smallest box
     ARIADNE_TEST_EQUAL(set1.bounding_box(), Box(2, 0.0,1.0, 0.0,1.0));
-    ARIADNE_TEST_EQUAL(set0.bounding_box(), Box(2, 0.0,2.0, -2.0,0.0));       
-    ARIADNE_TEST_EQUAL(set2.bounding_box(), Box(3, 2.0,4.0, 0.0,2.0, -2.0,0.0));       
+    ARIADNE_TEST_EQUAL(set0.bounding_box(), Box(2, 0.0,2.0, -2.0,2.0));       
+    ARIADNE_TEST_EQUAL(set2.bounding_box(), Box(3, 2.0,4.0, 0.0,2.0, -2.0,2.0));       
 }
 
 void test_predicates() {
@@ -592,29 +590,57 @@ void test_set_approximations() {
 	VectorFunction f(expr,varlist);
 	Box dom(2, -1.0,1.0, -1.0,1.0);
 	ImageSet is1(dom, f);
-
+    RealExpression invf_x = 2.0*x - y;
+    RealExpression invf_y = y;
+    expr.clear();
+	expr.append(invf_x);
+	expr.append(invf_y);
+	VectorFunction invf(expr,varlist);
+    ConstraintSet cs1(invf, dom);
+    
     // raise an error if the set is zero-dimensional
     BDDTreeSet set0;
     ARIADNE_TEST_FAIL(set0.adjoin_outer_approximation(is1, 1));
+    ARIADNE_TEST_FAIL(set0.adjoin_lower_approximation(is1, 0, 1));
+    ARIADNE_TEST_FAIL(set0.adjoin_inner_approximation(cs1, 0, 1));
     // raise an error if the dimensions are different
-    BDDTreeSet set1(Grid(4), true);
-    ARIADNE_TEST_FAIL(set1.adjoin_outer_approximation(is1, 1));
+    BDDTreeSet set1o(Grid(4), true);
+    ARIADNE_TEST_FAIL(set1o.adjoin_outer_approximation(is1, 1));
+    ARIADNE_TEST_FAIL(set1o.adjoin_lower_approximation(is1, 1));
+    ARIADNE_TEST_FAIL(set1o.adjoin_inner_approximation(cs1, Box(2, -1.0,1.0, -1.0,1.0), 1));
 
     // adjoin to an empty BDDTreeSet
-    set1 = BDDTreeSet(Grid(2), false);
-    set1.increase_height(is1.bounding_box());
-    ARIADNE_TEST_ASSERT(definitely(subset(is1.bounding_box(), set1.root_cell())));
-    Box dbox = set1.root_cell();
-    plot("test_bdd_set_is1",PlanarProjectionMap(2,0,1),dbox,Colour(1,0,1),is1);
-    set1.adjoin_outer_approximation(is1, 3);
-    ARIADNE_TEST_ASSERT(!set1.empty());
-    plot("test_bdd_set_is1_adjoin",PlanarProjectionMap(2,0,1),dbox,Colour(1,0,1),set1);
+    set1o = BDDTreeSet(Grid(2), false);
+    set1o.increase_height(is1.bounding_box());
+    ARIADNE_TEST_ASSERT(definitely(subset(is1.bounding_box(), set1o.root_cell())));
+    Box dbox = set1o.root_cell();
+    set1o.adjoin_outer_approximation(is1, 3);
+    ARIADNE_TEST_ASSERT(!set1o.empty());
+    plot("test_bdd_set_is1_outer",PlanarProjectionMap(2,0,1),dbox,Colour(1,0,1),set1o);
+    BDDTreeSet set1l(Grid(2), false);
+    set1l.adjoin_lower_approximation(is1, set1o.root_cell_height()/2 + 1, 3);
+    ARIADNE_TEST_ASSERT(!set1l.empty());
+    plot("test_bdd_set_is1_lower",PlanarProjectionMap(2,0,1),dbox,Colour(1,0,1),set1l);
+    ARIADNE_TEST_ASSERT(definitely(subset(set1l, set1o)));
+    ARIADNE_TEST_ASSERT(!possibly(superset(set1l, set1o)));
+    BDDTreeSet set1i(Grid(2), false);
+    set1i.adjoin_inner_approximation(cs1, set1o.root_cell_height()/2 + 1, 3);
+    ARIADNE_TEST_ASSERT(!set1i.empty());
+    plot("test_bdd_set_is1_inner",PlanarProjectionMap(2,0,1),dbox,Colour(1,0,1),set1i);
+    ARIADNE_TEST_ASSERT(definitely(subset(set1i, set1l)));
+    ARIADNE_TEST_ASSERT(!possibly(superset(set1i, set1l)));
     
     // adjoining an empty set do not change the set
     Box ebx = Box::empty_box(2);
-    BDDTreeSet set2 = set1;
-    set2.adjoin_outer_approximation(ebx, 5);
-    ARIADNE_TEST_EQUAL(set1, set2);
+    BDDTreeSet set2o = set1o;
+    set2o.adjoin_outer_approximation(ebx, 5);
+    ARIADNE_TEST_EQUAL(set1o, set2o);
+    BDDTreeSet set2l = set1l;
+    set2l.adjoin_lower_approximation(ebx, 5);
+    ARIADNE_TEST_EQUAL(set1l, set2l);
+    BDDTreeSet set2i = set1i;
+    set2i.adjoin_inner_approximation(ebx, 0, 5);
+    ARIADNE_TEST_EQUAL(set1i, set2i);
     
     // adjoin to a non-empty BDDTreeSet
 	f_x = -0.25*x - 0.5*y;
@@ -624,10 +650,26 @@ void test_set_approximations() {
 	expr.append(f_y);
 	f = VectorFunction(expr,varlist);
 	ImageSet is2(dom, f);
-    set2.adjoin_outer_approximation(is2, 4);
-    plot("test_bdd_set_is2_adjoin",PlanarProjectionMap(2,0,1),dbox,Colour(1,0,1),set2);
-    ARIADNE_TEST_ASSERT(definitely(subset(set1, set2)));
-    ARIADNE_TEST_ASSERT(!possibly(subset(set2, set1)));
+    invf_x = -4.0*x - 2.0*y;
+    invf_y = y;
+    expr.clear();
+	expr.append(invf_x);
+	expr.append(invf_y);
+	invf = VectorFunction(expr,varlist);
+    ConstraintSet cs2(invf, dom);
+	
+    set2o.adjoin_outer_approximation(is2, 4);
+    plot("test_bdd_set_is1_is2_outer",PlanarProjectionMap(2,0,1),dbox,Colour(1,0,1),set2o);
+    ARIADNE_TEST_ASSERT(definitely(subset(set1o, set2o)));
+    ARIADNE_TEST_ASSERT(!possibly(subset(set2o, set1o)));
+    set2l.adjoin_lower_approximation(is2, is2.bounding_box(), 4);
+    plot("test_bdd_set_is1_is2_lower",PlanarProjectionMap(2,0,1),dbox,Colour(1,0,1),set2l);
+    ARIADNE_TEST_ASSERT(definitely(subset(set1l, set2l)));
+    ARIADNE_TEST_ASSERT(!possibly(subset(set2l, set1l)));
+    set2i.adjoin_inner_approximation(cs2, is2.bounding_box(), 4);
+    plot("test_bdd_set_is1_is2_inner",PlanarProjectionMap(2,0,1),dbox,Colour(1,0,1),set2i);
+    ARIADNE_TEST_ASSERT(definitely(subset(set1i, set2i)));
+    ARIADNE_TEST_ASSERT(!possibly(subset(set2i, set1i)));
     	
 }
 
