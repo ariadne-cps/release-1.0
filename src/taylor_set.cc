@@ -278,6 +278,11 @@ TaylorSet::bounding_box() const
     return r;
 }
 
+Box
+TaylorSet::box() const
+{
+	return this->bounding_box();
+}
 
 TaylorSet
 TaylorSet::linearise() const

@@ -130,6 +130,8 @@ class TaylorSet
     virtual tribool inside(const Box&) const;
     //! \brief A bounding box for the set.
     virtual Box bounding_box() const;
+    //! \brief A bounding box for the set.
+    virtual Box box() const;
     //! \brief Draw on a two-dimensional canvas.
     virtual void draw(CanvasInterface& c) const;
     //! \brief Write to an output stream.

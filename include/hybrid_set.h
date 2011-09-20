@@ -172,6 +172,7 @@ class HybridBasicSet
 {
   public:
     typedef BS ContinuousStateSetType;
+    HybridBasicSet() : std::pair<DiscreteLocation,BS>() { }
     HybridBasicSet(const DiscreteLocation& q, const BS& s) : std::pair<DiscreteLocation,BS>(q,s) { }
     HybridBasicSet(const std::pair<DiscreteLocation,BS>& p) : std::pair<DiscreteLocation,BS>(p) { }
     const DiscreteLocation& location() const { return this->first; }
@@ -532,7 +533,7 @@ class HybridGridTreeSet
   public:
     typedef std::map<DiscreteLocation,GridTreeSet>::iterator locations_iterator;
     typedef std::map<DiscreteLocation,GridTreeSet>::const_iterator locations_const_iterator;
-    typedef HybridSetConstIterator<GridTreeSet,HybridGridCell> const_iterator;
+    typedef HybridSetConstIterator<GridTreeSet,HybridBox> const_iterator;
   public:
     locations_iterator locations_begin() {
         return this->std::map<DiscreteLocation,GridTreeSet>::begin(); }
@@ -663,7 +664,7 @@ class HybridGridTreeSet
         HybridListSet<Box> result;
         for(const_iterator iter=this->begin();
             iter!=this->end(); ++iter) {
-            result[iter->first].adjoin(iter->second.box()); }
+            result[iter->first].adjoin(iter->second); }
         return result; }
     void mince(int depth) {
         for(locations_iterator loc_iter=this->locations_begin();
@@ -767,7 +768,7 @@ template<class DS, class HBS> inline
 HBS const&
 HybridSetConstIterator<DS,HBS>::dereference() const
 {
-    this->hybrid_set=HBS(loc_iter->first,*this->bs_iter);
+    this->hybrid_set=HBS(loc_iter->first,this->bs_iter->box());
     return this->hybrid_set;
 }
 

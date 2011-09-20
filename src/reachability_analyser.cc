@@ -560,10 +560,10 @@ _outer_chain_reach_forward_pushTargetCells(
 		std::list<EnclosureType>& result_enclosures,
 		bool use_domain_checking) const
 {
-	for (HybridGridTreeSet::const_iterator cell_it = reachCells.begin(); cell_it != reachCells.end(); cell_it++)
+	for (HybridGridTreeSet::const_iterator cellbox_it = reachCells.begin(); cellbox_it != reachCells.end(); cellbox_it++)
 	{
-		const DiscreteLocation& loc = cell_it->first;
-		const Box& bx = cell_it->second.box();
+		const DiscreteLocation& loc = cellbox_it->first;
+		const Box& bx = cellbox_it->second;
 		const Box& domain = _settings->domain_bounds[loc];
 
 		ARIADNE_LOG(4,"Checking box "<< bx <<" in location " << loc.name());
@@ -591,9 +591,11 @@ _outer_chain_reach_backward_pushSourceCells(
 	// Adopt the minimum granularity when checking the cells
 	sourceCellsOverapprox.mince(_settings->maximum_grid_depth);
 
-	for (HybridGridTreeSet::const_iterator cell_it = sourceCellsOverapprox.begin(); cell_it != sourceCellsOverapprox.end(); ++cell_it) {
-		const DiscreteLocation& loc = cell_it->first;
-		const Box& bx = cell_it->second.box();
+	for (HybridGridTreeSet::const_iterator cellbox_it = sourceCellsOverapprox.begin();
+			cellbox_it != sourceCellsOverapprox.end();
+			++cellbox_it) {
+		const DiscreteLocation& loc = cellbox_it->first;
+		const Box& bx = cellbox_it->second;
 
 		ARIADNE_LOG(4,"Checking box "<< bx <<" in location " << loc.name());
 
@@ -765,16 +767,16 @@ _outer_chain_reach_pushLocalFinalCells(
 		std::list<EnclosureType>& result_enclosures,
 		bool use_domain_checking) const
 {
-	for (GTS::const_iterator cell_it = finalCells.begin(); cell_it != finalCells.end(); ++cell_it) {
-		const DiscreteLocation& loc = cell_it->first;
+	for (GTS::const_iterator cellbox_it = finalCells.begin(); cellbox_it != finalCells.end(); ++cellbox_it) {
+		const DiscreteLocation& loc = cellbox_it->first;
 		const Box& domain = _settings->domain_bounds[loc];
-		const Box& bx = cell_it->second.box();
+		const Box& bx = cellbox_it->second;
 
 		if (use_domain_checking && bx.disjoint(domain)) {
 			ARIADNE_LOG(4,"Discarding enclosure " << bx << " from final cell outside the domain in location " << loc.name() <<".");
 			throw ReachOutOfDomainException("a final cell is outside the domain");
 		} else {
-			result_enclosures.push_back(EnclosureType(cell_it->first,ContinuousEnclosureType(cell_it->second.box())));
+			result_enclosures.push_back(EnclosureType(cellbox_it->first,ContinuousEnclosureType(cellbox_it->second)));
 		}
 	}
 }
@@ -1032,10 +1034,10 @@ _getDerivativeWidthsScore(
 
     // Reads: \sum_{cells} \sum_{dim} der_widths(cell_loc,dim)/hmad(cell_loc,dim), under hmad(cell_loc,dim) > 0
 
-    for (HybridGridTreeSet::const_iterator cell_it = discretised_domain.begin();
-            cell_it != discretised_domain.end(); ++cell_it) {
-        const DiscreteLocation& loc = cell_it->box().first;
-        const Box& cell_bx = cell_it->box().second;
+    for (HybridGridTreeSet::const_iterator cellbox_it = discretised_domain.begin();
+            cellbox_it != discretised_domain.end(); ++cellbox_it) {
+        const DiscreteLocation& loc = cellbox_it->first;
+        const Box& cell_bx = cellbox_it->second;
 
         Vector<Float> der_widths = getDerivativeWidths(*_system,loc,cell_bx);
         Vector<Float> mad = hmad.find(loc)->second;
@@ -1064,10 +1066,10 @@ _getSplitDerivativeWidthsScores(
     Float left_result = 0;
     Float right_result = 0;
 
-    for (HybridGridTreeSet::const_iterator cell_it = discretised_domain.begin();
-            cell_it != discretised_domain.end(); ++cell_it) {
-        const DiscreteLocation& loc = cell_it->box().first;
-        const Box& cell_bx = cell_it->box().second;
+    for (HybridGridTreeSet::const_iterator cellbox_it = discretised_domain.begin();
+            cellbox_it != discretised_domain.end(); ++cellbox_it) {
+        const DiscreteLocation& loc = cellbox_it->first;
+        const Box& cell_bx = cellbox_it->second;
         const Vector<Float>& mad = hmad.find(loc)->second;
 
         Interval left_half_val = Interval(param_val.lower(),param_val.midpoint());
@@ -1078,7 +1080,7 @@ _getSplitDerivativeWidthsScores(
         Vector<Float> right_der_widths = getDerivativeWidths(*_system,loc,cell_bx);
         _system->substitute(param);
 
-        ARIADNE_LOG(5,"Cell " << cell_it->box() << ": " << left_der_widths << ", " << right_der_widths);
+        ARIADNE_LOG(5,"Box " << *cellbox_it << ": " << left_der_widths << ", " << right_der_widths);
 
         for (unsigned i=0; i < cell_bx.size(); ++i) {
             if (mad[i] > 0) {
@@ -1600,8 +1602,8 @@ cells_to_smallest_enclosures(
     cells.mince(maximum_grid_depth);
 
     std::list<EnclosureType> enclosures;
-    for (HybridGridTreeSet::const_iterator cell_it = cells.begin(); cell_it != cells.end(); ++cell_it) {
-        EnclosureType encl(cell_it->first,cell_it->second.box());
+    for (HybridGridTreeSet::const_iterator cellbox_it = cells.begin(); cellbox_it != cells.end(); ++cellbox_it) {
+        EnclosureType encl(cellbox_it->first,cellbox_it->second);
         enclosures.push_back(encl);
     }
 
