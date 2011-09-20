@@ -39,7 +39,7 @@
 #include "stlio.h"
 #include "function_set.h"
 #include "list_set.h"
-#include "grid_set.h"
+#include "denotable_set.h"
 #include "curve.h"
 
 #include "hybrid_set_interface.h"
@@ -55,7 +55,7 @@ namespace Ariadne {
 
 class DiscreteLocation;
 
-class HybridGridTreeSet;
+class HybridDenotableSet;
 class HybridImageSet;
 class HybridConstraintSet;
 
@@ -85,7 +85,7 @@ class HybridSpace
     //! \brief The interface satisified by located sets in the space.
     typedef HybridLocatedSetInterface LocatedSetInterfaceType;
     //! \brief The type of approximations to sets in the space.
-    typedef HybridGridTreeSet SetApproximationType;
+    typedef HybridDenotableSet SetApproximationType;
 
     typedef std::map<DiscreteLocation,uint>::const_iterator
     locations_const_iterator;
@@ -135,8 +135,8 @@ project(const HybridBoxes& box, const std::vector<uint>& dimensions);
 HybridBoxes
 project(const Box& box, const std::vector<uint>& dimensions, const HybridSpace& target_space);
 
-HybridGridTreeSet
-merge_and_project(const HybridGridTreeSet& grid_set, const HybridSpace& target_space);
+HybridDenotableSet
+merge_and_project(const HybridDenotableSet& grid_set, const HybridSpace& target_space);
 
 inline
 HybridBoxes
@@ -506,7 +506,7 @@ class HybridGridCell
     HybridBox box() const { return HybridBox(this->first,this->second.box()); }
 };
 
-class HybridGridTreeSet;
+class HybridDenotableSet;
 
 
 
@@ -526,75 +526,65 @@ void adjoin_denotable_set(HDS1& hds1, const HDS2 hds2) {
 }
 
 
-//! A set comprising a %GridTreeSet in each location.
-class HybridGridTreeSet
-    : public std::map<DiscreteLocation,GridTreeSet>
+//! A set comprising a denotable set in each location.
+class HybridDenotableSet
+    : public std::map<DiscreteLocation,DenotableSetType>
 {
   public:
-    typedef std::map<DiscreteLocation,GridTreeSet>::iterator locations_iterator;
-    typedef std::map<DiscreteLocation,GridTreeSet>::const_iterator locations_const_iterator;
-    typedef HybridSetConstIterator<GridTreeSet,HybridBox> const_iterator;
+    typedef std::map<DiscreteLocation,DenotableSetType>::iterator locations_iterator;
+    typedef std::map<DiscreteLocation,DenotableSetType>::const_iterator locations_const_iterator;
+    typedef HybridSetConstIterator<DenotableSetType,HybridBox> const_iterator;
   public:
     locations_iterator locations_begin() {
-        return this->std::map<DiscreteLocation,GridTreeSet>::begin(); }
+        return this->std::map<DiscreteLocation,DenotableSetType>::begin(); }
     locations_iterator locations_end() {
-        return this->std::map<DiscreteLocation,GridTreeSet>::end(); }
+        return this->std::map<DiscreteLocation,DenotableSetType>::end(); }
     locations_const_iterator locations_begin() const {
-        return this->std::map<DiscreteLocation,GridTreeSet>::begin(); }
+        return this->std::map<DiscreteLocation,DenotableSetType>::begin(); }
     locations_const_iterator locations_end() const {
-        return this->std::map<DiscreteLocation,GridTreeSet>::end(); }
+        return this->std::map<DiscreteLocation,DenotableSetType>::end(); }
     const_iterator begin() const {
         return const_iterator(*this,false); }
     const_iterator  end() const {
         return const_iterator(*this,true); }
   public:
-    HybridGridTreeSet() { }
-    HybridGridTreeSet(const HybridSpace& hspace) {
+    HybridDenotableSet() { }
+    HybridDenotableSet(const HybridSpace& hspace) {
         for(HybridSpace::locations_const_iterator loc_iter = hspace.
                 locations_begin(); loc_iter!=hspace.locations_end(); ++loc_iter) {
             this->insert(make_pair(loc_iter->first,Grid(loc_iter->second))); } }
-    HybridGridTreeSet(const HybridSpace& hspace, const Vector<Float>& lengths) {
+    HybridDenotableSet(const HybridSpace& hspace, const Vector<Float>& lengths) {
         for(HybridSpace::locations_const_iterator loc_iter = hspace.
                 locations_begin(); loc_iter!=hspace.locations_end(); ++loc_iter) {
             this->insert(make_pair(loc_iter->first,Grid(lengths))); } }
-    HybridGridTreeSet(const HybridGrid& hgrid) {
+    HybridDenotableSet(const HybridGrid& hgrid) {
         for(HybridGrid::locations_const_iterator loc_iter = hgrid.
                 locations_begin(); loc_iter!=hgrid.locations_end(); ++loc_iter) {
             this->insert(make_pair(loc_iter->first,Grid(loc_iter->second))); } }
-    HybridGridTreeSet(const HybridGridCell& hgc) {
+    HybridDenotableSet(const HybridGridCell& hgc) {
         this->adjoin(hgc); }
 
     HybridGrid grid() const { return HybridGrid(*this); }
 
     bool has_location(DiscreteLocation q) const {
-        return this->find(q)!=this->std::map<DiscreteLocation,GridTreeSet>::end(); }
+        return this->find(q)!=this->std::map<DiscreteLocation,DenotableSetType>::end(); }
 
-    void adjoin(DiscreteLocation q, const GridCell& c) {
-        this->find(q)->second.adjoin(c); }
-
-    void adjoin(const HybridGridCell& hgc) {
-        this->find(hgc.first)->second.adjoin(hgc.second); }
-
-    void adjoin(const HybridGridTreeSet& hgts) {
-        for(HybridGridTreeSet::locations_const_iterator loc_iter=hgts.locations_begin(); loc_iter!=hgts.locations_end(); ++loc_iter) {
+    void adjoin(const HybridDenotableSet& hgts) {
+        for(HybridDenotableSet::locations_const_iterator loc_iter=hgts.locations_begin(); loc_iter!=hgts.locations_end(); ++loc_iter) {
             if(!this->has_location(loc_iter->first)) {
-                GridTreeSet new_gts(loc_iter->second.grid());
+                DenotableSetType new_gts(loc_iter->second.grid());
                 this->insert(make_pair(loc_iter->first,new_gts)); }
             this->find(loc_iter->first)->second.adjoin(loc_iter->second); } }
 
-    void remove(const HybridGridTreeSet& hgts) {
-        for(HybridGridTreeSet::locations_const_iterator loc_iter=hgts.locations_begin(); loc_iter!=hgts.locations_end(); ++loc_iter) {
+    void remove(const HybridDenotableSet& hgts) {
+        for(HybridDenotableSet::locations_const_iterator loc_iter=hgts.locations_begin(); loc_iter!=hgts.locations_end(); ++loc_iter) {
             if(this->has_location(loc_iter->first)) {
                 this->find(loc_iter->first)->second.remove(loc_iter->second); } } }
 
-    void restrict(const HybridGridTreeSet& hgts) {
-        for(HybridGridTreeSet::locations_const_iterator loc_iter=hgts.locations_begin(); loc_iter!=hgts.locations_end(); ++loc_iter) {
+    void restrict(const HybridDenotableSet& hgts) {
+        for(HybridDenotableSet::locations_const_iterator loc_iter=hgts.locations_begin(); loc_iter!=hgts.locations_end(); ++loc_iter) {
             if(this->has_location(loc_iter->first)) {
                 this->find(loc_iter->first)->second.restrict(loc_iter->second); } } }
-
-    void restrict_to_height(uint h) {
-        for(locations_iterator loc_iter=locations_begin(); loc_iter!=locations_end(); ++loc_iter) {
-            loc_iter->second.restrict_to_height(h); } }
 
     void adjoin_inner_approximation(const HybridBoxes& hbxs, const int depth) {
         for(HybridBoxes::const_iterator loc_iter=hbxs.begin();
@@ -602,7 +592,7 @@ class HybridGridTreeSet
             {
                 DiscreteLocation loc=loc_iter->first;
                 if(!this->has_location(loc)) {
-                    this->insert(make_pair(loc,GridTreeSet(loc_iter->second.dimension()))); }
+                    this->insert(make_pair(loc,DenotableSetType(loc_iter->second.dimension()))); }
                 (*this)[loc].adjoin_inner_approximation(loc_iter->second,loc_iter->second,depth); } }
 
     void adjoin_lower_approximation(const HybridOvertSetInterface& hs, const int height, const int depth) {
@@ -612,7 +602,7 @@ class HybridGridTreeSet
             {
                 DiscreteLocation loc=loc_iter->first;
                 if(!this->has_location(loc)) {
-                    this->insert(make_pair(loc,GridTreeSet(loc_iter->second))); }
+                    this->insert(make_pair(loc,DenotableSetType(loc_iter->second))); }
                 (*this)[loc].adjoin_lower_approximation(hs[loc],height,depth); } }
 
     void adjoin_outer_approximation(const HybridCompactSetInterface& hs, const int depth) {
@@ -622,7 +612,7 @@ class HybridGridTreeSet
             {
                 DiscreteLocation loc=loc_iter->first;
                 if(!this->has_location(loc)) {
-                    this->insert(make_pair(loc,GridTreeSet(loc_iter->second))); }
+                    this->insert(make_pair(loc,DenotableSetType(loc_iter->second))); }
                 (*this)[loc].adjoin_outer_approximation(hs[loc],depth); } }
 
     void adjoin_outer_approximation(const HybridBoxes& hbxs, const int depth) {
@@ -631,18 +621,18 @@ class HybridGridTreeSet
             {
                 DiscreteLocation loc=loc_iter->first;
                 if(!this->has_location(loc)) {
-                    this->insert(make_pair(loc,GridTreeSet(loc_iter->second.dimension()))); }
+                    this->insert(make_pair(loc,DenotableSetType(loc_iter->second.dimension()))); }
                 (*this)[loc].adjoin_outer_approximation(loc_iter->second,depth); } }
 
     template<class S> void adjoin_outer_approximation(DiscreteLocation q, const S& s) {
         this->operator[](q).adjoin_outer_approximation(s); }
 
-    GridTreeSet& operator[](DiscreteLocation q) {
+    DenotableSetType& operator[](DiscreteLocation q) {
         ARIADNE_ASSERT(this->has_location(q));
         return this->find(q)->second;
     }
 
-    const GridTreeSet& operator[](DiscreteLocation q) const {
+    const DenotableSetType& operator[](DiscreteLocation q) const {
         ARIADNE_ASSERT(this->has_location(q));
         return this->find(q)->second;
     }
@@ -676,7 +666,7 @@ class HybridGridTreeSet
             loc_iter->second.recombine(); } }
   public:
     // HybridSetInterface methods
-    HybridGridTreeSet* clone() const { return new HybridGridTreeSet(*this); }
+    HybridDenotableSet* clone() const { return new HybridDenotableSet(*this); }
     HybridSpace space() const { return HybridSpace(*this); }
 
     tribool disjoint(const HybridBox& hbx) const {
@@ -731,14 +721,14 @@ class HybridGridTreeSet
     }
 
     std::ostream& write(std::ostream& os) const {
-        return os << static_cast<const std::map<DiscreteLocation,GridTreeSet>&>(*this);
+        return os << static_cast<const std::map<DiscreteLocation,DenotableSetType>&>(*this);
     }
 
   private:
     /*
       friend class boost::serialization::access;
       template<class Archive> void serialize(Archive & ar, const unsigned int version) {
-      ar & static_cast<std::map<int,GridTreeSet>&>(*this); }
+      ar & static_cast<std::map<int,DenotableSetType>&>(*this); }
     */
 };
 
@@ -793,8 +783,8 @@ HybridSetConstIterator<DS,HBS>::increment_loc()
 }
 
 
-template<class A> void serialize(A& archive, HybridGridTreeSet& set, const unsigned int version) {
-    archive & static_cast<std::map<DiscreteLocation,GridTreeSet>&>(set); }
+template<class A> void serialize(A& archive, HybridDenotableSet& set, const unsigned int version) {
+    archive & static_cast<std::map<DiscreteLocation,DenotableSetType>&>(set); }
 
 template<class BS> inline
 void
@@ -860,39 +850,39 @@ template<class X> std::map<DiscreteLocation,Vector<X> > min_elementwise(
 }
 
 template<class ES>
-HybridGridTreeSet
+HybridDenotableSet
 outer_approximation(const ListSet<HybridBasicSet<ES> >& hls,
                     const HybridGrid& hgr,
                     const int accuracy)
 {
-    HybridGridTreeSet result(hgr);
+    HybridDenotableSet result(hgr);
     for(typename HybridListSet<ES>::const_iterator
             iter=hls.begin(); iter!=hls.end(); ++iter)
         {
             DiscreteLocation loc=iter->first;
             const ES& es=iter->second;
             if(result.find(loc)==result.locations_end()) {
-                result.insert(make_pair(loc,GridTreeSet(hgr[loc])));
+                result.insert(make_pair(loc,DenotableSetType(hgr[loc])));
             }
-            GridTreeSet& gts=result[loc];
+            DenotableSetType& gts=result[loc];
             gts.adjoin_outer_approximation(es.bounding_box(),accuracy);
         }
     return result;
 }
 
 template<class ES>
-HybridGridTreeSet
+HybridDenotableSet
 outer_approximation(const HybridBasicSet<ES>& hs,
                     const HybridGrid& hgr,
                     const int accuracy)
 {
-    HybridGridTreeSet result(hgr);
+    HybridDenotableSet result(hgr);
     DiscreteLocation loc=hs.location();
     const ES& es=hs.continuous_state_set();
     if(result.find(loc)==result.locations_end()) {
-        result.insert(make_pair(loc,GridTreeSet(hgr[loc])));
+        result.insert(make_pair(loc,DenotableSetType(hgr[loc])));
     }
-    GridTreeSet& gts=result[loc];
+    DenotableSetType& gts=result[loc];
     gts.adjoin_outer_approximation(es.bounding_box(),accuracy);
 
     return result;
@@ -900,30 +890,38 @@ outer_approximation(const HybridBasicSet<ES>& hs,
 
 //! \brief Whether \a cons_set is disjoint from \a grid_set.
 //! \details Note that if \a cons_set does not have one location of \a grid_set, then for that location the result is true.
-tribool disjoint(const HybridConstraintSet& cons_set, const HybridGridTreeSet& grid_set);
+tribool disjoint(const HybridConstraintSet& cons_set, const HybridDenotableSet& grid_set);
 //! \brief Whether \a cons_set overlaps with \a grid_set.
 //! \details Note that if \a cons_set does not have one location of \a grid_set, then for that location the result is false.
-tribool overlaps(const HybridConstraintSet& cons_set, const HybridGridTreeSet& grid_set);
+tribool overlaps(const HybridConstraintSet& cons_set, const HybridDenotableSet& grid_set);
 //! \brief Whether \a cons_set covers \a grid_set.
 //! \details Note that if \a cons_set does not have one location of \a grid_set, then for that location the result is true.
-tribool covers(const HybridConstraintSet& cons_set, const HybridGridTreeSet& grid_set);
+tribool covers(const HybridConstraintSet& cons_set, const HybridDenotableSet& grid_set);
 
 //! \brief Evaluates \a grid_set on \a cons_set in order to obtain (a superset of) the overlapping cells.
-HybridGridTreeSet possibly_overlapping_cells(const HybridGridTreeSet& grid_set, const HybridConstraintSet& cons_set);
+HybridDenotableSet possibly_overlapping_cells(const HybridDenotableSet& grid_set, const HybridConstraintSet& cons_set);
 //! \brief Applies \a cons_set to \a grid_set in order to obtain the covered cells.
-HybridGridTreeSet definitely_covered_cells(const HybridGridTreeSet& grid_set, const HybridConstraintSet& cons_set);
+HybridDenotableSet definitely_covered_cells(const HybridDenotableSet& grid_set, const HybridConstraintSet& cons_set);
 
 //! \brief Evaluates the codomain of the function \a func applied on the cells of \a grid_set, each widened by \a eps.
-HybridBoxes eps_codomain(const HybridGridTreeSet& grid_set, const HybridFloatVector& eps, const HybridVectorFunction& func);
+HybridBoxes eps_codomain(const HybridDenotableSet& grid_set, const HybridFloatVector& eps, const HybridVectorFunction& func);
+
+//! \brief Projects \a cell using the given \a indices and with the \a projected_grid.
+//! \details No check is performed as to the consistency of the arguments.
+GridCell project_down_unchecked(const GridCell& cell, const Grid& projected_grid, const Vector<uint>& indices);
+HybridBox project_down_unchecked(const HybridBox& cell, const Grid& projected_grid, const Vector<uint>& indices);
+
+//! \brief Projects \a grid_set using the given \a indices.
+DenotableSetType project_down(const DenotableSetType& grid_set, const Vector<uint>& indices);
 
 //! \brief Projects \a grid_set using the given \a indices, also flattening the set in respect to the hybrid space.
 //! \details The \a grid_set must have the same grid for all locations.
-GridTreeSet flatten_and_project_down(const HybridGridTreeSet& grid_set, const Vector<uint>& indices);
+DenotableSetType flatten_and_project_down(const HybridDenotableSet& grid_set, const Vector<uint>& indices);
 
 } // namespace Ariadne
 
 namespace boost { namespace serialization {
-template<class A> void serialize(A& archive, const Ariadne::HybridGridTreeSet& set, const uint version);
+template<class A> void serialize(A& archive, const Ariadne::HybridDenotableSet& set, const uint version);
 template<class A> void serialize(A& archive, const Ariadne::DiscreteLocation& state, const uint version);
 }}
 

@@ -199,7 +199,7 @@ _safety_proving_once_backward_refinement(
 
     ARIADNE_LOG(5,"Computing the initial set...");
 
-    HybridGridTreeSet backward_initial = analyser->initial_cells_set(safety_constraint);
+    SetApproximationType backward_initial = analyser->initial_cells_set(safety_constraint);
 
     if (backward_initial.empty()) {
         throw EmptyInitialCellSetException("The initial cell set for backward reachability is empty (skipped).");
@@ -211,7 +211,7 @@ _safety_proving_once_backward_refinement(
 
     ARIADNE_LOG(5,"Retrieving backward reachability...");
 
-    HybridGridTreeSet backward_reach = analyser->outer_chain_reach(backward_initial,DIRECTION_BACKWARD);
+    SetApproximationType backward_reach = analyser->outer_chain_reach(backward_initial,DIRECTION_BACKWARD);
 
     _safety_reachability_restriction.reset(backward_reach.clone());
 
@@ -243,7 +243,7 @@ _safety_proving_once_forward_analysis(
 
     ARIADNE_LOG(5,"Computing the initial set...");
 
-    HybridGridTreeSet forward_initial;
+    SetApproximationType forward_initial;
     if (_safety_reachability_restriction) {
         forward_initial = analyser->initial_cells_set(initial_set);
     } else {
@@ -261,7 +261,7 @@ _safety_proving_once_forward_analysis(
 
     ARIADNE_LOG(5,"Retrieving forward reachability...");
 
-    HybridGridTreeSet forward_reach = analyser->outer_chain_reach(forward_initial,DIRECTION_FORWARD);
+    SetApproximationType forward_reach = analyser->outer_chain_reach(forward_initial,DIRECTION_FORWARD);
 
     ARIADNE_LOG(6,"Reachability size: " << forward_reach.size());
 
@@ -276,7 +276,7 @@ _safety_proving_once_forward_analysis(
 
 void
 Verifier::
-_update_safety_cached_reachability_with(const HybridGridTreeSet& reach) const
+_update_safety_cached_reachability_with(const SetApproximationType& reach) const
 {
 	if (_safety_coarse_outer_approximation) {
         ARIADNE_LOG(5,"Setting the reachability restriction cache.");
@@ -290,9 +290,9 @@ _update_safety_cached_reachability_with(const HybridGridTreeSet& reach) const
 void
 Verifier::
 _update_dominance_cached_reachability_with(
-        const HybridGridTreeSet& reach,
-        SetApproximationPtrType& outer_approximation,
-        SetApproximationPtrType& reachability_restriction) const
+        const SetApproximationType& reach,
+        SetApproximationTypePtr& outer_approximation,
+        SetApproximationTypePtr& reachability_restriction) const
 {
     if (outer_approximation) {
         ARIADNE_LOG(4,"Setting its reachability restriction cache.");
@@ -335,9 +335,9 @@ _safety_disproving_once(
 
 	    ARIADNE_LOG(5,"Retrieving forward reachability...");
 
-		HybridGridTreeSet reach;
+		SetApproximationType reach;
 		HybridFloatVector epsilon;
-		make_lpair<HybridGridTreeSet,HybridFloatVector>(reach,epsilon) = analyser->lower_chain_reach_and_epsilon(initial_set);
+		make_lpair<SetApproximationType,HybridFloatVector>(reach,epsilon) = analyser->lower_chain_reach_and_epsilon(initial_set);
 
 		ARIADNE_LOG(5, "Epsilon: " << epsilon);
 
@@ -501,12 +501,12 @@ Verifier::_dominance_proving_once(
 	dominating.getSystem().substitute_all(params,_settings->use_param_midpoints_for_proving);
 
 	try {
-		GridTreeSet flattened_dominated_lower_reach;
+		DenotableSetType flattened_dominated_lower_reach;
 		Vector<Float> flattened_epsilon;
-		make_lpair<GridTreeSet,Vector<Float> >(flattened_dominated_lower_reach,flattened_epsilon) =
+		make_lpair<DenotableSetType,Vector<Float> >(flattened_dominated_lower_reach,flattened_epsilon) =
 				_dominance_flattened_lower_reach_and_epsilon(dominated,params,DOMINATED_SYSTEM,accuracy);
 
-		GridTreeSet flattened_dominating_outer_reach = _dominance_flattened_outer_reach(dominating,params,DOMINATING_SYSTEM,accuracy);
+		DenotableSetType flattened_dominating_outer_reach = _dominance_flattened_outer_reach(dominating,params,DOMINATING_SYSTEM,accuracy);
 
 		result = definitely(covers(flattened_dominated_lower_reach,flattened_dominating_outer_reach,flattened_epsilon));
 
@@ -541,12 +541,12 @@ Verifier::_dominance_disproving_once(
 	dominating.getSystem().substitute_all(params,_settings->use_param_midpoints_for_disproving);
 
 	try {
-		GridTreeSet flattened_dominating_lower_reach;
+		DenotableSetType flattened_dominating_lower_reach;
 		Vector<Float> flattened_epsilon;
-		make_lpair<GridTreeSet,Vector<Float> >(flattened_dominating_lower_reach,flattened_epsilon) =
+		make_lpair<DenotableSetType,Vector<Float> >(flattened_dominating_lower_reach,flattened_epsilon) =
 				_dominance_flattened_lower_reach_and_epsilon(dominating,params,DOMINATING_SYSTEM,accuracy);
 
-		GridTreeSet flattened_dominated_outer_reach = _dominance_flattened_outer_reach(dominated,params,DOMINATED_SYSTEM,accuracy);
+		DenotableSetType flattened_dominated_outer_reach = _dominance_flattened_outer_reach(dominated,params,DOMINATED_SYSTEM,accuracy);
 
 		result = definitely(!inside(flattened_dominating_lower_reach,flattened_dominated_outer_reach,
 				flattened_epsilon,accuracy));
@@ -564,7 +564,7 @@ Verifier::_dominance_disproving_once(
 }
 
 
-std::pair<GridTreeSet,Vector<Float> >
+std::pair<DenotableSetType,Vector<Float> >
 Verifier::
 _dominance_flattened_lower_reach_and_epsilon(
 		DominanceVerificationInput& verInput,
@@ -576,9 +576,9 @@ _dominance_flattened_lower_reach_and_epsilon(
     const unsigned ANALYSER_TAB_OFFSET = 4;
 
 	string descriptor = (dominanceSystem == DOMINATING_SYSTEM ? "dominating" : "dominated");
-	HybridGridTreeSetPtr& outer_approximation = (dominanceSystem == DOMINATING_SYSTEM ?
+	SetApproximationTypePtr& outer_approximation = (dominanceSystem == DOMINATING_SYSTEM ?
 			_dominating_coarse_outer_approximation : _dominated_coarse_outer_approximation);
-	HybridGridTreeSetPtr& reachability_restriction = (dominanceSystem == DOMINATING_SYSTEM ?
+	SetApproximationTypePtr& reachability_restriction = (dominanceSystem == DOMINATING_SYSTEM ?
 			_dominating_reachability_restriction : _dominated_reachability_restriction);
 	Set<Identifier> locked_params_ids = (dominanceSystem == DOMINATING_SYSTEM ? parameters_identifiers(params) : Set<Identifier>());
 	HybridConstraintSet dominance_constraint; // No constraint is enforceable
@@ -593,14 +593,14 @@ _dominance_flattened_lower_reach_and_epsilon(
 
 	const Vector<uint>& projection = verInput.getProjection();
 
-	HybridGridTreeSet reach;
+	SetApproximationType reach;
 	HybridFloatVector epsilon;
-	make_lpair<HybridGridTreeSet,HybridFloatVector>(reach,epsilon) = analyser->lower_chain_reach_and_epsilon(verInput.getInitialSet());
+	make_lpair<SetApproximationType,HybridFloatVector>(reach,epsilon) = analyser->lower_chain_reach_and_epsilon(verInput.getInitialSet());
 
     if (_settings->plot_results)
         _plot_dominance(reach,dominanceSystem,accuracy,LOWER_SEMANTICS);
 
-	GridTreeSet flattened_reach = flatten_and_project_down(reach,projection);
+	DenotableSetType flattened_reach = flatten_and_project_down(reach,projection);
 
 	HybridFloatVector::const_iterator epsilon_it = epsilon.begin();
 	Vector<Float> flattened_epsilon(projection.size());
@@ -611,11 +611,11 @@ _dominance_flattened_lower_reach_and_epsilon(
 
 	ARIADNE_LOG(5,"Flattened epsilon: " << flattened_epsilon);
 
-	return std::pair<GridTreeSet,Vector<Float> >(flattened_reach,flattened_epsilon);
+	return std::pair<DenotableSetType,Vector<Float> >(flattened_reach,flattened_epsilon);
 }
 
 
-GridTreeSet
+DenotableSetType
 Verifier::
 _dominance_flattened_outer_reach(
 		DominanceVerificationInput& verInput,
@@ -627,9 +627,9 @@ _dominance_flattened_outer_reach(
     const unsigned ANALYSER_TAB_OFFSET = 4;
 
 	string descriptor = (dominanceSystem == DOMINATING_SYSTEM ? "dominating" : "dominated");
-	HybridGridTreeSetPtr& outer_approximation = (dominanceSystem == DOMINATING_SYSTEM ?
+	SetApproximationTypePtr& outer_approximation = (dominanceSystem == DOMINATING_SYSTEM ?
 			_dominating_coarse_outer_approximation : _dominated_coarse_outer_approximation);
-	HybridGridTreeSetPtr& reachability_restriction = (dominanceSystem == DOMINATING_SYSTEM ?
+	SetApproximationTypePtr& reachability_restriction = (dominanceSystem == DOMINATING_SYSTEM ?
 			_dominating_reachability_restriction : _dominated_reachability_restriction);
 	Set<Identifier> locked_params_ids = (dominanceSystem == DOMINATING_SYSTEM ? parameters_identifiers(params) : Set<Identifier>());
 	HybridConstraintSet dominance_constraint; // No constraint is enforceable
@@ -642,7 +642,7 @@ _dominance_flattened_outer_reach(
 
 	ARIADNE_LOG(4,"Getting its outer reached region...");
 
-	HybridGridTreeSet reach = analyser->outer_chain_reach(verInput.getInitialSet(),DIRECTION_FORWARD);
+	SetApproximationType reach = analyser->outer_chain_reach(verInput.getInitialSet(),DIRECTION_FORWARD);
 
 	_update_dominance_cached_reachability_with(reach,outer_approximation,reachability_restriction);
 
@@ -657,8 +657,8 @@ Verifier::
 _get_tuned_analyser(
         const VerificationInput& verInput,
         const Set<Identifier>& locked_params_ids,
-        const HybridGridTreeSetPtr& outer_approx,
-        const HybridGridTreeSetPtr& reachability_restriction,
+        const SetApproximationTypePtr& outer_approx,
+        const SetApproximationTypePtr& reachability_restriction,
         const HybridConstraintSet& constraint_set,
         bool EQUAL_GRID_FOR_ALL_LOCATIONS,
         int accuracy,
@@ -723,7 +723,7 @@ _plot_dirpath_init(std::string basename) const
 void
 Verifier::
 _plot_reach(
-		const HybridGridTreeSet& reach,
+		const SetApproximationType& reach,
 		string base_filename,
 		int accuracy) const
 {
@@ -737,7 +737,7 @@ _plot_reach(
 void
 Verifier::
 _plot_dominance(
-		const HybridGridTreeSet& reach,
+		const SetApproximationType& reach,
 		DominanceSystem dominanceSystem,
 		int accuracy,
 		Semantics semantics) const

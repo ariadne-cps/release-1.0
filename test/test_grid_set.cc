@@ -43,6 +43,7 @@
 
 #include "function_set.h"
 #include "grid_set.h"
+#include "denotable_set.h"
 #include "set_interface.h"
 
 #include "test.h"

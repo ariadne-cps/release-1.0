@@ -51,21 +51,21 @@ class Verifier
   private:
 
     typedef boost::shared_ptr<ReachabilityAnalyserInterface<SystemType> > AnalyserPtrType;
-    typedef boost::shared_ptr<SetApproximationType> SetApproximationPtrType;
+    typedef boost::shared_ptr<SetApproximationType> SetApproximationTypePtr;
 
   private:
     boost::shared_ptr<SettingsType> _settings;
     mutable std::string _plot_dirpath;
 
 	/*! \brief "Stateless" fields for holding outer approximations between successive internal calls. */
-	mutable SetApproximationPtrType _safety_coarse_outer_approximation;
-	mutable SetApproximationPtrType _dominating_coarse_outer_approximation;
-	mutable SetApproximationPtrType _dominated_coarse_outer_approximation;
+	mutable SetApproximationTypePtr _safety_coarse_outer_approximation;
+	mutable SetApproximationTypePtr _dominating_coarse_outer_approximation;
+	mutable SetApproximationTypePtr _dominated_coarse_outer_approximation;
 
 	/*! \brief "Stateless" fields for holding reachability restrictions between successive internal calls. */
-	mutable SetApproximationPtrType _safety_reachability_restriction;
-	mutable SetApproximationPtrType _dominating_reachability_restriction;
-	mutable SetApproximationPtrType _dominated_reachability_restriction;
+	mutable SetApproximationTypePtr _safety_reachability_restriction;
+	mutable SetApproximationTypePtr _dominating_reachability_restriction;
+	mutable SetApproximationTypePtr _dominated_reachability_restriction;
 
   public:
 
@@ -270,8 +270,8 @@ class Verifier
     AnalyserPtrType _get_tuned_analyser(
             const VerificationInput& verInput,
             const Set<Identifier>& locked_params_ids,
-            const SetApproximationPtrType& outer_approximation,
-            const SetApproximationPtrType& reachability_restriction,
+            const SetApproximationTypePtr& outer_approximation,
+            const SetApproximationTypePtr& reachability_restriction,
             const HybridConstraintSet& constraint_set,
             bool EQUAL_GRID_FOR_ALL_LOCATIONS,
             int accuracy,
@@ -297,9 +297,9 @@ class Verifier
      * approximation is set, then it is set, otherwise the reachability restriction is set (updated).
      */
 	void _update_dominance_cached_reachability_with(
-	        const HybridGridTreeSet& reach,
-	        SetApproximationPtrType& outer_approximation,
-	        SetApproximationPtrType& reachability_restriction) const;
+	        const SetApproximationType& reach,
+	        SetApproximationTypePtr& outer_approximation,
+	        SetApproximationTypePtr& reachability_restriction) const;
 
 	// Reached region plotting methods
 	void _plot_dirpath_init(std::string basename) const;

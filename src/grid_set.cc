@@ -3090,8 +3090,7 @@ GridTreeSet intersection( const GridTreeSubset& theSet1, const GridTreeSubset& t
     resultSet.adjoin( theSet1 );
     //Intersect the result with the second set
     resultSet.restrict( theSet2 );
-        
-    //Return the result
+
     return resultSet;
 }
     
@@ -3111,8 +3110,7 @@ GridTreeSet difference( const GridTreeSubset& theSet1, const GridTreeSubset& the
     resultSet.adjoin( theSet1 );
     //Remove the second set from the result set
     resultSet.remove( theSet2 );
-        
-    //Return the result
+
     return resultSet;
 }
 
@@ -3131,59 +3129,11 @@ void draw(CanvasInterface& theGraphic, const CompactSetInterface& theSet) {
     draw(theGraphic,outer_approximation(theSet,Grid(theSet.dimension()),DRAWING_DEPTH));
 }
 
-tribool disjoint(const ConstraintSet& cons_set, const GridTreeSet& grid_set)
+GridTreeSet possibly_overlapping_cells(const GridTreeSet& denotable_set, const ConstraintSet& cons_set)
 {
-	if (cons_set.disjoint(grid_set.bounding_box()))
-		return true;
+	GridTreeSet result(denotable_set.grid());
 
-	tribool result = true;
-
-	for (GridTreeSet::const_iterator cell_it = grid_set.begin(); cell_it != grid_set.end(); ++cell_it) {
-		tribool disjoint_cell = cons_set.disjoint(cell_it->box());
-		if (definitely(!disjoint_cell))
-			return false;
-		else
-			result = result && disjoint_cell;
-	}
-
-	return result;
-}
-
-
-tribool overlaps(const ConstraintSet& cons_set, const GridTreeSet& grid_set)
-{
-	return !disjoint(cons_set,grid_set);
-}
-
-
-tribool covers(const ConstraintSet& cons_set, const GridTreeSet& grid_set)
-{
-	if (grid_set.empty())
-		return true;
-	if (cons_set.covers(grid_set.bounding_box()))
-		return true;
-	if (cons_set.disjoint(grid_set.bounding_box()))
-		return false;
-
-	tribool result = true;
-
-	for (GridTreeSet::const_iterator cell_it = grid_set.begin(); cell_it != grid_set.end(); ++cell_it) {
-		tribool covering_cell = cons_set.covers(cell_it->box());
-		if (definitely(!covering_cell))
-			return false;
-		else
-			result = result || covering_cell;
-	}
-
-	return result;
-}
-
-
-GridTreeSet possibly_overlapping_cells(const GridTreeSet& grid_set, const ConstraintSet& cons_set)
-{
-	GridTreeSet result(grid_set.grid());
-
-	for (GridTreeSet::const_iterator cell_it = grid_set.begin(); cell_it != grid_set.end(); ++cell_it) {
+	for (GridTreeSet::const_iterator cell_it = denotable_set.begin(); cell_it != denotable_set.end(); ++cell_it) {
 		if (possibly(cons_set.overlaps(cell_it->box())))
 			result.adjoin(*cell_it);
 	}
@@ -3192,124 +3142,17 @@ GridTreeSet possibly_overlapping_cells(const GridTreeSet& grid_set, const Constr
 }
 
 
-GridTreeSet definitely_covered_cells(const GridTreeSet& grid_set, const ConstraintSet& cons_set)
+GridTreeSet definitely_covered_cells(const GridTreeSet& denotable_set, const ConstraintSet& cons_set)
 {
-	GridTreeSet result(grid_set.grid());
+	GridTreeSet result(denotable_set.grid());
 
-	for (GridTreeSet::const_iterator cell_it = grid_set.begin(); cell_it != grid_set.end(); ++cell_it) {
+	for (GridTreeSet::const_iterator cell_it = denotable_set.begin(); cell_it != denotable_set.end(); ++cell_it) {
 		if (definitely(cons_set.covers(cell_it->box())))
 			result.adjoin(*cell_it);
 	}
 
 	return result;
 }
-
-
-Box eps_codomain(const GridTreeSet& grid_set, const Vector<Float> eps, const VectorFunction& func)
-{
-	ARIADNE_ASSERT(grid_set.dimension() == func.argument_size());
-	ARIADNE_ASSERT(grid_set.dimension() == eps.size());
-
-	Box result = Box::empty_box(func.result_size());
-
-	for (GridTreeSet::const_iterator cell_it = grid_set.begin(); cell_it != grid_set.end(); ++cell_it) {
-		Box cell_box = cell_it->box();
-		cell_box.widen(eps);
-		result = hull(result,func.evaluate(cell_box));
-	}
-
-	return result;
-}
-
-GridCell project_down_unchecked(
-		const GridCell& cell,
-		const Grid& projected_grid,
-		const Vector<uint>& indices)
-{
-	uint cell_dimension = cell.dimension();
-
-	const BinaryWord& word = cell.word();
-
-	BinaryWord new_word;
-	for (uint i=0; i < word.size(); ++i) {
-		uint dim = i % cell_dimension;
-		for (uint j=0; j<indices.size(); ++j) {
-			if (indices[j] == dim) {
-				new_word.push_back(word[i]);
-			}
-		}
-	}
-
-	return GridCell(projected_grid,cell.height(),new_word);
-}
-
-GridTreeSet project_down(
-		const GridTreeSet& original_set,
-		const Vector<uint>& indices)
-{
-	Grid projected_grid = project_down(original_set.grid(),indices);
-
-	GridTreeSet result(projected_grid);
-
-	for (GridTreeSet::const_iterator cell_it = original_set.begin(); cell_it != original_set.end(); ++cell_it) {
-		result.adjoin(project_down_unchecked(*cell_it,result.grid(),indices));
-	}
-
-	return result;
-}
-
-tribool covers(const GridTreeSet& covering_set, const GridTreeSet& covered_set, const Vector<Float>& eps)
-{
-	ARIADNE_ASSERT_MSG(covering_set.dimension() == covered_set.dimension(),"The two sets must have the same dimensions.");
-
-	tribool result = true;
-
-	if (covering_set.bounding_box().disjoint(covered_set.bounding_box()))
-		return false;
-
-	for (GridTreeSet::const_iterator cell_it = covered_set.begin(); cell_it != covered_set.end(); ++cell_it) {
-		Box cell_bx = cell_it->box();
-		cell_bx.widen(eps);
-
-		tribool is_superset = covering_set.superset(cell_bx);
-
-		if (indeterminate(is_superset))
-			result = indeterminate;
-		else if (!possibly(is_superset))
-			return false;
-	}
-
-	return result;
-}
-
-tribool inside(const GridTreeSet& covered_set, const GridTreeSet& covering_set, const Vector<Float>& eps, int accuracy)
-{
-	ARIADNE_ASSERT_MSG(covering_set.dimension() == covered_set.dimension(),"The two sets must have the same dimensions.");
-
-	tribool result = true;
-
-	if (covering_set.bounding_box().disjoint(covered_set.bounding_box()))
-		return false;
-
-	GridTreeSet enlarged_covering_set = covering_set;
-	for (GridTreeSet::const_iterator cell_it = covering_set.begin(); cell_it != covering_set.end(); ++cell_it) {
-		Box cell_bx = cell_it->box();
-		cell_bx.widen(eps);
-		enlarged_covering_set.adjoin_outer_approximation(cell_bx,accuracy);
-	}
-
-	for (GridTreeSet::const_iterator cell_it = covered_set.begin(); cell_it != covered_set.end(); ++cell_it) {
-		tribool is_superset = covering_set.superset(cell_it->box());
-
-		if (indeterminate(is_superset))
-			result = indeterminate;
-		else if (!possibly(is_superset))
-			return false;
-	}
-
-	return result;
-}
-
 
 } // namespace Ariadne
 

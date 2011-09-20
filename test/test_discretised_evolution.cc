@@ -138,8 +138,8 @@ void TestDiscretisedEvolution::test_hybrid_time() const
     cout << "Computing discretised evolution... " << flush;
 
 
-    HybridGridTreeSet reach(outer_approximation(evolve_orbit.reach(),hagrid,depth));
-    HybridGridTreeSet final(outer_approximation(evolve_orbit.final(),hagrid,depth));
+    HybridDenotableSet reach(outer_approximation(evolve_orbit.reach(),hagrid,depth));
+    HybridDenotableSet final(outer_approximation(evolve_orbit.final(),hagrid,depth));
     cout << "done." << endl;
 
     GridTreeSet const& reach_cells=reach[location];

@@ -186,18 +186,18 @@ project(const Box& box, const std::vector<uint>& dimensions, const HybridSpace& 
 	return result;
 }
 
-HybridGridTreeSet
-merge_and_project(const HybridGridTreeSet& grid_set, const Vector<uint>& indices)
+HybridDenotableSet
+merge_and_project(const HybridDenotableSet& grid_set, const Vector<uint>& indices)
 {
-	return HybridGridTreeSet();
+	return HybridDenotableSet();
 }
 
 
-tribool disjoint(const HybridConstraintSet& cons_set, const HybridGridTreeSet& grid_set)
+tribool disjoint(const HybridConstraintSet& cons_set, const HybridDenotableSet& grid_set)
 {
     tribool result = true;
 
-    for (HybridGridTreeSet::locations_const_iterator gts_it = grid_set.locations_begin(); gts_it != grid_set.locations_end(); ++gts_it) {
+    for (HybridDenotableSet::locations_const_iterator gts_it = grid_set.locations_begin(); gts_it != grid_set.locations_end(); ++gts_it) {
     	HybridConstraintSet::locations_const_iterator cs_it = cons_set.find(gts_it->first);
     	if (cs_it != cons_set.locations_end()) {
     		tribool disjoint_gts = disjoint(cs_it->second,gts_it->second);
@@ -211,17 +211,17 @@ tribool disjoint(const HybridConstraintSet& cons_set, const HybridGridTreeSet& g
 }
 
 
-tribool overlaps(const HybridConstraintSet& cons_set, const HybridGridTreeSet& grid_set)
+tribool overlaps(const HybridConstraintSet& cons_set, const HybridDenotableSet& grid_set)
 {
     return !disjoint(cons_set,grid_set);
 }
 
 
-tribool covers(const HybridConstraintSet& cons_set, const HybridGridTreeSet& grid_set)
+tribool covers(const HybridConstraintSet& cons_set, const HybridDenotableSet& grid_set)
 {
     tribool result = true;
 
-    for (HybridGridTreeSet::locations_const_iterator gts_it = grid_set.locations_begin(); gts_it != grid_set.locations_end(); ++gts_it) {
+    for (HybridDenotableSet::locations_const_iterator gts_it = grid_set.locations_begin(); gts_it != grid_set.locations_end(); ++gts_it) {
     	HybridConstraintSet::locations_const_iterator cs_it = cons_set.find(gts_it->first);
     	if (cs_it != cons_set.locations_end()) {
     		tribool covered_gts = covers(cs_it->second,gts_it->second);
@@ -236,11 +236,11 @@ tribool covers(const HybridConstraintSet& cons_set, const HybridGridTreeSet& gri
 }
 
 
-HybridGridTreeSet possibly_overlapping_cells(const HybridGridTreeSet& grid_set, const HybridConstraintSet& cons_set)
+HybridDenotableSet possibly_overlapping_cells(const HybridDenotableSet& grid_set, const HybridConstraintSet& cons_set)
 {
-	HybridGridTreeSet result(grid_set.grid());
+	HybridDenotableSet result(grid_set.grid());
 
-    for (HybridGridTreeSet::locations_const_iterator gts_it = grid_set.locations_begin(); gts_it != grid_set.locations_end(); ++gts_it) {
+    for (HybridDenotableSet::locations_const_iterator gts_it = grid_set.locations_begin(); gts_it != grid_set.locations_end(); ++gts_it) {
     	HybridConstraintSet::locations_const_iterator cs_it = cons_set.find(gts_it->first);
     	if (cs_it != cons_set.locations_end())
     		result[gts_it->first] = possibly_overlapping_cells(gts_it->second,cs_it->second);
@@ -250,11 +250,11 @@ HybridGridTreeSet possibly_overlapping_cells(const HybridGridTreeSet& grid_set, 
 }
 
 
-HybridGridTreeSet definitely_covered_cells(const HybridGridTreeSet& grid_set, const HybridConstraintSet& cons_set)
+HybridDenotableSet definitely_covered_cells(const HybridDenotableSet& grid_set, const HybridConstraintSet& cons_set)
 {
-	HybridGridTreeSet result(grid_set.grid());
+	HybridDenotableSet result(grid_set.grid());
 
-    for (HybridGridTreeSet::locations_const_iterator gts_it = grid_set.locations_begin(); gts_it != grid_set.locations_end(); ++gts_it) {
+    for (HybridDenotableSet::locations_const_iterator gts_it = grid_set.locations_begin(); gts_it != grid_set.locations_end(); ++gts_it) {
     	HybridConstraintSet::locations_const_iterator cs_it = cons_set.find(gts_it->first);
     	if (cs_it != cons_set.locations_end())
     		result[gts_it->first] = definitely_covered_cells(gts_it->second,cs_it->second);
@@ -265,13 +265,13 @@ HybridGridTreeSet definitely_covered_cells(const HybridGridTreeSet& grid_set, co
 
 
 HybridBoxes eps_codomain(
-		const HybridGridTreeSet& grid_set,
+		const HybridDenotableSet& grid_set,
 		const HybridFloatVector& eps,
 		const HybridVectorFunction& func)
 {
 	HybridBoxes result;
 
-	for (HybridGridTreeSet::locations_const_iterator loc_it = grid_set.locations_begin(); loc_it != grid_set.locations_end(); ++loc_it) {
+	for (HybridDenotableSet::locations_const_iterator loc_it = grid_set.locations_begin(); loc_it != grid_set.locations_end(); ++loc_it) {
 		const DiscreteLocation& loc = loc_it->first;
 		HybridFloatVector::const_iterator eps_it = eps.find(loc);
 		HybridVectorFunction::const_iterator func_it = func.find(loc);
@@ -284,7 +284,60 @@ HybridBoxes eps_codomain(
 }
 
 
-GridTreeSet flatten_and_project_down(const HybridGridTreeSet& grid_set, const Vector<uint>& indices)
+GridCell project_down_unchecked(
+		const GridCell& cell,
+		const Grid& projected_grid,
+		const Vector<uint>& indices)
+{
+	uint cell_dimension = cell.dimension();
+
+	const BinaryWord& word = cell.word();
+
+	BinaryWord new_word;
+	for (uint i=0; i < word.size(); ++i) {
+		uint dim = i % cell_dimension;
+		for (uint j=0; j<indices.size(); ++j) {
+			if (indices[j] == dim) {
+				new_word.push_back(word[i]);
+			}
+		}
+	}
+
+	return GridCell(projected_grid,cell.height(),new_word);
+}
+
+HybridBox project_down_unchecked(
+		const HybridBox& cell,
+		const Grid& projected_grid,
+		const Vector<uint>& indices)
+{
+	uint cell_dimension = cell.second.dimension();
+
+	Box box_result(cell_dimension);
+	for (uint i=0; i < cell_dimension; ++i)
+		box_result[i] = cell.second[indices[i]];
+
+	return HybridBox(cell.first,box_result);
+}
+
+DenotableSetType project_down(
+		const DenotableSetType& original_set,
+		const Vector<uint>& indices)
+{
+	Grid projected_grid = project_down(original_set.grid(),indices);
+
+	DenotableSetType result(projected_grid);
+
+	for (DenotableSetType::const_iterator cell_it = original_set.begin(); cell_it != original_set.end(); ++cell_it) {
+		result.adjoin(project_down_unchecked(*cell_it,result.grid(),indices));
+	}
+
+	return result;
+}
+
+
+
+GridTreeSet flatten_and_project_down(const HybridDenotableSet& grid_set, const Vector<uint>& indices)
 {
 	const HybridGrid hgrid = grid_set.grid();
 
@@ -298,7 +351,7 @@ GridTreeSet flatten_and_project_down(const HybridGridTreeSet& grid_set, const Ve
 	Grid projected_grid = project_down(grid,indices);
 	GridTreeSet result(projected_grid);
 
-	for (HybridGridTreeSet::locations_const_iterator gts_it = grid_set.locations_begin();
+	for (HybridDenotableSet::locations_const_iterator gts_it = grid_set.locations_begin();
 			gts_it != grid_set.locations_end(); ++gts_it) {
 		result.adjoin(project_down(gts_it->second,indices));
 	}

@@ -39,6 +39,7 @@ SRC = \
 	taylor_set.cc \
 	grid_set.cc \
 	bdd_set.cc \
+	denotable_set.cc \
 	approximate_set.cc \
 	hybrid_set.cc \
 	geometry.cc \

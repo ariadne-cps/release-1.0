@@ -130,6 +130,14 @@ class Box
         return true;
     }
 
+    const Box& box() const {
+    	return *this;
+    }
+
+    Box& box() {
+    	return *this;
+    }
+
     //! \brief Make a dynamically-allocated copy.
     virtual Box* clone() const {
         return new Box(*this);

@@ -142,9 +142,9 @@ int main()
     HybridImageSet initial_set;
     initial_box=Vector<Float>(initial_state)+Vector<Interval>(4,Interval(-1,1)*0.025);
     initial_set[starvation_mode]=initial_box;
-    HybridGridTreeSet upper_initial_set = analyser.upper_reach(initial_set,zero_time);
+    HybridDenotableSet upper_initial_set = analyser.upper_reach(initial_set,zero_time);
     std::cout << "Computing reachable and evolved set... " << std::flush;
-    HybridGridTreeSet upper_evolve_set, upper_reach_set;
+    HybridDenotableSet upper_evolve_set, upper_reach_set;
     make_lpair(upper_reach_set,upper_evolve_set)= analyser.upper_reach_evolve(initial_set,reachability_time);
     std::cout << "done.\n" << std::endl;
 

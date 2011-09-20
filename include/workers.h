@@ -33,7 +33,7 @@ class UpperReachEvolveWorker
 {
 public:
 
-	typedef HybridGridTreeSet HGTS;
+	typedef HybridDenotableSet HGTS;
     typedef HybridEvolver::EnclosureType EnclosureType;
 	typedef HybridEvolver::ContinuousEnclosureType CE;
 	typedef std::list<EnclosureType> EL;
@@ -144,7 +144,7 @@ class LowerReachEpsilonWorker
 {
 public:
 
-	typedef HybridGridTreeSet HGTS;
+	typedef HybridDenotableSet HGTS;
     typedef HybridEvolver::EnclosureType EnclosureType;
 	typedef HybridEvolver::ContinuousEnclosureType CE;
 	typedef std::list<EnclosureType> EL;

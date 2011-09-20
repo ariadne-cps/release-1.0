@@ -2364,14 +2364,6 @@ template<class A> void serialize(A& archive, Ariadne::GridTreeSet& set, const un
     ARIADNE_NOT_IMPLEMENTED;
 }
 
-
-//! \brief Whether \a cons_set is disjoint from \a grid_set.
-tribool disjoint(const ConstraintSet& cons_set, const GridTreeSet& grid_set);
-//! \brief Whether \a cons_set overlaps with \a grid_set.
-tribool overlaps(const ConstraintSet& cons_set, const GridTreeSet& grid_set);
-//! \brief Whether \a cons_set covers \a grid_set.
-tribool covers(const ConstraintSet& cons_set, const GridTreeSet& grid_set);
-
 //! \brief Evaluates \a grid_set on \a cons_set in order to obtain (a superset of) the overlapping cells.
 //! \details The result is a subset of the cells of \a grid_set. As such, the cells are not manipulated (i.e., by mincing
 //! or recombining) in any way.
@@ -2380,26 +2372,6 @@ GridTreeSet possibly_overlapping_cells(const GridTreeSet& grid_set, const Constr
 //! \details The result is a subset of the cells of \a grid_set. As such, the cells are not manipulated (i.e., by mincing
 //! or recombining) in any way.
 GridTreeSet definitely_covered_cells(const GridTreeSet& grid_set, const ConstraintSet& cons_set);
-
-//! \brief Evaluates the codomain of \a func applied on the cells of \a grid_set, each widened by \a eps.
-Box eps_codomain(const GridTreeSet& grid_set, const Vector<Float> eps, const VectorFunction& func);
-
-//! \brief Projects \a cell using the given \a indices and with the \a projected_grid.
-//! \details No check is performed as to the consistency of the arguments.
-GridCell project_down_unchecked(const GridCell& cell, const Grid& projected_grid, const Vector<uint>& indices);
-
-//! \brief Projects \a grid_set using the given \a indices.
-GridTreeSet project_down(const GridTreeSet& grid_set, const Vector<uint>& indices);
-
-//! \brief Check whether \a covering_set covers \a covered_set with a tolerance of \a eps.
-//! \details Since the cell boxes of \a covered_set, enlarged of \a eps, are checked against \a covering_set,
-//! the two sets can feature different grids.
-tribool covers(const GridTreeSet& covering_set, const GridTreeSet& covered_set, const Vector<Float>& eps);
-
-//! \brief Check whether \a covering_set covers \a covered_set with a tolerance of \a eps.
-//! \details Since the cell boxes of \a covered_set are checked against an overapproximation (using \a accuracy) of the
-//! epsilon-enlargement of \a covering_set, the two sets can feature different grids.
-tribool inside(const GridTreeSet& covered_set, const GridTreeSet& covering_set, const Vector<Float>& eps, int accuracy);
 
 } // namespace Ariadne
 

@@ -105,8 +105,8 @@ HybridReachabilityAnalyser::
 tune_settings(
         const HybridBoxes& domain,
         const Set<Identifier>& locked_params_ids,
-        const HybridGridTreeSetPtr& outer_approximation,
-        const HybridGridTreeSetPtr& reachability_restriction,
+        const HybridDenotableSetPtr& outer_approximation,
+        const HybridDenotableSetPtr& reachability_restriction,
         const HybridConstraintSet& constraint_set,
         bool EQUAL_GRID_FOR_ALL_LOCATIONS,
         int accuracy,
@@ -146,7 +146,7 @@ tune_settings(
 void
 HybridReachabilityAnalyser::
 _plot_reach(
-		const HybridGridTreeSet& reach,
+		const SetApproximationType& reach,
 		string plot_dirpath,
 		string name_prefix) const
 {
@@ -157,13 +157,13 @@ _plot_reach(
 }
 
 
-HybridGridTreeSet
+HybridDenotableSet
 HybridReachabilityAnalyser::
 initial_cells_set(const HybridImageSet& initial_enclosure_set) const
 {
     const int& accuracy = _settings->maximum_grid_depth;
 
-    HybridGridTreeSet result(_settings->grid);
+    SetApproximationType result(_settings->grid);
 
     result.adjoin_outer_approximation(initial_enclosure_set,accuracy);
     result.mince(accuracy);
@@ -175,7 +175,7 @@ initial_cells_set(const HybridImageSet& initial_enclosure_set) const
 }
 
 
-HybridGridTreeSet
+HybridDenotableSet
 HybridReachabilityAnalyser::
 initial_cells_set(const HybridConstraintSet& initial_constraint_set) const
 {
@@ -184,7 +184,7 @@ initial_cells_set(const HybridConstraintSet& initial_constraint_set) const
 
     const int& accuracy = _settings->maximum_grid_depth;
 
-    HybridGridTreeSet result(_settings->grid);
+    SetApproximationType result(_settings->grid);
 
     result = *_settings->reachability_restriction;
     result.mince(accuracy);
@@ -194,11 +194,11 @@ initial_cells_set(const HybridConstraintSet& initial_constraint_set) const
 }
 
 
-std::pair<HybridGridTreeSet,HybridGridTreeSet>
+std::pair<HybridDenotableSet,HybridDenotableSet>
 HybridReachabilityAnalyser::
 _upper_reach_evolve(
 		const SystemType& sys,
-        const HybridGridTreeSet& initial_set,
+        const SetApproximationType& initial_set,
         const HybridTime& time,
         const int accuracy) const
 {
@@ -207,7 +207,7 @@ _upper_reach_evolve(
 	return _upper_reach_evolve(sys,initial_enclosures,time,false,DIRECTION_FORWARD,accuracy);
 }
 
-std::pair<HybridGridTreeSet,HybridGridTreeSet>
+std::pair<HybridDenotableSet,HybridDenotableSet>
 HybridReachabilityAnalyser::
 _upper_reach_evolve(
 		const SystemType& sys,
@@ -416,7 +416,7 @@ outer_chain_reach(
 {
     ARIADNE_LOG(1,"Performing outer chain reachability from an enclosure set...");
 
-	HybridGridTreeSet initial(_settings->grid);
+	SetApproximationType initial(_settings->grid);
     initial.adjoin_outer_approximation(initial_set,_settings->maximum_grid_depth);
     std::list<EnclosureType> initial_enclosures = cells_to_smallest_enclosures(initial,_settings->maximum_grid_depth);
 
@@ -427,7 +427,7 @@ outer_chain_reach(
 HybridReachabilityAnalyser::SetApproximationType
 HybridReachabilityAnalyser::
 outer_chain_reach(
-		const HybridGridTreeSet& initial,
+		const SetApproximationType& initial,
 		ContinuousEvolutionDirection direction) const
 {
     ARIADNE_LOG(1,"Performing outer chain reachability from a grid set...");
@@ -443,7 +443,7 @@ HybridReachabilityAnalyser::
 _outer_chain_reach(const std::list<EnclosureType>& initial_enclosures,
 		ContinuousEvolutionDirection direction) const
 {
-	HybridGridTreeSet reach;
+	SetApproximationType reach;
 
 	RealParameterSet original_parameters = _system->nonsingleton_parameters();
 
@@ -458,7 +458,7 @@ _outer_chain_reach(const std::list<EnclosureType>& initial_enclosures,
 
 			_system->substitute_all(*set_it);
 
-			HybridGridTreeSet local_reach = _outer_chain_reach_splitted(*_system,initial_enclosures,direction);
+			SetApproximationType local_reach = _outer_chain_reach_splitted(*_system,initial_enclosures,direction);
 
 			reach.adjoin(local_reach);
 		}
@@ -495,7 +495,7 @@ _outer_chain_reach_splitted(
     const int& maximum_grid_depth = _settings->maximum_grid_depth;
 
     HybridGrid grid = _settings->grid;
-    HybridGridTreeSet new_final(grid), new_reach(grid), reach(grid), final(grid);
+    SetApproximationType new_final(grid), new_reach(grid), reach(grid), final(grid);
 
     list<EnclosureType> working_enclosures = initial_enclosures;
 
@@ -556,11 +556,11 @@ void
 HybridReachabilityAnalyser::
 _outer_chain_reach_forward_pushTargetCells(
 		const SystemType& system,
-		const HybridGridTreeSet& reachCells,
+		const SetApproximationType& reachCells,
 		std::list<EnclosureType>& result_enclosures,
 		bool use_domain_checking) const
 {
-	for (HybridGridTreeSet::const_iterator cellbox_it = reachCells.begin(); cellbox_it != reachCells.end(); cellbox_it++)
+	for (SetApproximationType::const_iterator cellbox_it = reachCells.begin(); cellbox_it != reachCells.end(); cellbox_it++)
 	{
 		const DiscreteLocation& loc = cellbox_it->first;
 		const Box& bx = cellbox_it->second;
@@ -583,15 +583,15 @@ void
 HybridReachabilityAnalyser::
 _outer_chain_reach_backward_pushSourceCells(
 		const SystemType& system,
-		const HybridGridTreeSet& targetCells,
+		const SetApproximationType& targetCells,
 		std::list<EnclosureType>& result_enclosures) const
 {
-    HybridGridTreeSet sourceCellsOverapprox = *_settings->reachability_restriction;
+    SetApproximationType sourceCellsOverapprox = *_settings->reachability_restriction;
 
 	// Adopt the minimum granularity when checking the cells
 	sourceCellsOverapprox.mince(_settings->maximum_grid_depth);
 
-	for (HybridGridTreeSet::const_iterator cellbox_it = sourceCellsOverapprox.begin();
+	for (SetApproximationType::const_iterator cellbox_it = sourceCellsOverapprox.begin();
 			cellbox_it != sourceCellsOverapprox.end();
 			++cellbox_it) {
 		const DiscreteLocation& loc = cellbox_it->first;
@@ -676,7 +676,7 @@ _outer_chain_reach_backward_pushSourceEnclosures(
 		const SystemType& system,
 		const DiscreteLocation& sourceLocation,
 		const ContinuousEnclosureType& sourceEnclosure,
-		const HybridGridTreeSet& targetCells,
+		const SetApproximationType& targetCells,
 		const HybridGrid& grid,
 		std::list<EnclosureType>& result_enclosures) const
 {
@@ -763,7 +763,7 @@ _is_transition_feasible(
 void
 HybridReachabilityAnalyser::
 _outer_chain_reach_pushLocalFinalCells(
-		const HybridGridTreeSet& finalCells,
+		const SetApproximationType& finalCells,
 		std::list<EnclosureType>& result_enclosures,
 		bool use_domain_checking) const
 {
@@ -782,7 +782,7 @@ _outer_chain_reach_pushLocalFinalCells(
 }
 
 
-std::pair<HybridGridTreeSet,HybridFloatVector>
+std::pair<HybridDenotableSet,HybridFloatVector>
 HybridReachabilityAnalyser::
 _lower_chain_reach_and_epsilon(
 		const SystemType& system,
@@ -802,7 +802,7 @@ _lower_chain_reach_and_epsilon(
 
 	bool have_restriction = _settings->reachability_restriction;
 
-    HybridGridTreeSet reach(grid);
+    SetApproximationType reach(grid);
 	HybridSpace state_space = system.state_space();
 
 	HybridFloatVector epsilon;
@@ -843,13 +843,13 @@ _lower_chain_reach_and_epsilon(
 		epsilon = max_elementwise(epsilon,local_epsilon);
 
 		if (!_settings->constraint_set.empty()) {
-			HybridGridTreeSet local_reachability_restriction;
+			SetApproximationType local_reachability_restriction;
 			if (!have_restriction)
 				local_reachability_restriction.adjoin_outer_approximation(_settings->domain_bounds,accuracy);
 			else
 			    local_reachability_restriction = *_settings->reachability_restriction;
 
-			HybridGridTreeSet possibly_feasible_cells = Ariadne::possibly_feasible_cells(local_reach,
+			SetApproximationType possibly_feasible_cells = Ariadne::possibly_feasible_cells(local_reach,
 			        _settings->constraint_set,local_epsilon,local_reachability_restriction,accuracy);
 
 			if (possibly_feasible_cells.size() < local_reach.size()) {
@@ -873,7 +873,7 @@ _lower_chain_reach_and_epsilon(
 				adjoined_evolve_sizes,superposed_evolve_sizes,use_domain_checking);
 	}
 
-	return std::pair<HybridGridTreeSet,HybridFloatVector>(reach,epsilon);
+	return std::pair<SetApproximationType,HybridFloatVector>(reach,epsilon);
 }
 
 
@@ -912,12 +912,12 @@ _filter_enclosures(
 }
 
 
-std::pair<HybridGridTreeSet,HybridFloatVector>
+std::pair<HybridDenotableSet,HybridFloatVector>
 HybridReachabilityAnalyser::
 lower_chain_reach_and_epsilon(const HybridImageSet& initial_set) const
 {
 	HybridGrid grid = _settings->grid;
-	HybridGridTreeSet reach(grid);
+	SetApproximationType reach(grid);
 	HybridSpace state_space = _system->state_space();
 
     ARIADNE_LOG(1,"Performing lower chain reach with epsilon...");
@@ -943,9 +943,9 @@ lower_chain_reach_and_epsilon(const HybridImageSet& initial_set) const
 
 			_system->substitute_all(*set_it);
 
-			HybridGridTreeSet local_reach(grid);
+			SetApproximationType local_reach(grid);
 			HybridFloatVector local_epsilon;
-			make_lpair<HybridGridTreeSet,HybridFloatVector>(local_reach,local_epsilon) =
+			make_lpair<SetApproximationType,HybridFloatVector>(local_reach,local_epsilon) =
 					_lower_chain_reach_and_epsilon(*_system,initial_set);
 
 			reach.adjoin(local_reach);
@@ -961,7 +961,7 @@ lower_chain_reach_and_epsilon(const HybridImageSet& initial_set) const
 
     _system->substitute_all(original_parameters);
 
-	return std::pair<HybridGridTreeSet,HybridFloatVector>(reach,epsilon);
+	return std::pair<SetApproximationType,HybridFloatVector>(reach,epsilon);
 }
 
 
@@ -985,7 +985,7 @@ _getSplitParameterSetList() const
 
     if (!initial_parameter_set.empty()) {
 
-        HybridGridTreeSet discretised_domain;
+        SetApproximationType discretised_domain;
         if (_settings->reachability_restriction) {
             ARIADNE_LOG(2,"Creating the discretised domain from the reachability restriction...");
             discretised_domain.adjoin(*_settings->reachability_restriction);
@@ -1028,13 +1028,13 @@ Float
 HybridReachabilityAnalyser::
 _getDerivativeWidthsScore(
         const HybridFloatVector& hmad,
-        const HybridGridTreeSet& discretised_domain) const
+        const SetApproximationType& discretised_domain) const
 {
     Float result = 0;
 
     // Reads: \sum_{cells} \sum_{dim} der_widths(cell_loc,dim)/hmad(cell_loc,dim), under hmad(cell_loc,dim) > 0
 
-    for (HybridGridTreeSet::const_iterator cellbox_it = discretised_domain.begin();
+    for (SetApproximationType::const_iterator cellbox_it = discretised_domain.begin();
             cellbox_it != discretised_domain.end(); ++cellbox_it) {
         const DiscreteLocation& loc = cellbox_it->first;
         const Box& cell_bx = cellbox_it->second;
@@ -1058,7 +1058,7 @@ HybridReachabilityAnalyser::
 _getSplitDerivativeWidthsScores(
         const RealParameter& param,
         const HybridFloatVector& hmad,
-        const HybridGridTreeSet& discretised_domain) const
+        const SetApproximationType& discretised_domain) const
 {
     const Interval& param_val = param.value();
     const Float discretised_domain_size = discretised_domain.size();
@@ -1066,7 +1066,7 @@ _getSplitDerivativeWidthsScores(
     Float left_result = 0;
     Float right_result = 0;
 
-    for (HybridGridTreeSet::const_iterator cellbox_it = discretised_domain.begin();
+    for (SetApproximationType::const_iterator cellbox_it = discretised_domain.begin();
             cellbox_it != discretised_domain.end(); ++cellbox_it) {
         const DiscreteLocation& loc = cellbox_it->first;
         const Box& cell_bx = cellbox_it->second;
@@ -1101,7 +1101,7 @@ _updateSplitParameterSetLists(
         std::list<RealParameterSet>& result_parameter_set_list,
         const Float& initial_score,
         const HybridFloatVector& hmad,
-        const HybridGridTreeSet& discretised_domain) const
+        const SetApproximationType& discretised_domain) const
 {
     std::pair<Float,RealParameterSet> working_scored_parameter_set = working_scored_parameter_set_list.back();
     working_scored_parameter_set_list.pop_back();
@@ -1538,7 +1538,7 @@ getLockToGridTime(
 HybridFloatVector
 getHybridMaximumAbsoluteDerivatives(
 		const HybridReachabilityAnalyser::SystemType& sys,
-		const HybridGridTreeSetPtr& outer_approximation,
+		const HybridDenotableSetPtr& outer_approximation,
 		const HybridBoxes& domain_constraint)
 {
 	HybridFloatVector result;
@@ -1585,10 +1585,10 @@ getHybridMaximumAbsoluteDerivatives(
 
 bool
 new_reachability_restriction_equals(
-		const HybridGridTreeSet& new_restriction,
-		const HybridGridTreeSet& old_restriction)
+		const HybridDenotableSet& new_restriction,
+		const HybridDenotableSet& old_restriction)
 {
-	HybridGridTreeSet old_restriction_copy = old_restriction;
+	HybridDenotableSet old_restriction_copy = old_restriction;
 	old_restriction_copy.remove(new_restriction);
 
 	return old_restriction_copy.empty();
@@ -1596,13 +1596,13 @@ new_reachability_restriction_equals(
 
 std::list<EnclosureType>
 cells_to_smallest_enclosures(
-		HybridGridTreeSet cells,
+		HybridDenotableSet cells,
 		int maximum_grid_depth)
 {
     cells.mince(maximum_grid_depth);
 
     std::list<EnclosureType> enclosures;
-    for (HybridGridTreeSet::const_iterator cellbox_it = cells.begin(); cellbox_it != cells.end(); ++cellbox_it) {
+    for (HybridDenotableSet::const_iterator cellbox_it = cells.begin(); cellbox_it != cells.end(); ++cellbox_it) {
         EnclosureType encl(cellbox_it->first,cellbox_it->second);
         enclosures.push_back(encl);
     }
@@ -1614,7 +1614,7 @@ cells_to_smallest_enclosures(
 std::list<EnclosureType>
 restrict_enclosures(
 		const std::list<EnclosureType> enclosures,
-		const HybridGridTreeSet& restriction)
+		const HybridDenotableSet& restriction)
 {
 	std::list<EnclosureType> result;
 
@@ -1628,16 +1628,16 @@ restrict_enclosures(
 }
 
 
-HybridGridTreeSet
+HybridDenotableSet
 possibly_feasible_cells(
-		const HybridGridTreeSet& reach,
+		const HybridDenotableSet& reach,
 		const HybridConstraintSet& constraint,
 		const HybridFloatVector eps,
-		HybridGridTreeSet reachability_restriction,
+		HybridDenotableSet reachability_restriction,
 		int accuracy)
 {
 	reachability_restriction.mince(accuracy);
-	HybridGridTreeSet feasible_reachability_restriction = possibly_overlapping_cells(reachability_restriction,constraint);
+	HybridDenotableSet feasible_reachability_restriction = possibly_overlapping_cells(reachability_restriction,constraint);
 	HybridVectorFunction constraint_functions = constraint.functions();
 	HybridBoxes eps_constraint_codomain = eps_codomain(feasible_reachability_restriction, eps, constraint_functions);
 

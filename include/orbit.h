@@ -70,7 +70,7 @@ class InterpolatedCurve;
 class GridCell;
 class GridTreeSet;
 class HybridGridCell;
-class HybridGridTreeSet;
+class HybridDenotableSet;
 class HybridTime;
 
 class DiscreteLocation;
@@ -108,45 +108,6 @@ class Orbit<HybridPoint>
   private:
     boost::shared_ptr<std::vector<HybridInterpolatedCurve> > _curves;
 };
-
-template<>
-class Orbit<GridCell>
-{
-    class Data;
-  public:
-    typedef GridCell EnclosureType;
-    typedef GridTreeSet EnclosureListType;
-
-    Orbit(const GridCell&);
-    Orbit(const GridCell&, const GridTreeSet&,
-          const GridTreeSet&, const GridTreeSet&);
-    GridCell const& initial() const;
-    GridTreeSet const& reach() const;
-    GridTreeSet const& intermediate() const;
-    GridTreeSet const& final() const;
-  private:
-    boost::shared_ptr<Data> _data;
-};
-
-template<>
-class Orbit<HybridGridCell>
-{
-    class Data;
-  public:
-    typedef HybridGridCell EnclosureType;
-    typedef HybridGridTreeSet EnclosureListType;
-
-    Orbit(const HybridGridCell&);
-    Orbit(const HybridGridCell&, const HybridGridTreeSet&,
-          const HybridGridTreeSet&, const HybridGridTreeSet&);
-    HybridGridCell const& initial() const;
-    HybridGridTreeSet const& reach() const;
-    HybridGridTreeSet const& intermediate() const;
-    HybridGridTreeSet const& final() const;
-  private:
-    boost::shared_ptr<Data> _data;
-};
-
 
 template<class ES>
 class Orbit

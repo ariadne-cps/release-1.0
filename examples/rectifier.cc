@@ -281,7 +281,7 @@ int main()
     HybridTime reach_time(TIME_LIMIT,TRAN_LIMIT);
 
     std::cout << "Computing upper reach set... " << std::endl << std::flush;
-    HybridGridTreeSet reach = analyser.upper_reach(initial_set,reach_time);
+    HybridDenotableSet reach = analyser.upper_reach(initial_set,reach_time);
     std::cout << "done." << std::endl;
 
     plot("rectifier_reach_t_vin", 0, 1, 3, graphic_box, Colour(0.0,0.5,1.0), reach, -1);

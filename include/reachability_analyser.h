@@ -61,11 +61,11 @@ typedef std::map<DiscreteLocation,Vector<Float> > HybridFloatVector;
 typedef std::map<Identifier,int> ParameterIdIntMap;
 typedef HybridEvolver::EnclosureType EnclosureType;
 typedef HybridEvolver::ContinuousEnclosureType ContinuousEnclosureType;
-typedef boost::shared_ptr<HybridGridTreeSet> HybridGridTreeSetPtr;
+typedef boost::shared_ptr<HybridDenotableSet> HybridDenotableSetPtr;
 
 class HybridGrid;
 class HybridGridCell;
-class HybridGridTreeSet;
+class HybridDenotableSet;
 
 template<class ES> class HybridListSet;
 template<class ES> class HybridDiscretiser;
@@ -185,8 +185,8 @@ class HybridReachabilityAnalyser
     typedef HybridListSet<Box> BxLS;
     typedef HybridGrid Gr;
     typedef HybridGridCell GC;
-    typedef HybridGridTreeSet GCLS;
-    typedef HybridGridTreeSet GTS;
+    typedef SetApproximationType GCLS;
+    typedef SetApproximationType GTS;
     typedef HybridOpenSetInterface OpSI;
     typedef HybridOvertSetInterface OvSI;
     typedef HybridCompactSetInterface CoSI;
@@ -195,7 +195,7 @@ class HybridReachabilityAnalyser
 
     /*! \brief Plots \a reach in \a plot_dirpath directory, where \a name_prefix as a prefix to the filename */
     void _plot_reach(
-    		const HybridGridTreeSet& reach,
+    		const SetApproximationType& reach,
     		string plot_dirpath,
     		string name_prefix) const;
 
@@ -236,14 +236,14 @@ class HybridReachabilityAnalyser
      */
     void _outer_chain_reach_forward_pushTargetCells(
     		const SystemType& system,
-    		const HybridGridTreeSet& reachCells,
+    		const SetApproximationType& reachCells,
     		std::list<EnclosureType>& result_enclosures,
     		bool use_domain_checking) const;
 
     /*! \brief Pushes into \a result_enclosures the source enclosures from \a sourceCellsOverapprox that reach \a reachCells. */
     void _outer_chain_reach_backward_pushSourceCells(
     		const SystemType& system,
-    		const HybridGridTreeSet& reachCells,
+    		const SetApproximationType& reachCells,
     		std::list<EnclosureType>& result_enclosures) const;
 
     /*! \brief Checks whether a box \a bx is outside any invariant from \a invariants. */
@@ -276,21 +276,21 @@ class HybridReachabilityAnalyser
     		const SystemType& system,
     		const DiscreteLocation& sourceLocation,
     		const ContinuousEnclosureType& sourceEnclosure,
-			const HybridGridTreeSet& targetCells,
+			const SetApproximationType& targetCells,
 			const HybridGrid& grid,
 			std::list<EnclosureType>& result_enclosures) const;
 
     /*! \brief Pushes the enclosures from the \a finalCells tree set into the \a result_enclosures list.
      */
     void _outer_chain_reach_pushLocalFinalCells(
-    		const HybridGridTreeSet& finalCells,
+    		const SetApproximationType& finalCells,
     		std::list<EnclosureType>& result_enclosures,
     		bool use_domain_checking) const;
 
     /*! \brief Gets the lower reach and the epsilon for the \a system.
      * \details The \a constraint_set is checked: if not empty and its epsilon relaxation is not satisfied
      * for the current lower reach, an exception is raised. */
-    std::pair<HybridGridTreeSet,HybridFloatVector> _lower_chain_reach_and_epsilon(
+    std::pair<SetApproximationType,HybridFloatVector> _lower_chain_reach_and_epsilon(
     		const SystemType& system,
     		const HybridImageSet& initial_set) const;
 
@@ -309,13 +309,13 @@ class HybridReachabilityAnalyser
     /*! \brief Gets the maximum score corresponding to the derivative widths with no splitting. */
     Float _getDerivativeWidthsScore(
             const HybridFloatVector& hmad,
-            const HybridGridTreeSet& discretised_domain) const;
+            const SetApproximationType& discretised_domain) const;
 
     /*! \brief Gets the scores corresponding to the derivative widths with \a param splitted. */
     std::pair<Float,Float> _getSplitDerivativeWidthsScores(
             const RealParameter& param,
             const HybridFloatVector& hmad,
-            const HybridGridTreeSet& discretised_domain) const;
+            const SetApproximationType& discretised_domain) const;
 
     /*! \brief Updates the set \a working_scored_parameter_set_list by splitting onto the "best" parameter, or updates \a result_parameter_set_list if no splitting is possible. */
     /*! \details The \a hmad are the maximum derivative values with no splitting applied, hence they stay constant for successive calls of
@@ -326,7 +326,7 @@ class HybridReachabilityAnalyser
             std::list<RealParameterSet>& result_parameter_set_list,
             const Float& initial_score,
             const HybridFloatVector& hmad,
-            const HybridGridTreeSet& discretised_domain) const;
+            const SetApproximationType& discretised_domain) const;
 
     /*! \brief Gets the ratio of derivative widths when substituting the given \a half of \a param.
      * \details The \a max_der_widths and mid_der_widths are the the maximum derivative widths with no splitting applied, and
@@ -398,7 +398,7 @@ class HybridReachabilityAnalyserSettings {
     //! \details Be aware that such restriction is used for upper semantics strictly (tree set intersection), while for
     //! lower semantics the bounding boxes of the cells are employed instead. This permits to have different grids for different semantics.
     //! Hence, the analyser grid must match the reachability restriction grid for upper semantics only.
-    boost::shared_ptr<HybridGridTreeSet> reachability_restriction;
+    boost::shared_ptr<HybridDenotableSet> reachability_restriction;
 
     //! \brief The grid to use.
     HybridGrid grid;
@@ -495,7 +495,7 @@ Float getLockToGridTime(
  * \details ASSUMPTION: the continuous variables are preserved in order and quantity between discrete states. */
 HybridFloatVector getHybridMaximumAbsoluteDerivatives(
 		const HybridReachabilityAnalyser::SystemType& system,
-		const HybridGridTreeSetPtr& outer_approximation,
+		const HybridDenotableSetPtr& outer_approximation,
 		const HybridBoxes& domain_constraint);
 
 /*! \brief Checks whether \a new_restriction is equal to \a old_restriction.
@@ -503,27 +503,27 @@ HybridFloatVector getHybridMaximumAbsoluteDerivatives(
  * eliminating the need for any check of the two tree sets.
  */
 bool new_reachability_restriction_equals(
-		const HybridGridTreeSet& new_restriction,
-		const HybridGridTreeSet& old_restriction);
+		const HybridDenotableSet& new_restriction,
+		const HybridDenotableSet& old_restriction);
 
 /*! \brief Turns the cells from the grid tree set \a cells into enclosures of smallest size in respect to a given
  * \a maximum_grid_depth. */
 std::list<EnclosureType> cells_to_smallest_enclosures(
-		HybridGridTreeSet cells,
+		HybridDenotableSet cells,
 		int maximum_grid_depth);
 
 /*! \brief Restricts the \a enclosures to those possibly overlapping \a restriction */
 std::list<EnclosureType> restrict_enclosures(
 		const std::list<EnclosureType> enclosures,
-		const HybridGridTreeSet& restriction);
+		const HybridDenotableSet& restriction);
 
 /*! \brief Gets the cells from \a reach (inside \a reachability_restriction) that satisfy \a constraint
  * under a relaxation of the reachability given by \a eps. */
-HybridGridTreeSet possibly_feasible_cells(
-		const HybridGridTreeSet& reach,
+HybridDenotableSet possibly_feasible_cells(
+		const HybridDenotableSet& reach,
 		const HybridConstraintSet& constraint,
 		const HybridFloatVector eps,
-		HybridGridTreeSet reachability_restriction,
+		HybridDenotableSet reachability_restriction,
 		int accuracy);
 
 

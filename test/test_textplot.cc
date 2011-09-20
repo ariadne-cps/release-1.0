@@ -152,7 +152,7 @@ int main(int argc, char **argv)
     g.close();
     
      std::cout << "Testing hybrid grid sets.." << std::endl;
-    HybridGridTreeSet hgts;
+    HybridDenotableSet hgts;
     hgts.insert(make_pair(q1,GridTreeSet(2)));
     hgts[q1].adjoin_outer_approximation(ImageSet(bx1), 2);
     hgts.insert(make_pair(q2,GridTreeSet(2)));

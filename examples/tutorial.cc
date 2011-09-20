@@ -235,12 +235,12 @@ void compute_reachable_sets()
 
     // Compute lower-approximation to finite-time evolved set using lower-semantics.
     std::cout << "Computing lower evolve set... " << std::flush;
-    HybridGridTreeSet lower_evolve_set = analyser.lower_evolve(initial_set,reach_time);
+    HybridDenotableSet lower_evolve_set = analyser.lower_evolve(initial_set,reach_time);
     std::cout << "done." << std::endl;
 
     // Compute lower-approximation to finite-time reachable set using lower-semantics.
     std::cout << "Computing lower reach set... " << std::flush;
-    HybridGridTreeSet lower_reach_set = analyser.lower_reach(initial_set,reach_time);
+    HybridDenotableSet lower_reach_set = analyser.lower_reach(initial_set,reach_time);
     std::cout << "done." << std::endl;
 
     plot("tutorial-lower_reach_evolve.png",Box(2, 0.0,1.0, 14.0,21.0),
@@ -252,12 +252,12 @@ void compute_reachable_sets()
     // Subdivision is used as necessary to keep the local errors reasonable.
     // The accumulated global error may be very large.
     std::cout << "Computing upper evolve set... " << std::flush;
-    HybridGridTreeSet upper_evolve_set = analyser.upper_evolve(initial_set,reach_time);
+    HybridDenotableSet upper_evolve_set = analyser.upper_evolve(initial_set,reach_time);
     std::cout << "done." << std::endl;
 
     // Compute over-approximation to finite-time reachable set using upper semantics.
     std::cout << "Computing upper reach set... " << std::flush;
-    HybridGridTreeSet upper_reach_set = analyser.upper_reach(initial_set,reach_time);
+    HybridDenotableSet upper_reach_set = analyser.upper_reach(initial_set,reach_time);
     std::cout << "done." << std::endl;
 
     plot("tutorial-upper_reach_evolve.png",Box(2, 0.0,1.0, 14.0,21.0),
@@ -267,7 +267,7 @@ void compute_reachable_sets()
 
     // Compute over-approximation to infinite-time chain-reachable set using upper semantics.
     std::cout << "Computing chain reach set... " << std::flush;
-    HybridGridTreeSet chain_reach_set = analyser.outer_chain_reach(initial_set);
+    HybridDenotableSet chain_reach_set = analyser.outer_chain_reach(initial_set);
     std::cout << "done." << std::endl;
     plot("tutorial-chain_reach.png",Box(2, 0.0,1.0, 14.0,21.0), Colour(0.0,0.5,1.0), chain_reach_set);
 }
