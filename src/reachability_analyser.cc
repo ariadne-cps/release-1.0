@@ -43,7 +43,7 @@
 
 #include "box.h"
 #include "list_set.h"
-#include "grid_set.h"
+#include "denotable_set.h"
 
 #include "orbit.h"
 
@@ -1557,10 +1557,8 @@ getHybridMaximumAbsoluteDerivatives(
 		// If the reached region for the location exists and is not empty, check its cells, otherwise use the whole domain
 		if (outer_approximation && outer_approximation->has_location(loc) && !(*outer_approximation)[loc].empty()) {
 
-			// Get the GridTreeSet
-			GridTreeSet reach = (*outer_approximation)[loc];
-			// For each of its hybrid cells
-			for (GridTreeSet::const_iterator cells_it = reach.begin(); cells_it != reach.end(); cells_it++) {
+			DenotableSetType reach = (*outer_approximation)[loc];
+			for (DenotableSetType::const_iterator cells_it = reach.begin(); cells_it != reach.end(); cells_it++) {
 				// Gets the derivative bounds
 				der_bbx = sys.dynamic_function(loc)(cells_it->box());
 

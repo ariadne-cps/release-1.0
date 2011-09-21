@@ -135,9 +135,6 @@ project(const HybridBoxes& box, const std::vector<uint>& dimensions);
 HybridBoxes
 project(const Box& box, const std::vector<uint>& dimensions, const HybridSpace& target_space);
 
-HybridDenotableSet
-merge_and_project(const HybridDenotableSet& grid_set, const HybridSpace& target_space);
-
 inline
 HybridBoxes
 bounding_boxes(const std::map<DiscreteLocation,uint> space, Interval bound)
@@ -905,14 +902,6 @@ HybridDenotableSet definitely_covered_cells(const HybridDenotableSet& grid_set, 
 
 //! \brief Evaluates the codomain of the function \a func applied on the cells of \a grid_set, each widened by \a eps.
 HybridBoxes eps_codomain(const HybridDenotableSet& grid_set, const HybridFloatVector& eps, const HybridVectorFunction& func);
-
-//! \brief Projects \a cell using the given \a indices and with the \a projected_grid.
-//! \details No check is performed as to the consistency of the arguments.
-GridCell project_down_unchecked(const GridCell& cell, const Grid& projected_grid, const Vector<uint>& indices);
-HybridBox project_down_unchecked(const HybridBox& cell, const Grid& projected_grid, const Vector<uint>& indices);
-
-//! \brief Projects \a grid_set using the given \a indices.
-DenotableSetType project_down(const DenotableSetType& grid_set, const Vector<uint>& indices);
 
 //! \brief Projects \a grid_set using the given \a indices, also flattening the set in respect to the hybrid space.
 //! \details The \a grid_set must have the same grid for all locations.

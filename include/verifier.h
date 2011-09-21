@@ -248,14 +248,14 @@ class Verifier
 			const unsigned int& accuracy) const;
 
 	/*! \brief Gets the flattened lower reach and the epsilon of the \a dominanceSystem type. */
-	std::pair<GridTreeSet,Vector<Float> > _dominance_flattened_lower_reach_and_epsilon(
+	std::pair<DenotableSetType,Vector<Float> > _dominance_flattened_lower_reach_and_epsilon(
 			DominanceVerificationInput& verInput,
 			const RealParameterSet& params,
 			DominanceSystem dominanceSystem,
 			const unsigned int& accuracy) const;
 
 	/*! \brief Gets the flattened outer reach of the \a dominanceSystem type. */
-	GridTreeSet _dominance_flattened_outer_reach(
+	DenotableSetType _dominance_flattened_outer_reach(
 			DominanceVerificationInput& verInput,
 			const RealParameterSet& params,
 			DominanceSystem dominanceSystem,

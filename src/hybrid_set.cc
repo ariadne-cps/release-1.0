@@ -186,12 +186,6 @@ project(const Box& box, const std::vector<uint>& dimensions, const HybridSpace& 
 	return result;
 }
 
-HybridDenotableSet
-merge_and_project(const HybridDenotableSet& grid_set, const Vector<uint>& indices)
-{
-	return HybridDenotableSet();
-}
-
 
 tribool disjoint(const HybridConstraintSet& cons_set, const HybridDenotableSet& grid_set)
 {
@@ -284,60 +278,7 @@ HybridBoxes eps_codomain(
 }
 
 
-GridCell project_down_unchecked(
-		const GridCell& cell,
-		const Grid& projected_grid,
-		const Vector<uint>& indices)
-{
-	uint cell_dimension = cell.dimension();
-
-	const BinaryWord& word = cell.word();
-
-	BinaryWord new_word;
-	for (uint i=0; i < word.size(); ++i) {
-		uint dim = i % cell_dimension;
-		for (uint j=0; j<indices.size(); ++j) {
-			if (indices[j] == dim) {
-				new_word.push_back(word[i]);
-			}
-		}
-	}
-
-	return GridCell(projected_grid,cell.height(),new_word);
-}
-
-HybridBox project_down_unchecked(
-		const HybridBox& cell,
-		const Grid& projected_grid,
-		const Vector<uint>& indices)
-{
-	uint cell_dimension = cell.second.dimension();
-
-	Box box_result(cell_dimension);
-	for (uint i=0; i < cell_dimension; ++i)
-		box_result[i] = cell.second[indices[i]];
-
-	return HybridBox(cell.first,box_result);
-}
-
-DenotableSetType project_down(
-		const DenotableSetType& original_set,
-		const Vector<uint>& indices)
-{
-	Grid projected_grid = project_down(original_set.grid(),indices);
-
-	DenotableSetType result(projected_grid);
-
-	for (DenotableSetType::const_iterator cell_it = original_set.begin(); cell_it != original_set.end(); ++cell_it) {
-		result.adjoin(project_down_unchecked(*cell_it,result.grid(),indices));
-	}
-
-	return result;
-}
-
-
-
-GridTreeSet flatten_and_project_down(const HybridDenotableSet& grid_set, const Vector<uint>& indices)
+DenotableSetType flatten_and_project_down(const HybridDenotableSet& grid_set, const Vector<uint>& indices)
 {
 	const HybridGrid hgrid = grid_set.grid();
 
@@ -349,7 +290,7 @@ GridTreeSet flatten_and_project_down(const HybridDenotableSet& grid_set, const V
 	}
 
 	Grid projected_grid = project_down(grid,indices);
-	GridTreeSet result(projected_grid);
+	DenotableSetType result(projected_grid);
 
 	for (HybridDenotableSet::locations_const_iterator gts_it = grid_set.locations_begin();
 			gts_it != grid_set.locations_end(); ++gts_it) {

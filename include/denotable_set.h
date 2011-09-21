@@ -61,4 +61,4 @@ tribool inside(const DenotableSetType& covered_set, const DenotableSetType& cove
 
 }
 
-#endif
+#endif /* DENOTABLE_SET_H */
