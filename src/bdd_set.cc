@@ -76,25 +76,28 @@ Box _compute_root_cell(const Grid& grid, uint height, const array<int>& coordina
 }
 
 // Compute recursively the number of enabled cells
-size_t _enabled_cells_number(const bdd& b, int level) {
-    // std::cout << "_enabled_cells_number(" << b.id() << "," << level << ")" << std::endl;
+size_t _enabled_cells_number(const bdd& b, int level, int mince_depth) {
+    // std::cout << "_enabled_cells_number(" << b.id() << "," << level << ", " << mince_depth << ")" << std::endl;
     // Base cases: the size of the constant true/false is 1/0
-    if(b == bddtrue) return 1;
     if(b == bddfalse) return 0;
-    
+    if(b == bddtrue) {
+        // the number of cells depends on the mince_depth
+        if(mince_depth <= 0) return 1;
+        return (1 << mince_depth);
+    } 
     // Inductive cases
     int rootlevel = bdd_var2level(bdd_var(b));      // get the level of the root
     // std::cout << "rootlevel = " << rootlevel << std::endl;
     if(rootlevel == level) {                        // no jumps of variables
         bdd left = bdd_low(b);                      // get the left branch
         bdd right = bdd_high(b);                    // get the right branch
-        return _enabled_cells_number(left, level+1) +
-               _enabled_cells_number(right, level+1);
+        return _enabled_cells_number(left, level+1, mince_depth - 1) +
+               _enabled_cells_number(right, level+1, mince_depth - 1);
     }
     if(rootlevel > level) {     // the root variable is greater than the current level
         // hence, the root variable has been deleted by the bdd construction
         // because it pointed to two identical childs.
-        return 2*_enabled_cells_number(b, level+1);
+        return 2*_enabled_cells_number(b, level+1, mince_depth - 1);
     }
     // this branch should never be reached
     ARIADNE_FAIL_MSG("rootlevel cannot be greater than current level.");
@@ -252,16 +255,17 @@ void _equalize_root_cell(BDDTreeSet& set1, BDDTreeSet& set2) {
 }
 
 // Test whether the a BDDTreeSet based on root_cell and enabled_cells, where the root variable is root_var
-// is a subset of Box. 
-bool _subset(const Box& root_cell, const bdd& enabled_cells, int root_var, uint splitting_coordinate, const Box& box) {
+// is a subset of set. 
+tribool _subset(const Box& root_cell, const bdd& enabled_cells, int root_var, uint splitting_coordinate, const RegularSetInterface& set) {
     // std::cout << "_subset(" << root_cell << ", " << enabled_cells << ", " 
-    //           << root_var << ", " << splitting_coordinate << ", " << box << ")" << std::endl;
+    //           << root_var << ", " << splitting_coordinate << ", " << set << ")" << std::endl;
     // if the set is empty, return true
     if(enabled_cells == bddfalse) return true;
-    // if the root cell is a subset of box, return true
-    if(root_cell.subset(box)) return true;
-    // if the bdd is the constant true, return false
-    if(enabled_cells == bddtrue) return false;
+    tribool test = set.covers(root_cell);
+    // if the root cell is definitely a subset of box, return true
+    if(definitely(test)) return true;
+    // if the bdd is the constant true, return test
+    if(enabled_cells == bddtrue) return test;
     
     // Split the root cell and repeat recursively on the two subcells
     std::pair<Box,Box> subcells = root_cell.split(splitting_coordinate);  
@@ -276,9 +280,9 @@ bool _subset(const Box& root_cell, const bdd& enabled_cells, int root_var, uint 
     }
     
     int dim = root_cell.dimension();
-    if(!_subset(subcells.first, left_branch, root_var+1, (splitting_coordinate+1) % dim, box))
-        return false;
-    return _subset(subcells.second, right_branch, root_var+1, (splitting_coordinate+1) % dim, box);
+    test = _subset(subcells.first, left_branch, root_var+1, (splitting_coordinate+1) % dim, set);
+    if(!possibly(test)) return false;
+    return test && _subset(subcells.second, right_branch, root_var+1, (splitting_coordinate+1) % dim, set);
 }
 
 // Test whether the a BDDTreeSet based on root_cell and enabled_cells, where the root variable is root_var
@@ -326,16 +330,18 @@ bool _superset(const Box& root_cell, const bdd& enabled_cells, int root_var, uin
 }
 
 // Test whether the a BDDTreeSet based on root_cell and enabled_cells, where the root variable is root_var
-// is a disjoint from Box. 
-bool _disjoint(const Box& root_cell, const bdd& enabled_cells, int root_var, uint splitting_coordinate, const Box& box) {
+// is a disjoint from set. 
+tribool _disjoint(const Box& root_cell, const bdd& enabled_cells, int root_var, uint splitting_coordinate, const RegularSetInterface& set) {
     // std::cout << "_disjoint(" << root_cell << ", " << enabled_cells << ", " 
-    //           << root_var << ", " << splitting_coordinate << ", " << box << ")" << std::endl;
+    //           << root_var << ", " << splitting_coordinate << ", " << set << ")" << std::endl;
     // if the set is empty, return true
     if(enabled_cells == bddfalse) return true;
-    // if the root cell is disjoint from box, return true
-    if(root_cell.disjoint(box)) return true;
-    // if the bdd is the constant true, return false
-    if(enabled_cells == bddtrue) return false;
+    tribool test = set.disjoint(root_cell);
+    // if the root cell is definitely disjoint from set, return true
+    if(definitely(test)) return true;
+    // the set is possibly disjoint from the root_cell
+    // if the bdd is the constant true, return the result of the test
+    if(enabled_cells == bddtrue) return test;
     
     // Split the root cell and repeat recursively on the two subcells
     std::pair<Box,Box> subcells = root_cell.split(splitting_coordinate);  
@@ -350,9 +356,10 @@ bool _disjoint(const Box& root_cell, const bdd& enabled_cells, int root_var, uin
     }
     
     int dim = root_cell.dimension();
-    if(!_disjoint(subcells.first, left_branch, root_var+1, (splitting_coordinate+1) % dim, box))
-        return false;
-    return _disjoint(subcells.second, right_branch, root_var+1, (splitting_coordinate+1) % dim, box);
+    // test the left branch
+    test = _disjoint(subcells.first, left_branch, root_var+1, (splitting_coordinate+1) % dim, set);
+    if(!possibly(test)) return false;
+    return test && _disjoint(subcells.second, right_branch, root_var+1, (splitting_coordinate+1) % dim, set);
 }
 
 // recursive function that adjoin a box to a bdd with a maximum depth
@@ -525,11 +532,98 @@ bdd _adjoin_inner_approximation(const OpenSetInterface& set, const bdd& enabled_
     return (bdd_nithvar(root_var) & left_branch) | (bdd_ithvar(root_var) & right_branch);
 }
 
+// recursive function that restrict the bdd to the cells that possibly overlaps with a set
+bdd _possibly_restrict(const OvertSetInterface& set, const bdd& enabled_cells, const Box& root_cell,
+                       uint depth, uint splitting_coordinate, int root_var)
+{
+    // std::cout << "_possibly_restrict(" << set << ", " << enabled_cells << ", "
+    //            << root_cell << ", " << depth << ", " << splitting_coordinate << ", " << root_var 
+    //            << ")" << std::endl;
+    // if the bdd is the constant false, do nothing
+    if(enabled_cells == bddfalse) return bddfalse;
+    // if the set definitely not overlap the root cell, return the empty bdd
+    if(!possibly(set.overlaps(root_cell))) {
+        // std::cout << "set definitely not overlap the current cell, return false." << std::endl;
+        return bddfalse;
+    }
+    // if the depth is zero, return the current bdd
+    if(depth == 0) {
+        // std::cout << "depth is zero, return the current bdd." << std::endl;
+        return enabled_cells;
+    }
+    // std::cout << "set possibly overlaps the current cell, go on." << std::endl;
+    // split the root cell and the bdd, and continue recursively
+    std::pair <Box, Box> split_cells = root_cell.split(splitting_coordinate);
+    bdd right_branch, left_branch;
+    // if the variable labelling the root of the bdd is not root_var, do not split the bdd
+    if(enabled_cells == bddtrue || bdd_var(enabled_cells) != root_var) {
+        // std::cout << "bdd_var is different from root_var, do no split the bdd." << std::endl;
+        left_branch = enabled_cells;
+        right_branch = enabled_cells;
+    } else {
+        // std::cout << "bdd_var is equal to root_var, split the bdd." << std::endl;
+        left_branch = bdd_low(enabled_cells);
+        right_branch = bdd_high(enabled_cells);
+    }
+    left_branch = _possibly_restrict(set, left_branch, split_cells.first, depth - 1,
+                                    (splitting_coordinate + 1) % set.dimension(), root_var + 1);
+    right_branch = _possibly_restrict(set, right_branch, split_cells.second, depth - 1,
+                                    (splitting_coordinate + 1) % set.dimension(), root_var + 1);
+    return (bdd_nithvar(root_var) & left_branch) | (bdd_ithvar(root_var) & right_branch);
+}
+
+// recursive function that restrict the bdd to the cells that are definitely inside a set
+bdd _definitely_restrict(const OpenSetInterface& set, const bdd& enabled_cells, const Box& root_cell,
+                       uint depth, uint splitting_coordinate, int root_var)
+{
+    // std::cout << "_definitely_restrict(" << set << ", " << enabled_cells << ", "
+    //            << root_cell << ", " << splitting_coordinate << ", " << root_var 
+    //            << ")" << std::endl;
+    // if the bdd is the constant false, do nothing
+    if(enabled_cells == bddfalse) return bddfalse;
+    tribool test = set.covers(root_cell);
+    // if the set definitely not covers the root cell, return the empty bdd
+    if(!possibly(test)) {
+        // std::cout << "set definitely not cover the current cell, return false." << std::endl;
+        return bddfalse;
+    }
+    // if the set definitely covers the root cell, return the current bdd
+    if(definitely(test)) {
+        // std::cout << "set definitely cover the current cell, return the current bdd." << std::endl;
+        return enabled_cells;    
+    }
+    // if the depth is zero, return the empty bdd
+    if(depth == 0) {
+        // std::cout << "depth is 0 and the set possibly not cover the current cell, skip it." << std::endl;
+        return bddfalse;
+    }
+    // std::cout << "set possibly covers the current cell, go on." << std::endl;
+    // split the root cell and the bdd, and continue recursively
+    std::pair <Box, Box> split_cells = root_cell.split(splitting_coordinate);
+    bdd right_branch, left_branch;
+    // if the variable labelling the root of the bdd is not root_var, do not split the bdd
+    if(enabled_cells == bddtrue || bdd_var(enabled_cells) != root_var) {
+        // std::cout << "bdd_var is different from root_var, do no split the bdd." << std::endl;
+        left_branch = enabled_cells;
+        right_branch = enabled_cells;
+    } else {
+        // std::cout << "bdd_var is equal to root_var, split the bdd." << std::endl;
+        left_branch = bdd_low(enabled_cells);
+        right_branch = bdd_high(enabled_cells);
+    }
+    left_branch = _definitely_restrict(set, left_branch, split_cells.first, depth - 1,
+                                    (splitting_coordinate + 1) % set.dimension(), root_var + 1);
+    right_branch = _definitely_restrict(set, right_branch, split_cells.second, depth - 1,
+                                    (splitting_coordinate + 1) % set.dimension(), root_var + 1);
+    return (bdd_nithvar(root_var) & left_branch) | (bdd_ithvar(root_var) & right_branch);
+}
+
+
 
 
 // Function that increments a BDDTreeSet iterator
-void _compute_next_cell(std::vector< PathElement >& path) {
-    // std::cout << "_compute_next_cell( ... )" << std::endl;
+void _compute_next_cell(std::vector< PathElement >& path, int mince_depth) {
+    // std::cout << "_compute_next_cell( path , " << mince_depth << ")" << std::endl;
     // if the path is empty, do nothing and return
     if(path.empty()) {
         return;
@@ -543,7 +637,7 @@ void _compute_next_cell(std::vector< PathElement >& path) {
     if(tail.status == PE_RIGHT) {
         // std::cout << "  status is PE_RIGHT, backtracking." << std::endl;        
         path.pop_back();
-        _compute_next_cell(path);
+        _compute_next_cell(path, mince_depth + 1);
         return;
     }
     // if the status is LEFT, explore the right child
@@ -569,38 +663,45 @@ void _compute_next_cell(std::vector< PathElement >& path) {
         tail.root_var = tail.root_var + 1;
         // append the new step of the path and continue recursively
         path.push_back(tail);
-        _compute_next_cell(path);
+        _compute_next_cell(path, mince_depth - 1);
         return;
     }
     // if the status is NEW, we are exploring the node for the first time
-    // if the bdd is the constant true, we are in a cell: fix the flag to true and return
     // std::cout << "  status is PE_NEW ";        
-    if(tail.obdd == bddtrue) {
-        // std::cout << "and the current bdd is TRUE, exiting" << std::endl;
+
+    // if the bdd is the constant false, backtrack
+    if(tail.obdd == bddfalse) {
+        // std::cout << "and the current bdd is FALSE, backtracking" << std::endl;
+        path.pop_back();
+        _compute_next_cell(path, mince_depth + 1);
+        return;
+    }
+    // if the bdd is the constant true, we are in a cell:
+    // if mince_depth is zero or negative, fix the flag to true and return
+    // otherwise, go on and split
+    if(tail.obdd == bddtrue && mince_depth <= 0) {
+        // std::cout << ", the current bdd is TRUE and depth is greater or equal do mince_depth, exiting" << std::endl;
         // set the status to RIGHT
         tail.status = PE_RIGHT;
         path.pop_back();
         path.push_back(tail);
         return;
     }
-    // if the bdd is the constant false, backtrack
-    if(tail.obdd == bddfalse) {
-        // std::cout << "and the current bdd is FALSE, backtracking" << std::endl;
-        path.pop_back();
-        _compute_next_cell(path);
-        return;
-    }
-    // the bdd is different from true and false, explore the left child
+
+    // either the bdd is different from true and false, or we have to mince the cell: explore the left child
+    // std::cout << "and the current bdd is neither TRUE nor FALSE, or we have to mince further, go on" << std::endl;
+
     // set the status to left
-    // std::cout << "and the current bdd is neither TRUE nor FALSE, go on" << std::endl;
     tail.status = PE_LEFT;
     path.pop_back();
     path.push_back(tail);
-    // get the variable labeling the bdd
-    int var = bdd_var(tail.obdd);
-    // if the var labeling the bdd correspond to che current level, get the right child
-    if(var == tail.root_var) {
-        tail.obdd = bdd_low(tail.obdd);
+    if(tail.obdd != bddtrue) {
+        // get the variable labeling the bdd
+        int var = bdd_var(tail.obdd);
+        // if the var labeling the bdd correspond to che current level, get the right child
+        if(var == tail.root_var) {
+            tail.obdd = bdd_low(tail.obdd);
+        }
     }
     // get splitting coordinate
     i = tail.split_coordinate;
@@ -612,7 +713,7 @@ void _compute_next_cell(std::vector< PathElement >& path) {
     tail.root_var = tail.root_var + 1;
     // append the new step of the path and continue recursively
     path.push_back(tail);
-    _compute_next_cell(path);
+    _compute_next_cell(path, mince_depth - 1);
 }
 
 /************************************* BDDTreeSet **************************************/
@@ -621,6 +722,7 @@ BDDTreeSet::BDDTreeSet( )
     : _grid(0)
     , _root_cell_height(0)
     , _root_cell_coordinates()
+    , _mince_depth(-1)
 {
     _initialize_bddlib();
     this->_bdd = bdd_false();
@@ -632,6 +734,7 @@ BDDTreeSet::BDDTreeSet( const BDDTreeSet & set )
     , _root_cell_height(set.root_cell_height())
     , _root_cell_coordinates(set.root_cell_coordinates())
     , _bdd(set.enabled_cells())
+    , _mince_depth(set.mince_depth())
 {
 }
 
@@ -642,6 +745,7 @@ BDDTreeSet::BDDTreeSet( const Grid& grid, const uint root_cell_height,
     , _root_cell_height(root_cell_height)
     , _root_cell_coordinates(root_cell_coordinates)
     , _bdd(enabled_cells)
+    , _mince_depth(-1)
 {
     ARIADNE_ASSERT_MSG(root_cell_coordinates.size() == grid.dimension(),
         "root_cell_coordinates and grid must be of the same dimension.");
@@ -652,6 +756,7 @@ BDDTreeSet::BDDTreeSet( const uint dimension, const bool enable )
     : _grid(dimension)
     , _root_cell_height(0)
     , _root_cell_coordinates(dimension, 0)
+    , _mince_depth(-1)
 {
     _initialize_bddlib();
 
@@ -666,6 +771,7 @@ BDDTreeSet::BDDTreeSet( const Grid& grid, const bool enable )
     : _grid(grid)
     , _root_cell_height(0)
     , _root_cell_coordinates(grid.dimension(), 0)
+    , _mince_depth(-1)
 {
     _initialize_bddlib();
 
@@ -688,7 +794,12 @@ bool BDDTreeSet::empty() const {
 }
 
 size_t BDDTreeSet::size() const {
-    return _enabled_cells_number(this->enabled_cells(), 0);
+    // compute mince depth
+    int mince_depth = -1;
+    if(this->mince_depth() >= 0) {
+        mince_depth = this->root_cell_height() + this->mince_depth();
+    }
+    return _enabled_cells_number(this->enabled_cells(), 0, mince_depth);
 }
 
 uint BDDTreeSet::dimension() const {
@@ -703,8 +814,28 @@ uint BDDTreeSet::root_cell_height() const {
     return this->_root_cell_height;
 }
 
+uint BDDTreeSet::depth() const {
+    // get the index of the smallest var in the bdd
+    int* vars;
+    int varnum;
+    ARIADNE_ASSERT_MSG(bdd_scanset(bdd_support(this->_bdd), vars, varnum) == 0,
+        "Error in scanning the variable set.");
+    // free vars that is not needed: the var number is sufficient
+    free(vars);    
+    // Remove the variables that are necessary to reach the zero level
+    varnum = varnum - this->root_cell_height();
+    // If varnum is negative, the variable set is empty
+    if(varnum < 0) varnum = 0;
+    // the depth is the maximum between the mince_depth and the number of variables
+    return max(varnum, this->mince_depth());
+}
+
 array<int> BDDTreeSet::root_cell_coordinates() const {
     return this->_root_cell_coordinates;
+}
+
+int BDDTreeSet::mince_depth() const {
+    return this->_mince_depth;
 }
 
 const bdd& BDDTreeSet::enabled_cells() const {
@@ -732,7 +863,8 @@ bool BDDTreeSet::operator==(const BDDTreeSet& set) const {
         return false;
     if(this->root_cell_coordinates() != set.root_cell_coordinates())
         return false;
-        
+    if(this->mince_depth() != set.mince_depth())    
+        return false;
     return (this->enabled_cells() == set.enabled_cells());                
 }
 
@@ -869,10 +1001,20 @@ tribool BDDTreeSet::overlaps( const Box& box ) const {
     return !this->disjoint(box);        
 }
 
+void BDDTreeSet::mince( const uint subdiv ) {
+    this->_mince_depth = subdiv * this->dimension();
+};
+
+void BDDTreeSet::recombine() {
+    this->_mince_depth = -1;
+};
+
+
 void BDDTreeSet::clear( ) {
     this->_root_cell_height = 0;
     this->_root_cell_coordinates.fill(0);
     this->_bdd = bddfalse;
+    this->_mince_depth = -1;
 }
 
 
@@ -1133,7 +1275,43 @@ void BDDTreeSet::adjoin_inner_approximation( const OpenSetInterface& set, const 
     this->minimize_height();    
 }
 
+void BDDTreeSet::possibly_restrict(const OvertSetInterface& set) {
+    ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot compare with a zero-dimensional BDDTreeSet.");
+    ARIADNE_ASSERT_MSG(this->dimension() == set.dimension(), "Cannot compare sets with different dimensions.");
 
+    // Do nothing if the bdd set is empty
+    if(this->empty()) return;
+
+    // determine which dimension to split first 
+    uint height = this->root_cell_height();
+    uint dim = this->dimension();
+    uint i = 0;
+    if(height > 0) i = (dim - 1) - ((height-1) % dim);    
+    uint depth = this->depth();
+    // call to worker procedure that computes the new bdd
+    this->_bdd = _possibly_restrict(set, this->enabled_cells(), this->root_cell(), height + depth, i, 0);
+    // minimize the result
+    this->minimize_height();    
+}
+
+void BDDTreeSet::definitely_restrict(const OpenSetInterface& set) {
+    ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot compare with a zero-dimensional BDDTreeSet.");
+    ARIADNE_ASSERT_MSG(this->dimension() == set.dimension(), "Cannot compare sets with different dimensions.");
+
+    // Do nothing if the bdd set is empty
+    if(this->empty()) return;
+
+    // determine which dimension to split first 
+    uint height = this->root_cell_height();
+    uint dim = this->dimension();
+    uint i = 0;
+    if(height > 0) i = (dim - 1) - ((height-1) % dim); 
+    uint depth = this->depth();
+    // call to worker procedure that computes the new bdd
+    this->_bdd = _definitely_restrict(set, this->enabled_cells(), this->root_cell(), height + depth, i, 0);
+    // minimize the result
+    this->minimize_height();    
+}
 
 BDDTreeSet::const_iterator BDDTreeSet::begin() const {
     return BDDTreeSet::const_iterator(*this);
@@ -1185,6 +1363,7 @@ int operator==(const PathElement& a, const PathElement& b) {
 
 BDDTreeConstIterator::BDDTreeConstIterator() 
     : _path()
+    , _mince_depth(-1)
 {
 }
 
@@ -1204,23 +1383,32 @@ BDDTreeConstIterator::BDDTreeConstIterator( const BDDTreeSet& set )
         root.split_coordinate = (dim - 1) - ((height-1) % dim);
     }
     this->_path.push_back(root);
-    _compute_next_cell(this->_path);
+    // compute mince_depth
+    if(set.mince_depth() >= 0) {
+        this->_mince_depth = set.root_cell_height() + set.mince_depth();
+    } else {
+        this->_mince_depth = -1;    
+    }
+    _compute_next_cell(this->_path, this->_mince_depth);
 }
 
 BDDTreeConstIterator::BDDTreeConstIterator( const BDDTreeConstIterator& iter )
     : _path(iter._path)
+    , _mince_depth(iter._mince_depth)
 {
 }
 
 void BDDTreeConstIterator::increment() {
     // increment only if the iterator is a valid one
     if(!this->_path.empty()) {
-        _compute_next_cell(this->_path);
+        // compute initial mince_depth
+        int mince_depth = this->_mince_depth - (this->_path.size() - 1);
+        _compute_next_cell(this->_path, mince_depth);
     }
 }
 
 bool BDDTreeConstIterator::equal( BDDTreeConstIterator const & other ) const {
-    return (this->_path == other._path);
+    return (this->_path == other._path) && (this->_mince_depth == other._mince_depth);
 }
 
 Box const& BDDTreeConstIterator::dereference() const {
@@ -1246,6 +1434,78 @@ std::ostream& operator<<(std::ostream& os, const PathElement& pe) {
                  ", " << pe.status <<
                  ", " << pe.split_coordinate << 
                  ", " << pe.root_var <<" )";
+}
+
+/********************************** Comparison and filtering operators **********************************/
+
+tribool disjoint(const ConstraintSet& cons_set, const BDDTreeSet& bdd_set) {
+    ARIADNE_ASSERT_MSG(bdd_set.dimension() != 0, "Cannot compare with a zero-dimensional BDDTreeSet.");
+    ARIADNE_ASSERT_MSG(bdd_set.dimension() == cons_set.dimension(), "Cannot compare sets with different dimensions.");
+
+    // If the constraint set has an empty codomain, the test is true
+    if(cons_set.codomain().empty()) return true;
+        
+    // compute the first splitting coordinate
+    uint dim = bdd_set.dimension();
+    uint height = bdd_set.root_cell_height();
+    uint splitting_coordinate;
+    if(height == 0) {
+        splitting_coordinate = 0;
+    } else {
+        splitting_coordinate = (dim - 1) - ((height-1) % dim);
+    }
+    return _disjoint(bdd_set.root_cell(), bdd_set.enabled_cells(), 0, splitting_coordinate, cons_set);            
+}
+
+tribool overlaps(const ConstraintSet& cons_set, const BDDTreeSet& bdd_set) {
+    return !disjoint(cons_set, bdd_set);            
+}
+
+tribool covers(const ConstraintSet& cons_set, const BDDTreeSet& bdd_set) {
+    ARIADNE_ASSERT_MSG(bdd_set.dimension() != 0, "Cannot compare with a zero-dimensional BDDTreeSet.");
+    ARIADNE_ASSERT_MSG(bdd_set.dimension() == cons_set.dimension(), "Cannot compare sets with different dimensions.");
+
+    // compute the first splitting coordinate
+    uint dim = bdd_set.dimension();
+    uint height = bdd_set.root_cell_height();
+    uint splitting_coordinate;
+    if(height == 0) {
+        splitting_coordinate = 0;
+    } else {
+        splitting_coordinate = (dim - 1) - ((height-1) % dim);
+    }
+    return _subset(bdd_set.root_cell(), bdd_set.enabled_cells(), 0, splitting_coordinate, cons_set);        
+}
+
+BDDTreeSet possibly_overlapping_cells(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set) {
+    // make a copy of bdd_set
+    BDDTreeSet result = bdd_set;
+    
+    result.possibly_restrict(cons_set);
+    return result;
+}
+
+BDDTreeSet definitely_covered_cells(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set) {
+    // make a copy of bdd_set
+    BDDTreeSet result = bdd_set;
+    result.definitely_restrict(cons_set);
+    return result;
+}
+
+Box eps_codomain(const BDDTreeSet& bdd_set, const Vector<Float> eps, const VectorFunction& func) {
+    ARIADNE_NOT_IMPLEMENTED;    
+}
+
+BDDTreeSet project_down(const BDDTreeSet& bdd_set, const Vector<uint>& indices) {
+    ARIADNE_NOT_IMPLEMENTED;    
+}
+
+tribool covers(const BDDTreeSet& covering_set, const BDDTreeSet& covered_set, const Vector<Float>& eps) {
+    ARIADNE_NOT_IMPLEMENTED;    
+}
+
+tribool inside(const BDDTreeSet& covered_set, const BDDTreeSet& covering_set, const Vector<Float>& eps, int accuracy) {
+    ARIADNE_NOT_IMPLEMENTED;    
 }
 
 

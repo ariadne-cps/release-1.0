@@ -121,6 +121,8 @@ class BDDTreeSet : public DrawableInterface {
     array<int> _root_cell_coordinates;  
     // The bdd encoding the enabled cells
     bdd _bdd;
+    // The depth to which the cells must me minced
+    int _mince_depth;
     
   public:
     /*! \brief A short name for the constant iterator */
@@ -184,10 +186,18 @@ class BDDTreeSet : public DrawableInterface {
     /*! \brief The height of the root cell, that is, the number of subdivision needed to obtain a cell of the base grid.
      */
     uint root_cell_height() const;
+    
+    /*! \brief The depth of the set, that is, the longest path from a cell of the base grid to a leaf.
+     */
+    uint depth() const;
 
     /*! \brief The coordinate of the lower corner of the root cell
      */
     array<int> root_cell_coordinates() const;
+    
+    /*! \brief The depth to wich all cells are minced (returns -1 if the cells are not minced).
+     */
+    int mince_depth() const;
     
     /*! \brief The BDD representing the enabled cells.
      */
@@ -240,6 +250,21 @@ class BDDTreeSet : public DrawableInterface {
 
     /*! \brief Tests if a %BDDTreeSet overlaps a box. */
     tribool overlaps( const Box& box ) const;
+
+    //@}
+    
+    //@{
+    //! \name Subdivisions
+
+    /*! \brief Subdivides the cells in such a way every cell is equal or smaller to the base cell 
+     *  subdivided \a subdiv times in each dimension.
+     */
+    void mince( const uint subdiv );
+
+    /*! \brief Recombines the subdivisions, for instance if all subcells of a cell are
+     * enabled/disabled then they are put together.
+     */
+    void recombine();
 
     //@}
 
@@ -336,6 +361,14 @@ class BDDTreeSet : public DrawableInterface {
      */
     void adjoin_inner_approximation( const OpenSetInterface& set, const Box& bounding_box, const uint subdiv );
 
+    /*! \brief Restrict to the cells that possibly overlaps with \a set.
+     */
+    void possibly_restrict( const OvertSetInterface& set );
+
+    /*! \brief Restrict to the cells that are definitely inside \a set.
+     */
+    void definitely_restrict( const OpenSetInterface& set );
+
     //@}
 
     //@{
@@ -402,6 +435,8 @@ class BDDTreeConstIterator
   private:    
     /*! \brief The path from the root of the current cell */
     std::vector< PathElement > _path;
+    // The depth to which the cells must me minced
+    int _mince_depth;
         
     friend class boost::iterator_core_access;
 
@@ -442,38 +477,38 @@ template<class A> void serialize(A& archive, Ariadne::BDDTreeSet& set, const uns
     ARIADNE_NOT_IMPLEMENTED;
 }
 
-// 
-// //! \brief Whether \a cons_set is disjoint from \a bdd_set.
-// tribool disjoint(const ConstraintSet& cons_set, const BDDTreeSet& bdd_set);
-// //! \brief Whether \a cons_set overlaps with \a bdd_set.
-// tribool overlaps(const ConstraintSet& cons_set, const BDDTreeSet& bdd_set);
-// //! \brief Whether \a cons_set covers \a bdd_set.
-// tribool covers(const ConstraintSet& cons_set, const BDDTreeSet& bdd_set);
-// 
-// //! \brief Evaluates \a bdd_set on \a cons_set in order to obtain (a superset of) the overlapping cells.
-// //! \details The result is a subset of the cells of \a bdd_set. As such, the cells are not manipulated (i.e., by mincing
-// //! or recombining) in any way.
-// BDDTreeSet possibly_overlapping_cells(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set);
-// //! \brief Applies \a cons_set to \a bdd_set in order to obtain the definitely covered cells.
-// //! \details The result is a subset of the cells of \a bdd_set. As such, the cells are not manipulated (i.e., by mincing
-// //! or recombining) in any way.
-// BDDTreeSet definitely_covered_cells(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set);
-// 
-// //! \brief Evaluates the codomain of \a func applied on the cells of \a bdd_set, each widened by \a eps.
-// Box eps_codomain(const BDDTreeSet& bdd_set, const Vector<Float> eps, const VectorFunction& func);
-// 
-// //! \brief Projects \a bdd_set using the given \a indices.
-// BDDTreeSet project_down(const BDDTreeSet& bdd_set, const Vector<uint>& indices);
-// 
-// //! \brief Check whether \a covering_set covers \a covered_set with a tolerance of \a eps.
-// //! \details Since the cell boxes of \a covered_set, enlarged of \a eps, are checked against \a covering_set,
-// //! the two sets can feature different grids.
-// tribool covers(const BDDTreeSet& covering_set, const BDDTreeSet& covered_set, const Vector<Float>& eps);
-// 
-// //! \brief Check whether \a covering_set covers \a covered_set with a tolerance of \a eps.
-// //! \details Since the cell boxes of \a covered_set are checked against an overapproximation (using \a accuracy) of the
-// //! epsilon-enlargement of \a covering_set, the two sets can feature different grids.
-// tribool inside(const BDDTreeSet& covered_set, const BDDTreeSet& covering_set, const Vector<Float>& eps, int accuracy);
+
+//! \brief Whether \a cons_set is disjoint from \a bdd_set.
+tribool disjoint(const ConstraintSet& cons_set, const BDDTreeSet& bdd_set);
+//! \brief Whether \a cons_set overlaps with \a bdd_set.
+tribool overlaps(const ConstraintSet& cons_set, const BDDTreeSet& bdd_set);
+//! \brief Whether \a cons_set covers \a bdd_set.
+tribool covers(const ConstraintSet& cons_set, const BDDTreeSet& bdd_set);
+
+//! \brief Evaluates \a bdd_set on \a cons_set in order to obtain (a superset of) the overlapping cells.
+//! \details The result is a subset of the cells of \a bdd_set. As such, the cells are not manipulated (i.e., by mincing
+//! or recombining) in any way.
+BDDTreeSet possibly_overlapping_cells(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set);
+//! \brief Applies \a cons_set to \a bdd_set in order to obtain the definitely covered cells.
+//! \details The result is a subset of the cells of \a bdd_set. As such, the cells are not manipulated (i.e., by mincing
+//! or recombining) in any way.
+BDDTreeSet definitely_covered_cells(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set);
+
+//! \brief Evaluates the codomain of \a func applied on the cells of \a bdd_set, each widened by \a eps.
+Box eps_codomain(const BDDTreeSet& bdd_set, const Vector<Float> eps, const VectorFunction& func);
+
+//! \brief Projects \a bdd_set using the given \a indices.
+BDDTreeSet project_down(const BDDTreeSet& bdd_set, const Vector<uint>& indices);
+
+//! \brief Check whether \a covering_set covers \a covered_set with a tolerance of \a eps.
+//! \details Since the cell boxes of \a covered_set, enlarged of \a eps, are checked against \a covering_set,
+//! the two sets can feature different grids.
+tribool covers(const BDDTreeSet& covering_set, const BDDTreeSet& covered_set, const Vector<Float>& eps);
+
+//! \brief Check whether \a covering_set covers \a covered_set with a tolerance of \a eps.
+//! \details Since the cell boxes of \a covered_set are checked against an overapproximation (using \a accuracy) of the
+//! epsilon-enlargement of \a covering_set, the two sets can feature different grids.
+tribool inside(const BDDTreeSet& covered_set, const BDDTreeSet& covering_set, const Vector<Float>& eps, int accuracy);
 
 } // namespace Ariadne
 
