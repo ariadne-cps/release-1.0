@@ -263,10 +263,15 @@ tribool _subset(const Box& root_cell, const bdd& enabled_cells, int root_var, ui
     if(enabled_cells == bddfalse) return true;
     tribool test = set.covers(root_cell);
     // if the root cell is definitely a subset of box, return true
-    if(definitely(test)) return true;
+    if(definitely(test)) {
+        // std::cout << "set definitely covers the root cell, return TRUE." << std::endl;
+        return true;
+    }
     // if the bdd is the constant true, return test
-    if(enabled_cells == bddtrue) return test;
-    
+    if(enabled_cells == bddtrue) {
+        // std::cout << "set possibly covers the root cell, return " << test << std::endl;
+        return test;
+    }
     // Split the root cell and repeat recursively on the two subcells
     std::pair<Box,Box> subcells = root_cell.split(splitting_coordinate);  
     bdd right_branch, left_branch;
@@ -281,8 +286,13 @@ tribool _subset(const Box& root_cell, const bdd& enabled_cells, int root_var, ui
     
     int dim = root_cell.dimension();
     test = _subset(subcells.first, left_branch, root_var+1, (splitting_coordinate+1) % dim, set);
-    if(!possibly(test)) return false;
-    return test && _subset(subcells.second, right_branch, root_var+1, (splitting_coordinate+1) % dim, set);
+    if(!possibly(test)) {
+        // std::cout << "set does not cover the left branch, return FALSE." << std::endl;
+        return false;
+    }
+    test = test && _subset(subcells.second, right_branch, root_var+1, (splitting_coordinate+1) % dim, set);
+    // std::cout << "returning " << test << std::endl;
+    return test;
 }
 
 // Test whether the a BDDTreeSet based on root_cell and enabled_cells, where the root variable is root_var
@@ -533,10 +543,10 @@ bdd _adjoin_inner_approximation(const OpenSetInterface& set, const bdd& enabled_
 }
 
 // recursive function that restrict the bdd to the cells that possibly overlaps with a set
-bdd _possibly_restrict(const OvertSetInterface& set, const bdd& enabled_cells, const Box& root_cell,
+bdd _outer_restrict(const OvertSetInterface& set, const bdd& enabled_cells, const Box& root_cell,
                        uint depth, uint splitting_coordinate, int root_var)
 {
-    // std::cout << "_possibly_restrict(" << set << ", " << enabled_cells << ", "
+    // std::cout << "_outer_restrict(" << set << ", " << enabled_cells << ", "
     //            << root_cell << ", " << depth << ", " << splitting_coordinate << ", " << root_var 
     //            << ")" << std::endl;
     // if the bdd is the constant false, do nothing
@@ -565,18 +575,18 @@ bdd _possibly_restrict(const OvertSetInterface& set, const bdd& enabled_cells, c
         left_branch = bdd_low(enabled_cells);
         right_branch = bdd_high(enabled_cells);
     }
-    left_branch = _possibly_restrict(set, left_branch, split_cells.first, depth - 1,
+    left_branch = _outer_restrict(set, left_branch, split_cells.first, depth - 1,
                                     (splitting_coordinate + 1) % set.dimension(), root_var + 1);
-    right_branch = _possibly_restrict(set, right_branch, split_cells.second, depth - 1,
+    right_branch = _outer_restrict(set, right_branch, split_cells.second, depth - 1,
                                     (splitting_coordinate + 1) % set.dimension(), root_var + 1);
     return (bdd_nithvar(root_var) & left_branch) | (bdd_ithvar(root_var) & right_branch);
 }
 
 // recursive function that restrict the bdd to the cells that are definitely inside a set
-bdd _definitely_restrict(const OpenSetInterface& set, const bdd& enabled_cells, const Box& root_cell,
+bdd _inner_restrict(const OpenSetInterface& set, const bdd& enabled_cells, const Box& root_cell,
                        uint depth, uint splitting_coordinate, int root_var)
 {
-    // std::cout << "_definitely_restrict(" << set << ", " << enabled_cells << ", "
+    // std::cout << "_inner_restrict(" << set << ", " << enabled_cells << ", "
     //            << root_cell << ", " << splitting_coordinate << ", " << root_var 
     //            << ")" << std::endl;
     // if the bdd is the constant false, do nothing
@@ -611,9 +621,9 @@ bdd _definitely_restrict(const OpenSetInterface& set, const bdd& enabled_cells, 
         left_branch = bdd_low(enabled_cells);
         right_branch = bdd_high(enabled_cells);
     }
-    left_branch = _definitely_restrict(set, left_branch, split_cells.first, depth - 1,
+    left_branch = _inner_restrict(set, left_branch, split_cells.first, depth - 1,
                                     (splitting_coordinate + 1) % set.dimension(), root_var + 1);
-    right_branch = _definitely_restrict(set, right_branch, split_cells.second, depth - 1,
+    right_branch = _inner_restrict(set, right_branch, split_cells.second, depth - 1,
                                     (splitting_coordinate + 1) % set.dimension(), root_var + 1);
     return (bdd_nithvar(root_var) & left_branch) | (bdd_ithvar(root_var) & right_branch);
 }
@@ -1275,7 +1285,7 @@ void BDDTreeSet::adjoin_inner_approximation( const OpenSetInterface& set, const 
     this->minimize_height();    
 }
 
-void BDDTreeSet::possibly_restrict(const OvertSetInterface& set) {
+void BDDTreeSet::outer_restrict(const OvertSetInterface& set) {
     ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot compare with a zero-dimensional BDDTreeSet.");
     ARIADNE_ASSERT_MSG(this->dimension() == set.dimension(), "Cannot compare sets with different dimensions.");
 
@@ -1289,12 +1299,12 @@ void BDDTreeSet::possibly_restrict(const OvertSetInterface& set) {
     if(height > 0) i = (dim - 1) - ((height-1) % dim);    
     uint depth = this->depth();
     // call to worker procedure that computes the new bdd
-    this->_bdd = _possibly_restrict(set, this->enabled_cells(), this->root_cell(), height + depth, i, 0);
+    this->_bdd = _outer_restrict(set, this->enabled_cells(), this->root_cell(), height + depth, i, 0);
     // minimize the result
     this->minimize_height();    
 }
 
-void BDDTreeSet::definitely_restrict(const OpenSetInterface& set) {
+void BDDTreeSet::inner_restrict(const OpenSetInterface& set) {
     ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot compare with a zero-dimensional BDDTreeSet.");
     ARIADNE_ASSERT_MSG(this->dimension() == set.dimension(), "Cannot compare sets with different dimensions.");
 
@@ -1308,7 +1318,7 @@ void BDDTreeSet::definitely_restrict(const OpenSetInterface& set) {
     if(height > 0) i = (dim - 1) - ((height-1) % dim); 
     uint depth = this->depth();
     // call to worker procedure that computes the new bdd
-    this->_bdd = _definitely_restrict(set, this->enabled_cells(), this->root_cell(), height + depth, i, 0);
+    this->_bdd = _inner_restrict(set, this->enabled_cells(), this->root_cell(), height + depth, i, 0);
     // minimize the result
     this->minimize_height();    
 }
@@ -1462,6 +1472,7 @@ tribool overlaps(const ConstraintSet& cons_set, const BDDTreeSet& bdd_set) {
 }
 
 tribool covers(const ConstraintSet& cons_set, const BDDTreeSet& bdd_set) {
+    std::cout << "covers(" << cons_set << ", " << bdd_set << ")" << std::endl;
     ARIADNE_ASSERT_MSG(bdd_set.dimension() != 0, "Cannot compare with a zero-dimensional BDDTreeSet.");
     ARIADNE_ASSERT_MSG(bdd_set.dimension() == cons_set.dimension(), "Cannot compare sets with different dimensions.");
 
@@ -1480,15 +1491,14 @@ tribool covers(const ConstraintSet& cons_set, const BDDTreeSet& bdd_set) {
 BDDTreeSet possibly_overlapping_cells(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set) {
     // make a copy of bdd_set
     BDDTreeSet result = bdd_set;
-    
-    result.possibly_restrict(cons_set);
+    result.outer_restrict(cons_set);
     return result;
 }
 
 BDDTreeSet definitely_covered_cells(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set) {
     // make a copy of bdd_set
     BDDTreeSet result = bdd_set;
-    result.definitely_restrict(cons_set);
+    result.inner_restrict(cons_set);
     return result;
 }
 

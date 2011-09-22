@@ -121,7 +121,9 @@ tribool
 ImageSet::disjoint(const Box& bx) const
 {
     if(dynamic_cast<const VectorScalingFunction*>(this->_function.pointer())) {
-        return Ariadne::disjoint(bx,this->_function.evaluate(this->_domain));
+        Box bbox = this->bounding_box();
+        std::cout << "VectorScalingFunction.bounding_box() = " << bbox;
+        return Ariadne::approximate_disjoint(bx,bbox);
     } else {
         static const int MAX_SUBDIVISIONS=8;
         return Ariadne::disjoint(this->domain(),this->_function,bx,radius(bx)/MAX_SUBDIVISIONS);
@@ -212,7 +214,7 @@ ConstraintSet::overlaps(const Box& bx) const
 tribool
 ConstraintSet::covers(const Box& bx) const
 {
-    return Box(this->_function.evaluate(bx)).inside(this->_codomain);
+    return Ariadne::approximate_inside(this->_function.evaluate(bx), this->_codomain);
 }
 
 

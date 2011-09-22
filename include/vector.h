@@ -395,6 +395,10 @@ bool inside(const Vector<Interval>& v1, const Vector<Interval>& v2);
 bool covers(const Vector<Interval>& v1, const Vector<Interval>& v2);
 bool empty(const Vector<Interval>& v);
 
+tribool approximate_disjoint(const Vector<Interval>& v1, const Vector<Interval>& v2);
+tribool approximate_inside(const Vector<Interval>& v1, const Vector<Interval>& v2);
+
+
 Vector<Interval> split(const Vector<Interval>& v, uint k, tribool lr);
 Vector<Interval> split(const Vector<Interval>& v, tribool lr);
 std::pair< Vector<Interval>, Vector<Interval> > split(const Vector<Interval>& v);

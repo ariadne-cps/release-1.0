@@ -185,6 +185,30 @@ bool inside(const Vector<Interval>& v1, const Vector<Interval>& v2)
     return true;
 }
 
+tribool approximate_disjoint(const Vector<Interval>& v1, const Vector<Interval>& v2)
+{
+    ARIADNE_ASSERT(v1.size()==v2.size());
+    tribool result = false;
+    for(size_t i=0; i!=v1.size(); ++i) {
+        result = result || approximate_disjoint(v1[i],v2[i]);
+        if(definitely(result)) { return true; }
+    }
+    return result;
+}
+
+
+tribool approximate_inside(const Vector<Interval>& v1, const Vector<Interval>& v2)
+{
+    ARIADNE_ASSERT(v1.size()==v2.size());
+    tribool result = true;
+    for(size_t i=0; i!=v1.size(); ++i) {
+        result = result && approximate_inside(v1[i],v2[i]);
+        if(!possibly(result)) { return false; }
+    }
+    return result;
+}
+
+
 bool empty(const Vector<Interval>& v)
 {
     for(size_t i=0; i!=v.size(); ++i) {

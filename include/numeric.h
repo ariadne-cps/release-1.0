@@ -407,6 +407,18 @@ inline bool overlap(Interval i1, Interval i2) { return i1.lower()<i2.upper() && 
 inline bool inside(Interval i1, Interval i2) { return i1.lower()>i2.lower() && i1.upper()<i2.upper(); }
 inline bool covers(Interval i1, Interval i2) { return i1.lower()<i2.lower() && i1.upper()>i2.upper(); }
 
+inline tribool approximate_disjoint(Interval i1, Interval i2) { 
+    if(disjoint(i1, i2)) return true;
+    if(overlap(i1, i2)) return false;
+    return indeterminate;    
+}
+
+inline tribool approximate_inside(Interval i1, Interval i2) { 
+    if(i1.lower()>i2.lower() && i1.upper()<i2.upper()) return true;
+    if(i1.lower()<i2.lower() || i1.upper()>i2.upper()) return false;
+    return indeterminate;    
+}
+
 inline Interval max(Interval i1, Interval i2)
 {
     return Interval(max(i1.lower(),i2.lower()),max(i1.upper(),i2.upper()));

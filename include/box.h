@@ -190,7 +190,7 @@ class Box
         return Ariadne::inside(other.vector(), this->vector());
     }
 
-    //! \brief Tests if the box covers another box.
+    //! \brief Tests if the box is inside another box.
     //! Only returns true if the closure of the box is a subset
     //! of the interior of the other.
     virtual tribool inside(const Box& other) const {

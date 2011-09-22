@@ -239,6 +239,7 @@ void test_predicates() {
     set1 = BDDTreeSet(Grid(2), 2, array<int>(2, 0,0), enabled_cells);    
     enabled_cells = enabled_cells & bdd_nithvar(2) & bdd_nithvar(3);
     set2 = BDDTreeSet(Grid(2), 2, array<int>(2, 0,0), enabled_cells);  
+    // plot("test_bdd_set_set1",PlanarProjectionMap(2,0,1),set1.bounding_box(),Colour(1,0,1),set1);
     enabled_cells = enabled_cells & bdd_nithvar(4);
     BDDTreeSet set3(Grid(2), 2, array<int>(2, 0,0), enabled_cells);    
     ARIADNE_TEST_ASSERT(!possibly(covers(cs1, set1)));
@@ -794,17 +795,15 @@ void test_iterators_conversions_drawing() {
 }
 
 int main() {
-/*
+
     test_constructors();
     test_properties_subdivisions();
-*/
     test_predicates();
-/*
     test_operations();
     test_box_approximations();
     test_set_approximations();
     test_iterators_conversions_drawing();
- */   
+
     return ARIADNE_TEST_FAILURES;
 }
 

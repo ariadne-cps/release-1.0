@@ -361,13 +361,15 @@ class BDDTreeSet : public DrawableInterface {
      */
     void adjoin_inner_approximation( const OpenSetInterface& set, const Box& bounding_box, const uint subdiv );
 
-    /*! \brief Restrict to the cells that possibly overlaps with \a set.
+    /*! \brief Restrict to the cells that possibly overlaps with \a set. 
+     *  The result is an outer approximation of the intersection with \a set.
      */
-    void possibly_restrict( const OvertSetInterface& set );
+    void outer_restrict( const OvertSetInterface& set );
 
     /*! \brief Restrict to the cells that are definitely inside \a set.
+     *  The result is an inner approximation of the intersection with \a set.
      */
-    void definitely_restrict( const OpenSetInterface& set );
+    void inner_restrict( const OpenSetInterface& set );
 
     //@}
 
