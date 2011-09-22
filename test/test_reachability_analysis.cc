@@ -137,8 +137,8 @@ class TestReachabilityAnalysis
         HybridDenotableSet hybrid_lower_evolve=analyser.lower_evolve(initial_set,reach_time);
         cout << "Computing timed reachable set" << endl;
         HybridDenotableSet hybrid_lower_reach=analyser.lower_reach(initial_set,reach_time);
-        GridTreeSet& lower_evolve=hybrid_lower_evolve[loc];
-        GridTreeSet& lower_reach=hybrid_lower_reach[loc];
+        DenotableSetType& lower_evolve=hybrid_lower_evolve[loc];
+        DenotableSetType& lower_reach=hybrid_lower_reach[loc];
         cout << "Evolved to " << lower_evolve.size() << " cells " << endl << endl;
         cout << "Reached " << lower_reach.size() << " cells " << endl << endl;
         plot("test_reachability_analyser-map_lower_reach_evolve.png",bounding_box,lower_evolve,lower_reach,initial_set);
@@ -157,8 +157,8 @@ class TestReachabilityAnalysis
         HybridDenotableSet upper_reach_set=analyser.upper_reach(initial_set,reach_time);
         cout << "upper_reach_set="<<upper_reach_set<<std::endl;
  
-        const GridTreeSet& upper_evolve=upper_evolve_set[loc];
-        const GridTreeSet& upper_reach=upper_reach_set[loc];
+        const DenotableSetType& upper_evolve=upper_evolve_set[loc];
+        const DenotableSetType& upper_reach=upper_reach_set[loc];
         ImageSet& initial=initial_set[loc];
         //cout << "Reached " << upper_reach.size() << " cells out of " << upper_reach.capacity() << endl << endl;
         plot("test_reachability_analyser-map_upper_reach_evolve.png",bounding_box,upper_evolve,upper_reach,initial);

@@ -142,8 +142,8 @@ void TestDiscretisedEvolution::test_hybrid_time() const
     HybridDenotableSet final(outer_approximation(evolve_orbit.final(),hagrid,depth));
     cout << "done." << endl;
 
-    GridTreeSet const& reach_cells=reach[location];
-    GridTreeSet const& final_cells=final[location];
+    DenotableSetType const& reach_cells=reach[location];
+    DenotableSetType const& final_cells=final[location];
 
     cout << "initial_set=" << initial_set.range() << endl << endl;
     cout << "reach_set=" << reach_set << endl << endl;

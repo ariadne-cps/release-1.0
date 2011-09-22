@@ -52,6 +52,7 @@ class Zonotope;
 class TaylorSet;
 class GridCell;
 class GridTreeSubset;
+class BDDTreeSet;
 template<class BS> class ListSet;
 template<class BS> class HybridBasicSet;
 class DiscreteLocation;
@@ -74,6 +75,7 @@ class TextPlot
     void draw(const InterpolatedCurve&);
     void draw(const GridCell&);
     void draw(const GridTreeSubset&);
+    void draw(const BDDTreeSet&);
     template<class BS> void draw(const ListSet<BS>&);    
     template<class BS> void draw(const HybridBasicSet<BS>&);
     template<class BS> void draw(const std::map< DiscreteLocation,BS >&);    

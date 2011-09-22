@@ -30,7 +30,7 @@
 #include "curve.h"
 #include "taylor_set.h"
 #include "function_set.h"
-#include "grid_set.h"
+#include "denotable_set.h"
 #include "hybrid_set.h"
 
 #include "user_function.h"
@@ -118,17 +118,17 @@ int main(int argc, char **argv)
     g << ls;
     g.close();
 
-    std::cout << "Testing grid sets.." << std::endl;    
-    GridTreeSet gts(2);
-    gts.adjoin_outer_approximation(ImageSet(bx1), 2);
-    gts.adjoin_outer_approximation(ImageSet(bx2), 3);
-    gts.adjoin_outer_approximation(ImageSet(bx3), 4);
-    gts.adjoin_outer_approximation(ImageSet(bx4), 5);
-    gts.adjoin_outer_approximation(ImageSet(bx5), 6);
-    gts.recombine();
+    std::cout << "Testing denotable sets.." << std::endl;
+    DenotableSetType ds(2);
+    ds.adjoin_outer_approximation(ImageSet(bx1), 2);
+    ds.adjoin_outer_approximation(ImageSet(bx2), 3);
+    ds.adjoin_outer_approximation(ImageSet(bx3), 4);
+    ds.adjoin_outer_approximation(ImageSet(bx4), 5);
+    ds.adjoin_outer_approximation(ImageSet(bx5), 6);
+    ds.recombine();
 
-    g.open("test_textplot-gts.txt");
-    g << gts;
+    g.open("test_textplot-ds.txt");
+    g << ds;
     g.close();
     
     std::cout << "Testing hybrid basic sets.." << std::endl;
@@ -151,17 +151,17 @@ int main(int argc, char **argv)
     g << hls;
     g.close();
     
-     std::cout << "Testing hybrid grid sets.." << std::endl;
-    HybridDenotableSet hgts;
-    hgts.insert(make_pair(q1,GridTreeSet(2)));
-    hgts[q1].adjoin_outer_approximation(ImageSet(bx1), 2);
-    hgts.insert(make_pair(q2,GridTreeSet(2)));
-    hgts[q2].adjoin_outer_approximation(ImageSet(bx2), 3);
-    hgts.insert(make_pair(q3,GridTreeSet(2)));
-    hgts[q3].adjoin_outer_approximation(ImageSet(bx3), 4);
-    hgts.recombine();
-    g.open("test_textplot-hgts.txt");
-    g << hgts;
+     std::cout << "Testing hybrid denotable sets.." << std::endl;
+    HybridDenotableSet hds;
+    hds.insert(make_pair(q1,DenotableSetType(2)));
+    hds[q1].adjoin_outer_approximation(ImageSet(bx1), 2);
+    hds.insert(make_pair(q2,DenotableSetType(2)));
+    hds[q2].adjoin_outer_approximation(ImageSet(bx2), 3);
+    hds.insert(make_pair(q3,DenotableSetType(2)));
+    hds[q3].adjoin_outer_approximation(ImageSet(bx3), 4);
+    hds.recombine();
+    g.open("test_textplot-hds.txt");
+    g << hds;
     g.close();
     
 }

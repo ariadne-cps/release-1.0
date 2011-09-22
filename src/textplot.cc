@@ -35,6 +35,7 @@
 #include "polytope.h"
 #include "textplot.h"
 #include "grid_set.h"
+#include "bdd_set.h"
 #include "list_set.h"
 
 namespace Ariadne {
@@ -132,6 +133,12 @@ void TextPlot::draw(const GridCell& cell) {
 
 void TextPlot::draw(const GridTreeSubset& gts) {
     for(GridTreeSubset::const_iterator iter=gts.begin(); iter!=gts.end(); ++iter) {
+        this->draw(iter->box());
+    }
+}
+
+void TextPlot::draw(const BDDTreeSet& bddts) {
+    for(BDDTreeSet::const_iterator iter=bddts.begin(); iter!=bddts.end(); ++iter) {
         this->draw(iter->box());
     }
 }
