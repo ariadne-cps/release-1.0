@@ -122,7 +122,7 @@ ImageSet::disjoint(const Box& bx) const
 {
     if(dynamic_cast<const VectorScalingFunction*>(this->_function.pointer())) {
         Box bbox = this->bounding_box();
-        std::cout << "VectorScalingFunction.bounding_box() = " << bbox;
+        // std::cout << "VectorScalingFunction.bounding_box() = " << bbox;
         return Ariadne::approximate_disjoint(bx,bbox);
     } else {
         static const int MAX_SUBDIVISIONS=8;
