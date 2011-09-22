@@ -3129,6 +3129,54 @@ void draw(CanvasInterface& theGraphic, const CompactSetInterface& theSet) {
     draw(theGraphic,outer_approximation(theSet,Grid(theSet.dimension()),DRAWING_DEPTH));
 }
 
+
+tribool disjoint(const ConstraintSet& cons_set, const GridTreeSet& grid_set)
+{
+	if (cons_set.disjoint(grid_set.bounding_box()))
+		return true;
+
+	tribool result = true;
+
+	for (GridTreeSet::const_iterator cell_it = grid_set.begin(); cell_it != grid_set.end(); ++cell_it) {
+		tribool disjoint_cell = cons_set.disjoint(cell_it->box());
+		if (definitely(!disjoint_cell))
+			return false;
+		else
+			result = result && disjoint_cell;
+	}
+
+	return result;
+}
+
+
+tribool overlaps(const ConstraintSet& cons_set, const GridTreeSet& grid_set)
+{
+	return !disjoint(cons_set,grid_set);
+}
+
+
+tribool covers(const ConstraintSet& cons_set, const GridTreeSet& grid_set)
+{
+	if (grid_set.empty())
+		return true;
+	if (cons_set.covers(grid_set.bounding_box()))
+		return true;
+	if (cons_set.disjoint(grid_set.bounding_box()))
+		return false;
+
+	tribool result = true;
+
+	for (GridTreeSet::const_iterator cell_it = grid_set.begin(); cell_it != grid_set.end(); ++cell_it) {
+		tribool covering_cell = cons_set.covers(cell_it->box());
+		if (definitely(!covering_cell))
+			return false;
+		else
+			result = result || covering_cell;
+	}
+
+	return result;
+}
+
 GridCell project_down_unchecked(
 		const GridCell& cell,
 		const Grid& projected_grid,

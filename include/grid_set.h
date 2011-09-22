@@ -2364,11 +2364,19 @@ template<class A> void serialize(A& archive, Ariadne::GridTreeSet& set, const un
     ARIADNE_NOT_IMPLEMENTED;
 }
 
+//! \brief Whether \a cons_set is disjoint from \a grid_set.
+tribool disjoint(const ConstraintSet& cons_set, const GridTreeSet& grid_set);
+//! \brief Whether \a cons_set overlaps with \a grid_set.
+tribool overlaps(const ConstraintSet& cons_set, const GridTreeSet& grid_set);
+//! \brief Whether \a cons_set covers \a grid_set.
+tribool covers(const ConstraintSet& cons_set, const GridTreeSet& grid_set);
+
 //! \brief Projects \a cell using the given \a indices and with the \a projected_grid.
 //! \details No check is performed as to the consistency of the arguments.
 GridCell project_down_unchecked(const GridCell& cell, const Grid& projected_grid, const Vector<uint>& indices);
 
 //! \brief Projects \a grid_set using the given \a indices.
+//! \details The \a resulting set cannot have a larger dimension than the original set.
 GridTreeSet project_down(const GridTreeSet& grid_set, const Vector<uint>& indices);
 
 //! \brief Evaluates \a grid_set on \a cons_set in order to obtain (a superset of) the overlapping cells.

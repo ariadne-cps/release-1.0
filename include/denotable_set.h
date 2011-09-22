@@ -39,13 +39,6 @@ namespace Ariadne {
 //typedef BDDTreeSet DenotableSetType;
 typedef GridTreeSet DenotableSetType;
 
-//! \brief Whether \a cons_set is disjoint from \a denotable_set.
-tribool disjoint(const ConstraintSet& cons_set, const DenotableSetType& denotable_set);
-//! \brief Whether \a cons_set overlaps with \a denotable_set.
-tribool overlaps(const ConstraintSet& cons_set, const DenotableSetType& denotable_set);
-//! \brief Whether \a cons_set covers \a denotable_set.
-tribool covers(const ConstraintSet& cons_set, const DenotableSetType& denotable_set);
-
 //! \brief Evaluates the codomain of \a func applied on the cells of \a denotable_set, each widened by \a eps.
 Box eps_codomain(const DenotableSetType& denotable_set, const Vector<Float> eps, const VectorFunction& func);
 
