@@ -144,6 +144,8 @@ ImageSet::inside(const Box& bx) const
 {
     if(Ariadne::inside(this->bounding_box(),bx)) {
         return true;
+    } else if (Ariadne::disjoint(this->bounding_box(),bx)){
+    	return false;
     } else {
         return indeterminate;
     }
