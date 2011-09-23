@@ -186,7 +186,7 @@ int _increase_height(bdd& b, uint& root_cell_height, array<int>& root_cell_coord
  
  // Shift variables by n (possibly negative)
 void _shift_variables(bdd& b, int n) {
-    // std::cout << "Shifting " << b << " by " << n << std::endl;
+    // std::cout << "Shifting " << b.id() << " by " << n << std::endl;
     // If n == 0, do nothing
     if(n == 0) return;
     
@@ -195,8 +195,15 @@ void _shift_variables(bdd& b, int n) {
     int varnum;
     ARIADNE_ASSERT_MSG(bdd_scanset(bdd_support(b), oldvars, varnum) == 0,
         "Error in scanning the variable set.");
-    // If varnum is zero, the variable set of b is empty: no shift needed
-    if(varnum == 0) return;
+    // If varnum is zero, the variable set of b is empty: no shift needed,
+    // only check if new vars are necessary
+    if(varnum == 0) {
+        if(n >= bdd_varnum()) {
+        ARIADNE_ASSERT_MSG(bdd_setvarnum(n + 1) == 0, 
+            "Cannot add new BDD variables.");
+        }
+        return;
+    }
     // Check consistency of the shift index
     // std::cout << "Variable support: [" << oldvars[0] << " .. " << oldvars[varnum-1] << "]" << std::endl;
     ARIADNE_ASSERT_MSG(oldvars[0] + n >= 0, "Wrong shift index: negative variable number.")
@@ -660,7 +667,7 @@ void _compute_next_cell(std::vector< PathElement >& path, int mince_depth) {
         if(tail.obdd != bddtrue) {
             // if the var labeling the bdd correspond to che current level, get the right child
             if(bdd_var(tail.obdd) == tail.root_var) {
-                tail.obdd = bdd_low(tail.obdd);
+                tail.obdd = bdd_high(tail.obdd);
             }
         }
         // get splitting coordinate

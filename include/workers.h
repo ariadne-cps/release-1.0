@@ -122,10 +122,10 @@ private:
 										_evolver->reach_evolve(enclosure,_time,_ignore_activations,_continuous_direction,UPPER_SEMANTICS);
 
 				// Get the discretisation
+				_out_mutex.lock();
 				HGTS current_reach = outer_approximation(current_reach_enclosures,_grid,_accuracy);
 				HGTS current_evolve = outer_approximation(current_evolve_enclosures,_grid,_accuracy);
 
-				_out_mutex.lock();
 		        _reach.adjoin(current_reach);
         		_evolve.adjoin(current_evolve);
 				_out_mutex.unlock();
@@ -238,10 +238,9 @@ private:
 										_evolver->reach_evolve(current_initial_enclosure,_time,LOWER_SEMANTICS);
 
 				// Get the discretisation
+				_out_mutex.lock();
 				HGTS current_reach = outer_approximation(current_reach_enclosures,_grid,_accuracy);
 				HGTS current_evolve = outer_approximation(current_evolve_enclosures,_grid,_accuracy);
-
-				_out_mutex.lock();
 
 				_reach.adjoin(current_reach);
 				_evolve_global.adjoin(current_evolve);
