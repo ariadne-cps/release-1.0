@@ -657,11 +657,11 @@ void _compute_next_cell(std::vector< PathElement >& path, int mince_depth) {
         tail.status = PE_RIGHT;
         path.pop_back();
         path.push_back(tail);
-        // get the variable labeling the bdd
-        int var = bdd_var(tail.obdd);
-        // if the var labeling the bdd correspond to che current level, get the right child
-        if(var == tail.root_var) {
-            tail.obdd = bdd_high(tail.obdd);
+        if(tail.obdd != bddtrue) {
+            // if the var labeling the bdd correspond to che current level, get the right child
+            if(bdd_var(tail.obdd) == tail.root_var) {
+                tail.obdd = bdd_low(tail.obdd);
+            }
         }
         // get splitting coordinate
         i = tail.split_coordinate;
@@ -706,10 +706,8 @@ void _compute_next_cell(std::vector< PathElement >& path, int mince_depth) {
     path.pop_back();
     path.push_back(tail);
     if(tail.obdd != bddtrue) {
-        // get the variable labeling the bdd
-        int var = bdd_var(tail.obdd);
         // if the var labeling the bdd correspond to che current level, get the right child
-        if(var == tail.root_var) {
+        if(bdd_var(tail.obdd) == tail.root_var) {
             tail.obdd = bdd_low(tail.obdd);
         }
     }
@@ -1418,7 +1416,8 @@ void BDDTreeConstIterator::increment() {
 }
 
 bool BDDTreeConstIterator::equal( BDDTreeConstIterator const & other ) const {
-    return (this->_path == other._path) && (this->_mince_depth == other._mince_depth);
+    // two iterators are equal if they are both invalid, or if they have the same path and mince_depth
+    return (this->_path == other._path) && ((this->_mince_depth == other._mince_depth) || this->_path.empty());
 }
 
 Box const& BDDTreeConstIterator::dereference() const {
@@ -1472,7 +1471,7 @@ tribool overlaps(const ConstraintSet& cons_set, const BDDTreeSet& bdd_set) {
 }
 
 tribool covers(const ConstraintSet& cons_set, const BDDTreeSet& bdd_set) {
-    std::cout << "covers(" << cons_set << ", " << bdd_set << ")" << std::endl;
+    // std::cout << "covers(" << cons_set << ", " << bdd_set << ")" << std::endl;
     ARIADNE_ASSERT_MSG(bdd_set.dimension() != 0, "Cannot compare with a zero-dimensional BDDTreeSet.");
     ARIADNE_ASSERT_MSG(bdd_set.dimension() == cons_set.dimension(), "Cannot compare sets with different dimensions.");
 
@@ -1502,21 +1501,21 @@ BDDTreeSet definitely_covered_cells(const BDDTreeSet& bdd_set, const ConstraintS
     return result;
 }
 
-Box eps_codomain(const BDDTreeSet& bdd_set, const Vector<Float> eps, const VectorFunction& func) {
-    ARIADNE_NOT_IMPLEMENTED;    
-}
+// Box eps_codomain(const BDDTreeSet& bdd_set, const Vector<Float> eps, const VectorFunction& func) {
+//     ARIADNE_NOT_IMPLEMENTED;    
+// }
 
 BDDTreeSet project_down(const BDDTreeSet& bdd_set, const Vector<uint>& indices) {
     ARIADNE_NOT_IMPLEMENTED;    
 }
 
-tribool covers(const BDDTreeSet& covering_set, const BDDTreeSet& covered_set, const Vector<Float>& eps) {
-    ARIADNE_NOT_IMPLEMENTED;    
-}
-
-tribool inside(const BDDTreeSet& covered_set, const BDDTreeSet& covering_set, const Vector<Float>& eps, int accuracy) {
-    ARIADNE_NOT_IMPLEMENTED;    
-}
+// tribool covers(const BDDTreeSet& covering_set, const BDDTreeSet& covered_set, const Vector<Float>& eps) {
+//     ARIADNE_NOT_IMPLEMENTED;    
+// }
+// 
+// tribool inside(const BDDTreeSet& covered_set, const BDDTreeSet& covering_set, const Vector<Float>& eps, int accuracy) {
+//     ARIADNE_NOT_IMPLEMENTED;    
+// }
 
 
 } // namespace Ariadne

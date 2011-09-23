@@ -497,7 +497,7 @@ BDDTreeSet possibly_overlapping_cells(const BDDTreeSet& bdd_set, const Constrain
 BDDTreeSet definitely_covered_cells(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set);
 
 //! \brief Evaluates the codomain of \a func applied on the cells of \a bdd_set, each widened by \a eps.
-Box eps_codomain(const BDDTreeSet& bdd_set, const Vector<Float> eps, const VectorFunction& func);
+// Box eps_codomain(const BDDTreeSet& bdd_set, const Vector<Float> eps, const VectorFunction& func);
 
 //! \brief Projects \a bdd_set using the given \a indices.
 BDDTreeSet project_down(const BDDTreeSet& bdd_set, const Vector<uint>& indices);
@@ -505,12 +505,12 @@ BDDTreeSet project_down(const BDDTreeSet& bdd_set, const Vector<uint>& indices);
 //! \brief Check whether \a covering_set covers \a covered_set with a tolerance of \a eps.
 //! \details Since the cell boxes of \a covered_set, enlarged of \a eps, are checked against \a covering_set,
 //! the two sets can feature different grids.
-tribool covers(const BDDTreeSet& covering_set, const BDDTreeSet& covered_set, const Vector<Float>& eps);
+// tribool covers(const BDDTreeSet& covering_set, const BDDTreeSet& covered_set, const Vector<Float>& eps);
 
 //! \brief Check whether \a covering_set covers \a covered_set with a tolerance of \a eps.
 //! \details Since the cell boxes of \a covered_set are checked against an overapproximation (using \a accuracy) of the
 //! epsilon-enlargement of \a covering_set, the two sets can feature different grids.
-tribool inside(const BDDTreeSet& covered_set, const BDDTreeSet& covering_set, const Vector<Float>& eps, int accuracy);
+// tribool inside(const BDDTreeSet& covered_set, const BDDTreeSet& covering_set, const Vector<Float>& eps, int accuracy);
 
 } // namespace Ariadne
 
