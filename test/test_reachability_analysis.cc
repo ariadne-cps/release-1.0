@@ -100,6 +100,7 @@ class TestReachabilityAnalysis
 
     template<class S> void plot(const char* name, const Box& bounding_box, const S& set) {
         Figure g;
+        g.set_bounding_box(bounding_box);
         g << fill_colour(white) << bounding_box << line_style(true);
         g << fill_colour(blue) << set;
         g.write(name);
@@ -107,6 +108,7 @@ class TestReachabilityAnalysis
 
     template<class S, class IS> void plot(const char* name, const Box& bounding_box, const S& set, const IS& initial_set) {
         Figure g;
+        g.set_bounding_box(bounding_box);
         g << fill_colour(white) << bounding_box;
         g << line_style(true);
         g << fill_colour(red) << set;
@@ -118,6 +120,7 @@ class TestReachabilityAnalysis
     template<class ES, class RS, class IS> void plot(const char* name, const Box& bounding_box, 
                                                      const ES& evolve_set, const RS& reach_set, const IS& initial_set) {
         Figure g;
+        g.set_bounding_box(bounding_box);
         g << fill_colour(white) << bounding_box;
         g << line_style(true);
         g << fill_colour(green) << reach_set;
@@ -132,6 +135,7 @@ class TestReachabilityAnalysis
 
         DiscreteLocation loc(1);
         Box bounding_box(2,bound);
+        Box graphics_box(2,-1.0,2.1,-0.5,1.1);
         analyser.settings().domain_bounds[loc] = bounding_box;
         cout << "Computing timed evolve set" << endl;
         HybridDenotableSet hybrid_lower_evolve=analyser.lower_evolve(initial_set,reach_time);
@@ -141,7 +145,7 @@ class TestReachabilityAnalysis
         DenotableSetType& lower_reach=hybrid_lower_reach[loc];
         cout << "Evolved to " << lower_evolve.size() << " cells " << endl << endl;
         cout << "Reached " << lower_reach.size() << " cells " << endl << endl;
-        plot("test_reachability_analyser-map_lower_reach_evolve.png",bounding_box,lower_evolve,lower_reach,initial_set);
+        plot("test_reachability_analyser-map_lower_reach_evolve.png",graphics_box,lower_evolve,lower_reach,initial_set);
     }
   
     void test_upper_reach_evolve() {  
@@ -151,6 +155,7 @@ class TestReachabilityAnalysis
         cout << "Computing timed reachable set" << endl;
         DiscreteLocation loc(1);
         Box bounding_box(2,bound);
+        Box graphics_box(2,-1.0,2.1,-0.5,1.1);
         analyser.settings().domain_bounds[loc] = bounding_box;
         HybridDenotableSet upper_evolve_set=analyser.upper_evolve(initial_set,reach_time);
         cout << "upper_evolve_set="<<upper_evolve_set<<std::endl;
@@ -161,7 +166,7 @@ class TestReachabilityAnalysis
         const DenotableSetType& upper_reach=upper_reach_set[loc];
         ImageSet& initial=initial_set[loc];
         //cout << "Reached " << upper_reach.size() << " cells out of " << upper_reach.capacity() << endl << endl;
-        plot("test_reachability_analyser-map_upper_reach_evolve.png",bounding_box,upper_evolve,upper_reach,initial);
+        plot("test_reachability_analyser-map_upper_reach_evolve.png",graphics_box,upper_evolve,upper_reach,initial);
     }
   
     void test_chain_reach() {  
@@ -173,10 +178,11 @@ class TestReachabilityAnalysis
         HybridBoxes bounding_boxes
             =Ariadne::bounding_boxes(build_system().state_space(),bound);
         Box bounding_box=bounding_boxes[loc];
+        Box graphics_box(2,-1.0,2.1,-0.5,1.1);
 
         analyser.settings().domain_bounds[loc] = bounding_box;
         HybridDenotableSet chain_reach_set=analyser.outer_chain_reach(initial_set);
-        plot("test_reachability_analyser-map_chain_reach.png",bounding_box,chain_reach_set[loc],initial_set[loc]);
+        plot("test_reachability_analyser-map_chain_reach.png",graphics_box,chain_reach_set[loc],initial_set[loc]);
     }
   
     void test() {
