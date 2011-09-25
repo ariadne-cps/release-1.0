@@ -120,14 +120,15 @@ void test_properties_subdivisions() {
     // raise an error if the set is zero dimensional
     ARIADNE_TEST_FAIL(set0.root_cell());
     ARIADNE_TEST_EQUAL(set1.root_cell(), Box(2, 0.0,1.0, 0.0,1.0));
+    enabled_cells = bdd_nithvar(0) & bdd_ithvar(1) & bdd_nithvar(2) & bdd_ithvar(3);    
     set0 = BDDTreeSet(Grid(2), 3, array<int>(2, 0,0), enabled_cells);
     ARIADNE_TEST_EQUAL(set0.root_cell(), Box(2, 0.0,2.0, -2.0,2.0));
     ARIADNE_TEST_EQUAL(set2.root_cell(), Box(3, 2.0,4.0, 0.0,2.0, -2.0,2.0));   
     
     // Test bounding box
     ARIADNE_TEST_EQUAL(set1.bounding_box(), Box(2, 0.0,1.0, 0.0,1.0));
-    ARIADNE_TEST_EQUAL(set0.bounding_box(), Box(2, 0.0,2.0, -2.0,2.0));       
-    ARIADNE_TEST_EQUAL(set2.bounding_box(), Box(3, 2.0,4.0, 0.0,2.0, -2.0,2.0));       
+    ARIADNE_TEST_EQUAL(set0.bounding_box(), Box(2, 1.5,2.0, -2.0,-1.0));       
+    ARIADNE_TEST_EQUAL(set2.bounding_box(), Box(3, 2.0,3.0, 0.0,2.0, -2.0,2.0));       
 }
 
 void test_predicates() {
@@ -544,11 +545,7 @@ void test_box_approximations() {
     // adjoining a proper subset of the current set do not change the set
     set2.adjoin_over_approximation(Box(2, 0.25,0.75, 0.25,0.75), 2);
     ARIADNE_TEST_EQUAL(set1, set2);
-    
-    // test that is an over approximation and not an outer approximation
-    set2.adjoin_over_approximation(Box(2, 1.0), 2);
-    ARIADNE_TEST_EQUAL(set1, set2);
-    
+        
     // test adjoin with a general set
     bdd enabled_cells = bdd_nithvar(0) | (bdd_nithvar(1) & bdd_ithvar(3));
     set1 = BDDTreeSet(Grid(2, 2.0), 1, array<int>(2, 1,1), enabled_cells);
@@ -591,15 +588,15 @@ void test_box_approximations() {
     ARIADNE_TEST_ASSERT(!subset(set3, set2));
 
     // Test adjoin with a set of zero measure
-    bx1 = Box(2, 0.0,1.0, 1.0,1.0);
+    bx1 = Box(2, 0.1,0.9, 1.0,1.0);
     set1 = BDDTreeSet(Grid(2));
     set2 = set1;
     set2.adjoin_over_approximation(bx1, 1);
     ARIADNE_TEST_ASSERT(set1 != set2);
     ARIADNE_TEST_EQUAL(set2.grid(), set1.grid());
-    ARIADNE_TEST_EQUAL(set2.root_cell_height(), 0);
+    ARIADNE_TEST_EQUAL(set2.root_cell_height(), 1);
     ARIADNE_TEST_EQUAL(set2.root_cell_coordinates(), array<int>(2, 0,0));
-    ARIADNE_TEST_EQUAL(set2.enabled_cells(), bdd_ithvar(1));                          
+    ARIADNE_TEST_EQUAL(set2.enabled_cells(), (bdd_ithvar(0) & bdd_nithvar(2)) | (bdd_nithvar(0) & bdd_ithvar(2)));                          
 
     set1 = BDDTreeSet(Grid(2, 2.0));
     set2 = set1;
@@ -608,9 +605,9 @@ void test_box_approximations() {
     ARIADNE_TEST_EQUAL(set2.grid(), set1.grid());
     ARIADNE_TEST_EQUAL(set2.root_cell_height(), 0);
     ARIADNE_TEST_EQUAL(set2.root_cell_coordinates(), array<int>(2, 0,0));
-    ARIADNE_TEST_EQUAL(set2.enabled_cells(), bddtrue);  
+    ARIADNE_TEST_EQUAL(set2.enabled_cells(), bdd_nithvar(0));  
     
-    bx1 = Box(2, 0.0,1.0, 0.5,0.5);
+    bx1 = Box(2, 0.1,1.0, 0.5,0.5);
     set2 = set1;
     set2.adjoin_over_approximation(bx1, 1);
     ARIADNE_TEST_ASSERT(set1 != set2);
@@ -737,7 +734,20 @@ void test_set_approximations() {
     plot("test_bdd_set_is1_is2_inner",PlanarProjectionMap(2,0,1),dbox,Colour(1,0,1),set2i);
     ARIADNE_TEST_ASSERT(definitely(subset(set1i, set2i)));
     ARIADNE_TEST_ASSERT(!possibly(subset(set2i, set1i)));
-    	
+    
+    // Test adjoin with a point on a corner of the grid
+    Box bx(2, 2.0,2.0, 0.0,0.0);
+    set1o = BDDTreeSet(2);
+    set1l = BDDTreeSet(2);
+    set1i = BDDTreeSet(2);
+    set1o.adjoin_outer_approximation(ImageSet(bx), 2);
+    ARIADNE_TEST_EQUAL(set1o.size(), 4);
+    ARIADNE_PRINT_TEST_COMMENT("set1o = " << set1o);
+    set1l.adjoin_lower_approximation(bx, bx, 2);
+    ARIADNE_TEST_ASSERT(set1l.empty());
+    set1i.adjoin_inner_approximation(bx, bx, 2);
+    ARIADNE_TEST_ASSERT(set1i.empty());
+        	
 }
 
 void test_iterators_conversions_drawing() {

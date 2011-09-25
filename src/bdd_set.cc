@@ -29,6 +29,10 @@
 namespace Ariadne {
 
 /********************************** Utility functions **********************************/
+// The silent Garbage Collector Handler
+void _silent_gbchandler(int pre, bddGbcStat *s) {
+    // do nothing
+}
 
 // Test if BuDDy has been initialized. If not, initialize it.
 void _initialize_bddlib() {
@@ -38,6 +42,8 @@ void _initialize_bddlib() {
         ARIADNE_ASSERT_MSG(bdd_init(100000, 10000) == 0, "Error in the initialization of the bdd library.");
         // Set the initial number of variables.
         ARIADNE_ASSERT_MSG(bdd_setvarnum(32) == 0, "Error in the initialization of the bdd library.");
+        // Set the Garbage Collector Handler to the silent one (removes logging)
+        bdd_gbc_hook(_silent_gbchandler);
     }
 }
 
@@ -149,7 +155,7 @@ int _minimize_height(bdd& b, uint& root_cell_height, array<int>& root_cell_coord
 int _increase_height(bdd& b, uint& root_cell_height, array<int>& root_cell_coordinates, uint new_height) 
 {
     // std::cout << "_increase_height(" << b << ", " << root_cell_height << ", " << root_cell_coordinates
-    //           << ", " << new_height << ")" << std::endl;
+    //            << ", " << new_height << ")" << std::endl;
     // if the new height is equal or smaller than the current one do nothing
     if(root_cell_height >= new_height) return root_cell_height;
 
@@ -867,7 +873,40 @@ Box BDDTreeSet::root_cell() const {
 
 
 Box BDDTreeSet::bounding_box() const {
-    return this->root_cell();
+    // The root_cell is a rough estimate of the bounding box
+    Box bbox = this->root_cell();
+    uint dim = this->dimension();
+    // determine which dimension to split first
+    uint i = 0;
+    uint height = this->root_cell_height();
+    if(height > 0) 
+        i = (dim - 1) - ((height + 1) % dim);
+    // loop until the bounding box can be refined
+    bdd b = this->enabled_cells();
+    int root_var = 0;
+    while(true) { 
+        // if the current bdd is TRUE or FALSE return the current bbox
+        if(b == bddtrue || b == bddfalse) break;
+        // if the variable labelling the root is different from root_var return the current bbox
+        if(bdd_var(b) != root_var) break;
+        // get the two childs of b
+        bdd left = bdd_low(b);
+        bdd right = bdd_high(b);
+        // if both children are different from FALSE, return the current bbox
+        if(left != bddfalse && right != bddfalse) break;
+        // exactly one of the two children is FALSE, improve the bbox estimate
+        // split the bbox along the correct coordinate
+        if(right == bddfalse) {    // the right child is false, consider the left one
+            bbox = bbox.split(i).first;
+            b = left;
+        } else {    // the left child is false, consider the right one
+            bbox = bbox.split(i).second;
+            b = right;
+        }
+        root_var++;
+        i = (i + 1) % dim;        
+    }
+    return bbox;
 }
 
 
@@ -1075,7 +1114,7 @@ int BDDTreeSet::increase_height(const Box& box) {
     uint height = this->root_cell_height();
     uint dim = this->dimension();
     int i = 0;
-    while(!definitely(box.subset(root_cell))) {
+    while(!definitely(root_cell.covers(box))) {
         // std::cout << "height = " << height << ", root_cell = " << root_cell << std::endl;        
         // determine which dimension to merge 
         i = (dim - 1) - (height % dim);

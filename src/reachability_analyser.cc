@@ -368,6 +368,7 @@ upper_reach_evolve(
 
     ARIADNE_LOG(3,"Computing initial evolution...");
     initial.adjoin_outer_approximation(initial_set,accuracy);
+    ARIADNE_LOG(4,"initial.size()="<<initial.size());
 
     const EvolverPtrType& evolver = _get_tuned_evolver(*_system,accuracy,EVOLVER_TAB_OFFSET,UPPER_SEMANTICS);
     std::list<EnclosureType> initial_enclosures = cells_to_smallest_enclosures(initial,accuracy);
