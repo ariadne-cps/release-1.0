@@ -873,39 +873,19 @@ Box BDDTreeSet::root_cell() const {
 
 
 Box BDDTreeSet::bounding_box() const {
-    // The root_cell is a rough estimate of the bounding box
-    Box bbox = this->root_cell();
-    uint dim = this->dimension();
-    // determine which dimension to split first
-    uint i = 0;
-    uint height = this->root_cell_height();
-    if(height > 0) 
-        i = (dim - 1) - ((height + 1) % dim);
-    // loop until the bounding box can be refined
-    bdd b = this->enabled_cells();
-    int root_var = 0;
-    while(true) { 
-        // if the current bdd is TRUE or FALSE return the current bbox
-        if(b == bddtrue || b == bddfalse) break;
-        // if the variable labelling the root is different from root_var return the current bbox
-        if(bdd_var(b) != root_var) break;
-        // get the two childs of b
-        bdd left = bdd_low(b);
-        bdd right = bdd_high(b);
-        // if both children are different from FALSE, return the current bbox
-        if(left != bddfalse && right != bddfalse) break;
-        // exactly one of the two children is FALSE, improve the bbox estimate
-        // split the bbox along the correct coordinate
-        if(right == bddfalse) {    // the right child is false, consider the left one
-            bbox = bbox.split(i).first;
-            b = left;
-        } else {    // the left child is false, consider the right one
-            bbox = bbox.split(i).second;
-            b = right;
+    if(this->empty()) return Box::empty_box(this->dimension());
+
+    BDDTreeSet::const_iterator iter=this->begin();
+    Box bbox = (*iter);
+
+    for(iter++ ; iter!=this->end(); ++iter) {
+        Box cell = (*iter);
+        for(uint i = 0; i < cell.dimension(); ++i) {
+            if(cell[i].lower() < bbox[i].lower()) bbox[i].set_lower(cell[i].lower());
+            if(cell[i].upper() > bbox[i].upper()) bbox[i].set_upper(cell[i].upper());
         }
-        root_var++;
-        i = (i + 1) % dim;        
     }
+
     return bbox;
 }
 

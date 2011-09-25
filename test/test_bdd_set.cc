@@ -126,9 +126,9 @@ void test_properties_subdivisions() {
     ARIADNE_TEST_EQUAL(set2.root_cell(), Box(3, 2.0,4.0, 0.0,2.0, -2.0,2.0));   
     
     // Test bounding box
-    ARIADNE_TEST_EQUAL(set1.bounding_box(), Box(2, 0.0,1.0, 0.0,1.0));
+    ARIADNE_TEST_ASSERT(set1.bounding_box().empty());
     ARIADNE_TEST_EQUAL(set0.bounding_box(), Box(2, 1.5,2.0, -2.0,-1.0));       
-    ARIADNE_TEST_EQUAL(set2.bounding_box(), Box(3, 2.0,3.0, 0.0,2.0, -2.0,2.0));       
+    ARIADNE_TEST_EQUAL(set2.bounding_box(), Box(3, 2.0,4.0, 0.0,2.0, -2.0,0.0));       
 }
 
 void test_predicates() {
