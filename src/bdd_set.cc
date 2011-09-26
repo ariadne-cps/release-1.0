@@ -1457,12 +1457,12 @@ bool BDDTreeConstIterator::equal( BDDTreeConstIterator const & other ) const {
     return (this->_path == other._path) && ((this->_mince_depth == other._mince_depth) || this->_path.empty());
 }
 
-Box BDDTreeConstIterator::dereference() const {
-    ARIADNE_ASSERT_MSG(!this->_path.empty(), "Cannot dereference and invalid BDDTreeConstIterator.");
-    PathElement tail = this->_path.back();
+
+Box const& BDDTreeConstIterator::dereference() const {
+    ARIADNE_ASSERT_MSG(!this->_path.empty(), "Cannot dereference an invalid BDDTreeConstIterator.");
+    const PathElement& tail = this->_path.back();
     return tail.cell;
 }
-
 
 /********************************** Stream operators **********************************/
 

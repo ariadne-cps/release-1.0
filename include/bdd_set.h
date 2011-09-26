@@ -451,7 +451,7 @@ class BDDTreeConstIterator
      */
     bool equal( BDDTreeConstIterator const & other ) const;
 
-    Box dereference() const;
+    Box const& dereference() const;
 
     //@}
 
