@@ -59,7 +59,7 @@ void _initialize_bddlib() {
     }
 }
 
-inline void _ensure_bdd_variables(uint numvar) {
+inline void _ensure_bdd_variables(int numvar) {
     if(bdd_varnum() < numvar) {
         ARIADNE_ASSERT_MSG(bdd_setvarnum(numvar) == 0, "Cannot add new BDD variables.");
     }
@@ -223,14 +223,14 @@ void _shift_variables(bdd& b, int n) {
     // If varnum is zero, the variable set of b is empty: no shift needed,
     // only check if new vars are necessary
     if(varnum == 0) {
-        _ensure_bdd_variables(n);
+        _ensure_bdd_variables(n + 1);
         return;
     }
     // Check consistency of the shift index
     // std::cout << "Variable support: [" << oldvars[0] << " .. " << oldvars[varnum-1] << "]" << std::endl;
     ARIADNE_ASSERT_MSG(oldvars[0] + n >= 0, "Wrong shift index: negative variable number.")
     // Add new vars if necessary
-    _ensure_bdd_variables(oldvars[varnum-1] + n);
+    _ensure_bdd_variables(oldvars[varnum-1] + n + 1);
     // create the new variable list
     int* newvars = new int[varnum];
     for(int i = 0; i != varnum; ++i) {
@@ -250,6 +250,7 @@ void _shift_variables(bdd& b, int n) {
 // Increase the height of the two sets until they have the same root cell,
 // that is, the same root_cell_height and the same root_cell_coordinates
 void _equalize_root_cell(BDDTreeSet& set1, BDDTreeSet& set2) {
+    // std::cout << "_equalize_root_cell( ... )" << std::endl;
     // check whether they have the same grid
     ARIADNE_ASSERT_MSG(set1.grid() == set2.grid(),
         "Cannot equalize BDDTreeSets based on different grids.");
@@ -1081,6 +1082,7 @@ int BDDTreeSet::minimize_height() {
 }
 
 int BDDTreeSet::increase_height(uint new_height) {
+    // std::cout << "increase_height(" <<  new_height << ")" << std::endl;
     // Raise an error if the set is zero-dimensional
     ARIADNE_ASSERT_MSG(this->grid().dimension() != 0, "Cannot increase height of a zero-dimensional set.");
 
@@ -1188,6 +1190,7 @@ void BDDTreeSet::restrict( const BDDTreeSet& set ) {
 }
 
 void BDDTreeSet::remove( const BDDTreeSet& set ) {
+    // std::cout << "BDDTreeSet::remove( ... )" << std::endl;
     // raise an error if the current set is zero-dimensional
     ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot remove from a zero-dimensional BDDTeeSet.");
     // the two sets must have the same grid
