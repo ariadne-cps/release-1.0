@@ -451,7 +451,7 @@ class BDDTreeConstIterator
      */
     bool equal( BDDTreeConstIterator const & other ) const;
 
-    Box const& dereference() const;
+    Box dereference() const;
 
     //@}
 
@@ -497,7 +497,7 @@ BDDTreeSet possibly_overlapping_cells(const BDDTreeSet& bdd_set, const Constrain
 BDDTreeSet definitely_covered_cells(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set);
 
 //! \brief Evaluates the codomain of \a func applied on the cells of \a bdd_set, each widened by \a eps.
-// Box eps_codomain(const BDDTreeSet& bdd_set, const Vector<Float> eps, const VectorFunction& func);
+//Box eps_codomain(const BDDTreeSet& bdd_set, const Vector<Float> eps, const VectorFunction& func);
 
 //! \brief Projects \a bdd_set using the given \a indices.
 BDDTreeSet project_down(const BDDTreeSet& bdd_set, const Vector<uint>& indices);

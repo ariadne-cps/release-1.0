@@ -219,9 +219,9 @@ _upper_reach_evolve(
 {
     const unsigned EVOLVER_TAB_OFFSET = 4;
 
-	std::pair<GTS,GTS> result;
-	GTS& reach = result.first;
-	GTS& evolve = result.second;
+	std::pair<HDS,HDS> result;
+	HDS& reach = result.first;
+	HDS& evolve = result.second;
 
 	ARIADNE_LOG(4,"Evolving and discretising...");
 
@@ -275,9 +275,9 @@ lower_reach_evolve(
     HybridGrid grid = _settings->grid;
     const int accuracy = _settings->maximum_grid_depth;
 
-    GTS reach(grid); GTS evolve(grid);
+    HDS reach(grid); HDS evolve(grid);
     // No reachability restriction involved
-    GTS reachability_restriction(grid);
+    HDS reachability_restriction(grid);
 
     list<EnclosureType> initial_enclosures = enclosures_from_split_domain_midpoints(initial_set,min_cell_widths(grid,accuracy));
 
@@ -312,7 +312,7 @@ upper_evolve(
 {
     ARIADNE_LOG(2,"HybridReachabilityAnalyser::upper_evolve(set,time)");
  
-	GTS reach, evolve;
+	HDS reach, evolve;
 	make_lpair(reach,evolve) = upper_reach_evolve(initial_set, time); // Runs the upper_reach_evolve routine on its behalf
 
     return evolve;
@@ -328,7 +328,7 @@ upper_reach(
 {
     ARIADNE_LOG(2,"HybridReachabilityAnalyser::upper_reach(set,time)");
 
-	GTS reach, evolve;
+	HDS reach, evolve;
 	make_lpair(reach,evolve) = upper_reach_evolve(initial_set, time);
 
     return reach;
@@ -341,7 +341,7 @@ upper_reach_evolve(
         const HybridImageSet& initial_set,
         const TimeType& time) const
 {
-    const unsigned EVOLVER_TAB_OFFSET = 3;
+    const unsigned EVOLVER_TAB_OFFSET = 4;
 
     ARIADNE_LOG(2,"HybridReachabilityAnalyser::upper_reach_evolve(system,set,time)");
     ARIADNE_LOG(3,"initial_set="<<initial_set);
@@ -349,7 +349,7 @@ upper_reach_evolve(
     HybridGrid grid = _settings->grid;
     const int accuracy = _settings->maximum_grid_depth;
 
-    GTS initial(grid),found(grid),evolve(grid),reach(grid);
+    HDS initial(grid),found(grid),evolve(grid),reach(grid);
 
     Float real_time=time.continuous_time();
     uint discrete_steps=time.discrete_time();
@@ -372,19 +372,19 @@ upper_reach_evolve(
 
     const EvolverPtrType& evolver = _get_tuned_evolver(*_system,accuracy,EVOLVER_TAB_OFFSET,UPPER_SEMANTICS);
     std::list<EnclosureType> initial_enclosures = cells_to_smallest_enclosures(initial,accuracy);
+    ARIADNE_LOG(4,"Starting from " << initial_enclosures.size() << " enclosures.");
     for (std::list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); ++encl_it) {
         Orbit<EnclosureType> orbit = evolver->orbit(*encl_it,hybrid_lock_to_grid_time,UPPER_SEMANTICS);
         reach.adjoin(outer_approximation(orbit.reach(),grid,accuracy));
         evolve.adjoin(outer_approximation(orbit.final(),grid,accuracy));
     }
+    ARIADNE_LOG(4,"Reach size ="<<reach.size());
+    ARIADNE_LOG(4,"Final size ="<<evolve.size());
 
     for(uint i=1; i<time_steps; ++i) {
         ARIADNE_LOG(3,"computing "<<i+1<<"-th reachability step...");
         make_lpair(found,evolve) = _upper_reach_evolve(*_system,evolve,hybrid_lock_to_grid_time,accuracy);
-        ARIADNE_LOG(4,"found.size()="<<found.size());
-        ARIADNE_LOG(4,"evolve.size()="<<evolve.size());
         reach.adjoin(found);
-        ARIADNE_LOG(3,"found "<<found.size()<<" cells.");
     }
 
     ARIADNE_LOG(5,"remaining_time="<<remaining_time);
@@ -503,6 +503,10 @@ _outer_chain_reach_splitted(
     ARIADNE_LOG(2,"Computing recurrent " << (direction == DIRECTION_FORWARD ? "forward" : "backward") << " evolution...");
     HybridTime hybrid_lock_to_grid_time(lock_to_grid_time,lock_to_grid_steps);
 
+    if (initial_enclosures.empty()) {
+    	ARIADNE_LOG(3,"Empty initial enclosures, will skip calculation.");
+    }
+
     uint i=0;
     while (!working_enclosures.empty())
 	{
@@ -513,6 +517,9 @@ _outer_chain_reach_splitted(
         static const bool ignore_activations = true;
         make_lpair(new_reach,new_final) = _upper_reach_evolve(sys,working_enclosures,
         		hybrid_lock_to_grid_time,ignore_activations,direction,maximum_grid_depth);
+
+	    ARIADNE_LOG(3,"Reach size after evolution = "<<new_reach.size());
+	    ARIADNE_LOG(3,"Final size after evolution = "<<new_final.size());
 
         new_final.remove(final);
 		new_reach.remove(reach);
@@ -532,7 +539,6 @@ _outer_chain_reach_splitted(
 		ARIADNE_LOG(3,"Final size after mincing = "<<new_final.size());
 
         working_enclosures.clear();
-
         if (direction == DIRECTION_FORWARD)
         	_outer_chain_reach_forward_pushTargetCells(sys,new_reach,working_enclosures,no_restriction);
         else
@@ -768,7 +774,7 @@ _outer_chain_reach_pushLocalFinalCells(
 		std::list<EnclosureType>& result_enclosures,
 		bool use_domain_checking) const
 {
-	for (GTS::const_iterator cellbox_it = finalCells.begin(); cellbox_it != finalCells.end(); ++cellbox_it) {
+	for (HDS::const_iterator cellbox_it = finalCells.begin(); cellbox_it != finalCells.end(); ++cellbox_it) {
 		const DiscreteLocation& loc = cellbox_it->first;
 		const Box& domain = _settings->domain_bounds[loc];
 		const Box& bx = cellbox_it->second;
@@ -828,7 +834,7 @@ _lower_chain_reach_and_epsilon(
 		HUM& adjoined_evolve_sizes = evolve_sizes.first;
 		HUM& superposed_evolve_sizes = evolve_sizes.second;
 
-		GTS local_reach;
+		HDS local_reach;
 		HybridFloatVector local_epsilon;
 
 
@@ -838,7 +844,7 @@ _lower_chain_reach_and_epsilon(
 
 		ARIADNE_LOG(3,"Evolving and discretising...");
 
-		make_ltuple<std::pair<HUM,HUM>,EL,GTS,HybridFloatVector>(evolve_sizes,final_enclosures,
+		make_ltuple<std::pair<HUM,HUM>,EL,HDS,HybridFloatVector>(evolve_sizes,final_enclosures,
 				local_reach,local_epsilon) = worker.get_result();
 
 		epsilon = max_elementwise(epsilon,local_epsilon);
@@ -1598,7 +1604,7 @@ cells_to_smallest_enclosures(
 		HybridDenotableSet cells,
 		int maximum_grid_depth)
 {
-    cells.mince(maximum_grid_depth);
+	cells.mince(maximum_grid_depth);
 
     std::list<EnclosureType> enclosures;
     for (HybridDenotableSet::const_iterator cellbox_it = cells.begin(); cellbox_it != cells.end(); ++cellbox_it) {

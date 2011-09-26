@@ -33,7 +33,7 @@ class UpperReachEvolveWorker
 {
 public:
 
-	typedef HybridDenotableSet HGTS;
+	typedef HybridDenotableSet HDS;
     typedef HybridEvolver::EnclosureType EnclosureType;
 	typedef HybridEvolver::ContinuousEnclosureType CE;
 	typedef std::list<EnclosureType> EL;
@@ -60,8 +60,8 @@ public:
 	  _concurrency(concurrency),
 	  _enclosures_it(_initial_enclosures.begin())
     {
-		_reach = HGTS(grid);
-		_evolve = HGTS(grid);
+		_reach = HDS(grid);
+		_evolve = HDS(grid);
 		_enclosures_it = _initial_enclosures.begin();
     }
  
@@ -69,12 +69,12 @@ public:
     {
     }
 
-    std::pair<HGTS,HGTS> get_result() 
+    std::pair<HDS,HDS> get_result() 
     {
     	_start();
     	_wait_completion();
 
-		return make_pair<HGTS,HGTS>(_reach,_evolve);
+		return make_pair<HDS,HDS>(_reach,_evolve);
     }
  
 private:
@@ -89,7 +89,7 @@ private:
 	const ContinuousEvolutionDirection& _continuous_direction;
 	const uint& _concurrency;
 
-	HGTS _reach, _evolve;
+	HDS _reach, _evolve;
 
     std::list<boost::shared_ptr<boost::thread> > _m_threads;
     boost::mutex _inp_mutex, _out_mutex;
@@ -121,13 +121,15 @@ private:
 				make_ltuple<ELS,ELS>(current_reach_enclosures,current_evolve_enclosures) =
 										_evolver->reach_evolve(enclosure,_time,_ignore_activations,_continuous_direction,UPPER_SEMANTICS);
 
-				// Get the discretisation
 				_out_mutex.lock();
-				HGTS current_reach = outer_approximation(current_reach_enclosures,_grid,_accuracy);
-				HGTS current_evolve = outer_approximation(current_evolve_enclosures,_grid,_accuracy);
+
+				// Get the discretisation
+				HDS current_reach = outer_approximation(current_reach_enclosures,_grid,_accuracy);
+				HDS current_evolve = outer_approximation(current_evolve_enclosures,_grid,_accuracy);
 
 		        _reach.adjoin(current_reach);
         		_evolve.adjoin(current_evolve);
+
 				_out_mutex.unlock();
 			}
         }
@@ -144,7 +146,7 @@ class LowerReachEpsilonWorker
 {
 public:
 
-	typedef HybridDenotableSet HGTS;
+	typedef HybridDenotableSet HDS;
     typedef HybridEvolver::EnclosureType EnclosureType;
 	typedef HybridEvolver::ContinuousEnclosureType CE;
 	typedef std::list<EnclosureType> EL;
@@ -167,8 +169,8 @@ public:
 	  _accuracy(accuracy),
 	  _concurrency(concurrency)
     {
-    	_reach = HGTS(grid);
-		_evolve_global = HGTS(grid);
+    	_reach = HDS(grid);
+		_evolve_global = HDS(grid);
 
     	HybridSpace state_space = _evolver->system().state_space();
     	for (HybridSpace::const_iterator hs_it = state_space.begin(); hs_it != state_space.end(); ++hs_it)
@@ -180,16 +182,16 @@ public:
     }
 
     // Create the threads and produce the required results
-    tuple<std::pair<HUM,HUM>,EL,HGTS,HybridFloatVector> get_result()
+    tuple<std::pair<HUM,HUM>,EL,HDS,HybridFloatVector> get_result()
     {
     	_start();
     	_wait_completion();
 
 		// Calculate the adjoined evolve sizes
-		for (HGTS::locations_const_iterator evolve_global_it = _evolve_global.locations_begin(); evolve_global_it != _evolve_global.locations_end(); evolve_global_it++)
+		for (HDS::locations_const_iterator evolve_global_it = _evolve_global.locations_begin(); evolve_global_it != _evolve_global.locations_end(); evolve_global_it++)
 			_adjoined_evolve_sizes[evolve_global_it->first] = evolve_global_it->second.size();
 
-		return make_tuple<std::pair<HUM,HUM>,EL,HGTS,HybridFloatVector>(make_pair<HUM,HUM>(_adjoined_evolve_sizes,_superposed_evolve_sizes),_final_enclosures,_reach,_epsilon);
+		return make_tuple<std::pair<HUM,HUM>,EL,HDS,HybridFloatVector>(make_pair<HUM,HUM>(_adjoined_evolve_sizes,_superposed_evolve_sizes),_final_enclosures,_reach,_epsilon);
     }
  
 private:
@@ -202,10 +204,10 @@ private:
 	const int& _accuracy;
 	const uint& _concurrency;
 
-	HGTS _evolve_global;
+	HDS _evolve_global;
 	HUM _adjoined_evolve_sizes, _superposed_evolve_sizes;
 	EL _final_enclosures;
-	HGTS _reach;
+	HDS _reach;
 	HybridFloatVector _epsilon;
 
     std::list<boost::shared_ptr<boost::thread> > _m_threads;
@@ -237,10 +239,11 @@ private:
 				make_ltuple<ELS,ELS>(current_reach_enclosures,current_evolve_enclosures) =
 										_evolver->reach_evolve(current_initial_enclosure,_time,LOWER_SEMANTICS);
 
-				// Get the discretisation
 				_out_mutex.lock();
-				HGTS current_reach = outer_approximation(current_reach_enclosures,_grid,_accuracy);
-				HGTS current_evolve = outer_approximation(current_evolve_enclosures,_grid,_accuracy);
+
+				// Get the discretisation
+				HDS current_reach = outer_approximation(current_reach_enclosures,_grid,_accuracy);
+				HDS current_evolve = outer_approximation(current_evolve_enclosures,_grid,_accuracy);
 
 				_reach.adjoin(current_reach);
 				_evolve_global.adjoin(current_evolve);
@@ -253,7 +256,7 @@ private:
 				}
 
 				// Add the number of cells of the current evolve to the superposed total at the end of the step, for each location
-				for (HGTS::locations_const_iterator evolve_it = current_evolve.locations_begin(); evolve_it != current_evolve.locations_end(); evolve_it++)
+				for (HDS::locations_const_iterator evolve_it = current_evolve.locations_begin(); evolve_it != current_evolve.locations_end(); evolve_it++)
 					_superposed_evolve_sizes[evolve_it->first] += current_evolve[evolve_it->first].size();
 				// Add the current_enclosures to the final enclosures
 				for (ELS::locations_const_iterator loc_it = current_evolve_enclosures.locations_begin(); loc_it != current_evolve_enclosures.locations_end(); loc_it++)

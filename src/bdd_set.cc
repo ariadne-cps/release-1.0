@@ -1457,11 +1457,10 @@ bool BDDTreeConstIterator::equal( BDDTreeConstIterator const & other ) const {
     return (this->_path == other._path) && ((this->_mince_depth == other._mince_depth) || this->_path.empty());
 }
 
-Box const& BDDTreeConstIterator::dereference() const {
+Box BDDTreeConstIterator::dereference() const {
     ARIADNE_ASSERT_MSG(!this->_path.empty(), "Cannot dereference and invalid BDDTreeConstIterator.");
     PathElement tail = this->_path.back();
-    Box *pCell = new Box(tail.cell);
-    return (*pCell);
+    return tail.cell;
 }
 
 
@@ -1553,7 +1552,6 @@ BDDTreeSet project_down(const BDDTreeSet& bdd_set, const Vector<uint>& indices) 
 // tribool inside(const BDDTreeSet& covered_set, const BDDTreeSet& covering_set, const Vector<Float>& eps, int accuracy) {
 //     ARIADNE_NOT_IMPLEMENTED;    
 // }
-
 
 } // namespace Ariadne
 

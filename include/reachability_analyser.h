@@ -186,7 +186,7 @@ class HybridReachabilityAnalyser
     typedef HybridGrid Gr;
     typedef HybridGridCell GC;
     typedef SetApproximationType GCLS;
-    typedef SetApproximationType GTS;
+    typedef SetApproximationType HDS;
     typedef HybridOpenSetInterface OpSI;
     typedef HybridOvertSetInterface OvSI;
     typedef HybridCompactSetInterface CoSI;
@@ -206,13 +206,13 @@ class HybridReachabilityAnalyser
             unsigned ADD_TAB_OFFSET,
             Semantics semantics) const;
 
-    std::pair<GTS,GTS> _upper_reach_evolve(
+    std::pair<HDS,HDS> _upper_reach_evolve(
     		const SystemType& sys,
-    		const GTS& set,
+    		const HDS& set,
     		const T& time,
     		const int accuracy) const;
 
-    std::pair<GTS,GTS> _upper_reach_evolve(
+    std::pair<HDS,HDS> _upper_reach_evolve(
     		const SystemType& sys,
     		const list<EnclosureType>& initial_enclosures,
     		const T& time,
