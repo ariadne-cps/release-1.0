@@ -34,6 +34,16 @@ void _silent_gbchandler(int pre, bddGbcStat *s) {
     // do nothing
 }
 
+// An Error Handler for the BDD library that throws an ARIADNE Exception
+void _bdd_error_handler(int errcode) {
+    if(bdd_errstring(errcode) == NULL) {
+        ARIADNE_FAIL_MSG("BDD unknown error " << errcode);
+    } else {
+        ARIADNE_FAIL_MSG("in BDD library: " << bdd_errstring(errcode));    
+    }
+}
+
+
 // Test if BuDDy has been initialized. If not, initialize it.
 void _initialize_bddlib() {
     // TO DO: make the different parameters definable by the user.
@@ -44,8 +54,17 @@ void _initialize_bddlib() {
         ARIADNE_ASSERT_MSG(bdd_setvarnum(32) == 0, "Error in the initialization of the bdd library.");
         // Set the Garbage Collector Handler to the silent one (removes logging)
         bdd_gbc_hook(_silent_gbchandler);
+        // Set the error code handler
+        bdd_error_hook(_bdd_error_handler);
     }
 }
+
+inline void _ensure_bdd_variables(uint numvar) {
+    if(bdd_varnum() < numvar) {
+        ARIADNE_ASSERT_MSG(bdd_setvarnum(numvar) == 0, "Cannot add new BDD variables.");
+    }
+}
+
 
 // Compute the grid corresponding to a given root height, starting from the base grid
 Grid _compute_root_grid(const Grid& grid, uint height) {
@@ -204,20 +223,14 @@ void _shift_variables(bdd& b, int n) {
     // If varnum is zero, the variable set of b is empty: no shift needed,
     // only check if new vars are necessary
     if(varnum == 0) {
-        if(n >= bdd_varnum()) {
-        ARIADNE_ASSERT_MSG(bdd_setvarnum(n + 1) == 0, 
-            "Cannot add new BDD variables.");
-        }
+        _ensure_bdd_variables(n);
         return;
     }
     // Check consistency of the shift index
     // std::cout << "Variable support: [" << oldvars[0] << " .. " << oldvars[varnum-1] << "]" << std::endl;
     ARIADNE_ASSERT_MSG(oldvars[0] + n >= 0, "Wrong shift index: negative variable number.")
     // Add new vars if necessary
-    if(oldvars[varnum-1] + n >= bdd_varnum()) {
-        ARIADNE_ASSERT_MSG(bdd_setvarnum(oldvars[varnum-1] + n + 1) == 0, 
-            "Cannot add new BDD variables.");
-    }
+    _ensure_bdd_variables(oldvars[varnum-1] + n);
     // create the new variable list
     int* newvars = new int[varnum];
     for(int i = 0; i != varnum; ++i) {
@@ -737,6 +750,8 @@ void _compute_next_cell(std::vector< PathElement >& path, int mince_depth) {
     _compute_next_cell(path, mince_depth - 1);
 }
 
+
+
 /************************************* BDDTreeSet **************************************/
 
 BDDTreeSet::BDDTreeSet( )
@@ -1189,6 +1204,7 @@ void BDDTreeSet::remove( const BDDTreeSet& set ) {
 }
 
 void BDDTreeSet::adjoin_over_approximation( const Box& box, const uint subdiv ) {
+    // std::cout << "adjoin_over_approximation( " << box << ", " << subdiv << ")" << std::endl;
     // raise an error if the set is zero dimensional
     ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot adjoin a box to a zero-dimensional BDDTreeSet.");
     // raise an error if the dimensions of box and set are different
@@ -1200,15 +1216,16 @@ void BDDTreeSet::adjoin_over_approximation( const Box& box, const uint subdiv ) 
     if(box.empty()) return;
     
     // First step: increase the height of the BDDTreeSet until the box is a subset of the root cell
-    this->increase_height(box);
-    
-    // recursive call to worker procedure that computes the new bdd
-    uint height = this->root_cell_height();
+    uint height = this->increase_height(box);
     uint dim = this->dimension();
+    uint depth = height + dim*subdiv;
+    // add new variables if needed
+    _ensure_bdd_variables(depth);
+    // call to recursive worker procedure that computes the new bdd
     // determine which dimension to split first 
     uint i = 0;
     if(height > 0) i = (dim - 1) - ((height-1) % dim);    
-    this->_bdd = _adjoin_over_approximation(box, this->enabled_cells(), this->root_cell(), height + dim*subdiv, i, 0);
+    this->_bdd = _adjoin_over_approximation(box, this->enabled_cells(), this->root_cell(), depth, i, 0);
     // minimize the result
     this->minimize_height();
 }   
@@ -1225,17 +1242,19 @@ void BDDTreeSet::adjoin_outer_approximation( const CompactSetInterface& set, con
     if(bbox.empty()) return;
     
     // First step: increase the height of the BDDTreeSet until the set is a subset of the root cell
-    this->increase_height(bbox);
+    uint height = this->increase_height(bbox);
+    uint dim = this->dimension();
+    uint depth = height + dim*subdiv;
+    // add new variables if needed
+    _ensure_bdd_variables(depth);
 
-    // recursive call to worker procedure that computes the new bdd
-    uint height = this->root_cell_height();
+    // call to recursive worker procedure that computes the new bdd
     // std::cout << "root cell after height increase: " << this->root_cell() << std::endl;
     // ARIADNE_ASSERT_MSG(this->root_cell().covers(bbox), "Error in increasing the set height: the new root cell must cover the set.");
-    uint dim = this->dimension();
     // determine which dimension to split first 
     uint i = 0;
     if(height > 0) i = (dim - 1) - ((height-1) % dim);    
-    this->_bdd = _adjoin_outer_approximation(set, this->enabled_cells(), this->root_cell(), height + dim*subdiv, i, 0);
+    this->_bdd = _adjoin_outer_approximation(set, this->enabled_cells(), this->root_cell(), depth, i, 0);
     // minimize the result
     this->minimize_height();    
 }
@@ -1249,12 +1268,15 @@ void BDDTreeSet::adjoin_lower_approximation( const OvertSetInterface& set, const
     // First step: increase the height of the BDDTreeSet to height * dim
     uint dim = this->dimension();
     uint set_height = this->increase_height(height * dim);
+    uint depth = set_height + dim*subdiv;
+    // add new variables if needed
+    _ensure_bdd_variables(depth);
 
     // determine which dimension to split first 
     uint i = 0;
     if(set_height > 0) i = (dim - 1) - ((set_height-1) % dim);    
     // call to worker procedure that computes the new bdd
-    this->_bdd = _adjoin_lower_approximation(set, this->enabled_cells(), this->root_cell(), set_height + dim*subdiv, i, 0);
+    this->_bdd = _adjoin_lower_approximation(set, this->enabled_cells(), this->root_cell(), depth, i, 0);
     // minimize the result
     this->minimize_height();            
 }
@@ -1268,12 +1290,17 @@ void BDDTreeSet::adjoin_lower_approximation( const OvertSetInterface& set, const
     // First step: increase the height of the BDDTreeSet until it covers the bounding_box
     uint height = this->increase_height(bounding_box);
     uint dim = this->dimension();
+    uint depth = height + dim*subdiv;
+    // add new variables if needed
+    _ensure_bdd_variables(depth);
+
+    // call to recursive worker procedure that computes the new bdd
 
     // determine which dimension to split first 
     uint i = 0;
     if(height > 0) i = (dim - 1) - ((height-1) % dim);    
     // call to worker procedure that computes the new bdd
-    this->_bdd = _adjoin_lower_approximation(set, this->enabled_cells(), this->root_cell(), height + dim*subdiv, i, 0);
+    this->_bdd = _adjoin_lower_approximation(set, this->enabled_cells(), this->root_cell(), depth, i, 0);
     // minimize the result
     this->minimize_height();    
 }
@@ -1291,12 +1318,17 @@ void BDDTreeSet::adjoin_inner_approximation( const OpenSetInterface& set, const 
     // First step: increase the height of the BDDTreeSet to height * dim
     uint dim = this->dimension();
     uint set_height = this->increase_height(height * dim);
+    uint depth = set_height + dim*subdiv;
+    // add new variables if needed
+    _ensure_bdd_variables(depth);
+
+    // call to recursive worker procedure that computes the new bdd
 
     // determine which dimension to split first 
     uint i = 0;
     if(set_height > 0) i = (dim - 1) - ((set_height-1) % dim);    
     // call to worker procedure that computes the new bdd
-    this->_bdd = _adjoin_inner_approximation(set, this->enabled_cells(), this->root_cell(), set_height + dim*subdiv, i, 0);
+    this->_bdd = _adjoin_inner_approximation(set, this->enabled_cells(), this->root_cell(), depth, i, 0);
     // minimize the result
     this->minimize_height();    
 }
@@ -1310,12 +1342,17 @@ void BDDTreeSet::adjoin_inner_approximation( const OpenSetInterface& set, const 
     // First step: increase the height of the BDDTreeSet until it covers the bounding_box
     uint height = this->increase_height(bounding_box);
     uint dim = this->dimension();
+    uint depth = height + dim*subdiv;
+    // add new variables if needed
+    _ensure_bdd_variables(depth);
+
+    // call to recursive worker procedure that computes the new bdd
 
     // determine which dimension to split first 
     uint i = 0;
     if(height > 0) i = (dim - 1) - ((height-1) % dim);    
     // call to worker procedure that computes the new bdd
-    this->_bdd = _adjoin_inner_approximation(set, this->enabled_cells(), this->root_cell(), height + dim*subdiv, i, 0);
+    this->_bdd = _adjoin_inner_approximation(set, this->enabled_cells(), this->root_cell(), depth, i, 0);
     // minimize the result
     this->minimize_height();    
 }
