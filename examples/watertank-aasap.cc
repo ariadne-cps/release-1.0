@@ -42,7 +42,7 @@ int main(int argc,char *argv[])
     // System variables
     RealVariable x("x");    // water level
     RealVariable y("y");    // valve aperture
-    RealVariable t_out("t_out");    // valve aperture
+    RealVariable t_out("t_out");    // timer for the controller
 
 	// The parameter to modify, its interval and the tolerance
     RealConstant Delta("Delta",Interval(0.0,0.0));
@@ -214,9 +214,6 @@ int main(int argc,char *argv[])
 	RealSpace space;
 	make_lpair<HybridAutomaton,RealSpace>(system,space) = make_monolithic_automaton(system_io);
 
-	/// Add access to the Delta constant
-	//system.register_accessible_constant(Delta);
-
 	// Verification information
 
 	// The initial values
@@ -225,9 +222,9 @@ int main(int argc,char *argv[])
 
 	// The safety constraint
 	List<RealVariable> varlist;
+	varlist.append(t_out);
 	varlist.append(x);
 	varlist.append(y);
-	varlist.append(t_out);
 	RealExpression expr = x;
 	List<RealExpression> consexpr;
 	consexpr.append(expr);
@@ -241,6 +238,7 @@ int main(int argc,char *argv[])
 
 	Verifier verifier;
 	verifier.verbosity = verb;
+	verifier.settings().time_limit_for_outcome = 300;
 
 	SafetyVerificationInput verInfo(system, initial_set, domain, safety_constraint);
     verifier.safety(verInfo);
