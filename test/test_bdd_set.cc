@@ -742,7 +742,6 @@ void test_set_approximations() {
     set1i = BDDTreeSet(2);
     set1o.adjoin_outer_approximation(ImageSet(bx), 2);
     ARIADNE_TEST_EQUAL(set1o.size(), 4);
-    ARIADNE_PRINT_TEST_COMMENT("set1o = " << set1o);
     set1l.adjoin_lower_approximation(bx, bx, 2);
     ARIADNE_TEST_ASSERT(set1l.empty());
     set1i.adjoin_inner_approximation(bx, bx, 2);

@@ -159,7 +159,7 @@ int _increase_height(bdd& b, uint& root_cell_height, array<int>& root_cell_coord
     // if the new height is equal or smaller than the current one do nothing
     if(root_cell_height >= new_height) return root_cell_height;
 
-    // Increase the root cell height by one and recursively call _minimize_height
+    // Increase the root cell height by one and recursively call _increase_height
     // compute the new root_cell_coordinate
     // determine which dimension to merge 
     uint dim = root_cell_coordinates.size();
@@ -1090,20 +1090,29 @@ int BDDTreeSet::increase_height(const Box& box) {
     // Raise an error if the set is zero-dimensional
     ARIADNE_ASSERT_MSG(this->grid().dimension() != 0, "Cannot increase height of a zero-dimensional set.");
 
-    Box root_cell = this->root_cell();
+    // Get the root gird
     uint height = this->root_cell_height();
+    Grid root_grid = _compute_root_grid(this->grid(), height);
+    // compute the root cell from the coordinates
+    array<int> coordinates = this->root_cell_coordinates();
+    Box root_cell = root_grid.cell(coordinates);
+
     uint dim = this->dimension();
     int i = 0;
     while(!definitely(root_cell.covers(box))) {
         // std::cout << "height = " << height << ", root_cell = " << root_cell << std::endl;        
         // determine which dimension to merge 
         i = (dim - 1) - (height % dim);
-        // if the occurrence of the merge is even, enlarge the cell to the right
+        // if the occurrence of the merge is even, shift the origin of the grid
         if((height / dim) % 2 == 1) {
-            root_cell[i] = root_cell[i] - Interval(0.0, root_cell[i].width());
-        } else {    // otherwise, to the left
-            root_cell[i] = root_cell[i] + Interval(0.0, root_cell[i].width());
+            root_grid.set_origin_coordinate(i, root_grid.origin()[i]-root_grid.lengths()[i]);
+            coordinates[i]++;
         }
+        root_grid.set_length(i, 2.0*root_grid.lengths()[i]);
+        // get the new root cell
+        if(coordinates[i] < 0) coordinates[i]--;
+        coordinates[i] = coordinates[i] / 2;
+        root_cell = root_grid.cell(coordinates);
         // increase height
         height++;    
     }
@@ -1220,6 +1229,8 @@ void BDDTreeSet::adjoin_outer_approximation( const CompactSetInterface& set, con
 
     // recursive call to worker procedure that computes the new bdd
     uint height = this->root_cell_height();
+    // std::cout << "root cell after height increase: " << this->root_cell() << std::endl;
+    // ARIADNE_ASSERT_MSG(this->root_cell().covers(bbox), "Error in increasing the set height: the new root cell must cover the set.");
     uint dim = this->dimension();
     // determine which dimension to split first 
     uint i = 0;
