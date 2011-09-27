@@ -58,6 +58,7 @@ Box eps_codomain(const DenotableSetType& denotable_set, const Vector<Float> eps,
 tribool covers(const DenotableSetType& covering_set, const DenotableSetType& covered_set, const Vector<Float>& eps)
 {
 	ARIADNE_ASSERT_MSG(covering_set.dimension() == covered_set.dimension(),"The two sets must have the same dimensions.");
+	ARIADNE_ASSERT_MSG(covering_set.dimension() == eps.size(),"The vector eps must have the same dimension of the sets");
 
 	tribool result = true;
 
@@ -82,6 +83,7 @@ tribool covers(const DenotableSetType& covering_set, const DenotableSetType& cov
 tribool inside(const DenotableSetType& covered_set, const DenotableSetType& covering_set, const Vector<Float>& eps, int accuracy)
 {
 	ARIADNE_ASSERT_MSG(covering_set.dimension() == covered_set.dimension(),"The two sets must have the same dimensions.");
+	ARIADNE_ASSERT_MSG(covering_set.dimension() == eps.size(),"The vector eps must have the same dimension of the sets");
 
 	tribool result = true;
 
@@ -96,7 +98,7 @@ tribool inside(const DenotableSetType& covered_set, const DenotableSetType& cove
 	}
 
 	for (DenotableSetType::const_iterator cell_it = covered_set.begin(); cell_it != covered_set.end(); ++cell_it) {
-		tribool is_superset = covering_set.superset(cell_it->box());
+		tribool is_superset = enlarged_covering_set.superset(cell_it->box());
 
 		if (indeterminate(is_superset))
 			result = indeterminate;

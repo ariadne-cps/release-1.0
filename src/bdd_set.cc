@@ -65,6 +65,16 @@ inline void _ensure_bdd_variables(int numvar) {
     }
 }
 
+// compute the coordinate to merge when increasing height by 1
+inline uint _merging_coordinate(uint height, uint dim) {
+    return (dim - 1) - (height % dim);
+}
+
+// compute the coordinate to split when decreasing height by 1
+inline uint _splitting_coordinate(uint height, uint dim) {
+    if(height == 0) return 0;
+    return (dim - 1) - ((height-1) % dim);
+}
 
 // Compute the grid corresponding to a given root height, starting from the base grid
 Grid _compute_root_grid(const Grid& grid, uint height) {
@@ -76,7 +86,7 @@ Grid _compute_root_grid(const Grid& grid, uint height) {
     uint dim = res.dimension();
     for(uint h = 0; h != height; ++h) {
         // determine which dimension to merge 
-        uint i = (dim - 1) - (h % dim);
+        uint i = _merging_coordinate(h, dim);
         // if the occurrence of the merge is even, shift the origin
         if((h / dim) % 2 == 1) {
             res.set_origin_coordinate(i, res.origin()[i]-res.lengths()[i]);
@@ -149,10 +159,10 @@ int _minimize_height(bdd& b, uint& root_cell_height, array<int>& root_cell_coord
     // if both children are different from FALSE, do not decrease height
     if(left != bddfalse && right != bddfalse) return -root_var;
     // exactly one of the two children is FALSE, decrease height by 1 and repeat
-    root_cell_height--;
     // determine which dimension to split
     uint dim = root_cell_coordinates.size();
-    uint i = (dim - 1) - (root_cell_height % dim);
+    uint i = _splitting_coordinate(root_cell_height, dim);
+    root_cell_height--;
     // determine if this is an odd or even occurrence of the split
     uint p = (root_cell_height / dim) % 2;
     // compute the new coordinate for the i-th dimension,
@@ -182,7 +192,7 @@ int _increase_height(bdd& b, uint& root_cell_height, array<int>& root_cell_coord
     // compute the new root_cell_coordinate
     // determine which dimension to merge 
     uint dim = root_cell_coordinates.size();
-    uint i = (dim - 1) - (root_cell_height % dim);
+    uint i = _merging_coordinate(root_cell_height, dim);
     // If the current height is an "odd" one, the origin of the grid is shifted
     // shift the i-th coordinate accordingly
     if(((root_cell_height / dim) % 2) == 1) {
@@ -267,7 +277,7 @@ void _equalize_root_cell(BDDTreeSet& set1, BDDTreeSet& set2) {
     // increase mch until the two root cell coordinates are the same
     while(rcc1 != rcc2) {
         // determine which dimension to merge 
-        uint i = (dim - 1) - (mch % dim);
+        uint i = _merging_coordinate(mch, dim);
         // compute the parity of the merge
         uint p = (mch / dim) % 2;
         // half the i-th cooridnate
@@ -751,6 +761,40 @@ void _compute_next_cell(std::vector< PathElement >& path, int mince_depth) {
     _compute_next_cell(path, mince_depth - 1);
 }
 
+// Function that computes the bounding_box
+Box _bounding_box(bdd enabled_cells, Box const& cell, uint dim, uint split, int root_var) {
+    // std::cout << "_bounding_box(" << enabled_cells << ", " << cell << ", " << dim << ", " 
+    //           << split << ", " << root_var << ")" << std::endl;
+    // if the current bdd is FALSE, return the empty box
+    if(enabled_cells == bddfalse) {
+        // std::cout << "The current bdd is FALSE, return the empty box." << std::endl;
+        return Box::empty_box(dim);
+    }
+    // if the current bdd is TRUE, return the current cell
+    if(enabled_cells == bddtrue) {
+        // std::cout << "The current bdd is TRUE, return the current cell." << std::endl;
+        return cell;
+    }
+    // split the current cell
+    std::pair<Box, Box> cells = cell.split(split);
+    // if the root_var is different from the var labelling the bdd, the bounding_box
+    // can be obtained by enlarging the bbox of one of the child on the split coordinate
+    if(bdd_var(enabled_cells) != root_var) {
+        // get the bounding box of the left child
+        Box bbox = _bounding_box(enabled_cells, cells.first, dim, (split + 1) % dim, root_var+1);
+        bbox[split] = cell[split];
+        // std::cout << "The variable labeling the bdd is different from " << root_var 
+        //           << ", return " << bbox << std::endl;
+        return bbox;
+    }
+    // otherwise, get the bounding box of two childs and return the convex hull
+    Box lbox = _bounding_box(bdd_low(enabled_cells), cells.first, dim, (split + 1) % dim, root_var+1);
+    Box rbox = _bounding_box(bdd_high(enabled_cells), cells.second, dim, (split + 1) % dim, root_var+1);
+    
+    lbox = hull(lbox, rbox);
+    // std::cout << "Return the convex hull: " << lbox << std::endl;
+    return lbox;
+}
 
 
 /************************************* BDDTreeSet **************************************/
@@ -890,19 +934,10 @@ Box BDDTreeSet::root_cell() const {
 
 Box BDDTreeSet::bounding_box() const {
     if(this->empty()) return Box::empty_box(this->dimension());
-
-    BDDTreeSet::const_iterator iter=this->begin();
-    Box bbox = (*iter);
-
-    for(iter++ ; iter!=this->end(); ++iter) {
-        Box cell = (*iter);
-        for(uint i = 0; i < cell.dimension(); ++i) {
-            if(cell[i].lower() < bbox[i].lower()) bbox[i].set_lower(cell[i].lower());
-            if(cell[i].upper() > bbox[i].upper()) bbox[i].set_upper(cell[i].upper());
-        }
-    }
-
-    return bbox;
+    uint dim = this->dimension();
+    // get the first splitting coordinate
+    uint split = _splitting_coordinate(this->root_cell_height(), dim);
+    return _bounding_box(this->enabled_cells(), this->root_cell(), dim, split, 0);
 }
 
 
@@ -990,12 +1025,7 @@ tribool BDDTreeSet::subset( const Box& box ) const {
     // compute the first splitting coordinate
     uint dim = this->dimension();
     uint height = this->root_cell_height();
-    uint splitting_coordinate;
-    if(height == 0) {
-        splitting_coordinate = 0;
-    } else {
-        splitting_coordinate = (dim - 1) - ((height-1) % dim);
-    }
+    uint splitting_coordinate = _splitting_coordinate(height, dim);
     return _subset(this->root_cell(), this->enabled_cells(), 0, splitting_coordinate, box);        
 }
 
@@ -1015,12 +1045,7 @@ tribool BDDTreeSet::superset( const Box& box ) const {
     // compute the first splitting coordinate
     uint dim = this->dimension();
     uint height = this->root_cell_height();
-    uint splitting_coordinate;
-    if(height == 0) {
-        splitting_coordinate = 0;
-    } else {
-        splitting_coordinate = (dim - 1) - ((height-1) % dim);
-    }
+    uint splitting_coordinate = _splitting_coordinate(height, dim);
     return _superset(this->root_cell(), this->enabled_cells(), 0, splitting_coordinate, box);        
 }
 
@@ -1038,12 +1063,7 @@ tribool BDDTreeSet::disjoint( const Box& box  ) const {
     // compute the first splitting coordinate
     uint dim = this->dimension();
     uint height = this->root_cell_height();
-    uint splitting_coordinate;
-    if(height == 0) {
-        splitting_coordinate = 0;
-    } else {
-        splitting_coordinate = (dim - 1) - ((height-1) % dim);
-    }
+    uint splitting_coordinate = _splitting_coordinate(height, dim);
     return _disjoint(this->root_cell(), this->enabled_cells(), 0, splitting_coordinate, box);        
 }
 
@@ -1119,7 +1139,7 @@ int BDDTreeSet::increase_height(const Box& box) {
     while(!definitely(root_cell.covers(box))) {
         // std::cout << "height = " << height << ", root_cell = " << root_cell << std::endl;        
         // determine which dimension to merge 
-        i = (dim - 1) - (height % dim);
+        i = _merging_coordinate(height, dim);
         // if the occurrence of the merge is even, shift the origin of the grid
         if((height / dim) % 2 == 1) {
             root_grid.set_origin_coordinate(i, root_grid.origin()[i]-root_grid.lengths()[i]);
@@ -1226,8 +1246,7 @@ void BDDTreeSet::adjoin_over_approximation( const Box& box, const uint subdiv ) 
     _ensure_bdd_variables(depth);
     // call to recursive worker procedure that computes the new bdd
     // determine which dimension to split first 
-    uint i = 0;
-    if(height > 0) i = (dim - 1) - ((height-1) % dim);    
+    uint i = _splitting_coordinate(height, dim);
     this->_bdd = _adjoin_over_approximation(box, this->enabled_cells(), this->root_cell(), depth, i, 0);
     // minimize the result
     this->minimize_height();
@@ -1255,8 +1274,7 @@ void BDDTreeSet::adjoin_outer_approximation( const CompactSetInterface& set, con
     // std::cout << "root cell after height increase: " << this->root_cell() << std::endl;
     // ARIADNE_ASSERT_MSG(this->root_cell().covers(bbox), "Error in increasing the set height: the new root cell must cover the set.");
     // determine which dimension to split first 
-    uint i = 0;
-    if(height > 0) i = (dim - 1) - ((height-1) % dim);    
+    uint i = _splitting_coordinate(height, dim);
     this->_bdd = _adjoin_outer_approximation(set, this->enabled_cells(), this->root_cell(), depth, i, 0);
     // minimize the result
     this->minimize_height();    
@@ -1276,8 +1294,7 @@ void BDDTreeSet::adjoin_lower_approximation( const OvertSetInterface& set, const
     _ensure_bdd_variables(depth);
 
     // determine which dimension to split first 
-    uint i = 0;
-    if(set_height > 0) i = (dim - 1) - ((set_height-1) % dim);    
+    uint i = _splitting_coordinate(set_height, dim);
     // call to worker procedure that computes the new bdd
     this->_bdd = _adjoin_lower_approximation(set, this->enabled_cells(), this->root_cell(), depth, i, 0);
     // minimize the result
@@ -1300,8 +1317,7 @@ void BDDTreeSet::adjoin_lower_approximation( const OvertSetInterface& set, const
     // call to recursive worker procedure that computes the new bdd
 
     // determine which dimension to split first 
-    uint i = 0;
-    if(height > 0) i = (dim - 1) - ((height-1) % dim);    
+    uint i = _splitting_coordinate(height, dim);
     // call to worker procedure that computes the new bdd
     this->_bdd = _adjoin_lower_approximation(set, this->enabled_cells(), this->root_cell(), depth, i, 0);
     // minimize the result
@@ -1328,8 +1344,7 @@ void BDDTreeSet::adjoin_inner_approximation( const OpenSetInterface& set, const 
     // call to recursive worker procedure that computes the new bdd
 
     // determine which dimension to split first 
-    uint i = 0;
-    if(set_height > 0) i = (dim - 1) - ((set_height-1) % dim);    
+    uint i = _splitting_coordinate(set_height, dim);
     // call to worker procedure that computes the new bdd
     this->_bdd = _adjoin_inner_approximation(set, this->enabled_cells(), this->root_cell(), depth, i, 0);
     // minimize the result
@@ -1352,8 +1367,7 @@ void BDDTreeSet::adjoin_inner_approximation( const OpenSetInterface& set, const 
     // call to recursive worker procedure that computes the new bdd
 
     // determine which dimension to split first 
-    uint i = 0;
-    if(height > 0) i = (dim - 1) - ((height-1) % dim);    
+    uint i = _splitting_coordinate(height, dim);
     // call to worker procedure that computes the new bdd
     this->_bdd = _adjoin_inner_approximation(set, this->enabled_cells(), this->root_cell(), depth, i, 0);
     // minimize the result
@@ -1370,8 +1384,7 @@ void BDDTreeSet::outer_restrict(const OvertSetInterface& set) {
     // determine which dimension to split first 
     uint height = this->root_cell_height();
     uint dim = this->dimension();
-    uint i = 0;
-    if(height > 0) i = (dim - 1) - ((height-1) % dim);    
+    uint i = _splitting_coordinate(height, dim);
     uint depth = this->depth();
     // call to worker procedure that computes the new bdd
     this->_bdd = _outer_restrict(set, this->enabled_cells(), this->root_cell(), height + depth, i, 0);
@@ -1389,8 +1402,7 @@ void BDDTreeSet::inner_restrict(const OpenSetInterface& set) {
     // determine which dimension to split first 
     uint height = this->root_cell_height();
     uint dim = this->dimension();
-    uint i = 0;
-    if(height > 0) i = (dim - 1) - ((height-1) % dim); 
+    uint i = _splitting_coordinate(height, dim);
     uint depth = this->depth();
     // call to worker procedure that computes the new bdd
     this->_bdd = _inner_restrict(set, this->enabled_cells(), this->root_cell(), height + depth, i, 0);
