@@ -32,21 +32,17 @@ int main(int argc,char *argv[])
 		verb = atoi(argv[1]);
 
     /// Set the system parameters
-	RealConstant a("a",0.02);
-	RealConstant b("b",0.3);
-	RealConstant Ta("Ta",4.0);
-	RealConstant T("T",0.1);
-	RealConstant hmin("hmin",5.5); 
-	RealConstant hmax("hmax",8.0);
+	RealParameter a("a",0.02);
+	RealParameter b("b",0.3);
+	RealParameter Ta("Ta",4.0);
+	RealParameter T("T",0.1);
+	RealParameter hmin("hmin",5.5);
+	RealParameter hmax("hmax",8.0);
 
     // System variables
     RealVariable x("x");    // water level
     RealVariable y("y");    // valve aperture
     RealVariable t_out("t_out");    // timer for the controller
-
-	// The parameter to modify, its interval and the tolerance
-    RealConstant Delta("Delta",Interval(0.0,0.0));
-    RealConstant parameter = Delta;
 
     // Create the tank automaton
 
@@ -207,7 +203,10 @@ int main(int argc,char *argv[])
 	/// Compose the automata
 	HybridIOAutomaton tank_valve = compose("tank,valve",tank,valve,flow,idle);
 	HybridIOAutomaton tank_valve_evaluator = compose("tank,valve,evaluator",tank_valve,evaluator,DiscreteLocation("flow,idle"),shallow);
-	HybridIOAutomaton system_io = compose("watertank-aasap",tank_valve_evaluator,controller,DiscreteLocation("flow,idle,shallow"),nothing);
+	HybridIOAutomaton relaxed_controller = aasap_relaxation(controller);
+	HybridIOAutomaton system_io = compose("watertank-aasap",tank_valve_evaluator,relaxed_controller,DiscreteLocation("flow,idle,shallow"),nothing);
+
+	cout << "System parameters: " << system_io.parameters() << "\n";
 
 	/// Create the monolithic automaton
 	HybridAutomaton system;
@@ -218,11 +217,14 @@ int main(int argc,char *argv[])
 
 	// The initial values
 	HybridImageSet initial_set;
-	initial_set[DiscreteLocation("flow,idle,shallow,nothing")] = Box(3, 0.0,0.0, 6.0,6.0, 1.0,1.0);
+	initial_set[DiscreteLocation("flow,idle,shallow,nothing")] = Box(6, 0.0,0.0, 0.0,0.0, 0.0,0.0, 0.0,0.0, 6.0,6.0, 1.0,1.0);
 
 	// The safety constraint
 	List<RealVariable> varlist;
+	varlist.append(RealVariable("d"));
 	varlist.append(t_out);
+	varlist.append(RealVariable("y_HIGH"));
+	varlist.append(RealVariable("y_LOW"));
 	varlist.append(x);
 	varlist.append(y);
 	RealExpression expr = x;
@@ -232,15 +234,20 @@ int main(int argc,char *argv[])
 	Box codomain(1,5.25,8.25);
 	HybridConstraintSet safety_constraint(system.state_space(),ConstraintSet(cons_f,codomain));
 
-	HybridBoxes domain = bounding_boxes(system.state_space(),Box(3,-0.1,0.2,4.0,10.0,-0.5,1.5));
+	HybridBoxes domain = bounding_boxes(system.state_space(),Box(6, -0.1,15.1, -0.1,0.2, -0.1,1.1, -0.1,1.1, 4.0,10.0, -0.5,1.5));
+
+	// The parameters
+	RealParameterSet parameters;
+	parameters.insert(RealParameter("Delta",Interval(0.0,0.1)));
 
 	/// Verification
 
 	Verifier verifier;
 	verifier.verbosity = verb;
-	verifier.settings().time_limit_for_outcome = 300;
+	verifier.settings().time_limit_for_outcome = 600;
 
-	SafetyVerificationInput verInfo(system, initial_set, domain, safety_constraint);
-    verifier.safety(verInfo);
+	SafetyVerificationInput verInput(system, initial_set, domain, safety_constraint);
+    //verifier.safety(verInfo);
+	std::list<ParametricOutcome> results = verifier.parametric_safety(verInput, parameters);
 
 }

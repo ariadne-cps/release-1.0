@@ -1400,8 +1400,8 @@ HybridIOAutomaton aasap_relaxation(const HybridIOAutomaton& hioa)
 	typedef std::map<DiscreteEvent,bool> ReceivedEventsMap;
 	typedef std::list<std::pair<DiscreteLocation,ReceivedEventsMap> > LocationsWithReceivedEvents;
 
-	// Create the Delta constant with arbitrary value 0
-	RealConstant Delta("Delta",0.0);
+	// Create the Delta parameter with arbitrary value 0
+	RealParameter Delta("Delta",0.0);
 	// Create the d variable
 	RealVariable d("d");
 

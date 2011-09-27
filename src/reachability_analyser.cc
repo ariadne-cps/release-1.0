@@ -849,6 +849,8 @@ _lower_chain_reach_and_epsilon(
 
 		epsilon = max_elementwise(epsilon,local_epsilon);
 
+		ARIADNE_LOG(3,"Checking constraint satisfaction...");
+
 		if (!_settings->constraint_set.empty()) {
 			SetApproximationType local_reachability_restriction;
 			if (!have_restriction)
@@ -856,6 +858,7 @@ _lower_chain_reach_and_epsilon(
 			else
 			    local_reachability_restriction = *_settings->reachability_restriction;
 
+			ARIADNE_LOG(4,"Local reachability restriction size = " << local_reachability_restriction.size());
 			SetApproximationType possibly_feasible_cells = Ariadne::possibly_feasible_cells(local_reach,
 			        _settings->constraint_set,local_epsilon,local_reachability_restriction,accuracy);
 
@@ -1645,7 +1648,6 @@ possibly_feasible_cells(
 	HybridDenotableSet feasible_reachability_restriction = possibly_overlapping_cells(reachability_restriction,constraint);
 	HybridVectorFunction constraint_functions = constraint.functions();
 	HybridBoxes eps_constraint_codomain = eps_codomain(feasible_reachability_restriction, eps, constraint_functions);
-
 	HybridConstraintSet eps_constraint(constraint_functions,eps_constraint_codomain);
 
 	return possibly_overlapping_cells(reach,eps_constraint);
