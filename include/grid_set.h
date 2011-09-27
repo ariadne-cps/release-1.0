@@ -98,6 +98,10 @@ bool overlap(const GridCell& theCell, const GridTreeSubset& theSet);
 bool subset(const GridTreeSubset& theSet1, const GridTreeSubset& theSet2);
 bool overlap(const GridTreeSubset& theSet1, const GridTreeSubset& theSet2);
 
+/*! \brief Checks whether the set is a subset of \a otherSet.
+ *  \details It is assumed that the grids of the two sets are the same, otherwise an error is raised. */
+//bool subset(const GridTreeSet& theSet1, const GridTreeSet& theSet2);
+
 GridTreeSet join(const GridTreeSubset& theSet1, const GridTreeSubset& theSet2);
 GridTreeSet intersection(const GridTreeSubset& theSet1, const GridTreeSubset& theSet2);
 GridTreeSet difference(const GridTreeSubset& theSet1, const GridTreeSubset& theSet2);
@@ -2379,14 +2383,10 @@ GridCell project_down_unchecked(const GridCell& cell, const Grid& projected_grid
 //! \details The \a resulting set cannot have a larger dimension than the original set.
 GridTreeSet project_down(const GridTreeSet& grid_set, const Vector<uint>& indices);
 
-//! \brief Evaluates \a grid_set on \a cons_set in order to obtain (a superset of) the overlapping cells.
-//! \details The result is a subset of the cells of \a grid_set. As such, the cells are not manipulated (i.e., by mincing
-//! or recombining) in any way.
-GridTreeSet possibly_overlapping_cells(const GridTreeSet& grid_set, const ConstraintSet& cons_set);
-//! \brief Applies \a cons_set to \a grid_set in order to obtain the definitely covered cells.
-//! \details The result is a subset of the cells of \a grid_set. As such, the cells are not manipulated (i.e., by mincing
-//! or recombining) in any way.
-GridTreeSet definitely_covered_cells(const GridTreeSet& grid_set, const ConstraintSet& cons_set);
+//! \brief Evaluates \a grid_set on \a cons_set in order to obtain (a superset of) the overlapping subset.
+GridTreeSet possibly_overlapping_subset(const GridTreeSet& grid_set, const ConstraintSet& cons_set);
+//! \brief Applies \a cons_set to \a grid_set in order to obtain the definitely covered subset.
+GridTreeSet definitely_covered_subset(const GridTreeSet& grid_set, const ConstraintSet& cons_set);
 
 } // namespace Ariadne
 

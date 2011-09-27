@@ -885,6 +885,10 @@ outer_approximation(const HybridBasicSet<ES>& hs,
     return result;
 }
 
+//! \brief Checks if \a theSet1 is a subset of \a theSet2.
+//! \details If the sets do not have the same grid, an error is raised.
+bool subset(const HybridDenotableSet& theSet1, const HybridDenotableSet& theSet2);
+
 //! \brief Whether \a cons_set is disjoint from \a grid_set.
 //! \details Note that if \a cons_set does not have one location of \a grid_set, then for that location the result is true.
 tribool disjoint(const HybridConstraintSet& cons_set, const HybridDenotableSet& grid_set);
@@ -895,10 +899,10 @@ tribool overlaps(const HybridConstraintSet& cons_set, const HybridDenotableSet& 
 //! \details Note that if \a cons_set does not have one location of \a grid_set, then for that location the result is true.
 tribool covers(const HybridConstraintSet& cons_set, const HybridDenotableSet& grid_set);
 
-//! \brief Evaluates \a grid_set on \a cons_set in order to obtain (a superset of) the overlapping cells.
-HybridDenotableSet possibly_overlapping_cells(const HybridDenotableSet& grid_set, const HybridConstraintSet& cons_set);
-//! \brief Applies \a cons_set to \a grid_set in order to obtain the covered cells.
-HybridDenotableSet definitely_covered_cells(const HybridDenotableSet& grid_set, const HybridConstraintSet& cons_set);
+//! \brief Evaluates \a grid_set on \a cons_set in order to obtain (a superset of) the overlapping subset.
+HybridDenotableSet possibly_overlapping_subset(const HybridDenotableSet& grid_set, const HybridConstraintSet& cons_set);
+//! \brief Applies \a cons_set to \a grid_set in order to obtain the covered subset.
+HybridDenotableSet definitely_covered_subset(const HybridDenotableSet& grid_set, const HybridConstraintSet& cons_set);
 
 //! \brief Evaluates the codomain of the function \a func applied on the cells of \a grid_set, each widened by \a eps.
 HybridBoxes eps_codomain(const HybridDenotableSet& grid_set, const HybridFloatVector& eps, const HybridVectorFunction& func);

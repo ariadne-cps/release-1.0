@@ -339,7 +339,7 @@ _safety_disproving_once(
 		HybridFloatVector epsilon;
 		make_lpair<SetApproximationType,HybridFloatVector>(reach,epsilon) = analyser->lower_chain_reach_and_epsilon(initial_set);
 
-		ARIADNE_LOG(5, "Epsilon: " << epsilon);
+		//ARIADNE_LOG(5, "Epsilon: " << epsilon);
 
 		if (_settings->plot_results)
 			_plot_reach(reach,"lower",accuracy);

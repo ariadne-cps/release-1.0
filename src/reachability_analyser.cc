@@ -121,9 +121,9 @@ tune_settings(
     _settings->reachability_restriction = reachability_restriction;
 
     _settings->domain_bounds = domain;
-    ARIADNE_LOG(2, "Domain: " << domain);
+    //ARIADNE_LOG(2, "Domain: " << domain);
     _settings->constraint_set = constraint_set;
-    ARIADNE_LOG(2, "Constraint set: " << constraint_set);
+    //ARIADNE_LOG(2, "Constraint set: " << constraint_set);
     _settings->lock_to_grid_time = getLockToGridTime(*_system,domain);
     ARIADNE_LOG(2, "Lock to grid time: " << _settings->lock_to_grid_time);
     _settings->locked_parameters_ids = locked_params_ids;
@@ -132,9 +132,9 @@ tune_settings(
     ARIADNE_LOG(2, "Derivatives evaluation source: " << (outer_approximation ? "Outer approximation" : "Domain box"));
     HybridFloatVector hmad = getHybridMaximumAbsoluteDerivatives(*_system,outer_approximation,domain);
     ARIADNE_LOG(2, "System parameters: " << dynamic_cast<HybridAutomaton&>(*_system).parameters());
-    ARIADNE_LOG(2, "Derivatives bounds: " << hmad);
+    //ARIADNE_LOG(2, "Derivatives bounds: " << hmad);
     _settings->grid = HybridGrid(getHybridGrid(hmad,domain,EQUAL_GRID_FOR_ALL_LOCATIONS));
-    ARIADNE_LOG(2, "Grid lengths: " << _settings->grid.lengths());
+    //ARIADNE_LOG(2, "Grid lengths: " << _settings->grid.lengths());
 
     // Checking for grid and reachability restriction grid equality is required for upper semantics only
     if (reachability_restriction && semantics == UPPER_SEMANTICS)
@@ -166,10 +166,10 @@ initial_cells_set(const HybridImageSet& initial_enclosure_set) const
     SetApproximationType result(_settings->grid);
 
     result.adjoin_outer_approximation(initial_enclosure_set,accuracy);
-    result.mince(accuracy);
     if (_settings->reachability_restriction) {
         result.restrict(*_settings->reachability_restriction);
     }
+    result.mince(accuracy);
 
     return result;
 }
@@ -184,11 +184,8 @@ initial_cells_set(const HybridConstraintSet& initial_constraint_set) const
 
     const int& accuracy = _settings->maximum_grid_depth;
 
-    SetApproximationType result(_settings->grid);
-
-    result = *_settings->reachability_restriction;
+    HybridDenotableSet result = definitely_covered_subset(*_settings->reachability_restriction,initial_constraint_set);
     result.mince(accuracy);
-    result.remove(definitely_covered_cells(result,initial_constraint_set));
 
     return result;
 }
@@ -809,7 +806,7 @@ _lower_chain_reach_and_epsilon(
 
 	bool have_restriction = _settings->reachability_restriction;
 
-    SetApproximationType reach(grid);
+    HDS reach(grid);
 	HybridSpace state_space = system.state_space();
 
 	HybridFloatVector epsilon;
@@ -849,20 +846,57 @@ _lower_chain_reach_and_epsilon(
 
 		epsilon = max_elementwise(epsilon,local_epsilon);
 
-		ARIADNE_LOG(3,"Checking constraint satisfaction...");
-
 		if (!_settings->constraint_set.empty()) {
-			SetApproximationType local_reachability_restriction;
-			if (!have_restriction)
-				local_reachability_restriction.adjoin_outer_approximation(_settings->domain_bounds,accuracy);
-			else
-			    local_reachability_restriction = *_settings->reachability_restriction;
 
-			ARIADNE_LOG(4,"Local reachability restriction size = " << local_reachability_restriction.size());
-			SetApproximationType possibly_feasible_cells = Ariadne::possibly_feasible_cells(local_reach,
-			        _settings->constraint_set,local_epsilon,local_reachability_restriction,accuracy);
+			ARIADNE_LOG(3,"Checking constraint satisfaction...");
 
-			if (possibly_feasible_cells.size() < local_reach.size()) {
+			// Identify the "constrainable" hybrid space given by locations both reachable and under constraint
+			HybridBoxes constrainable_domain_bounds;
+			for (HDS::locations_const_iterator loc_it = local_reach.locations_begin();
+					loc_it != local_reach.locations_end(); ++loc_it) {
+				if (!loc_it->second.empty() && _settings->constraint_set.find(loc_it->first) != _settings->constraint_set.end())
+					constrainable_domain_bounds[loc_it->first] = _settings->domain_bounds.find(loc_it->first)->second;
+			}
+			HybridSpace constrainable_space(constrainable_domain_bounds);
+
+			// Construct the grid
+			HybridGrid constrainable_grid;
+			for (HybridSpace::const_iterator hs_it = constrainable_space.begin(); hs_it != constrainable_space.end(); ++hs_it) {
+				constrainable_grid[hs_it->first] = grid[hs_it->first];
+			}
+
+			// Project the constraint (for hybrid space consistency)
+			HybridConstraintSet constrainable_constraint_set;
+			for (HybridSpace::const_iterator hs_it = constrainable_space.begin(); hs_it != constrainable_space.end(); ++hs_it) {
+				constrainable_constraint_set[hs_it->first] = _settings->constraint_set.find(hs_it->first)->second;
+			}
+			// Project the local reach
+			HDS constrainable_local_reach(constrainable_grid);
+			for (HybridSpace::const_iterator hs_it = constrainable_space.begin(); hs_it != constrainable_space.end(); ++hs_it) {
+				constrainable_local_reach[hs_it->first] = local_reach[hs_it->first];
+			}
+			// Project the local epsilon
+			HybridFloatVector constrainable_local_epsilon;
+			for (HybridSpace::const_iterator hs_it = constrainable_space.begin(); hs_it != constrainable_space.end(); ++hs_it) {
+				constrainable_local_epsilon[hs_it->first] = local_epsilon[hs_it->first];
+			}
+
+			// Construct the reachability restriction
+			HDS constrainable_reachability_restriction(constrainable_grid);
+			if (!have_restriction) {
+				constrainable_reachability_restriction.adjoin_outer_approximation(constrainable_domain_bounds,accuracy);
+			} else {
+				for (HybridSpace::const_iterator hs_it = constrainable_space.begin(); hs_it != constrainable_space.end(); ++hs_it) {
+					constrainable_reachability_restriction[hs_it->first] = _settings->reachability_restriction->find(hs_it->first)->second;
+				}
+			}
+
+			ARIADNE_LOG(4,"Local reachability restriction size = " << constrainable_reachability_restriction.size());
+			HDS possibly_feasible_set = Ariadne::possibly_feasible_subset(constrainable_local_reach,
+			        constrainable_constraint_set,constrainable_local_epsilon,constrainable_reachability_restriction,accuracy);
+
+			// If the original set is not a subset of the possibly feasible, then they are not equal and infeasible cells are present
+			if (!subset(constrainable_local_reach,possibly_feasible_set)) {
 				throw ReachUnsatisfiesConstraintException("The lower reached region partially does not satisfy the constraint.");
 			}
 		}
@@ -883,7 +917,7 @@ _lower_chain_reach_and_epsilon(
 				adjoined_evolve_sizes,superposed_evolve_sizes,use_domain_checking);
 	}
 
-	return std::pair<SetApproximationType,HybridFloatVector>(reach,epsilon);
+	return std::pair<HDS,HybridFloatVector>(reach,epsilon);
 }
 
 
@@ -961,7 +995,7 @@ lower_chain_reach_and_epsilon(const HybridImageSet& initial_set) const
 			reach.adjoin(local_reach);
 			epsilon = max_elementwise(epsilon,local_epsilon);
 
-			ARIADNE_LOG(2,"Epsilon: " << local_epsilon);
+			//ARIADNE_LOG(2,"Epsilon: " << local_epsilon);
 		}
 
 	} catch (ReachUnsatisfiesConstraintException ex) {
@@ -990,8 +1024,6 @@ _getSplitParameterSetList() const
 
     HybridFloatVector hmad = getHybridMaximumAbsoluteDerivatives(*_system,
             _settings->reachability_restriction,_settings->domain_bounds);
-
-    ARIADNE_LOG(2,"Hybrid Maximum Absolute Derivatives: " << hmad);
 
     if (!initial_parameter_set.empty()) {
 
@@ -1637,20 +1669,19 @@ restrict_enclosures(
 
 
 HybridDenotableSet
-possibly_feasible_cells(
+possibly_feasible_subset(
 		const HybridDenotableSet& reach,
 		const HybridConstraintSet& constraint,
 		const HybridFloatVector eps,
 		HybridDenotableSet reachability_restriction,
 		int accuracy)
 {
-	reachability_restriction.mince(accuracy);
-	HybridDenotableSet feasible_reachability_restriction = possibly_overlapping_cells(reachability_restriction,constraint);
+	HybridDenotableSet feasible_reachability_restriction = possibly_overlapping_subset(reachability_restriction,constraint);
 	HybridVectorFunction constraint_functions = constraint.functions();
 	HybridBoxes eps_constraint_codomain = eps_codomain(feasible_reachability_restriction, eps, constraint_functions);
 	HybridConstraintSet eps_constraint(constraint_functions,eps_constraint_codomain);
 
-	return possibly_overlapping_cells(reach,eps_constraint);
+	return possibly_overlapping_subset(reach,eps_constraint);
 }
 
 

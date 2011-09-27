@@ -186,6 +186,18 @@ project(const Box& box, const std::vector<uint>& dimensions, const HybridSpace& 
 	return result;
 }
 
+bool subset(const HybridDenotableSet& theSet1, const HybridDenotableSet& theSet2)
+{
+	ARIADNE_ASSERT_MSG(theSet1.grid() == theSet2.grid(), "Cannot perform subset on two HybridDenotableSets with different grids.")
+	for (HybridDenotableSet::locations_const_iterator set1_it = theSet1.locations_begin();
+			set1_it != theSet1.locations_end(); ++set1_it) {
+		if (!subset(set1_it->second,theSet2.find(set1_it->first)->second))
+			return false;
+	}
+
+	return true;
+}
+
 
 tribool disjoint(const HybridConstraintSet& cons_set, const HybridDenotableSet& grid_set)
 {
@@ -230,28 +242,28 @@ tribool covers(const HybridConstraintSet& cons_set, const HybridDenotableSet& gr
 }
 
 
-HybridDenotableSet possibly_overlapping_cells(const HybridDenotableSet& grid_set, const HybridConstraintSet& cons_set)
+HybridDenotableSet possibly_overlapping_subset(const HybridDenotableSet& grid_set, const HybridConstraintSet& cons_set)
 {
 	HybridDenotableSet result(grid_set.grid());
 
     for (HybridDenotableSet::locations_const_iterator gts_it = grid_set.locations_begin(); gts_it != grid_set.locations_end(); ++gts_it) {
     	HybridConstraintSet::locations_const_iterator cs_it = cons_set.find(gts_it->first);
     	if (cs_it != cons_set.locations_end())
-    		result[gts_it->first] = possibly_overlapping_cells(gts_it->second,cs_it->second);
+    		result[gts_it->first] = possibly_overlapping_subset(gts_it->second,cs_it->second);
     }
 
 	return result;
 }
 
 
-HybridDenotableSet definitely_covered_cells(const HybridDenotableSet& grid_set, const HybridConstraintSet& cons_set)
+HybridDenotableSet definitely_covered_subset(const HybridDenotableSet& grid_set, const HybridConstraintSet& cons_set)
 {
 	HybridDenotableSet result(grid_set.grid());
 
     for (HybridDenotableSet::locations_const_iterator gts_it = grid_set.locations_begin(); gts_it != grid_set.locations_end(); ++gts_it) {
     	HybridConstraintSet::locations_const_iterator cs_it = cons_set.find(gts_it->first);
     	if (cs_it != cons_set.locations_end())
-    		result[gts_it->first] = definitely_covered_cells(gts_it->second,cs_it->second);
+    		result[gts_it->first] = definitely_covered_subset(gts_it->second,cs_it->second);
     }
 
 	return result;

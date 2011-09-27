@@ -2981,6 +2981,13 @@ bool subset( const GridTreeSubset& theSet1, const GridTreeSubset& theSet2 ) {
 
     return result;
 }
+
+/*
+bool subset(const GridTreeSet& theSet1, const GridTreeSet& theSet2)
+{
+	return Ariadne::subset(theSet1,theSet2);
+}
+*/
     
 /*! \brief This is a helper function for bool overlap( const GridTreeSubset& theSet1, const GridTreeSubset& theSet2 )
  *  pSuperTreeRootNode is the root tree node, pathFromSuperToSub is the path from this root node to the root node
@@ -3214,7 +3221,7 @@ GridTreeSet project_down(
 	return result;
 }
 
-GridTreeSet possibly_overlapping_cells(const GridTreeSet& denotable_set, const ConstraintSet& cons_set)
+GridTreeSet possibly_overlapping_subset(const GridTreeSet& denotable_set, const ConstraintSet& cons_set)
 {
 	GridTreeSet result(denotable_set.grid());
 
@@ -3227,7 +3234,7 @@ GridTreeSet possibly_overlapping_cells(const GridTreeSet& denotable_set, const C
 }
 
 
-GridTreeSet definitely_covered_cells(const GridTreeSet& denotable_set, const ConstraintSet& cons_set)
+GridTreeSet definitely_covered_subset(const GridTreeSet& denotable_set, const ConstraintSet& cons_set)
 {
 	GridTreeSet result(denotable_set.grid());
 

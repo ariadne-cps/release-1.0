@@ -517,9 +517,9 @@ std::list<EnclosureType> restrict_enclosures(
 		const std::list<EnclosureType> enclosures,
 		const HybridDenotableSet& restriction);
 
-/*! \brief Gets the cells from \a reach (inside \a reachability_restriction) that satisfy \a constraint
+/*! \brief Gets the subset of \a reach (inside \a reachability_restriction) that satisfy \a constraint
  * under a relaxation of the reachability given by \a eps. */
-HybridDenotableSet possibly_feasible_cells(
+HybridDenotableSet possibly_feasible_subset(
 		const HybridDenotableSet& reach,
 		const HybridConstraintSet& constraint,
 		const HybridFloatVector eps,

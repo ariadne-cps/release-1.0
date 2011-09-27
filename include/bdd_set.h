@@ -487,14 +487,10 @@ tribool overlaps(const ConstraintSet& cons_set, const BDDTreeSet& bdd_set);
 //! \brief Whether \a cons_set covers \a bdd_set.
 tribool covers(const ConstraintSet& cons_set, const BDDTreeSet& bdd_set);
 
-//! \brief Evaluates \a bdd_set on \a cons_set in order to obtain (a superset of) the overlapping cells.
-//! \details The result is a subset of the cells of \a bdd_set. As such, the cells are not manipulated (i.e., by mincing
-//! or recombining) in any way.
-BDDTreeSet possibly_overlapping_cells(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set);
-//! \brief Applies \a cons_set to \a bdd_set in order to obtain the definitely covered cells.
-//! \details The result is a subset of the cells of \a bdd_set. As such, the cells are not manipulated (i.e., by mincing
-//! or recombining) in any way.
-BDDTreeSet definitely_covered_cells(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set);
+//! \brief Evaluates \a bdd_set on \a cons_set in order to obtain (a superset of) the overlapping subset.
+BDDTreeSet possibly_overlapping_subset(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set);
+//! \brief Applies \a cons_set to \a bdd_set in order to obtain the definitely covered subset.
+BDDTreeSet definitely_covered_subset(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set);
 
 //! \brief Evaluates the codomain of \a func applied on the cells of \a bdd_set, each widened by \a eps.
 //Box eps_codomain(const BDDTreeSet& bdd_set, const Vector<Float> eps, const VectorFunction& func);

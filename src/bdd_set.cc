@@ -1575,14 +1575,14 @@ tribool covers(const ConstraintSet& cons_set, const BDDTreeSet& bdd_set) {
     return _subset(bdd_set.root_cell(), bdd_set.enabled_cells(), 0, splitting_coordinate, cons_set);        
 }
 
-BDDTreeSet possibly_overlapping_cells(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set) {
+BDDTreeSet possibly_overlapping_subset(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set) {
     // make a copy of bdd_set
     BDDTreeSet result = bdd_set;
     result.outer_restrict(cons_set);
     return result;
 }
 
-BDDTreeSet definitely_covered_cells(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set) {
+BDDTreeSet definitely_covered_subset(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set) {
     // make a copy of bdd_set
     BDDTreeSet result = bdd_set;
     result.inner_restrict(cons_set);
