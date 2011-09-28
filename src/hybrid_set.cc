@@ -242,11 +242,11 @@ tribool covers(const HybridConstraintSet& cons_set, const HybridDenotableSet& gr
 }
 
 
-HybridDenotableSet possibly_overlapping_subset(const HybridDenotableSet& grid_set, const HybridConstraintSet& cons_set)
+HybridDenotableSet possibly_overlapping_subset(const HybridDenotableSet& hdenotable_set, const HybridConstraintSet& cons_set)
 {
-	HybridDenotableSet result(grid_set.grid());
+	HybridDenotableSet result(hdenotable_set.grid());
 
-    for (HybridDenotableSet::locations_const_iterator gts_it = grid_set.locations_begin(); gts_it != grid_set.locations_end(); ++gts_it) {
+    for (HybridDenotableSet::locations_const_iterator gts_it = hdenotable_set.locations_begin(); gts_it != hdenotable_set.locations_end(); ++gts_it) {
     	HybridConstraintSet::locations_const_iterator cs_it = cons_set.find(gts_it->first);
     	if (cs_it != cons_set.locations_end())
     		result[gts_it->first] = possibly_overlapping_subset(gts_it->second,cs_it->second);
@@ -256,11 +256,11 @@ HybridDenotableSet possibly_overlapping_subset(const HybridDenotableSet& grid_se
 }
 
 
-HybridDenotableSet definitely_covered_subset(const HybridDenotableSet& grid_set, const HybridConstraintSet& cons_set)
+HybridDenotableSet definitely_covered_subset(const HybridDenotableSet& hdenotable_set, const HybridConstraintSet& cons_set)
 {
-	HybridDenotableSet result(grid_set.grid());
+	HybridDenotableSet result(hdenotable_set.grid());
 
-    for (HybridDenotableSet::locations_const_iterator gts_it = grid_set.locations_begin(); gts_it != grid_set.locations_end(); ++gts_it) {
+    for (HybridDenotableSet::locations_const_iterator gts_it = hdenotable_set.locations_begin(); gts_it != hdenotable_set.locations_end(); ++gts_it) {
     	HybridConstraintSet::locations_const_iterator cs_it = cons_set.find(gts_it->first);
     	if (cs_it != cons_set.locations_end())
     		result[gts_it->first] = definitely_covered_subset(gts_it->second,cs_it->second);

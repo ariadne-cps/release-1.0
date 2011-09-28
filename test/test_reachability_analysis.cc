@@ -169,8 +169,8 @@ class TestReachabilityAnalysis
         ImageSet& initial=initial_set[loc];
         cout << "Evolved to " << upper_evolve.size() << " cells"  << endl;
         cout << "Reached " << upper_reach.size() << " cells" << endl << endl;
-        ARIADNE_TEST_EQUAL(upper_evolve.size(),7);
-        ARIADNE_TEST_EQUAL(upper_reach.size(),374);
+        ARIADNE_TEST_EQUAL(upper_evolve.size(),9);
+        ARIADNE_TEST_EQUAL(upper_reach.size(),377);
         plot("test_reachability_analyser-map_upper_reach_evolve.png",graphics_box,upper_evolve,upper_reach,initial);
     }
   
@@ -188,7 +188,7 @@ class TestReachabilityAnalysis
         analyser.settings().domain_bounds[loc] = bounding_box;
         HybridDenotableSet chain_reach_set=analyser.outer_chain_reach(initial_set);
         cout << "Reached " << chain_reach_set.size() << " cells" << endl << endl;
-        ARIADNE_TEST_EQUAL(chain_reach_set.size(),426);
+        ARIADNE_TEST_EQUAL(chain_reach_set.size(),425);
         plot("test_reachability_analyser-map_chain_reach.png",graphics_box,chain_reach_set[loc],initial_set[loc]);
     }
   

@@ -634,6 +634,12 @@ class HybridDenotableSet
         return this->find(q)->second;
     }
 
+    void clear() {
+    	for(locations_iterator loc_iter=this->locations_begin(); loc_iter!=this->locations_end(); ++loc_iter) {
+    		loc_iter->second.clear();
+    	}
+    }
+
     bool empty() const {
         for(locations_const_iterator loc_iter=this->locations_begin();
             loc_iter!=this->locations_end(); ++loc_iter) {

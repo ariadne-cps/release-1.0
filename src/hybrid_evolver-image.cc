@@ -1072,7 +1072,7 @@ _add_models_subdivisions_time(
 
 ImageSetHybridEvolverSettings::ImageSetHybridEvolverSettings(const SystemType& sys)
     : minimum_discretised_enclosure_widths(getMinimumGridCellWidths(HybridGrid(sys.state_space()),0)),
-      maximum_enclosure_widths_ratio(2),
+      maximum_enclosure_widths_ratio(2.0),
       enable_subdivisions(false),
       enable_premature_termination_on_enclosure_size(true)
 {

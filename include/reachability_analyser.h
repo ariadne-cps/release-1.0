@@ -208,27 +208,16 @@ class HybridReachabilityAnalyser
 
     std::pair<HDS,HDS> _upper_reach_evolve(
     		const SystemType& sys,
-    		const HDS& set,
+    		const SetApproximationType& initial_enclosures,
     		const T& time,
-    		const int accuracy) const;
-
-    std::pair<HDS,HDS> _upper_reach_evolve(
-    		const SystemType& sys,
-    		const list<EnclosureType>& initial_enclosures,
-    		const T& time,
-    		bool enable_premature_termination_on_blocking_event,
-    		ContinuousEvolutionDirection direction,
-    		int accuracy) const;
-
-    /*! \brief Performs outer chain reach calculation. */
-    SetApproximationType _outer_chain_reach(
-    		const std::list<EnclosureType>& initial_enclosures,
-    		ContinuousEvolutionDirection direction) const;
+    		int accuracy,
+    		bool enable_premature_termination_on_blocking_event = false,
+    		ContinuousEvolutionDirection direction = DIRECTION_FORWARD) const;
 
     /*! \brief Performs outer chain reach calculation, where the constants of the \a system are assumed to be already splitted. */
     SetApproximationType _outer_chain_reach_splitted(
     		const SystemType& system,
-    		const std::list<EnclosureType>& initial_enclosures,
+    		const SetApproximationType& initial,
     		ContinuousEvolutionDirection direction) const;
 
     /*! \brief Pushes into \a result_enclosures the enclosures from \a reachCells.
@@ -237,14 +226,14 @@ class HybridReachabilityAnalyser
     void _outer_chain_reach_forward_pushTargetCells(
     		const SystemType& system,
     		const SetApproximationType& reachCells,
-    		std::list<EnclosureType>& result_enclosures,
+    		SetApproximationType& result_set,
     		bool use_domain_checking) const;
 
     /*! \brief Pushes into \a result_enclosures the source enclosures from \a sourceCellsOverapprox that reach \a reachCells. */
     void _outer_chain_reach_backward_pushSourceCells(
     		const SystemType& system,
     		const SetApproximationType& reachCells,
-    		std::list<EnclosureType>& result_enclosures) const;
+    		SetApproximationType& result_set) const;
 
     /*! \brief Checks whether a box \a bx is outside any invariant from \a invariants. */
     bool _outer_chain_reach_isOutsideInvariants(
@@ -262,30 +251,23 @@ class HybridReachabilityAnalyser
     		const ContinuousEnclosureType& source,
     		Semantics semantics) const;
 
-    /*! \brief Pushes the enclosures from the \a source enclosure into the \a destination enclosure list, for all \a transitions.
-     */
-    void _outer_chain_reach_forward_pushTargetEnclosures(
+    //! \brief Adjoins the target of \a sourceEnclosure into \a result_set.
+    void _outer_chain_reach_adjoinTargetEnclosure(
     		const SystemType& system,
     		const DiscreteLocation& sourceLocation,
     		const ContinuousEnclosureType& sourceEnclosure,
-			const HybridGrid& grid,
-			std::list<EnclosureType>& result_enclosures,
-			bool use_domain_checking) const;
+			SetApproximationType& result_set) const;
 
-    void _outer_chain_reach_backward_pushSourceEnclosures(
+    //! \brief Adjoins \a sourceEnclosure into \a result_set if its target overlaps with \a targetCells.
+    void _outer_chain_reach_adjoinSourceEnclosure(
     		const SystemType& system,
     		const DiscreteLocation& sourceLocation,
     		const ContinuousEnclosureType& sourceEnclosure,
-			const SetApproximationType& targetCells,
-			const HybridGrid& grid,
-			std::list<EnclosureType>& result_enclosures) const;
+    		const SetApproximationType& targetCells,
+			SetApproximationType& result_set) const;
 
-    /*! \brief Pushes the enclosures from the \a finalCells tree set into the \a result_enclosures list.
-     */
-    void _outer_chain_reach_pushLocalFinalCells(
-    		const SetApproximationType& finalCells,
-    		std::list<EnclosureType>& result_enclosures,
-    		bool use_domain_checking) const;
+    //! \brief Checks that \a finalCells is inside invariants
+    void _outer_chain_reach_checkFinalCells(const SetApproximationType& finalCells) const;
 
     /*! \brief Gets the lower reach and the epsilon for the \a system.
      * \details The \a constraint_set is checked: if not empty and its epsilon relaxation is not satisfied
@@ -439,12 +421,6 @@ void remove_nonlocked_parameters(
         RealParameterSet& params,
         const Set<Identifier>& locked_params_ids);
 
-/*! \brief Generates a list of hybrid enclosures from the domain midpoints of a splitting of \a img_set,
- * where the image of each part has bounding box widths lower than the corresponding \a max_cell_widths */
-list<EnclosureType> enclosures_from_split_domain_midpoints(
-		const HybridImageSet img_set,
-		const HybridFloatVector max_cell_widths);
-
 /*! \brief Helper function to get the hybrid widths of the derivatives from the \a system. */
 HybridFloatVector getHybridDerivativeWidths(
 		const HybridReachabilityAnalyser::SystemType& system,
@@ -458,17 +434,6 @@ Vector<Float> getDerivativeWidths(
 
 /*! \brief Gets the set of all the midpoints of the split intervals in \a intervals_set. */
 std::list<RealParameterSet> getMidpointsSet(const std::list<RealParameterSet>& intervals_set);
-
-/*! \brief Splits \a target_encl for location \a target_loc, storing the result in \a initial_enclosures.
- * \details The function is recursive.
- */
-void pushSplitTargetEnclosures(
-		std::list<EnclosureType>& initial_enclosures,
-		const DiscreteLocation& target_loc,
-		const ContinuousEnclosureType& target_encl,
-	    const Vector<Float>& minTargetCellWidths,
-		const Box& target_domain_constraint,
-		bool use_domain_checking);
 
 /*! \brief Get the hybrid grid given the maximum derivative \a hmad and the \a domain parameter, where the grid is chosen differently for each location.
  * \details The grid is chosen so that each cell is included into the domains for all locations. The \a equal_for_all_locations flag decides whether the
@@ -506,19 +471,14 @@ HybridFloatVector getHybridMaximumAbsoluteDerivatives(
 		const HybridDenotableSetPtr& outer_approximation,
 		const HybridBoxes& domain_constraint);
 
-/*! \brief Checks whether \a new_restriction is equal to \a old_restriction.
- * \details The routine assumes that \a new_restriction has been obtained from \a old_restriction, thus
- * eliminating the need for any check of the two tree sets.
- */
-bool new_reachability_restriction_equals(
-		const HybridDenotableSet& new_restriction,
-		const HybridDenotableSet& old_restriction);
+//! \brief Creates enclosures from splitting \a initial_set in respect to \a max_cell_widths
+list<EnclosureType>
+enclosures_from_split_initial_set_midpoints(
+		const HybridImageSet initial_set,
+		const HybridFloatVector max_cell_widths);
 
-/*! \brief Turns the cells from the grid tree set \a cells into enclosures of smallest size in respect to a given
- * \a maximum_grid_depth. */
-std::list<EnclosureType> cells_to_smallest_enclosures(
-		HybridDenotableSet cells,
-		int maximum_grid_depth);
+//! \brief Copies the \a reach set into enclosures.
+std::list<EnclosureType> to_enclosures(const HybridDenotableSet& reach);
 
 /*! \brief Restricts the \a enclosures to those possibly overlapping \a restriction */
 std::list<EnclosureType> restrict_enclosures(
@@ -533,7 +493,6 @@ HybridDenotableSet possibly_feasible_subset(
 		const HybridFloatVector eps,
 		HybridDenotableSet reachability_restriction,
 		int accuracy);
-
 
 } // namespace Ariadne
 

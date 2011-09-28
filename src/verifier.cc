@@ -243,13 +243,7 @@ _safety_proving_once_forward_analysis(
 
     ARIADNE_LOG(5,"Computing the initial set...");
 
-    SetApproximationType forward_initial;
-    if (_safety_reachability_restriction) {
-        forward_initial = analyser->initial_cells_set(initial_set);
-    } else {
-        forward_initial.adjoin_outer_approximation(initial_set,accuracy);
-        forward_initial.mince(accuracy);
-    }
+    SetApproximationType forward_initial = analyser->initial_cells_set(initial_set);
 
     if (forward_initial.empty()) {
         throw EmptyInitialCellSetException("The initial cell set for forward reachability is empty (skipped).");

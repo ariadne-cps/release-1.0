@@ -323,7 +323,7 @@ class ImageSetHybridEvolverSettings {
     //! \brief The maximum ratio between enclosure widths and reference widths.
     //! \details Reference widths are the initial ones, if larger than maximum_discretised_enclosure_widths, or
     //! maximum_discretised_enclosure_widths themselves if not.
-    UnsignedIntType maximum_enclosure_widths_ratio;
+    RealType maximum_enclosure_widths_ratio;
 
     //! \brief Enable subdivision of basic sets (false by default).
     bool enable_subdivisions;
