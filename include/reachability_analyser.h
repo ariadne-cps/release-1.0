@@ -294,6 +294,14 @@ class HybridReachabilityAnalyser
     		const SystemType& system,
     		const HybridImageSet& initial_set) const;
 
+    /*! \brief Checks whether \a reach with \a epsilon satisfies the constraint.
+     * \details Throws ReachUnsatisfiesConstraintException if it doesn't.
+     */
+    void _lower_chain_reach_and_epsilon_constraint_check(
+    		const SystemType& system,
+    		const HDS& reach,
+    		const HybridFloatVector& epsilon) const;
+
     /*! \brief Filters \a final_enclosures into \a initial_enclosures.
      * \details The procedure prunes a percentage of the enclosures based on \a adjoined_evolve_sizes and \a superposed_evolve_sizes. */
     void _filter_enclosures(
