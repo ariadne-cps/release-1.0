@@ -123,9 +123,9 @@ class ImageSetHybridEvolver
                             const EnclosureType& initial, const TimeType& time, bool ignore_activations,
                             ContinuousEvolutionDirection direction, Semantics semantics) const;
 
-    virtual void _evolution_step(std::list< HybridTimedSetType >& working_sets,
+    virtual void _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
                                   EnclosureListType& reachable, EnclosureListType& intermediate,
-                                  const HybridTimedSetType& current_set, const TimeType& time,
+                                  const pair<uint,HybridTimedSetType>& current_set, const TimeType& time,
                                   bool ignore_activations, ContinuousEvolutionDirection direction, Semantics semantics) const;
 
   protected:
@@ -156,6 +156,7 @@ class ImageSetHybridEvolver
             Semantics semantics) const;
 
     void compute_flow_model(
+    		const DiscreteLocation&,
     		FlowSetModelType&,
     		BoxType&,
     		Float&,
@@ -185,41 +186,50 @@ class ImageSetHybridEvolver
 
   private:
 
-    bool _is_enclosure_too_large(const SetModelType& initial_set_model) const;
+    std::map<uint,Vector<Float> > _indexed_set_models_widths(std::list< pair<uint,HybridTimedSetType> >& working_sets) const;
 
-    void _evolution_add_initialSet(std::list< HybridTimedSetType >& working_sets,
+    bool _is_enclosure_too_large(
+    		const DiscreteLocation& loc,
+    		const SetModelType& set_model,
+    		const Vector<Float>& initial_set_model_widths) const;
+
+    void _evolution_add_initialSet(std::list< pair<uint,HybridTimedSetType> >& working_sets,
     							   const EnclosureType& initial_set,
     							   Semantics semantics) const;
 
-    void _add_models_subdivisions_autoselect(std::list< HybridTimedSetType >& working_sets,
-    		  	  	  	  	  	  	  		 const SetModelType& initial_set_model,
-    		  	  	  	  	  	  	  		 const TimeModelType& initial_time_model,
-    		  	  	  	  	  	  	  		 const DiscreteLocation& initial_location,
-    		  	  	  	  	  	  	  		 const EventListType& initial_events,
+    void _add_models_subdivisions_autoselect(std::list< pair<uint,HybridTimedSetType> >& working_sets,
+    										 const uint& set_index,
+    		  	  	  	  	  	  	  		 const SetModelType& set_model,
+    		  	  	  	  	  	  	  		 const TimeModelType& time_model,
+    		  	  	  	  	  	  	  		 const DiscreteLocation& location,
+    		  	  	  	  	  	  	  		 const EventListType& events,
     		  	  	  	  	  	  	  		 Semantics semantics) const;
 
-    void _add_models_subdivisions_time(std::list< HybridTimedSetType >& working_sets,
-    		  	  	  	  	  	  	   const SetModelType& initial_set_model,
-    		  	  	  	  	  	  	   const TimeModelType& initial_time_model,
-    		  	  	  	  	  	  	   const DiscreteLocation& initial_location,
-    		  	  	  	  	  	  	   const EventListType& initial_events,
+    void _add_models_subdivisions_time(std::list< pair<uint,HybridTimedSetType> >& working_sets,
+			 	 	 	 	 	 	   const uint& set_index,
+    		  	  	  	  	  	  	   const SetModelType& set_model,
+    		  	  	  	  	  	  	   const TimeModelType& time_model,
+    		  	  	  	  	  	  	   const DiscreteLocation& location,
+    		  	  	  	  	  	  	   const EventListType& events,
     		  	  	  	  	  	  	   Semantics semantics) const;
 
-    void _add_subdivisions(std::list< HybridTimedSetType >& working_sets,
+    void _add_subdivisions(std::list< pair<uint,HybridTimedSetType> >& working_sets,
     					   const array< TimedSetModelType >& subdivisions,
-    					   const DiscreteLocation& initial_location,
-    					   const EventListType& initial_events,
+    					   const uint& set_index,
+    					   const DiscreteLocation& location,
+    					   const EventListType& events,
     					   const uint dimension) const;
 
-    void _log_step_summary(const std::list<HybridTimedSetType>& working_sets,
+    void _log_step_summary(const std::list< pair<uint,HybridTimedSetType> >& working_sets,
     					 const EnclosureListType& reach_sets,
-    					 const EventListType& initial_events,
-    					 const TimeModelType& initial_time_model,
-    					 const SetModelType& initial_set_model,
-    					 const DiscreteLocation& initial_location) const;
+    					 const EventListType& events,
+    					 const TimeModelType& time_model,
+    					 const SetModelType& set_model,
+    					 const DiscreteLocation& location) const;
 
-    void _computeEvolutionForEvents(std::list< HybridTimedSetType >& working_sets,
+    void _computeEvolutionForEvents(std::list< pair<uint,HybridTimedSetType> >& working_sets,
 			   	   	   	   	   	    EnclosureListType& intermediate_sets,
+			   	   	   	   	   	    const uint& set_index,
 			   	   	   	   	   	    const DiscreteLocation& location,
 			   	   	   	   	   	    const std::set<DiscreteEvent>& blocking_events,
 			   	   	   	   	   	    const EventListType& events,
@@ -301,12 +311,19 @@ class ImageSetHybridEvolverSettings {
   public:
 
     //! \brief The maximum allowable step size for integration, different for each location.
-    //! Decreasing the values increases the accuracy of the computation.
+    //! \details Decreasing the values increases the accuracy of the computation.
     std::map<DiscreteLocation,RealType> hybrid_maximum_step_size;
 
-    //! \brief The maximum allowable cell of a basic set during integration.
-    //! Decreasing the volume of the cell increases the accuracy of the computation of an over-approximation.
-    Vector<RealType> maximum_enclosure_cell;
+    //! \brief The minimum enclosure widths that a discretised enclosure would have.
+    //! \details If an enclosure starts evolution with widths strictly lesser than these, premature termination is performed
+    //! when the widths are maximum_enclosure_widths_ratio times the minimum_discretised_enclosure_widths. If not,
+    //! premature termination is performed when the widths are maximum_enclosure_widths_ratio times the initial enclosure widths.
+    HybridFloatVector minimum_discretised_enclosure_widths;
+
+    //! \brief The maximum ratio between enclosure widths and reference widths.
+    //! \details Reference widths are the initial ones, if larger than maximum_discretised_enclosure_widths, or
+    //! maximum_discretised_enclosure_widths themselves if not.
+    UnsignedIntType maximum_enclosure_widths_ratio;
 
     //! \brief Enable subdivision of basic sets (false by default).
     bool enable_subdivisions;
@@ -326,8 +343,8 @@ tribool positively_crossing(const Box& set_bounds,
 							const RealScalarFunction& activation);
 
 
-/*! \brief Set the maximum enclosure cell from the hybrid grid \a hgrid and the \a maximum_grid_depth. */
-Vector<Float> getMaximumEnclosureCell(
+/*! \brief Set the minimum cell widths from the hybrid grid \a hgrid at \a maximum_grid_depth. */
+HybridFloatVector getMinimumGridCellWidths(
 		const HybridGrid& hgrid,
 		int maximum_grid_depth);
 

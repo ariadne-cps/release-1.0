@@ -109,7 +109,7 @@ int main()
     HybridEvolver evolver(sinusoid);
 
     /// Set the evolution parameters
-    evolver.settings().maximum_enclosure_cell = Vector<Float>(2,0.5);
+    evolver.settings().minimum_discretised_enclosure_widths[l1] = Vector<Float>(2,0.5);
     evolver.settings().hybrid_maximum_step_size[l1] = 0.1*pi<Float>();
 
     std::cout <<  evolver.settings() << std::endl;

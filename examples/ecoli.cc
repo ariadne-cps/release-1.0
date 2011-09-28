@@ -110,7 +110,7 @@ int main()
     /// Create a HybridEvolver object
     /// Set the evolution parameters
     HybridEvolver evolver(ecoli_system);
-    evolver.settings().maximum_enclosure_cell = Vector<Float>(4,0.25);
+    evolver.settings().minimum_discretised_enclosure_widths[starvation_mode] = Vector<Float>(4,0.25);
     evolver.settings().hybrid_maximum_step_size[starvation_mode] = 0.25;
     std::cout <<  evolver.settings() << std::endl;
 

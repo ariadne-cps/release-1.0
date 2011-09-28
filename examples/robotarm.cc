@@ -378,10 +378,12 @@ int main(int argc, char** argv)
     HybridEvolver evolver(system);
     evolver.verbosity = 1;
 
-    evolver.settings().maximum_enclosure_cell=enclosure_cell;
+
     HybridSpace hspace = system.state_space();
-    for (HybridSpace::locations_const_iterator loc_it = hspace.locations_begin(); loc_it != hspace.locations_end(); loc_it++)
+    for (HybridSpace::locations_const_iterator loc_it = hspace.locations_begin(); loc_it != hspace.locations_end(); loc_it++) {
         evolver.settings().hybrid_maximum_step_size[loc_it->first]=step_size;
+        evolver.settings().minimum_discretised_enclosure_widths[loc_it->first]=enclosure_cell;
+    }
     evolver.settings().enable_premature_termination_on_enclosure_size=true;
 
     std::cout << "Evolution settings:" << evolver.settings() << std::endl;

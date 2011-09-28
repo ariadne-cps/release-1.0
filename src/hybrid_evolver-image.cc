@@ -109,8 +109,8 @@ tune_settings(
     this->free_cores = free_cores;
 
     ARIADNE_LOG(1, "Tuning settings for evolution...");
-	this->_settings->maximum_enclosure_cell = getMaximumEnclosureCell(grid,accuracy);
-	ARIADNE_LOG(2, "Maximum enclosure cell: " << this->_settings->maximum_enclosure_cell);
+	this->_settings->minimum_discretised_enclosure_widths = getMinimumGridCellWidths(grid,accuracy);
+	ARIADNE_LOG(2, "Maximum enclosure cell: " << this->_settings->minimum_discretised_enclosure_widths);
 	this->_settings->hybrid_maximum_step_size = getHybridMaximumStepSize(hmad,grid,accuracy,semantics);
 	ARIADNE_LOG(2, "Maximum step size: " << this->_settings->hybrid_maximum_step_size);
 }
@@ -129,44 +129,47 @@ _evolution(EnclosureListType& final_sets,
 {
     ARIADNE_LOG(1,"Computing evolution up to "<<maximum_hybrid_time.continuous_time()<<" time units and "<<maximum_hybrid_time.discrete_time()<<" steps.");
 
-	// The working sets, pushed back and popped front
-    std::list< HybridTimedSetType > working_sets;
+    std::list< pair<uint,HybridTimedSetType> > working_sets;
     _evolution_add_initialSet(working_sets,initial_set,semantics);
+    std::map<uint,Vector<Float> > initial_indexed_set_models_widths = _indexed_set_models_widths(working_sets);
 
 	// While there exists a working set, process it
 	while(!working_sets.empty()) {
 
 		// Get the least recent working set, pop it and update the corresponding size
-		HybridTimedSetType current_set = working_sets.front();
+		pair<uint,HybridTimedSetType> current_set = working_sets.front();
 		working_sets.pop_front();
 
 		// Get the members of the current set
-        DiscreteLocation initial_location=current_set.first;
-        EventListType initial_events=current_set.second;
-		SetModelType initial_set_model=current_set.third;
-		TimeModelType initial_time_model=current_set.fourth;
+		uint set_index = current_set.first;
+        DiscreteLocation loc=current_set.second.first;
+        EventListType events=current_set.second.second;
+		SetModelType set_model=current_set.second.third;
+		TimeModelType time_model=current_set.second.fourth;
 
-		_log_step_summary(working_sets,reach_sets,initial_events,initial_time_model,initial_set_model,initial_location);
+		Vector<Float> reference_enclosure_widths = this->_settings->minimum_discretised_enclosure_widths.find(loc)->second;
 
-		bool isEnclosureTooLarge = _is_enclosure_too_large(initial_set_model);
-		bool subdivideOverTime = (initial_time_model.range().width() > this->_settings->hybrid_maximum_step_size[initial_location]/2);
+		_log_step_summary(working_sets,reach_sets,events,time_model,set_model,loc);
 
-		if(initial_time_model.range().lower()>=maximum_hybrid_time.continuous_time() ||
-		   initial_events.size()>=uint(maximum_hybrid_time.discrete_time())) {
+		bool isEnclosureTooLarge = _is_enclosure_too_large(loc,set_model,initial_indexed_set_models_widths[set_index]);
+		bool subdivideOverTime = (time_model.range().width() > this->_settings->hybrid_maximum_step_size[loc]/2);
+
+		if(time_model.range().lower()>=maximum_hybrid_time.continuous_time() ||
+		   events.size()>=uint(maximum_hybrid_time.discrete_time())) {
             ARIADNE_LOG(2,"Final time reached, adjoining result to final sets.");
-            final_sets.adjoin(initial_location,_toolbox->enclosure(initial_set_model));
+            final_sets.adjoin(loc,_toolbox->enclosure(set_model));
         } else if (subdivideOverTime && this->_settings->enable_subdivisions) {
-            ARIADNE_LOG(2,"Computed time range " << initial_time_model.range() << " width larger than half the maximum step size " << this->_settings->hybrid_maximum_step_size[initial_location] << ", subdividing over time.");
-            _add_models_subdivisions_time(working_sets,initial_set_model,initial_time_model,initial_location,initial_events,semantics);
+            ARIADNE_LOG(2,"Computed time range " << time_model.range() << " width larger than half the maximum step size " << this->_settings->hybrid_maximum_step_size[loc] << ", subdividing over time.");
+            _add_models_subdivisions_time(working_sets,set_index,set_model,time_model,loc,events,semantics);
 		} else if (semantics == UPPER_SEMANTICS && this->_settings->enable_subdivisions && isEnclosureTooLarge) {
-            ARIADNE_LOG(2,"Computed set range " << initial_set_model.range() << " widths larger than maximum_enclosure_cell " << this->_settings->maximum_enclosure_cell << ", subdividing.");
-            _add_models_subdivisions_autoselect(working_sets,initial_set_model,initial_time_model,initial_location,initial_events,semantics);
+            ARIADNE_LOG(2,"Computed set range " << set_model.range() << " widths larger than allowed, subdividing.");
+            _add_models_subdivisions_autoselect(working_sets,set_index,set_model,time_model,loc,events,semantics);
         } else if((semantics == LOWER_SEMANTICS || !this->_settings->enable_subdivisions) &&
                   this->_settings->enable_premature_termination_on_enclosure_size && isEnclosureTooLarge) {
-            ARIADNE_LOG(2,"Terminating evolution at time " << initial_time_model.value()
-                        << " and set " << initial_set_model.centre() << " due to maximum enclosure bounds being exceeded.");
+            ARIADNE_LOG(2,"Terminating evolution at time " << time_model.value()
+                        << " and set " << set_model.centre() << " due to maximum enclosure bounds being exceeded.");
             if(semantics == UPPER_SEMANTICS)
-                final_sets.adjoin(initial_location,_toolbox->enclosure(initial_set_model));
+                final_sets.adjoin(loc,_toolbox->enclosure(set_model));
         } else {
             this->_evolution_step(working_sets,reach_sets,intermediate_sets,current_set,maximum_hybrid_time,
             		ignore_activations,direction,semantics);
@@ -177,10 +180,10 @@ _evolution(EnclosureListType& final_sets,
 
 void
 ImageSetHybridEvolver::
-_evolution_step(std::list< HybridTimedSetType >& working_sets,
+_evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
                 EnclosureListType& reach_sets,
                 EnclosureListType& intermediate_sets,
-                const HybridTimedSetType& working_set,
+                const pair<uint,HybridTimedSetType>& current_set,
                 const TimeType& maximum_hybrid_time,
                 bool ignore_activations,
                 ContinuousEvolutionDirection direction,
@@ -280,7 +283,8 @@ _evolution_step(std::list< HybridTimedSetType >& working_sets,
     EventListType events_history;
     SetModelType set_model;
     TimeModelType time_model;
-    make_ltuple(location,events_history,set_model,time_model)=working_set;
+    const uint& set_index = current_set.first;
+    make_ltuple(location,events_history,set_model,time_model)=current_set.second;
     steps=events_history.size();
 
     // Extract information about the current location
@@ -319,7 +323,7 @@ _evolution_step(std::list< HybridTimedSetType >& working_sets,
     FlowSetModelType flow_set_model; BoxType flow_bounds; 
     Float time_step = this->_settings->hybrid_maximum_step_size[location];
     const Float maximum_time=maximum_hybrid_time.continuous_time();
-    compute_flow_model(flow_set_model,flow_bounds,time_step,dynamic,set_model,time_model,maximum_time,semantics);
+    compute_flow_model(location,flow_set_model,flow_bounds,time_step,dynamic,set_model,time_model,maximum_time,semantics);
 
     ARIADNE_LOG(2,"flow_bounds = "<<flow_bounds)
     ARIADNE_LOG(2,"time_step = "<<time_step)
@@ -349,7 +353,7 @@ _evolution_step(std::list< HybridTimedSetType >& working_sets,
     _compute_and_adjoin_reachableSet(reach_sets,reachable_set,location,flow_set_model,zero_time_model,blocking_time_model,semantics);
 
     if(semantics!=LOWER_SEMANTICS || blocking_events.size()==1)
-    	_computeEvolutionForEvents(working_sets,intermediate_sets,location,blocking_events,events_history,
+    	_computeEvolutionForEvents(working_sets,intermediate_sets,set_index,location,blocking_events,events_history,
     								activation_times,flow_set_model,time_model,blocking_time_model,time_step,ignore_activations,semantics);
 
 }
@@ -483,6 +487,7 @@ is_enclosure_to_be_discarded(const ContinuousEnclosureType& enclosure,
 // Compute the flow, parameterising space with the set parameters
 void ImageSetHybridEvolver::
 compute_flow_model(
+		const DiscreteLocation& loc,
 		FlowSetModelType& flow_set_model,
 		BoxType& flow_bounds, Float& time_step,
         VectorFunction dynamic,
@@ -495,7 +500,8 @@ compute_flow_model(
     const int MAXIMUM_BOUNDS_DIAMETER_FACTOR = 8;
     float remaining_time = finishing_time - starting_time_model.range().lower();
     const Float maximum_step_size=min(time_step, remaining_time);
-    const Float maximum_bounds_diameter=max(this->_settings->maximum_enclosure_cell)*MAXIMUM_BOUNDS_DIAMETER_FACTOR;
+    const Float maximum_bounds_diameter=max(this->_settings->minimum_discretised_enclosure_widths.find(loc)->second)*
+    		MAXIMUM_BOUNDS_DIAMETER_FACTOR*this->_settings->maximum_enclosure_widths_ratio;
 
     BoxType starting_set_bounding_box=starting_set_model.range();
     ARIADNE_LOG(3,"starting_set_bounding_box="<<starting_set_bounding_box);
@@ -720,7 +726,7 @@ compute_activationTimes(std::map<DiscreteEvent,tuple<TimeModelType,TimeModelType
 
 void
 ImageSetHybridEvolver::
-_log_step_summary(const std::list<HybridTimedSetType>& working_sets,
+_log_step_summary(const std::list<pair<uint,HybridTimedSetType> >& working_sets,
 					 const EnclosureListType& reach_sets,
 					 const EventListType& initial_events,
 					 const TimeModelType& initial_time_model,
@@ -738,8 +744,9 @@ _log_step_summary(const std::list<HybridTimedSetType>& working_sets,
 }
 
 void ImageSetHybridEvolver::
-_computeEvolutionForEvents(std::list< HybridTimedSetType >& working_sets,
+_computeEvolutionForEvents(std::list< pair<uint,HybridTimedSetType> >& working_sets,
 						   EnclosureListType& intermediate_sets,
+						   const uint& set_index,
 						   const DiscreteLocation& location,
 						   const std::set<DiscreteEvent>& blocking_events,
 						   const EventListType& events,
@@ -762,7 +769,7 @@ _computeEvolutionForEvents(std::list< HybridTimedSetType >& working_sets,
         if(event==finishing_event) {
             // TODO: Better estimate to use smaller blocking time
             intermediate_sets.adjoin(make_pair(location,evolved_set_model));
-            working_sets.push_back(make_tuple(location,events,evolved_set_model,final_time_model));
+            working_sets.push_back(make_pair(set_index,make_tuple(location,events,evolved_set_model,final_time_model)));
         } else {
             EventKind kind = _sys->event_kind(location,event);
             bool is_transition = (kind == URGENT || kind == PERMISSIVE);
@@ -772,7 +779,7 @@ _computeEvolutionForEvents(std::list< HybridTimedSetType >& working_sets,
 				DiscreteLocation jump_location=_sys->target(location,event);
 				std::vector<DiscreteEvent> jump_events=events;
 				jump_events.push_back(event);
-				working_sets.push_back(make_tuple(jump_location,jump_events,jump_set_model,final_time_model));
+				working_sets.push_back(make_pair(set_index,make_tuple(jump_location,jump_events,jump_set_model,final_time_model)));
         	}
         }
     }
@@ -796,7 +803,7 @@ _computeEvolutionForEvents(std::list< HybridTimedSetType >& working_sets,
 			DiscreteLocation jump_location=_sys->target(location,event);
 			std::vector<DiscreteEvent> jump_events=events;
 			jump_events.push_back(event);
-			working_sets.push_back(make_tuple(jump_location,jump_events,jump_set_model,active_time_model));
+			working_sets.push_back(make_pair(set_index,make_tuple(jump_location,jump_events,jump_set_model,active_time_model)));
 		}
     }
 }
@@ -927,7 +934,7 @@ _logEvolutionStepInitialState(const EventListType& previous_events,
 void
 ImageSetHybridEvolver::
 _evolution_add_initialSet(
-		std::list< HybridTimedSetType >& working_sets,
+		std::list< pair<uint,HybridTimedSetType> >& working_sets,
 		const EnclosureType& initial_set,
 		Semantics semantics) const
 {
@@ -941,33 +948,75 @@ _evolution_add_initialSet(
 	// Check for non-zero maximum step size
 	ARIADNE_ASSERT_MSG(this->_settings->hybrid_maximum_step_size[initial_location] > 0, "Error: the maximum step size for location " << initial_location.name() << " is zero.");
 	// Check for match between the enclosure cell size and the set size
-	ARIADNE_ASSERT_MSG(this->_settings->maximum_enclosure_cell.size() == initial_set_model.size(), "Error: mismatch between the maximum_enclosure_cell size and the set size.");
+	ARIADNE_ASSERT_MSG(this->_settings->minimum_discretised_enclosure_widths.find(initial_location)->second.size() ==
+			initial_set_model.size(), "Error: mismatch between the minimum_discretised_enclosure_widths size and the set size.");
 
     ARIADNE_LOG(3,"initial_set_model = "<<initial_set_model);
     TimeModelType initial_time_model=_toolbox->time_model(0.0,Box(initial_set_model.argument_size()));
     ARIADNE_LOG(3,"initial_time_model = "<<initial_time_model);
     TimedSetModelType initial_timed_set_model=join(initial_set_model.models(),initial_time_model);
     ARIADNE_LOG(3,"initial_timed_set_model = "<<initial_timed_set_model);
-    working_sets.push_back(make_tuple(initial_location,EventListType(),initial_set_model,initial_time_model));
+    working_sets.push_back(make_pair(working_sets.size(),make_tuple(initial_location,EventListType(),initial_set_model,initial_time_model)));
+}
+
+std::map<uint,Vector<Float> >
+ImageSetHybridEvolver::
+_indexed_set_models_widths(std::list< pair<uint,HybridTimedSetType> >& working_sets) const
+{
+
+	std::map<uint,Vector<Float> > result;
+
+	for (std::list< pair<uint,HybridTimedSetType> >::const_iterator set_it = working_sets.begin(); set_it != working_sets.end(); ++set_it) {
+		const Vector<Interval> initial_set_model_range = set_it->second.third.range();
+
+		Vector<Float> widths(initial_set_model_range.size());
+		for (uint j=0;j<initial_set_model_range.size();++j)
+			widths[j] = initial_set_model_range[j].width();
+
+		result.insert(make_pair(set_it->first,widths));
+	}
+
+	return result;
 }
 
 bool
 ImageSetHybridEvolver::
-_is_enclosure_too_large(const SetModelType& initial_set_model) const
+_is_enclosure_too_large(
+		const DiscreteLocation& loc,
+		const SetModelType& set_model,
+		const Vector<Float>& initial_set_model_widths) const
 {
-	const Vector<Interval> initial_set_model_range = initial_set_model.range();
+	const Vector<Float>& loc_minimum_discretised_enclosure_widths =
+			this->_settings->minimum_discretised_enclosure_widths.find(loc)->second;
 
-	for (uint i=0;i<initial_set_model_range.size();++i)
-		if (initial_set_model_range[i].width() > this->_settings->maximum_enclosure_cell[i])
-			return true;
+	// Identify whether we should use the minimum discretised_enclosure_widths
+	bool use_initial_set_as_reference = false;
+	for (uint i=0;i<initial_set_model_widths.size();++i)
+		if (initial_set_model_widths[i] >= loc_minimum_discretised_enclosure_widths[i]) {
+			use_initial_set_as_reference = true;
+			break;
+		}
+
+	const Vector<Interval> set_model_range = set_model.range();
+	for (uint i=0;i<set_model_range.size();++i) {
+		if (use_initial_set_as_reference) {
+			if (set_model_range[i].width()/initial_set_model_widths[i] >= this->_settings->maximum_enclosure_widths_ratio)
+				return true;
+		} else {
+			if (set_model_range[i].width() >= loc_minimum_discretised_enclosure_widths[i]*
+					this->_settings->maximum_enclosure_widths_ratio)
+				return true;
+		}
+	}
 
 	return false;
 }
 
 void
 ImageSetHybridEvolver::
-_add_subdivisions(std::list< HybridTimedSetType >& working_sets,
+_add_subdivisions(std::list< pair<uint,HybridTimedSetType> >& working_sets,
 				  const array< TimedSetModelType >& subdivisions,
+				  const uint& set_index,
 				  const DiscreteLocation& initial_location,
 				  const EventListType& initial_events,
 				  const uint dimension) const
@@ -981,44 +1030,49 @@ _add_subdivisions(std::list< HybridTimedSetType >& working_sets,
         ARIADNE_LOG(3,"subdivided_set_model.range()="<<subdivided_set_model.range());
         ARIADNE_LOG(3,"subdivided_set_model.radius()*10000="<<radius(subdivided_set_model.range())*10000);
         ARIADNE_LOG(3,"subdivided_time_model.range()="<<subdivided_time_model.range());
-        working_sets.push_back(make_tuple(initial_location,initial_events,subdivided_set_model,subdivided_time_model));
+        working_sets.push_back(make_pair(set_index,make_tuple(initial_location,initial_events,subdivided_set_model,subdivided_time_model)));
     }
 }
 
 void
 ImageSetHybridEvolver::
-_add_models_subdivisions_autoselect(std::list< HybridTimedSetType >& working_sets,
-		  	  	  	  	  	  	  	const SetModelType& initial_set_model,
-		  	  	  	  	  	  	  	const TimeModelType& initial_time_model,
-		  	  	  	  	  	  	  	const DiscreteLocation& initial_location,
-		  	  	  	  	  	  	  	const EventListType& initial_events,
-		  	  	  	  	  	  	  	Semantics semantics) const
+_add_models_subdivisions_autoselect(
+		std::list< pair<uint,HybridTimedSetType> >& working_sets,
+		const uint& set_index,
+		const SetModelType& set_model,
+		const TimeModelType& time_model,
+		const DiscreteLocation& location,
+		const EventListType& events,
+		Semantics semantics) const
 {
-    uint nd=initial_set_model.dimension();
-    SetModelType initial_timed_set_model=join(initial_set_model.models(),initial_time_model);
-    array< TimedSetModelType > subdivisions=_toolbox->subdivide(initial_timed_set_model);
-    _add_subdivisions(working_sets,subdivisions,initial_location,initial_events,nd);
+    uint nd=set_model.dimension();
+    SetModelType timed_set_model=join(set_model.models(),time_model);
+    array< TimedSetModelType > subdivisions=_toolbox->subdivide(timed_set_model);
+    _add_subdivisions(working_sets,subdivisions,set_index,location,events,nd);
 }
 
 
 void
 ImageSetHybridEvolver::
-_add_models_subdivisions_time(std::list< HybridTimedSetType >& working_sets,
-		  	  	  	  	  	  const SetModelType& initial_set_model,
-		  	  	  	  	  	  const TimeModelType& initial_time_model,
-		  	  	  	  	  	  const DiscreteLocation& initial_location,
-		  	  	  	  	  	  const EventListType& initial_events,
-		  	  	  	  	  	  Semantics semantics) const
+_add_models_subdivisions_time(
+		std::list< pair<uint,HybridTimedSetType> >& working_sets,
+		const uint& set_index,
+		const SetModelType& set_model,
+		const TimeModelType& time_model,
+		const DiscreteLocation& location,
+		const EventListType& events,
+		Semantics semantics) const
 {
-    uint nd=initial_set_model.dimension();
-    SetModelType initial_timed_set_model=join(initial_set_model.models(),initial_time_model);
-    array< TimedSetModelType > subdivisions=_toolbox->subdivide(initial_timed_set_model,nd);
-    _add_subdivisions(working_sets,subdivisions,initial_location,initial_events,nd);
+    uint nd=set_model.dimension();
+    SetModelType timed_set_model=join(set_model.models(),time_model);
+    array< TimedSetModelType > subdivisions=_toolbox->subdivide(timed_set_model,nd);
+    _add_subdivisions(working_sets,subdivisions,set_index,location,events,nd);
 }
 
 
 ImageSetHybridEvolverSettings::ImageSetHybridEvolverSettings(const SystemType& sys)
-    : maximum_enclosure_cell(Vector<RealType>(sys.state_space().begin()->second,2.0)),
+    : minimum_discretised_enclosure_widths(getMinimumGridCellWidths(HybridGrid(sys.state_space()),0)),
+      maximum_enclosure_widths_ratio(2),
       enable_subdivisions(false),
       enable_premature_termination_on_enclosure_size(true)
 {
@@ -1032,9 +1086,10 @@ ImageSetHybridEvolverSettings::ImageSetHybridEvolverSettings(const SystemType& s
 std::ostream&
 operator<<(std::ostream& os, const ImageSetHybridEvolverSettings& s)
 {
-    os << "ContinuousEvolutionSettings"
+    os << "ImageSetHybridEvolverSettings"
        << ",\n  hybrid_maximum_step_size=" << s.hybrid_maximum_step_size
-       << ",\n  maximum_enclosure_cell=" << s.maximum_enclosure_cell
+       << ",\n  minimum_discretised_enclosure_widths=" << s.minimum_discretised_enclosure_widths
+       << ",\n  maximum_enclosure_widths_ratio=" << s.maximum_enclosure_widths_ratio
        << ",\n  enable_subdivisions=" << s.enable_subdivisions
        << ",\n  enable_premature_termination_on_enclosure_size=" << s.enable_premature_termination_on_enclosure_size
        << "\n)\n";
@@ -1042,29 +1097,19 @@ operator<<(std::ostream& os, const ImageSetHybridEvolverSettings& s)
 }
 
 
-Vector<Float>
-getMaximumEnclosureCell(
+HybridFloatVector
+getMinimumGridCellWidths(
 		const HybridGrid& hgrid,
 		int maximum_grid_depth)
 {
-	// Introduces a ratio (>1) in respect to the grid cell
-	// NOTE: it is preferable to have the ratio slightly lesser than an integer multiple of the grid cell, so that
-	// the overapproximation error due to discretization is minimized
-	static const double RATIO = 1.9;
 	const Float divider = (1<<maximum_grid_depth);
 
-	const uint css = hgrid.locations_begin()->second.lengths().size();
-
-	Vector<Float> result(css);
+	HybridFloatVector result;
 	for (HybridGrid::locations_const_iterator hg_it = hgrid.locations_begin(); hg_it != hgrid.locations_end(); hg_it++) {
-		ARIADNE_ASSERT_MSG(hg_it->second.lengths().size() == css,
-				"The maximum enclosure cell is obtained under the assumption that the continuous state space dimension is the same for all locations.");
-		for (uint i=0;i<css;i++)
-			if (hg_it->second.lengths()[i] > result[i])
-				result[i] = hg_it->second.lengths()[i];
+		result.insert(make_pair(hg_it->first,hg_it->second.lengths()/divider));
 	}
 
-	return RATIO*result/divider;
+	return result;
 }
 
 

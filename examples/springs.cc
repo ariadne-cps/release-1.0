@@ -162,7 +162,8 @@ int main()
     evolver.verbosity = 1;
 
     /// Set the evolution parameters
-    evolver.settings().maximum_enclosure_cell = Vector<Float>(5,MAX_ENCLOSURE_WIDTH);
+    evolver.settings().minimum_discretised_enclosure_widths[1] = Vector<Float>(5,MAX_ENCLOSURE_WIDTH);
+    evolver.settings().minimum_discretised_enclosure_widths[2] = Vector<Float>(5,MAX_ENCLOSURE_WIDTH);
     evolver.settings().hybrid_maximum_step_size[1] = MAX_STEP_SIZE;
     evolver.settings().hybrid_maximum_step_size[2] = MAX_STEP_SIZE;
     std::cout <<  evolver.settings() << std::endl;
