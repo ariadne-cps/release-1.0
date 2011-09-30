@@ -44,6 +44,7 @@ class TestHybridSet {
     void test_hybrid_image_set();
     void test_hybrid_list_set();
     void test_hybrid_constraint_set();
+    void test_hybrid_restriction_set();
 };
 
 void 
@@ -52,6 +53,7 @@ TestHybridSet::test()
     ARIADNE_TEST_CALL(test_hybrid_image_set());
     ARIADNE_TEST_CALL(test_hybrid_list_set());
     ARIADNE_TEST_CALL(test_hybrid_constraint_set());
+    ARIADNE_TEST_CALL(test_hybrid_restriction_set());
 }
 
 
@@ -147,6 +149,52 @@ TestHybridSet::test_hybrid_list_set()
     ++loc_iter;
     ARIADNE_TEST_ASSERT(loc_iter==hls.locations_end());
 
+}
+
+
+void
+TestHybridSet::test_hybrid_restriction_set() {
+
+	DiscreteLocation q1(1);
+	DiscreteLocation q2(2);
+	DiscreteLocation q3(3);
+
+	HybridBoxes domain;
+	domain[q1] = Box(2,-1.0,1.0,-2.0,3.0);
+	domain[q2] = Box(3,0.5,2.0,-1.0,0.0,1.0,1.5);
+
+	HybridGrid grid;
+	grid[q1] = Grid(Vector<Float>(2,2.0,3.0));
+	grid[q2] = Grid(Vector<Float>(3,1.0,0.5,1.0));
+
+	int accuracy = 1;
+
+	HybridRestrictionSet hrs(domain,grid,accuracy);
+
+	ARIADNE_TEST_ASSERT(hrs.has_location(q1));
+	ARIADNE_TEST_ASSERT(hrs.has_location(q2));
+	ARIADNE_TEST_ASSERT(!hrs.has_location(q3));
+
+	ARIADNE_TEST_ASSERT(!hrs.has_discretised(q1));
+	ARIADNE_TEST_ASSERT(!hrs.has_discretised(q2));
+    ARIADNE_TEST_FAIL(!hrs.has_discretised(q3));
+
+    ARIADNE_TEST_FAIL(hrs[q3]);
+    ARIADNE_TEST_EXECUTE(hrs[q2]);
+
+    ARIADNE_TEST_ASSERT(hrs.has_discretised(q2));
+
+    DenotableSetType q2_restriction = hrs[q2];
+    hrs.refine(2);
+    ARIADNE_TEST_EQUAL(hrs.accuracy(),2);
+    ARIADNE_TEST_ASSERT(q2_restriction.bounding_box() != hrs[q2].bounding_box());
+    ARIADNE_TEST_ASSERT(hrs[q2].bounding_box().inside(q2_restriction.bounding_box()));
+
+    Box q1_bx = hrs.bounding_box(q1);
+    Box q2_bx = hrs.bounding_box(q2);
+    ARIADNE_TEST_ASSERT(domain[q1].inside(q1_bx));
+    ARIADNE_TEST_ASSERT(domain[q2].inside(q2_bx));
+    ARIADNE_TEST_ASSERT(hrs.has_discretised(q1));
 }
 
 

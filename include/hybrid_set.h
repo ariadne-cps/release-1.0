@@ -161,6 +161,18 @@ bounding_boxes(const std::map<DiscreteLocation,uint> space, const Box& bbox)
     return result;
 }
 
+inline
+HybridSpace
+state_space(const HybridBoxes& hboxes)
+{
+	HybridSpace result;
+
+	for (HybridBoxes::const_iterator hb_it = hboxes.begin(); hb_it != hboxes.end(); ++hb_it) {
+		result.insert(make_pair(hb_it->first,hb_it->second.dimension()));
+	}
+
+	return result;
+}
 
 
 template<class BS>
@@ -546,6 +558,9 @@ class HybridDenotableSet
         return const_iterator(*this,true); }
   public:
     HybridDenotableSet() { }
+
+    virtual ~HybridDenotableSet() {}
+
     HybridDenotableSet(const HybridSpace& hspace) {
         for(HybridSpace::locations_const_iterator loc_iter = hspace.
                 locations_begin(); loc_iter!=hspace.locations_end(); ++loc_iter) {
@@ -560,11 +575,6 @@ class HybridDenotableSet
             this->insert(make_pair(loc_iter->first,Grid(loc_iter->second))); } }
     HybridDenotableSet(const HybridGridCell& hgc) {
         this->adjoin(hgc); }
-
-    HybridGrid grid() const { return HybridGrid(*this); }
-
-    bool has_location(DiscreteLocation q) const {
-        return this->find(q)!=this->std::map<DiscreteLocation,DenotableSetType>::end(); }
 
     void adjoin(const HybridDenotableSet& hgts) {
         for(HybridDenotableSet::locations_const_iterator loc_iter=hgts.locations_begin(); loc_iter!=hgts.locations_end(); ++loc_iter) {
@@ -621,12 +631,17 @@ class HybridDenotableSet
                     this->insert(make_pair(loc,DenotableSetType(loc_iter->second.dimension()))); }
                 (*this)[loc].adjoin_outer_approximation(loc_iter->second,depth); } }
 
-    DenotableSetType& operator[](DiscreteLocation q) {
+    virtual HybridGrid grid() const { return HybridGrid(*this); }
+
+    virtual bool has_location(DiscreteLocation q) const {
+        return this->find(q)!=this->std::map<DiscreteLocation,DenotableSetType>::end(); }
+
+    virtual DenotableSetType& operator[](DiscreteLocation q) {
         ARIADNE_ASSERT(this->has_location(q));
         return this->find(q)->second;
     }
 
-    const DenotableSetType& operator[](DiscreteLocation q) const {
+    virtual const DenotableSetType& operator[](DiscreteLocation q) const {
         ARIADNE_ASSERT(this->has_location(q));
         return this->find(q)->second;
     }
@@ -731,6 +746,75 @@ class HybridDenotableSet
       ar & static_cast<std::map<int,DenotableSetType>&>(*this); }
     */
 };
+
+
+//! A hybrid denotable set used as a restriction, with facilities to avoid unnecessary discretisations.
+class HybridRestrictionSet
+	: public HybridDenotableSet
+{
+  public:
+	typedef HybridDenotableSet::iterator locations_iterator;
+	typedef HybridDenotableSet::locations_const_iterator locations_const_iterator;
+	typedef HybridDenotableSet::const_iterator const_iterator;
+  public:
+
+	HybridRestrictionSet(
+			const HybridBoxes& domain,
+			const HybridGrid& grid,
+			int accuracy);
+
+	virtual ~HybridRestrictionSet() { }
+
+	//! \brief (override) Return the grid as exposed by the given domain.
+	HybridGrid grid() const { return _grid; }
+
+	//! \brief Return the accuracy
+	//! \details This is not mandatory to expose this information, but useful
+	//! for adopting the %HybridRestrictionSet as the accuracy reference.
+	int accuracy() const { return _accuracy; }
+
+	//! \brief Whether location \a q has already been discretised.
+	bool has_discretised(DiscreteLocation q) const;
+
+	//! \brief Whether location \a q is present in the space of the set.
+	bool has_location(DiscreteLocation q) const;
+
+	//! \brief Refine the content at the given accuracy.
+	//! \details Does not perform the operation on non-discretised locations or locations where the
+	//! restriction set does not cross the domain border.
+	void refine(int accuracy);
+
+	//! \brief Return an overapproximation of the bounding box of the restriction.
+	//! \details Does not discretise if not necessary: hence the result for non-discretised locations
+	//! is a reasonable overapproximation.
+	Box bounding_box(DiscreteLocation q) const;
+
+	//! \brief (override) Return the set by reference.
+	//! \details Discretises if the location has not been discretised yet.
+	DenotableSetType& operator[](DiscreteLocation q);
+
+	//! \brief (override) Return the set by constant reference.
+	//! \details Discretises if the location has not been discretised yet.
+    const DenotableSetType& operator[](DiscreteLocation q) const;
+
+  private:
+
+    //! \brief Insert the discretisation at location q.
+    //! \details It is assumed, not checked, that in location q no discretisation has already been performed.
+    //! This operation will overwrite the existing content, in that case. It is const for compatibility with
+    //! the operator[] const method, and it const-casts this to work the problem around.
+    void _insert_domain_discretisation(DiscreteLocation q) const;
+
+  private:
+
+	// The domain that would be discretised into the related denotable set
+	HybridBoxes _domain;
+	// The grid used
+	HybridGrid _grid;
+	// The accuracy to be used when operating with the set
+	int _accuracy;
+};
+
 
 template<class DS, class HBS> inline
 HybridSetConstIterator<DS,HBS>::

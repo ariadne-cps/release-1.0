@@ -60,6 +60,115 @@ HybridConstraintSet(const HybridSpace& hspace, ConstraintSet constraint)
 	}
 }
 
+HybridRestrictionSet::
+HybridRestrictionSet(
+		const HybridBoxes& domain,
+		const HybridGrid& grid,
+		int accuracy) :
+		_domain(domain),
+		_grid(grid),
+		_accuracy(accuracy)
+{
+
+}
+
+
+bool
+HybridRestrictionSet::
+has_discretised(DiscreteLocation q) const
+{
+    ARIADNE_ASSERT_MSG(this->has_location(q), "The location " << q << " was not found in the HybridRestrictionSet.");
+    return this->find(q) != this->std::map<DiscreteLocation,DenotableSetType>::end();
+}
+
+
+bool
+HybridRestrictionSet::
+has_location(DiscreteLocation q) const
+{
+	return (_domain.find(q) != _domain.end());
+}
+
+
+void
+HybridRestrictionSet::
+refine(int accuracy)
+{
+	_accuracy = accuracy;
+
+	for (HybridRestrictionSet::locations_iterator hrs_it = this->locations_begin(); hrs_it != this->locations_end(); ++hrs_it) {
+		const DiscreteLocation& loc = hrs_it->first;
+		const DenotableSetType& set = hrs_it->second;
+		const Box& domain_box = _domain.find(loc)->second;
+
+		if (!set.bounding_box().inside(domain_box)) {
+			const Grid& local_grid = _grid.find(loc)->second;
+
+			DenotableSetType refined_local_restriction(local_grid);
+			refined_local_restriction.adjoin_outer_approximation(domain_box,accuracy);
+			(*this)[loc] = refined_local_restriction;
+		}
+	}
+}
+
+
+Box
+HybridRestrictionSet::
+bounding_box(DiscreteLocation q) const
+{
+    ARIADNE_ASSERT_MSG(this->has_location(q), "The location " << q << " was not found in the HybridRestrictionSet.");
+
+    const Float accuracy_divider = (1<<_accuracy);
+
+    if (!this->has_discretised(q)) {
+    	return (*this)[q].bounding_box();
+    } else {
+    	const Vector<Float>& grid_lengths = _grid.find(q)->second.lengths();
+    	Box result = _domain.find(q)->second;
+    	// Add the minimum cell size on each extreme of the domain box
+    	for (uint i=0; i<result.size();++i) {
+    		Float inaccuracy = grid_lengths[i]/accuracy_divider;
+    		result[i] = Interval(result[i].lower()-inaccuracy,result[i].upper()+inaccuracy);
+    	}
+    	return result;
+    }
+}
+
+
+DenotableSetType&
+HybridRestrictionSet::
+operator[](DiscreteLocation q)
+{
+    ARIADNE_ASSERT_MSG(this->has_location(q), "The location " << q << " was not found in the HybridRestrictionSet.");
+
+    if (!this->has_discretised(q))
+    	_insert_domain_discretisation(q);
+
+    return this->find(q)->second;
+}
+
+
+const DenotableSetType&
+HybridRestrictionSet::
+operator[](DiscreteLocation q) const
+{
+    ARIADNE_ASSERT_MSG(this->has_location(q), "The location " << q << " was not found in the HybridRestrictionSet.");
+
+    if (!this->has_discretised(q))
+    	_insert_domain_discretisation(q);
+
+    return this->find(q)->second;
+}
+
+void
+HybridRestrictionSet::
+_insert_domain_discretisation(DiscreteLocation q) const
+{
+	DenotableSetType discretisation(_grid.find(q)->second);
+	discretisation.adjoin_outer_approximation(_domain.find(q)->second,_accuracy);
+	const_cast<HybridRestrictionSet*>(this)->insert(make_pair(q,discretisation));
+}
+
 
 HybridBoxes
 hull(const HybridBoxes& box1, const HybridBoxes& box2)
