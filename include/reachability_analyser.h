@@ -174,6 +174,7 @@ class HybridReachabilityAnalyser
             const Set<Identifier>& locked_params_ids,
             const HybridConstraintSet& constraint_set,
             unsigned free_cores,
+            bool enable_lower_reach_restriction_check,
             Semantics semantics);
 
     /*! \brief Produces the starting cells from an enclosure set. */
@@ -378,6 +379,10 @@ class HybridReachabilityAnalyserSettings {
 
     //! \brief The target ratio of derivatives widthd to obtain when splitting parameters (must be > 0).
     RealType splitting_parameters_target_ratio;
+
+    //! \brief Checks whether the restriction would affect the lower reach and issues an error if it does.
+    //! \details Useful to validate the restriction used.
+    bool enable_lower_reach_restriction_check;
 
     //! \brief Enable the pruning of the trajectories when too large.
     //! \details The pruning is done probabilistically.

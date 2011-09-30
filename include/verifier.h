@@ -269,6 +269,7 @@ class Verifier
             const HybridConstraintSet& constraint_set,
             int accuracy,
             unsigned ADD_TAB_OFFSET,
+            bool enable_lower_reach_restriction_check,
             Semantics semantics) const;
 
 	/*! \brief Initialises the safety restriction. */

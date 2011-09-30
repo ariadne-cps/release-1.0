@@ -188,6 +188,7 @@ _safety_proving_once_backward_refinement(
         const RealParameterSet& params) const
 {
     const unsigned ANALYSER_TAB_OFFSET = 5;
+    const bool ENABLE_LOWER_REACH_RESTRICTION_CHECK = false;
 
     const HybridConstraintSet& safety_constraint = verInput.getSafetyConstraint();
 
@@ -195,7 +196,7 @@ _safety_proving_once_backward_refinement(
 
     AnalyserPtrType analyser = _get_tuned_analyser(verInput.getSystem(),parameters_identifiers(params),
             _safety_reachability_restriction,safety_constraint,
-            accuracy,ANALYSER_TAB_OFFSET,UPPER_SEMANTICS);
+            accuracy,ANALYSER_TAB_OFFSET,ENABLE_LOWER_REACH_RESTRICTION_CHECK,UPPER_SEMANTICS);
 
     ARIADNE_LOG(5,"Computing the initial set...");
 
@@ -230,6 +231,7 @@ _safety_proving_once_forward_analysis(
         const RealParameterSet& params) const
 {
     const unsigned ANALYSER_TAB_OFFSET = 5;
+    const bool ENABLE_LOWER_REACH_RESTRICTION_CHECK = !_settings->enable_backward_refinement_for_safety_proving;
 
     const HybridImageSet& initial_set = verInput.getInitialSet();
     const HybridConstraintSet& safety_constraint = verInput.getSafetyConstraint();
@@ -238,7 +240,7 @@ _safety_proving_once_forward_analysis(
 
     AnalyserPtrType analyser = _get_tuned_analyser(verInput.getSystem(),parameters_identifiers(params),
             _safety_reachability_restriction,safety_constraint,
-            accuracy,ANALYSER_TAB_OFFSET,UPPER_SEMANTICS);
+            accuracy,ANALYSER_TAB_OFFSET,ENABLE_LOWER_REACH_RESTRICTION_CHECK,UPPER_SEMANTICS);
 
     ARIADNE_LOG(5,"Computing the initial set...");
 
@@ -275,6 +277,7 @@ _safety_disproving_once(
 		const RealParameterSet& params) const
 {
     const unsigned ANALYSER_TAB_OFFSET = 5;
+    const bool ENABLE_LOWER_REACH_RESTRICTION_CHECK = !_settings->enable_backward_refinement_for_safety_proving;
 
     SystemType& sys = verInput.getSystem();
     const HybridImageSet& initial_set = verInput.getInitialSet();
@@ -290,7 +293,7 @@ _safety_disproving_once(
 
     AnalyserPtrType analyser = _get_tuned_analyser(verInput.getSystem(),parameters_identifiers(params),
             _safety_reachability_restriction,safety_constraint,
-            accuracy,ANALYSER_TAB_OFFSET,LOWER_SEMANTICS);
+            accuracy,ANALYSER_TAB_OFFSET,ENABLE_LOWER_REACH_RESTRICTION_CHECK,LOWER_SEMANTICS);
 
 	bool result = false;
 	try {
@@ -537,6 +540,7 @@ _dominance_flattened_lower_reach_and_epsilon(
 		const unsigned int& accuracy) const
 {
     const unsigned ANALYSER_TAB_OFFSET = 4;
+    const bool ENABLE_LOWER_REACH_RESTRICTION_CHECK = true;
 
 	string descriptor = (dominanceSystem == DOMINATING_SYSTEM ? "dominating" : "dominated");
 	SetApproximationTypePtr& reachability_restriction = (dominanceSystem == DOMINATING_SYSTEM ?
@@ -548,7 +552,7 @@ _dominance_flattened_lower_reach_and_epsilon(
 
     AnalyserPtrType analyser = _get_tuned_analyser(verInput.getSystem(),locked_params_ids,
             reachability_restriction,dominance_constraint,
-            accuracy,ANALYSER_TAB_OFFSET,LOWER_SEMANTICS);
+            accuracy,ANALYSER_TAB_OFFSET,ENABLE_LOWER_REACH_RESTRICTION_CHECK,LOWER_SEMANTICS);
 
 	ARIADNE_LOG(4,"Getting its lower reached region...");
 
@@ -585,6 +589,7 @@ _dominance_flattened_outer_reach(
 		const unsigned int& accuracy) const
 {
     const unsigned ANALYSER_TAB_OFFSET = 4;
+    const bool ENABLE_LOWER_REACH_RESTRICTION_CHECK = true;
 
 	string descriptor = (dominanceSystem == DOMINATING_SYSTEM ? "dominating" : "dominated");
 	SetApproximationTypePtr& reachability_restriction = (dominanceSystem == DOMINATING_SYSTEM ?
@@ -596,7 +601,7 @@ _dominance_flattened_outer_reach(
 
     AnalyserPtrType analyser = _get_tuned_analyser(verInput.getSystem(),locked_params_ids,
             reachability_restriction,dominance_constraint,
-            accuracy,ANALYSER_TAB_OFFSET,UPPER_SEMANTICS);
+            accuracy,ANALYSER_TAB_OFFSET,ENABLE_LOWER_REACH_RESTRICTION_CHECK,UPPER_SEMANTICS);
 
 	ARIADNE_LOG(4,"Getting its outer reached region...");
 
@@ -619,6 +624,7 @@ _get_tuned_analyser(
         const HybridConstraintSet& constraint_set,
         int accuracy,
         unsigned ADD_TAB_OFFSET,
+        bool enable_lower_reach_restriction_check,
         Semantics semantics) const
 {
     AnalyserPtrType analyser(new HybridReachabilityAnalyser(sys,*reachability_restriction,accuracy));
@@ -626,7 +632,7 @@ _get_tuned_analyser(
     analyser->verbosity = this->verbosity - ADD_TAB_OFFSET;
     analyser->tab_offset = this->tab_offset + ADD_TAB_OFFSET;
 
-    analyser->tune_settings(locked_params_ids,constraint_set,this->free_cores,semantics);
+    analyser->tune_settings(locked_params_ids,constraint_set,this->free_cores,enable_lower_reach_restriction_check,semantics);
 
     return analyser;
 }

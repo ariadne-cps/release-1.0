@@ -892,6 +892,10 @@ outer_approximation(const HybridBasicSet<ES>& hs,
 //! \details If the sets do not have the same grid, an error is raised.
 bool subset(const HybridDenotableSet& theSet1, const HybridDenotableSet& theSet2);
 
+//! \brief Checks if \a theSet1 restricts \a theSet2.
+//! \details If the sets do not have the same grid, an error is raised.
+bool restricts(const HybridDenotableSet& hgts1, const HybridDenotableSet& hgts2);
+
 //! \brief Whether \a cons_set is disjoint from \a grid_set.
 //! \details Note that if \a cons_set does not have one location of \a grid_set, then for that location the result is true.
 tribool disjoint(const HybridConstraintSet& cons_set, const HybridDenotableSet& grid_set);

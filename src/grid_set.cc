@@ -3136,6 +3136,16 @@ void draw(CanvasInterface& theGraphic, const CompactSetInterface& theSet) {
     draw(theGraphic,outer_approximation(theSet,Grid(theSet.dimension()),DRAWING_DEPTH));
 }
 
+bool restricts( const GridTreeSet& set1, const GridTreeSet& set2 ) {
+    // the two sets must have the same grid
+    ARIADNE_ASSERT_MSG(set1.grid() == set2.grid(), "Cannot restrict a GridTreeSet with a different grid.");
+
+    GridTreeSet set2_restricted = set1;
+    set2_restricted.restrict(set1);
+
+    return subset(set2, set2_restricted);
+}
+
 
 tribool disjoint(const ConstraintSet& cons_set, const GridTreeSet& grid_set)
 {

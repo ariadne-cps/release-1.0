@@ -113,13 +113,12 @@ template<class SYS> class ReachabilityAnalyserInterface
     
     /*! \brief Tune the settings.
      * \details Much of the arguments do not need to be defined, being either empty or null.
-     * The \a locked_params_ids are parameters for which the system should not be split.
-     * The \a reach_restriction is a restriction that must be applied to the reached regions obtained.
      */
     virtual void tune_settings(
             const Set<Identifier>& locked_params_ids,
             const HybridConstraintSet& constraint_set,
             unsigned free_cores,
+            bool enable_lower_reach_restriction_check,
             Semantics semantics) = 0;
 
     /*! \brief Produce the starting cells from an enclosure set. */

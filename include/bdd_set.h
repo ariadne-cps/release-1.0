@@ -84,6 +84,7 @@ bool subset(const BDDTreeSet& set1, const BDDTreeSet& set2);
 bool superset(const BDDTreeSet& set1, const BDDTreeSet& set2);
 bool disjoint(const BDDTreeSet& set1, const BDDTreeSet& set2);
 bool overlap(const BDDTreeSet& set1, const BDDTreeSet& set2);
+bool restricts(const BDDTreeSet& set1, const BDDTreeSet& set2);
 // 
 BDDTreeSet join(const BDDTreeSet& set1, const BDDTreeSet& set2);
 BDDTreeSet intersection(const BDDTreeSet& set1, const BDDTreeSet& set2);
@@ -238,6 +239,10 @@ class BDDTreeSet : public DrawableInterface {
     /*! \brief Tests if two %BDDTreeSets overlap.
      */
     friend bool overlap( const BDDTreeSet& set1, const BDDTreeSet& set2 );
+
+    /*! \brief Tests if \a set1 restricts \a set2.
+     */
+    friend bool restricts( const BDDTreeSet& set1, const BDDTreeSet& set2 );
 
     /*! \brief Tests if a %BDDTreeSet is a subset of a box. */
     tribool subset( const Box& box ) const ;

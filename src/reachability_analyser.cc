@@ -131,6 +131,7 @@ tune_settings(
         const Set<Identifier>& locked_params_ids,
         const HybridConstraintSet& constraint_set,
         unsigned free_cores,
+        bool enable_lower_reach_restriction_check,
         Semantics semantics)
 {
     ARIADNE_LOG(1, "Tuning settings for analysis...");
@@ -139,6 +140,7 @@ tune_settings(
 
     _settings->locked_parameters_ids = locked_params_ids;
     _settings->constraint_set = constraint_set;
+    _settings->enable_lower_reach_restriction_check = enable_lower_reach_restriction_check;
 }
 
 
@@ -263,11 +265,18 @@ lower_reach_evolve(
 	ARIADNE_LOG(3,"Computing evolution...");
     for (list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); encl_it++) {
         Orbit<EnclosureType> orbit = evolver->orbit(*encl_it,time,LOWER_SEMANTICS);
-        reach.adjoin(outer_approximation(orbit.reach(),grid,accuracy));
-        evolve.adjoin(outer_approximation(orbit.final(),grid,accuracy));
-    }
 
-    reach.restrict(_settings->reachability_restriction);
+        HDS local_reach = outer_approximation(orbit.reach(),grid,accuracy);
+        HDS local_evolve = outer_approximation(orbit.final(),grid,accuracy);
+
+        if (_settings->enable_lower_reach_restriction_check) {
+        	ARIADNE_ASSERT_MSG(!restricts(_settings->reachability_restriction,local_reach), "The lower reach is not inside the reachability restriction. Check the bounding domain used.");
+        }
+        local_reach.restrict(_settings->reachability_restriction);
+
+        reach.adjoin(local_reach);
+        evolve.adjoin(local_evolve);
+    }
 
     reach.recombine();
     evolve.recombine();
@@ -750,6 +759,10 @@ _lower_chain_reach_and_epsilon(
 				local_reach,local_epsilon) = worker.get_result();
 
 		epsilon = max_elementwise(epsilon,local_epsilon);
+
+	    if (_settings->enable_lower_reach_restriction_check) {
+	    	ARIADNE_ASSERT_MSG(!restricts(_settings->reachability_restriction,local_reach), "The lower reach is not inside the reachability restriction. Check the bounding domain used.");
+	    }
 		local_reach.restrict(_settings->reachability_restriction);
 
 		if (!_settings->constraint_set.empty())
@@ -1102,6 +1115,7 @@ HybridReachabilityAnalyserSettings::HybridReachabilityAnalyserSettings(
       constraint_set(),
       reachability_restriction(restriction),
       splitting_parameters_target_ratio(0.05),
+      enable_lower_reach_restriction_check(false),
       enable_lower_pruning(true)
 {
 	ARIADNE_ASSERT_MSG(sys.state_space() == restriction.space(),

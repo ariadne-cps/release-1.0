@@ -198,6 +198,16 @@ bool subset(const HybridDenotableSet& theSet1, const HybridDenotableSet& theSet2
 	return true;
 }
 
+bool restricts(const HybridDenotableSet& hgts1, const HybridDenotableSet& hgts2) {
+	ARIADNE_ASSERT_MSG(hgts1.grid() == hgts2.grid(), "For a restriction the grids of the two sets must be equal.");
+    for(HybridDenotableSet::locations_const_iterator loc_iter=hgts1.locations_begin();
+    		loc_iter!=hgts1.locations_end(); ++loc_iter) {
+        if (restricts(loc_iter->second,hgts2.find(loc_iter->first)->second))
+        	return true;
+    }
+    return false;
+}
+
 
 tribool disjoint(const HybridConstraintSet& cons_set, const HybridDenotableSet& grid_set)
 {

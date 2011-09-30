@@ -1015,6 +1015,18 @@ bool overlap( const BDDTreeSet& set1, const BDDTreeSet& set2 ) {
 }
 
 
+bool restricts( const BDDTreeSet& set1, const BDDTreeSet& set2 ) {
+    // the two sets must have the same grid
+    ARIADNE_ASSERT_MSG(set1.grid() == set2.grid(), "Cannot restrict a BDDTreeSet with a different grid.");
+
+    BDDTreeSet set2_restricted = set1;
+    set2_restricted.restrict(set1);
+
+    // To Davide: Is it more efficient doing this check or an inequality one?
+    return subset(set2, set2_restricted);
+}
+
+
 tribool BDDTreeSet::subset( const Box& box ) const {
     // raise an error if the current set is zero dimensional
     ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot test for subset of a zero-dimensional set.");
@@ -1178,9 +1190,9 @@ BDDTreeSet difference( const BDDTreeSet& set1, const BDDTreeSet& set2 ) {
 
 void BDDTreeSet::adjoin( const BDDTreeSet& set ) {
     // raise an error if the current set is zero-dimensional
-    ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot adjoin a BDDTeeSet to a zero-dimensional one.");
+    ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot adjoin a BDDTreeSet to a zero-dimensional one.");
     // the two sets must have the same grid
-    ARIADNE_ASSERT_MSG(this->grid() == set.grid(), "Cannot adjoin a BDDTeeSet with a different grid.");
+    ARIADNE_ASSERT_MSG(this->grid() == set.grid(), "Cannot adjoin a BDDTreeSet with a different grid.");
     
     // Make a copy of set that can be modified
     BDDTreeSet set2 = set;
@@ -1195,9 +1207,9 @@ void BDDTreeSet::adjoin( const BDDTreeSet& set ) {
 
 void BDDTreeSet::restrict( const BDDTreeSet& set ) {
     // raise an error if the current set is zero-dimensional
-    ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot restrict a zero-dimensional BDDTeeSet.");
+    ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot restrict a zero-dimensional BDDTreeSet.");
     // the two sets must have the same grid
-    ARIADNE_ASSERT_MSG(this->grid() == set.grid(), "Cannot intersect a BDDTeeSet with a different grid.");
+    ARIADNE_ASSERT_MSG(this->grid() == set.grid(), "Cannot intersect a BDDTreeSet with a different grid.");
     
     // Make a copy of set that can be modified
     BDDTreeSet set2 = set;
@@ -1212,9 +1224,9 @@ void BDDTreeSet::restrict( const BDDTreeSet& set ) {
 void BDDTreeSet::remove( const BDDTreeSet& set ) {
     // std::cout << "BDDTreeSet::remove( ... )" << std::endl;
     // raise an error if the current set is zero-dimensional
-    ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot remove from a zero-dimensional BDDTeeSet.");
+    ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot remove from a zero-dimensional BDDTreeSet.");
     // the two sets must have the same grid
-    ARIADNE_ASSERT_MSG(this->grid() == set.grid(), "Cannot remove a BDDTeeSet with a different grid.");
+    ARIADNE_ASSERT_MSG(this->grid() == set.grid(), "Cannot remove a BDDTreeSet with a different grid.");
     
     // Make a copy of set that can be modified
     BDDTreeSet set2 = set;

@@ -1207,6 +1207,16 @@ class GridTreeSet : public GridTreeSubset {
     //@}
 
     //@{
+    //! \name Geometric Predicates
+
+    /*! \brief Tests if \a set1 restricts \a set2.
+     */
+    friend bool restricts( const GridTreeSet& set1, const GridTreeSet& set2 );
+
+    //@}
+
+
+    //@{
     //! \name Geometric Operations
 
     /*! \brief Join (make union of) two grid paving sets. */
@@ -2267,6 +2277,7 @@ inline void GridTreeSet::adjoin( const GridTreeSubset& theOtherSubPaving ) {
     }
 }
 
+
 /**************************************FRIENDS OF BinaryTreeNode***************************************/
 
 /*! \brief Stream insertion operator, prints out two binary arrays, one is the tree structure
@@ -2367,6 +2378,11 @@ GridTreeSet outer_approximation(const ListSet<BS>& theSet, const Grid& theGrid, 
 template<class A> void serialize(A& archive, Ariadne::GridTreeSet& set, const unsigned int version) {
     ARIADNE_NOT_IMPLEMENTED;
 }
+
+/*! \brief Checks if \a set1 restricts \a set2
+ * \details Throws error if the two grids do not match.
+ */
+bool restricts( const GridTreeSet& set1, const GridTreeSet& set2 );
 
 //! \brief Whether \a cons_set is disjoint from \a grid_set.
 tribool disjoint(const ConstraintSet& cons_set, const GridTreeSet& grid_set);
