@@ -70,19 +70,19 @@ class HybridSpace
     : public std::map<DiscreteLocation,uint>
 {
   public:
-    //! \brief The interface satisified by bounded sets in the space.
+    //! \brief The interface satisfied by bounded sets in the space.
     typedef HybridBoundedSetInterface BoundedSetInterfaceType;
-    //! \brief The interface satisified by overt sets in the space.
+    //! \brief The interface satisfied by overt sets in the space.
     typedef HybridOvertSetInterface OvertSetInterfaceType;
-    //! \brief The interface satisified by over sets in the space.
+    //! \brief The interface satisfied by over sets in the space.
     typedef HybridOpenSetInterface OpenSetInterfaceType;
-    //! \brief The interface satisified by closed sets in the space.
+    //! \brief The interface satisfied by closed sets in the space.
     typedef HybridClosedSetInterface ClosedSetInterfaceType;
-    //! \brief The interface satisified by compact sets in the space.
+    //! \brief The interface satisfied by compact sets in the space.
     typedef HybridCompactSetInterface CompactSetInterfaceType;
-    //! \brief The interface satisified by regular sets in the space.
+    //! \brief The interface satisfied by regular sets in the space.
     typedef HybridRegularSetInterface RegularSetInterfaceType;
-    //! \brief The interface satisified by located sets in the space.
+    //! \brief The interface satisfied by located sets in the space.
     typedef HybridLocatedSetInterface LocatedSetInterfaceType;
     //! \brief The type of approximations to sets in the space.
     typedef HybridDenotableSet SetApproximationType;
@@ -620,9 +620,6 @@ class HybridDenotableSet
                 if(!this->has_location(loc)) {
                     this->insert(make_pair(loc,DenotableSetType(loc_iter->second.dimension()))); }
                 (*this)[loc].adjoin_outer_approximation(loc_iter->second,depth); } }
-
-    template<class S> void adjoin_outer_approximation(DiscreteLocation q, const S& s) {
-        this->operator[](q).adjoin_outer_approximation(s); }
 
     DenotableSetType& operator[](DiscreteLocation q) {
         ARIADNE_ASSERT(this->has_location(q));

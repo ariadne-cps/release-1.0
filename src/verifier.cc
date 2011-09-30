@@ -97,12 +97,14 @@ _safety_nosplitting(
 	if (_settings->plot_results)
 		_plot_dirpath_init(system.name());
 
-	_reset_safety_state();
+	_init_safety_restriction(verInput);
 
 	time_t initial_time = time(NULL);
 	for (int accuracy = 0; time(NULL) - initial_time < _settings->time_limit_for_outcome; ++accuracy) {
 
 		ARIADNE_LOG(2, "Accuracy " << accuracy);
+
+		_refine_safety_restriction(verInput.getDomain(),accuracy);
 
 		tribool result = _safety_once(verInput,accuracy,params);
 
@@ -155,19 +157,18 @@ _safety_proving_once(
 	ARIADNE_LOG(4,"Performing outer reachability analysis...");
 
 	try {
-
-		if (_settings->enable_backward_refinement_for_safety_proving && _safety_reachability_restriction)
+		if (_settings->enable_backward_refinement_for_safety_proving)
 		    _safety_proving_once_backward_refinement(verInput,accuracy,params);
 
 		result = _safety_proving_once_forward_analysis(verInput,accuracy,params);
 
-	} catch (ReachOutOfDomainException ex) {
+	} catch (ReachOutOfDomainException& ex) {
 		ARIADNE_LOG(5, "The outer reached region is partially out of the domain (skipped).");
 		result = false;
-	} catch (ReachUnsatisfiesConstraintException ex) {
+	} catch (ReachUnsatisfiesConstraintException& ex) {
 		ARIADNE_LOG(5, "The outer reached region is not inside the safe region (skipped).");
 		result = false;
-	} catch (EmptyInitialCellSetException ex) {
+	} catch (EmptyInitialCellSetException& ex) {
         ARIADNE_LOG(5, ex.what());
         result = true;
     }
@@ -186,16 +187,15 @@ _safety_proving_once_backward_refinement(
         const unsigned int& accuracy,
         const RealParameterSet& params) const
 {
-    const bool EQUAL_GRID_FOR_ALL_LOCATIONS = false;
     const unsigned ANALYSER_TAB_OFFSET = 5;
 
     const HybridConstraintSet& safety_constraint = verInput.getSafetyConstraint();
 
     ARIADNE_LOG(5,"Creating the analyser for backward reachability...");
 
-    AnalyserPtrType analyser = _get_tuned_analyser(verInput,parameters_identifiers(params),
-            _safety_coarse_outer_approximation,_safety_reachability_restriction,safety_constraint,
-            EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,ANALYSER_TAB_OFFSET,UPPER_SEMANTICS);
+    AnalyserPtrType analyser = _get_tuned_analyser(verInput.getSystem(),parameters_identifiers(params),
+            _safety_reachability_restriction,safety_constraint,
+            accuracy,ANALYSER_TAB_OFFSET,UPPER_SEMANTICS);
 
     ARIADNE_LOG(5,"Computing the initial set...");
 
@@ -229,7 +229,6 @@ _safety_proving_once_forward_analysis(
         const unsigned int& accuracy,
         const RealParameterSet& params) const
 {
-    const bool EQUAL_GRID_FOR_ALL_LOCATIONS = false;
     const unsigned ANALYSER_TAB_OFFSET = 5;
 
     const HybridImageSet& initial_set = verInput.getInitialSet();
@@ -237,9 +236,9 @@ _safety_proving_once_forward_analysis(
 
     ARIADNE_LOG(5,"Creating the analyser for forward reachability...");
 
-    AnalyserPtrType analyser = _get_tuned_analyser(verInput,parameters_identifiers(params),
-            _safety_coarse_outer_approximation,_safety_reachability_restriction,safety_constraint,
-            EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,ANALYSER_TAB_OFFSET,UPPER_SEMANTICS);
+    AnalyserPtrType analyser = _get_tuned_analyser(verInput.getSystem(),parameters_identifiers(params),
+            _safety_reachability_restriction,safety_constraint,
+            accuracy,ANALYSER_TAB_OFFSET,UPPER_SEMANTICS);
 
     ARIADNE_LOG(5,"Computing the initial set...");
 
@@ -262,40 +261,11 @@ _safety_proving_once_forward_analysis(
     if (_settings->plot_results)
         _plot_reach(forward_reach,"forward",accuracy);
 
-    _update_safety_cached_reachability_with(forward_reach);
+    _safety_reachability_restriction.reset(forward_reach.clone());
 
     return definitely(covers(safety_constraint,forward_reach));
 }
 
-
-void
-Verifier::
-_update_safety_cached_reachability_with(const SetApproximationType& reach) const
-{
-	if (_safety_coarse_outer_approximation) {
-        ARIADNE_LOG(5,"Setting the reachability restriction cache.");
-		_safety_reachability_restriction.reset(reach.clone());
-	} else {
-        ARIADNE_LOG(5,"Setting the outer approximation cache.");
-		_safety_coarse_outer_approximation.reset(reach.clone());
-	}
-}
-
-void
-Verifier::
-_update_dominance_cached_reachability_with(
-        const SetApproximationType& reach,
-        SetApproximationTypePtr& outer_approximation,
-        SetApproximationTypePtr& reachability_restriction) const
-{
-    if (outer_approximation) {
-        ARIADNE_LOG(4,"Setting its reachability restriction cache.");
-        reachability_restriction.reset(reach.clone());
-    } else {
-        ARIADNE_LOG(4,"Setting its outer approximation cache.");
-        outer_approximation.reset(reach.clone());
-    }
-}
 
 bool
 Verifier::
@@ -304,10 +274,7 @@ _safety_disproving_once(
         const unsigned int& accuracy,
 		const RealParameterSet& params) const
 {
-    const bool EQUAL_GRID_FOR_ALL_LOCATIONS = false;
     const unsigned ANALYSER_TAB_OFFSET = 5;
-
-	bool result = false;
 
     SystemType& sys = verInput.getSystem();
     const HybridImageSet& initial_set = verInput.getInitialSet();
@@ -321,10 +288,11 @@ _safety_disproving_once(
 
     ARIADNE_LOG(5,"Creating the analyser for forward reachability...");
 
-    AnalyserPtrType analyser = _get_tuned_analyser(verInput,parameters_identifiers(params),
-            _safety_coarse_outer_approximation,_safety_reachability_restriction,safety_constraint,
-            EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,ANALYSER_TAB_OFFSET,LOWER_SEMANTICS);
+    AnalyserPtrType analyser = _get_tuned_analyser(verInput.getSystem(),parameters_identifiers(params),
+            _safety_reachability_restriction,safety_constraint,
+            accuracy,ANALYSER_TAB_OFFSET,LOWER_SEMANTICS);
 
+	bool result = false;
 	try {
 
 	    ARIADNE_LOG(5,"Retrieving forward reachability...");
@@ -333,12 +301,10 @@ _safety_disproving_once(
 		HybridFloatVector epsilon;
 		make_lpair<SetApproximationType,HybridFloatVector>(reach,epsilon) = analyser->lower_chain_reach_and_epsilon(initial_set);
 
-		//ARIADNE_LOG(5, "Epsilon: " << epsilon);
-
 		if (_settings->plot_results)
 			_plot_reach(reach,"lower",accuracy);
 
-	} catch (ReachUnsatisfiesConstraintException ex) {
+	} catch (ReachUnsatisfiesConstraintException& ex) {
 		ARIADNE_LOG(5, "The lower reached region is partially outside the safe region (skipped).");
 		result = true;
 	}
@@ -457,12 +423,16 @@ Verifier::_dominance(
 	if (_settings->plot_results)
 		_plot_dirpath_init(dominating.getSystem().name() + "&" + dominated.getSystem().name());
 
-	_reset_dominance_state();
+	_init_dominance_restriction(dominating,DOMINATING_SYSTEM);
+	_init_dominance_restriction(dominated,DOMINATED_SYSTEM);
 
 	time_t initial_time = time(NULL);
     for (int accuracy = 0; time(NULL) - initial_time < _settings->time_limit_for_outcome; ++accuracy)
 	{
 		ARIADNE_LOG(2, "Accuracy " << accuracy);
+
+		_refine_dominance_restriction(dominating.getDomain(),accuracy,DOMINATING_SYSTEM);
+		_refine_dominance_restriction(dominated.getDomain(),accuracy,DOMINATED_SYSTEM);
 
 		if (_dominance_proving_once(dominating, dominated, params, accuracy)) {
 			ARIADNE_LOG(2, "Dominates.");
@@ -507,7 +477,7 @@ Verifier::_dominance_proving_once(
 		ARIADNE_LOG(4, "The outer reached region of the dominating system is " << (!result ? "not ": "") <<
 					   "inside the projected shrinked lower reached region of the dominated system.");
 
-	} catch (ReachOutOfDomainException ex) {
+	} catch (ReachOutOfDomainException& ex) {
 		ARIADNE_LOG(4,"The outer reached region of the dominating system is partially out of the domain (skipped).");
 		result = false;
 	}
@@ -545,7 +515,7 @@ Verifier::_dominance_disproving_once(
 		result = definitely(!inside(flattened_dominating_lower_reach,flattened_dominated_outer_reach,
 				flattened_epsilon,accuracy));
 
-	} catch (ReachOutOfDomainException ex) {
+	} catch (ReachOutOfDomainException& ex) {
 		ARIADNE_LOG(4,"The outer reached region of the dominated system is partially out of the domain (skipped).");
 		result = false;
 	}
@@ -566,12 +536,9 @@ _dominance_flattened_lower_reach_and_epsilon(
 		DominanceSystem dominanceSystem,
 		const unsigned int& accuracy) const
 {
-    const bool EQUAL_GRID_FOR_ALL_LOCATIONS = true;
     const unsigned ANALYSER_TAB_OFFSET = 4;
 
 	string descriptor = (dominanceSystem == DOMINATING_SYSTEM ? "dominating" : "dominated");
-	SetApproximationTypePtr& outer_approximation = (dominanceSystem == DOMINATING_SYSTEM ?
-			_dominating_coarse_outer_approximation : _dominated_coarse_outer_approximation);
 	SetApproximationTypePtr& reachability_restriction = (dominanceSystem == DOMINATING_SYSTEM ?
 			_dominating_reachability_restriction : _dominated_reachability_restriction);
 	Set<Identifier> locked_params_ids = (dominanceSystem == DOMINATING_SYSTEM ? parameters_identifiers(params) : Set<Identifier>());
@@ -579,9 +546,9 @@ _dominance_flattened_lower_reach_and_epsilon(
 
 	ARIADNE_LOG(4,"Creating the analyser for the " << descriptor << " system...");
 
-    AnalyserPtrType analyser = _get_tuned_analyser(verInput,locked_params_ids,
-            outer_approximation,reachability_restriction,dominance_constraint,
-            EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,ANALYSER_TAB_OFFSET,LOWER_SEMANTICS);
+    AnalyserPtrType analyser = _get_tuned_analyser(verInput.getSystem(),locked_params_ids,
+            reachability_restriction,dominance_constraint,
+            accuracy,ANALYSER_TAB_OFFSET,LOWER_SEMANTICS);
 
 	ARIADNE_LOG(4,"Getting its lower reached region...");
 
@@ -617,12 +584,9 @@ _dominance_flattened_outer_reach(
 		DominanceSystem dominanceSystem,
 		const unsigned int& accuracy) const
 {
-    const bool EQUAL_GRID_FOR_ALL_LOCATIONS = true;
     const unsigned ANALYSER_TAB_OFFSET = 4;
 
 	string descriptor = (dominanceSystem == DOMINATING_SYSTEM ? "dominating" : "dominated");
-	SetApproximationTypePtr& outer_approximation = (dominanceSystem == DOMINATING_SYSTEM ?
-			_dominating_coarse_outer_approximation : _dominated_coarse_outer_approximation);
 	SetApproximationTypePtr& reachability_restriction = (dominanceSystem == DOMINATING_SYSTEM ?
 			_dominating_reachability_restriction : _dominated_reachability_restriction);
 	Set<Identifier> locked_params_ids = (dominanceSystem == DOMINATING_SYSTEM ? parameters_identifiers(params) : Set<Identifier>());
@@ -630,15 +594,15 @@ _dominance_flattened_outer_reach(
 
     ARIADNE_LOG(4,"Creating the analyser for the " << descriptor << " system...");
 
-    AnalyserPtrType analyser = _get_tuned_analyser(verInput,locked_params_ids,
-            outer_approximation,reachability_restriction,dominance_constraint,
-            EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,ANALYSER_TAB_OFFSET,UPPER_SEMANTICS);
+    AnalyserPtrType analyser = _get_tuned_analyser(verInput.getSystem(),locked_params_ids,
+            reachability_restriction,dominance_constraint,
+            accuracy,ANALYSER_TAB_OFFSET,UPPER_SEMANTICS);
 
 	ARIADNE_LOG(4,"Getting its outer reached region...");
 
 	SetApproximationType reach = analyser->outer_chain_reach(verInput.getInitialSet(),DIRECTION_FORWARD);
 
-	_update_dominance_cached_reachability_with(reach,outer_approximation,reachability_restriction);
+	reachability_restriction.reset(reach.clone());
 
 	if (_settings->plot_results)
 		_plot_dominance(reach,dominanceSystem,accuracy,UPPER_SEMANTICS);
@@ -649,26 +613,20 @@ _dominance_flattened_outer_reach(
 Verifier::AnalyserPtrType
 Verifier::
 _get_tuned_analyser(
-        const VerificationInput& verInput,
+        const SystemType& sys,
         const Set<Identifier>& locked_params_ids,
-        const SetApproximationTypePtr& outer_approx,
         const SetApproximationTypePtr& reachability_restriction,
         const HybridConstraintSet& constraint_set,
-        bool EQUAL_GRID_FOR_ALL_LOCATIONS,
         int accuracy,
         unsigned ADD_TAB_OFFSET,
         Semantics semantics) const
 {
-    const SystemType& sys = verInput.getSystem();
-    const HybridBoxes& domain = verInput.getDomain();
-
-    AnalyserPtrType analyser(new HybridReachabilityAnalyser(sys));
+    AnalyserPtrType analyser(new HybridReachabilityAnalyser(sys,*reachability_restriction,accuracy));
 
     analyser->verbosity = this->verbosity - ADD_TAB_OFFSET;
     analyser->tab_offset = this->tab_offset + ADD_TAB_OFFSET;
 
-    analyser->tune_settings(domain,locked_params_ids,outer_approx,reachability_restriction,
-            constraint_set,EQUAL_GRID_FOR_ALL_LOCATIONS,accuracy,this->free_cores,semantics);
+    analyser->tune_settings(locked_params_ids,constraint_set,this->free_cores,semantics);
 
     return analyser;
 }
@@ -676,23 +634,87 @@ _get_tuned_analyser(
 
 void
 Verifier::
-_reset_safety_state() const
+_init_safety_restriction(const SafetyVerificationInput& verInput) const
 {
-	_safety_coarse_outer_approximation.reset();
+	const bool EQUAL_GRID_FOR_ALL_LOCATIONS = false;
 
-	_safety_reachability_restriction.reset();
+	_init_restriction(verInput,_safety_reachability_restriction,EQUAL_GRID_FOR_ALL_LOCATIONS);
+}
+
+
+
+void
+Verifier::
+_init_dominance_restriction(
+		const DominanceVerificationInput& verInput,
+		DominanceSystem dominanceSystem) const
+{
+	const bool EQUAL_GRID_FOR_ALL_LOCATIONS = true;
+
+	SetApproximationTypePtr& reachability_restriction = (dominanceSystem == DOMINATING_SYSTEM ?
+			_dominating_reachability_restriction : _dominated_reachability_restriction);
+
+	_init_restriction(verInput,reachability_restriction,EQUAL_GRID_FOR_ALL_LOCATIONS);
 }
 
 
 void
 Verifier::
-_reset_dominance_state() const
+_init_restriction(
+		const VerificationInput& verInput,
+		SetApproximationTypePtr& reachability_restriction,
+		bool EQUAL_GRID_FOR_ALL_LOCATIONS) const
 {
-    _dominating_coarse_outer_approximation.reset();
-    _dominated_coarse_outer_approximation.reset();
+	const int accuracy = 0;
 
-    _dominating_reachability_restriction.reset();
-    _dominated_reachability_restriction.reset();
+	const SystemType& sys = verInput.getSystem();
+    const HybridBoxes& domain = verInput.getDomain();
+
+    HybridFloatVector hmad = getHybridMidpointAbsoluteDerivatives(sys,domain);
+    HybridGrid grid = getHybridGrid(hmad,domain,EQUAL_GRID_FOR_ALL_LOCATIONS);
+    reachability_restriction.reset(new HybridDenotableSet(grid));
+    reachability_restriction->adjoin_outer_approximation(domain,accuracy);
+}
+
+
+void
+Verifier::
+_refine_safety_restriction(
+		const HybridBoxes& domain,
+		int accuracy) const
+{
+	_refine_restriction(domain,accuracy,_safety_reachability_restriction);
+}
+
+
+void
+Verifier::
+_refine_dominance_restriction(
+		const HybridBoxes& domain,
+		int accuracy,
+		DominanceSystem dominanceSystem) const
+{
+	SetApproximationTypePtr& reachability_restriction = (dominanceSystem == DOMINATING_SYSTEM ?
+			_dominating_reachability_restriction : _dominated_reachability_restriction);
+
+	_refine_restriction(domain,accuracy,reachability_restriction);
+}
+
+
+void
+Verifier::
+_refine_restriction(
+		const HybridBoxes& domain,
+		int accuracy,
+		SetApproximationTypePtr& reachability_restriction) const
+{
+	// Refinement is necessary only if the restriction is not already inside the domain
+	if (!superset(domain,reachability_restriction->bounding_box())) {
+
+		SetApproximationType new_domain_discretisation(reachability_restriction->grid());
+		new_domain_discretisation.adjoin_outer_approximation(domain,accuracy);
+		reachability_restriction->restrict(new_domain_discretisation);
+	}
 }
 
 

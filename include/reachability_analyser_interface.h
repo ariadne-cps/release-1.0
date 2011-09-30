@@ -113,19 +113,12 @@ template<class SYS> class ReachabilityAnalyserInterface
     
     /*! \brief Tune the settings.
      * \details Much of the arguments do not need to be defined, being either empty or null.
-     * The \a domain represents the region where the evolution should be constrained.
      * The \a locked_params_ids are parameters for which the system should not be split.
-     * The \a reach_outer_approx is an outer approximation for the reachability of the system.
      * The \a reach_restriction is a restriction that must be applied to the reached regions obtained.
      */
     virtual void tune_settings(
-            const HybridBoxes& domain,
             const Set<Identifier>& locked_params_ids,
-            const SetApproximationPtrType& reach_outer_approx,
-            const SetApproximationPtrType& reach_restriction,
             const HybridConstraintSet& constraint_set,
-            bool EQUAL_GRID_FOR_ALL_LOCATIONS,
-            int accuracy,
             unsigned free_cores,
             Semantics semantics) = 0;
 

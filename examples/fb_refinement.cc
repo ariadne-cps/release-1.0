@@ -100,14 +100,15 @@ int main(int argc,char *argv[])
 	consexpr.append(consexpr_y);
 
 	VectorFunction cons_f(consexpr,varlist);
-	Box codomain(2,-std::numeric_limits<double>::max(),9.5,-std::numeric_limits<double>::max(), 9.5);
+	Box codomain(2,-std::numeric_limits<double>::max(),9.0,-std::numeric_limits<double>::max(), 9.0);
 	HybridConstraintSet safety_constraint(system.state_space(),ConstraintSet(cons_f,codomain));
 
 	/// Verification
 
 	Verifier verifier;
 	verifier.verbosity = verifierVerbosity;
-	verifier.settings().plot_results = false;
+	verifier.settings().time_limit_for_outcome = 60;
+	verifier.settings().plot_results = true;
 
 	SafetyVerificationInput verInput(system, initial_set, domain, safety_constraint);
 	cout << verifier.safety(verInput);

@@ -73,8 +73,6 @@ void wait_for_keypress() {
 }
 
 
-static const int BLOCKING_EVENT = -2;
-
 class DegenerateCrossingException : public std::runtime_error {
   public:
     DegenerateCrossingException(const char* msg) : std::runtime_error(msg) { }
@@ -307,6 +305,7 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
     			break;
     		default:
     			ARIADNE_FAIL_MSG("Unhandled event kind.");
+    			break;
     	}
     }
 
@@ -550,7 +549,7 @@ compute_eventBlockingTimes_and_nonTransverseEvents(
                     event_blocking_times[event]=crossing_time_model;
                 }
             }
-            catch(DegenerateCrossingException e) {
+            catch(DegenerateCrossingException& e) {
                 ARIADNE_LOG(3,"Degenerate Crossing exception catched.");
                 BoxType space_domain=project(flow_set_model.domain(),range(0,flow_set_model.argument_size()-1));
                 Interval touching_time_interval=_toolbox->scaled_touching_time_interval(guard,flow_set_model);

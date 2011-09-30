@@ -47,8 +47,6 @@ using Ariadne::Models::Henon;
 
 class TestReachabilityAnalysis 
 {  
-    Grid grid;
-    Interval bound;
     HybridImageSet initial_set;
     HybridTime reach_time;
  
@@ -56,9 +54,15 @@ class TestReachabilityAnalysis
     typedef HybridBasicSet<TaylorSet> HybridEnclosureType;
 
   public:
-    static HybridReachabilityAnalyser build_analyser()
+
+    HybridReachabilityAnalyser build_analyser()
     {
-        HybridReachabilityAnalyser analyser(build_system());
+    	HybridBoxes domain;
+    	DiscreteLocation loc(1);
+    	domain[loc] = Box(2,-1.0,2.1,-0.5,1.1);
+    	int accuracy = 6;
+
+        HybridReachabilityAnalyser analyser(build_system(),domain,accuracy);
         cout << "Done building analyser\n";
         return analyser;
     }
@@ -70,12 +74,12 @@ class TestReachabilityAnalysis
     	std::cout<<std::setprecision(20);
 		std::cerr<<std::setprecision(20);
 		std::clog<<std::setprecision(20);
-		DiscreteLocation location(1);
+		DiscreteLocation loc(1);
 
 		Matrix<Float> A=Matrix<Float>("[-0.5,-1.0;1.0,-0.5]");
 		Vector<Float> b=Vector<Float>("[0.0,0.0]");
 		VectorAffineFunction aff(A,b);
-		system.new_mode(location,aff);
+		system.new_mode(loc,aff);
 		cout << "Done building system\n";
 
 		cout << "system=" << system << endl;
@@ -84,9 +88,7 @@ class TestReachabilityAnalysis
     }
 
     TestReachabilityAnalysis()
-        : grid(2),
-          bound(-4,4),
-          reach_time(4.0,3)
+        : reach_time(4.0,3)
     {
         cout << "Done initialising variables\n";
 
@@ -133,10 +135,9 @@ class TestReachabilityAnalysis
 
     	HybridReachabilityAnalyser analyser(build_analyser());
 
+    	cout << "Reachability restriction bbox = " << analyser.settings().reachability_restriction.bounding_box() << "\n";
         DiscreteLocation loc(1);
-        Box bounding_box(2,bound);
         Box graphics_box(2,-1.0,2.1,-0.5,1.1);
-        analyser.settings().domain_bounds[loc] = bounding_box;
         cout << "Computing timed evolve set" << endl;
         HybridDenotableSet hybrid_lower_evolve=analyser.lower_evolve(initial_set,reach_time);
         cout << "Computing timed reachable set" << endl;
@@ -145,8 +146,8 @@ class TestReachabilityAnalysis
         DenotableSetType& lower_reach=hybrid_lower_reach[loc];
         cout << "Evolved to " << lower_evolve.size() << " cells " << endl;
         cout << "Reached " << lower_reach.size() << " cells " << endl << endl;
-        ARIADNE_TEST_EQUAL(lower_evolve.size(),0);
-        ARIADNE_TEST_EQUAL(lower_reach.size(),255);
+        ARIADNE_TEST_EQUAL(lower_evolve.size(),1);
+        ARIADNE_TEST_EQUAL(lower_reach.size(),173);
         plot("test_reachability_analyser-map_lower_reach_evolve.png",graphics_box,lower_evolve,lower_reach,initial_set);
     }
   
@@ -156,9 +157,7 @@ class TestReachabilityAnalysis
 
         cout << "Computing timed reachable set" << endl;
         DiscreteLocation loc(1);
-        Box bounding_box(2,bound);
         Box graphics_box(2,-1.0,2.1,-0.5,1.1);
-        analyser.settings().domain_bounds[loc] = bounding_box;
         HybridDenotableSet upper_evolve_set=analyser.upper_evolve(initial_set,reach_time);
         // cout << "upper_evolve_set="<<upper_evolve_set<<std::endl;
         HybridDenotableSet upper_reach_set=analyser.upper_reach(initial_set,reach_time);
@@ -169,8 +168,8 @@ class TestReachabilityAnalysis
         ImageSet& initial=initial_set[loc];
         cout << "Evolved to " << upper_evolve.size() << " cells"  << endl;
         cout << "Reached " << upper_reach.size() << " cells" << endl << endl;
-        ARIADNE_TEST_EQUAL(upper_evolve.size(),9);
-        ARIADNE_TEST_EQUAL(upper_reach.size(),377);
+        ARIADNE_TEST_EQUAL(upper_evolve.size(),6);
+        ARIADNE_TEST_EQUAL(upper_reach.size(),240);
         plot("test_reachability_analyser-map_upper_reach_evolve.png",graphics_box,upper_evolve,upper_reach,initial);
     }
   
@@ -180,15 +179,11 @@ class TestReachabilityAnalysis
 
         cout << "Computing chain reachable set" << endl;
         DiscreteLocation loc(1);
-        HybridBoxes bounding_boxes
-            =Ariadne::bounding_boxes(build_system().state_space(),bound);
-        Box bounding_box=bounding_boxes[loc];
         Box graphics_box(2,-1.0,2.1,-0.5,1.1);
         // analyser.verbosity=4;
-        analyser.settings().domain_bounds[loc] = bounding_box;
         HybridDenotableSet chain_reach_set=analyser.outer_chain_reach(initial_set);
         cout << "Reached " << chain_reach_set.size() << " cells" << endl << endl;
-        ARIADNE_TEST_EQUAL(chain_reach_set.size(),425);
+        ARIADNE_TEST_EQUAL(chain_reach_set.size(),277);
         plot("test_reachability_analyser-map_chain_reach.png",graphics_box,chain_reach_set[loc],initial_set[loc]);
     }
   

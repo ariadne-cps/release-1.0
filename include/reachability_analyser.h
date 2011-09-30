@@ -95,7 +95,15 @@ class HybridReachabilityAnalyser
     /*! \brief Virtual destructor */
     virtual ~HybridReachabilityAnalyser();
 
-    HybridReachabilityAnalyser(const SystemType& system);
+    HybridReachabilityAnalyser(
+    		const SystemType& system,
+    		const HybridDenotableSet& restriction,
+    		int accuracy);
+
+    HybridReachabilityAnalyser(
+    		const SystemType& system,
+    		const HybridBoxes& domain,
+    		int accuracy);
 
     /*! \brief Make a dynamically-allocated copy. */
     virtual HybridReachabilityAnalyser* clone() const { return new HybridReachabilityAnalyser(*this); }
@@ -163,13 +171,8 @@ class HybridReachabilityAnalyser
 
     /*! \brief Tune the settings. */
     virtual void tune_settings(
-            const HybridBoxes& domain,
             const Set<Identifier>& locked_params_ids,
-            const SetApproximationPtrType& reach_outer_approx,
-            const SetApproximationPtrType& reach_restriction,
             const HybridConstraintSet& constraint_set,
-            bool EQUAL_GRID_FOR_ALL_LOCATIONS,
-            int accuracy,
             unsigned free_cores,
             Semantics semantics);
 
@@ -202,7 +205,6 @@ class HybridReachabilityAnalyser
     /*! \brief Obtains an evolver from the system, already tuned in respect to accuracy and semantics */
     EvolverPtrType _get_tuned_evolver(
             const SystemType& sys,
-            int accuracy,
             unsigned ADD_TAB_OFFSET,
             Semantics semantics) const;
 
@@ -210,7 +212,6 @@ class HybridReachabilityAnalyser
     		const SystemType& sys,
     		const SetApproximationType& initial_enclosures,
     		const T& time,
-    		int accuracy,
     		bool enable_premature_termination_on_blocking_event = false,
     		ContinuousEvolutionDirection direction = DIRECTION_FORWARD) const;
 
@@ -226,8 +227,7 @@ class HybridReachabilityAnalyser
     void _outer_chain_reach_forward_pushTargetCells(
     		const SystemType& system,
     		const SetApproximationType& reachCells,
-    		SetApproximationType& result_set,
-    		bool use_domain_checking) const;
+    		SetApproximationType& result_set) const;
 
     /*! \brief Pushes into \a result_enclosures the source enclosures from \a sourceCellsOverapprox that reach \a reachCells. */
     void _outer_chain_reach_backward_pushSourceCells(
@@ -266,9 +266,6 @@ class HybridReachabilityAnalyser
     		const SetApproximationType& targetCells,
 			SetApproximationType& result_set) const;
 
-    //! \brief Checks that \a finalCells is inside invariants
-    void _outer_chain_reach_checkFinalCells(const SetApproximationType& finalCells) const;
-
     /*! \brief Gets the lower reach and the epsilon for the \a system.
      * \details The \a constraint_set is checked: if not empty and its epsilon relaxation is not satisfied
      * for the current lower reach, an exception is raised. */
@@ -290,33 +287,29 @@ class HybridReachabilityAnalyser
     		std::list<EnclosureType>& final_enclosures,
     		std::list<EnclosureType>& initial_enclosures,
     		const std::map<DiscreteLocation,uint>& adjoined_evolve_sizes,
-    		const std::map<DiscreteLocation,uint>& superposed_evolve_sizes,
-    		bool use_domain_checking) const;
+    		const std::map<DiscreteLocation,uint>& superposed_evolve_sizes) const;
 
     /*! \brief Gets the set of all the split intervals from the parameters of the system.*/
     std::list<RealParameterSet> _getSplitParameterSetList() const;
 
     /*! \brief Gets the maximum score corresponding to the derivative widths with no splitting. */
     Float _getDerivativeWidthsScore(
-            const HybridFloatVector& hmad,
-            const SetApproximationType& discretised_domain) const;
+            const HybridFloatVector& hmad) const;
 
     /*! \brief Gets the scores corresponding to the derivative widths with \a param splitted. */
     std::pair<Float,Float> _getSplitDerivativeWidthsScores(
             const RealParameter& param,
-            const HybridFloatVector& hmad,
-            const SetApproximationType& discretised_domain) const;
+            const HybridFloatVector& hmad) const;
 
     /*! \brief Updates the set \a working_scored_parameter_set_list by splitting onto the "best" parameter, or updates \a result_parameter_set_list if no splitting is possible. */
     /*! \details The \a hmad are the maximum derivative values with no splitting applied, hence they stay constant for successive calls of
-     * this method. The \a discretised_domain is used to evaluate the derivatives in different cells of the discretised domain.
+     * this method.
      */
     void _updateSplitParameterSetLists(
             std::list<std::pair<Float,RealParameterSet> >& working_scored_parameter_set_list,
             std::list<RealParameterSet>& result_parameter_set_list,
             const Float& initial_score,
-            const HybridFloatVector& hmad,
-            const SetApproximationType& discretised_domain) const;
+            const HybridFloatVector& hmad) const;
 
     /*! \brief Gets the ratio of derivative widths when substituting the given \a half of \a param.
      * \details The \a max_der_widths and mid_der_widths are the the maximum derivative widths with no splitting applied, and
@@ -341,7 +334,10 @@ class HybridReachabilityAnalyserSettings {
   private:
 
     //! \brief Default constructor based on a system.
-    HybridReachabilityAnalyserSettings(const SystemType& sys);
+    HybridReachabilityAnalyserSettings(
+    		const SystemType& sys,
+    		const HybridDenotableSet& restriction,
+    		int accuracy);
 
   public:
 
@@ -359,15 +355,8 @@ class HybridReachabilityAnalyserSettings {
     //! This parameter is only used for continuous-time computation.
     RealType lock_to_grid_time;
 
-    //! \brief The time after which an evolver may approximate computed sets on a grid,
-    //! in order to use previously cached results for the grid.
-    //! \details
-    //! Increasing this parameter may improve the accuracy of the computations.
-    //! If there is recurrence in the system, then this parameter should be set to
-    //! the average recurrence time, if known.
-    //!  <br>
-    //! This parameter is only used for discrete-time computation.
-    UnsignedIntType lock_to_grid_steps;
+    //! \brief The number of transitions before a discretisation.
+    IntType lock_to_grid_steps;
 
     //! \brief Set the depth used for approximation on a grid for computations using upper semantics.
     //! \details
@@ -376,22 +365,13 @@ class HybridReachabilityAnalyserSettings {
     //! This parameter is only used in upper_evolve(), upper_reach() and chain_reach() routines.
     IntType maximum_grid_depth;
 
-    //! \brief Set the allowed bounding domain for chain reachability computations.
-    //! \details Defaults to an unbounded box. Since it is also used to tune the evolver, it could be necessary to provide an explicit bounded value for it.
-    HybridBoxes domain_bounds;
-
     //! \brief Set the constraint set for reachability.
     //! \details Used for early termination of lower chain reachability. An empty constraint set implies no constraint at all.
     HybridConstraintSet constraint_set;
 
     //! \brief Set the restriction for reachability.
-    //! \details Be aware that such restriction is used for upper semantics strictly (tree set intersection), while for
-    //! lower semantics the bounding boxes of the cells are employed instead. This permits to have different grids for different semantics.
-    //! Hence, the analyser grid must match the reachability restriction grid for upper semantics only.
-    boost::shared_ptr<HybridDenotableSet> reachability_restriction;
-
-    //! \brief The grid to use.
-    HybridGrid grid;
+    //! \details Can be empty for those methods that do not require restriction (i.e., using finite time).
+    HybridDenotableSet reachability_restriction;
 
     //! \brief The parameters that must not be automatically split inside a system.
     Set<Identifier> locked_parameters_ids;
@@ -461,12 +441,27 @@ Grid getGrid(
 	ASSUMPTION: the continuous variables are preserved in order and quantity between discrete states. */
 Float getLockToGridTime(
 		const HybridReachabilityAnalyser::SystemType& system,
-		const HybridBoxes& domain);
+		const HybridDenotableSet& restriction);
+
+/*! \brief Get the hybrid midpoint absolute derivatives of \system given a domain \a domain_constraint box.
+ * \details ASSUMPTION: the continuous variables are preserved in order and quantity between discrete states. */
+HybridFloatVector
+getHybridMidpointAbsoluteDerivatives(
+		const HybridReachabilityAnalyser::SystemType& sys,
+		const HybridBoxes& bounding_domain);
+
+/*! \brief Get the hybrid midpoint absolute derivatives of \system given a domain \a domain_constraint reachable set.
+ * \details ASSUMPTION: the continuous variables are preserved in order and quantity between discrete states. */
+HybridFloatVector
+getHybridMidpointAbsoluteDerivatives(
+		const HybridReachabilityAnalyser::SystemType& sys,
+		const HybridDenotableSet& bounding_domain);
 
 /*! \brief Get the hybrid maximum absolute derivatives of \system given a previously computed outer approximation
  *  \a outer_approximation and a domain \a domain_constraint.
  * \details ASSUMPTION: the continuous variables are preserved in order and quantity between discrete states. */
-HybridFloatVector getHybridMaximumAbsoluteDerivatives(
+HybridFloatVector
+getHybridMaximumAbsoluteDerivatives(
 		const HybridReachabilityAnalyser::SystemType& system,
 		const HybridDenotableSetPtr& outer_approximation,
 		const HybridBoxes& domain_constraint);

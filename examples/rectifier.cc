@@ -266,11 +266,14 @@ int main()
     std::cout << "done." << std::endl;
 */
     /// Create a ReachabilityAnalyser object
-    HybridReachabilityAnalyser analyser(rectifier);
+    HybridBoxes domain;
+    Box domain_box(3,0.0,1.0/dp[1],-dp[0],dp[0],2.0,dp[0]);
+    domain[offoff] = domain_box;
+    domain[offon] = domain_box;
+    domain[onoff] = domain_box;
+    domain[onon] = domain_box;
+    HybridReachabilityAnalyser analyser(rectifier, domain, MAX_GRID_DEPTH);
     analyser.settings().lock_to_grid_time = LOCK_TOGRID_TIME;
-    analyser.settings().maximum_grid_depth= MAX_GRID_DEPTH;
-    Grid grid(Vector<Float>(3, 0.25/dp[1], 1.0, 0.5));
-    analyser.settings().grid = HybridGrid(rectifier.state_space(),grid);
     std::cout <<  analyser.settings() << std::endl;
 
     analyser.verbosity=VERBOSITY;

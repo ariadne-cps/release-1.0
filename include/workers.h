@@ -43,7 +43,7 @@ public:
 	// Constructor
     UpperReachEvolveWorker(
     		const EvolverType& evolver,
-    		const list<EnclosureType>& initial_enclosures,
+    		list<EnclosureType>& initial_enclosures,
     		const HybridTime& time,
     		const HybridGrid& grid,
     		const int& accuracy,
@@ -57,12 +57,10 @@ public:
 	  _accuracy(accuracy),
 	  _ignore_activations(ignore_activations),
 	  _continuous_direction(continuous_direction),
-	  _concurrency(concurrency),
-	  _enclosures_it(_initial_enclosures.begin())
+	  _concurrency(concurrency)
     {
 		_reach = HDS(grid);
 		_evolve = HDS(grid);
-		_enclosures_it = _initial_enclosures.begin();
     }
  
     ~UpperReachEvolveWorker()
@@ -81,7 +79,7 @@ private:
 
 	// A reference to the input variables
 	const EvolverType& _evolver;
-	const list<EnclosureType>& _initial_enclosures;
+	list<EnclosureType>& _initial_enclosures;
 	const HybridTime& _time;
 	const HybridGrid& _grid;
 	const int& _accuracy;
@@ -93,9 +91,6 @@ private:
 
     std::list<boost::shared_ptr<boost::thread> > _m_threads;
     boost::mutex _inp_mutex, _out_mutex;
-
-	// The iterator for the enclosures
-	list<EnclosureType>::const_iterator _enclosures_it;
  
 	void _start()
 	{
@@ -108,12 +103,13 @@ private:
         while (true) {
 			_inp_mutex.lock();
 
-			if (_enclosures_it == _initial_enclosures.end()) {
+			if (_initial_enclosures.empty()) {
 				_inp_mutex.unlock();					
 				break;
 			} else {
-				EnclosureType enclosure = *_enclosures_it;
-				++_enclosures_it;
+
+				EnclosureType enclosure = _initial_enclosures.front();
+				_initial_enclosures.pop_front();
 				_inp_mutex.unlock();		
 
 				// Get the enclosures from the initial enclosure, in a lock_time flight

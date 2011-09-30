@@ -134,9 +134,11 @@ int main()
 
 
     /// Create a ReachabilityAnalyser object
-    HybridReachabilityAnalyser analyser(ecoli_system);
+    int maximum_grid_depth=18;
+    HybridBoxes domain;
+    domain[1] = bounding_box;
+    HybridReachabilityAnalyser analyser(ecoli_system,domain,maximum_grid_depth);
     analyser.settings().lock_to_grid_time=lock_to_grid_time;
-    analyser.settings().maximum_grid_depth=18;
     std::cout<<"Discrete evolution parameters="<<analyser.settings()<<"\n";
 
     HybridImageSet initial_set;

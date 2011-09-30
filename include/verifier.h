@@ -57,11 +57,6 @@ class Verifier
     boost::shared_ptr<SettingsType> _settings;
     mutable std::string _plot_dirpath;
 
-	/*! \brief "Stateless" fields for holding outer approximations between successive internal calls. */
-	mutable SetApproximationTypePtr _safety_coarse_outer_approximation;
-	mutable SetApproximationTypePtr _dominating_coarse_outer_approximation;
-	mutable SetApproximationTypePtr _dominated_coarse_outer_approximation;
-
 	/*! \brief "Stateless" fields for holding reachability restrictions between successive internal calls. */
 	mutable SetApproximationTypePtr _safety_reachability_restriction;
 	mutable SetApproximationTypePtr _dominating_reachability_restriction;
@@ -266,40 +261,48 @@ class Verifier
 	//@{
 	//! \name Other helper methods
 
-    /*! \brief Obtains an analyser from the verification input, already tuned in respect to the other arguments. */
+    /*! \brief Obtains an analyser from the system, already tuned in respect to the other arguments. */
     AnalyserPtrType _get_tuned_analyser(
-            const VerificationInput& verInput,
+            const SystemType& sys,
             const Set<Identifier>& locked_params_ids,
-            const SetApproximationTypePtr& outer_approximation,
             const SetApproximationTypePtr& reachability_restriction,
             const HybridConstraintSet& constraint_set,
-            bool EQUAL_GRID_FOR_ALL_LOCATIONS,
             int accuracy,
             unsigned ADD_TAB_OFFSET,
             Semantics semantics) const;
 
-	/*! \brief Resets cached verification state information, for safety. */
-	void _reset_safety_state() const;
+	/*! \brief Initialises the safety restriction. */
+	void _init_safety_restriction(const SafetyVerificationInput& verInput) const;
 
-	void _show_safety_state() const;
+	/*! \brief Initialises the dominance restriction for the given \a dominanceSystem. */
+	void _init_dominance_restriction(
+			const DominanceVerificationInput& verInput,
+			DominanceSystem dominanceSystem) const;
 
-	/*! \brief Resets cached verification state information, for dominance. */
-	void _reset_dominance_state() const;
+	/*! \brief Utility function generalising the safety and dominance cases. */
+	void _init_restriction(
+			const VerificationInput& verInput,
+			SetApproximationTypePtr& reachability_restriction,
+			bool EQUAL_GRID_FOR_ALL_LOCATIONS) const;
 
-	/*! \brief Updates with \a reach the outer approximation or the reachability restriction.
-	 * \details Which field is set depends on the current state of such variables: if no coarse outer
-	 * approximation is set, then it is set, otherwise the reachability restriction is set (updated).
-	 */
-	void _update_safety_cached_reachability_with(const SetApproximationType& reach) const;
+	/*! \brief Refines the safety restriction by restricting in respect to the discretised \a domain at the given \a accuracy.
+	 *  \details Skips this operation if the safety restriction is already inside the \a domain, since it would yield the original restriction. */
+	void _refine_safety_restriction(
+			const HybridBoxes& domain,
+			int accuracy) const;
 
-    /*! \brief Updates with \a reach the \a outer_approximation or the \a reachability_restriction.
-     * \details Which field is set depends on the current state of such variables: if no coarse outer
-     * approximation is set, then it is set, otherwise the reachability restriction is set (updated).
-     */
-	void _update_dominance_cached_reachability_with(
-	        const SetApproximationType& reach,
-	        SetApproximationTypePtr& outer_approximation,
-	        SetApproximationTypePtr& reachability_restriction) const;
+	/*! \brief Refines the dominance restriction by restricting in respect to the discretised \a domain at the given \a accuracy.
+	 *  \details Skips this operation if the safety restriction is already inside the \a domain, since it would yield the original restriction. */
+	void _refine_dominance_restriction(
+			const HybridBoxes& domain,
+			int accuracy,
+			DominanceSystem dominanceSystem) const;
+
+	/*! \brief Utility function generalising the safety and dominance cases. */
+	void _refine_restriction(
+			const HybridBoxes& domain,
+			int accuracy,
+			SetApproximationTypePtr& reachability_restriction) const;
 
 	// Reached region plotting methods
 	void _plot_dirpath_init(std::string basename) const;

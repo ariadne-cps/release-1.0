@@ -219,9 +219,14 @@ void compute_evolution()
 
 void compute_reachable_sets()
 {
+	Box bbx = Box(2, 0.0,1.0, 14.0,21.0);
+	int maximum_grid_depth=12;
+	HybridBoxes domain;
+	domain[1] = bbx;
+	domain[2] = bbx;
+
     // Create a ReachabilityAnalyser object
-    HybridReachabilityAnalyser analyser(create_heating_system());
-    analyser.settings().maximum_grid_depth=12;
+    HybridReachabilityAnalyser analyser(create_heating_system(),domain,maximum_grid_depth);
 
     //*(analyser.settings().grid)=HybridGrid(heating_system.state_space());
 
@@ -244,7 +249,7 @@ void compute_reachable_sets()
     HybridDenotableSet lower_reach_set = analyser.lower_reach(initial_set,reach_time);
     std::cout << "done." << std::endl;
 
-    plot("tutorial-lower_reach_evolve.png",Box(2, 0.0,1.0, 14.0,21.0),
+    plot("tutorial-lower_reach_evolve.png",bbx,
          Colour(0.0,0.5,1.0), lower_reach_set,
          Colour(0.0,0.25,0.5), initial_set,
          Colour(0.25,0.0,0.5), lower_evolve_set);
@@ -261,7 +266,7 @@ void compute_reachable_sets()
     HybridDenotableSet upper_reach_set = analyser.upper_reach(initial_set,reach_time);
     std::cout << "done." << std::endl;
 
-    plot("tutorial-upper_reach_evolve.png",Box(2, 0.0,1.0, 14.0,21.0),
+    plot("tutorial-upper_reach_evolve.png",bbx,
          Colour(0.0,0.5,1.0), upper_reach_set,
          Colour(0.0,0.25,0.5), initial_set,
          Colour(0.25,0.0,0.5), upper_evolve_set);
@@ -270,7 +275,7 @@ void compute_reachable_sets()
     std::cout << "Computing chain reach set... " << std::flush;
     HybridDenotableSet chain_reach_set = analyser.outer_chain_reach(initial_set);
     std::cout << "done." << std::endl;
-    plot("tutorial-chain_reach.png",Box(2, 0.0,1.0, 14.0,21.0), Colour(0.0,0.5,1.0), chain_reach_set);
+    plot("tutorial-chain_reach.png",bbx, Colour(0.0,0.5,1.0), chain_reach_set);
 }
 
 

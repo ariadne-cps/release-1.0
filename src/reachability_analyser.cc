@@ -68,12 +68,38 @@ HybridReachabilityAnalyser::
 {
 }
 
+
 HybridReachabilityAnalyser::
-HybridReachabilityAnalyser(const HybridAutomatonInterface& system)
-	: _settings(new SettingsType(system))
+HybridReachabilityAnalyser(
+		const HybridAutomatonInterface& system,
+		const HybridDenotableSet& restriction,
+		int accuracy)
+	: _settings(new SettingsType(system,restriction,accuracy))
 	, _system(system.clone())
 	, free_cores(0)
 {
+    this->charcode = "a";
+}
+
+
+HybridReachabilityAnalyser::
+HybridReachabilityAnalyser(
+		const HybridAutomatonInterface& system,
+		const HybridBoxes& domain,
+		int accuracy)
+	: _system(system.clone())
+	, free_cores(0)
+{
+	bool EQUAL_GRID_FOR_ALL_LOCATIONS = false;
+
+    HybridFloatVector hmad = getHybridMidpointAbsoluteDerivatives(system,domain);
+    HybridGrid grid = getHybridGrid(hmad,domain,EQUAL_GRID_FOR_ALL_LOCATIONS);
+
+	HybridDenotableSet discretised_domain(grid);
+	discretised_domain.adjoin_outer_approximation(domain,accuracy);
+
+	_settings.reset(new SettingsType(system,discretised_domain,accuracy));
+
     this->charcode = "a";
 }
 
@@ -82,7 +108,6 @@ HybridReachabilityAnalyser::EvolverPtrType
 HybridReachabilityAnalyser::
 _get_tuned_evolver(
         const HybridAutomatonInterface& sys,
-        int accuracy,
         unsigned ADD_TAB_OFFSET,
         Semantics semantics) const
 {
@@ -91,10 +116,10 @@ _get_tuned_evolver(
     evolver->verbosity = this->verbosity - ADD_TAB_OFFSET;
     evolver->tab_offset = this->tab_offset + ADD_TAB_OFFSET;
 
-    HybridFloatVector hmad = getHybridMaximumAbsoluteDerivatives(sys,
-            _settings->reachability_restriction,_settings->domain_bounds);
+    HybridFloatVector hmad = getHybridMidpointAbsoluteDerivatives(sys,_settings->reachability_restriction);
 
-    evolver->tune_settings(_settings->grid,hmad,accuracy,this->free_cores,semantics);
+    evolver->tune_settings(_settings->reachability_restriction.grid(),hmad,
+    		_settings->maximum_grid_depth,this->free_cores,semantics);
 
     return evolver;
 }
@@ -103,13 +128,8 @@ _get_tuned_evolver(
 void
 HybridReachabilityAnalyser::
 tune_settings(
-        const HybridBoxes& domain,
         const Set<Identifier>& locked_params_ids,
-        const HybridDenotableSetPtr& outer_approximation,
-        const HybridDenotableSetPtr& reachability_restriction,
         const HybridConstraintSet& constraint_set,
-        bool EQUAL_GRID_FOR_ALL_LOCATIONS,
-        int accuracy,
         unsigned free_cores,
         Semantics semantics)
 {
@@ -117,29 +137,8 @@ tune_settings(
 
     this->free_cores = free_cores;
 
-    _settings->maximum_grid_depth = accuracy;
-    _settings->reachability_restriction = reachability_restriction;
-
-    _settings->domain_bounds = domain;
-    //ARIADNE_LOG(2, "Domain: " << domain);
-    _settings->constraint_set = constraint_set;
-    //ARIADNE_LOG(2, "Constraint set: " << constraint_set);
-    _settings->lock_to_grid_time = getLockToGridTime(*_system,domain);
-    ARIADNE_LOG(2, "Lock to grid time: " << _settings->lock_to_grid_time);
     _settings->locked_parameters_ids = locked_params_ids;
-    ARIADNE_LOG(2, "Locked parameters IDs: " << locked_params_ids);
-
-    ARIADNE_LOG(2, "Derivatives evaluation source: " << (outer_approximation ? "Outer approximation" : "Domain box"));
-    HybridFloatVector hmad = getHybridMaximumAbsoluteDerivatives(*_system,outer_approximation,domain);
-    ARIADNE_LOG(2, "System parameters: " << dynamic_cast<HybridAutomaton&>(*_system).parameters());
-    //ARIADNE_LOG(2, "Derivatives bounds: " << hmad);
-    _settings->grid = HybridGrid(getHybridGrid(hmad,domain,EQUAL_GRID_FOR_ALL_LOCATIONS));
-    //ARIADNE_LOG(2, "Grid lengths: " << _settings->grid.lengths());
-
-    // Checking for grid and reachability restriction grid equality is required for upper semantics only
-    if (reachability_restriction && semantics == UPPER_SEMANTICS)
-        ARIADNE_ASSERT_MSG(_settings->grid == reachability_restriction->grid(),
-            "For upper semantics, the analyser grid and the reachability restriction grid must match.");
+    _settings->constraint_set = constraint_set;
 }
 
 
@@ -163,12 +162,10 @@ initial_cells_set(const HybridImageSet& initial_enclosure_set) const
 {
     const int& accuracy = _settings->maximum_grid_depth;
 
-    SetApproximationType result(_settings->grid);
+    SetApproximationType result(_settings->reachability_restriction.grid());
 
     result.adjoin_outer_approximation(initial_enclosure_set,accuracy);
-    if (_settings->reachability_restriction) {
-        result.restrict(*_settings->reachability_restriction);
-    }
+    result.restrict(_settings->reachability_restriction);
 
     return result;
 }
@@ -178,10 +175,7 @@ HybridDenotableSet
 HybridReachabilityAnalyser::
 initial_cells_set(const HybridConstraintSet& initial_constraint_set) const
 {
-    ARIADNE_ASSERT_MSG(_settings->reachability_restriction,
-            "A reachability restriction is required for computing the initial cell set from a constraint set.");
-
-    HybridDenotableSet result = *_settings->reachability_restriction;
+    HybridDenotableSet result = _settings->reachability_restriction;
     result.mince(_settings->maximum_grid_depth);
     HybridDenotableSet definitely_feasible_subset = definitely_covered_subset(result,initial_constraint_set);
     result.remove(definitely_feasible_subset);
@@ -196,11 +190,12 @@ _upper_reach_evolve(
 		const SystemType& sys,
         const HybridDenotableSet& initial_set,
         const HybridTime& time,
-        int accuracy,
         bool enable_premature_termination_on_blocking_event,
         ContinuousEvolutionDirection direction) const
 {
     const unsigned EVOLVER_TAB_OFFSET = 4;
+
+    const int accuracy = _settings->maximum_grid_depth;
 
 	std::pair<HDS,HDS> result;
 	HDS& reach = result.first;
@@ -211,11 +206,11 @@ _upper_reach_evolve(
 	const uint concurrency = boost::thread::hardware_concurrency() - free_cores;
 	ARIADNE_ASSERT_MSG(concurrency>0 && concurrency <= boost::thread::hardware_concurrency(),"Error: concurrency must be positive and less than the maximum allowed.");
 
-	const HybridGrid& grid = _settings->grid;
+	const HybridGrid& grid = _settings->reachability_restriction.grid();
 
 	list<EnclosureType> initial_enclosures = to_enclosures(initial_set);
 
-	const EvolverPtrType& evolver = _get_tuned_evolver(sys,accuracy,EVOLVER_TAB_OFFSET,UPPER_SEMANTICS);
+	const EvolverPtrType& evolver = _get_tuned_evolver(sys,EVOLVER_TAB_OFFSET,UPPER_SEMANTICS);
 	UpperReachEvolveWorker worker(evolver,initial_enclosures,time,
 			grid,accuracy,enable_premature_termination_on_blocking_event,direction,concurrency);
 	result = worker.get_result();
@@ -257,16 +252,14 @@ lower_reach_evolve(
 
     ARIADNE_LOG(2,"HybridReachabilityAnalyser::lower_reach_evolve(...)");
 
-    HybridGrid grid = _settings->grid;
-    const int accuracy = _settings->maximum_grid_depth;
+    const HybridGrid& grid = _settings->reachability_restriction.grid();
+    const int& accuracy = _settings->maximum_grid_depth;
 
     HDS reach(grid); HDS evolve(grid);
-    // No reachability restriction involved
-    HDS reachability_restriction(grid);
 
     list<EnclosureType> initial_enclosures = enclosures_from_split_initial_set_midpoints(initial_set,min_cell_widths(grid,accuracy));
 
-    const EvolverPtrType& evolver = _get_tuned_evolver(*_system,accuracy,EVOLVER_TAB_OFFSET,LOWER_SEMANTICS);
+    const EvolverPtrType& evolver = _get_tuned_evolver(*_system,EVOLVER_TAB_OFFSET,LOWER_SEMANTICS);
 	ARIADNE_LOG(3,"Computing evolution...");
     for (list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); encl_it++) {
         Orbit<EnclosureType> orbit = evolver->orbit(*encl_it,time,LOWER_SEMANTICS);
@@ -274,10 +267,7 @@ lower_reach_evolve(
         evolve.adjoin(outer_approximation(orbit.final(),grid,accuracy));
     }
 
-    if (_settings->reachability_restriction) {
-        reach.restrict(*_settings->reachability_restriction);
-        evolve.restrict(*_settings->reachability_restriction);
-    }
+    reach.restrict(_settings->reachability_restriction);
 
     reach.recombine();
     evolve.recombine();
@@ -331,7 +321,7 @@ upper_reach_evolve(
     ARIADNE_LOG(2,"HybridReachabilityAnalyser::upper_reach_evolve(system,set,time)");
     ARIADNE_LOG(3,"initial_set="<<initial_set);
 
-    HybridGrid grid = _settings->grid;
+    HybridGrid grid = _settings->reachability_restriction.grid();
     const int accuracy = _settings->maximum_grid_depth;
 
     HDS initial(grid),found(grid),evolve(grid),reach(grid);
@@ -355,7 +345,7 @@ upper_reach_evolve(
     initial.adjoin_outer_approximation(initial_set,accuracy);
     ARIADNE_LOG(4,"initial.size()="<<initial.size());
 
-    const EvolverPtrType& evolver = _get_tuned_evolver(*_system,accuracy,EVOLVER_TAB_OFFSET,UPPER_SEMANTICS);
+    const EvolverPtrType& evolver = _get_tuned_evolver(*_system,EVOLVER_TAB_OFFSET,UPPER_SEMANTICS);
     std::list<EnclosureType> initial_enclosures = to_enclosures(initial);
     ARIADNE_LOG(4,"Starting from " << initial_enclosures.size() << " enclosures.");
     for (std::list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); ++encl_it) {
@@ -368,21 +358,19 @@ upper_reach_evolve(
 
     for(uint i=1; i<time_steps; ++i) {
         ARIADNE_LOG(3,"computing "<<i+1<<"-th reachability step...");
-        make_lpair(found,evolve) = _upper_reach_evolve(*_system,evolve,hybrid_lock_to_grid_time,accuracy);
+        make_lpair(found,evolve) = _upper_reach_evolve(*_system,evolve,hybrid_lock_to_grid_time);
         reach.adjoin(found);
     }
 
     ARIADNE_LOG(5,"remaining_time="<<remaining_time);
     if(!evolve.empty() && remaining_time > 0) {
         ARIADNE_LOG(3,"computing evolution for the remaining time...");
-        make_lpair(found,evolve) = _upper_reach_evolve(*_system,evolve,hybrid_remaining_time,accuracy);
+        make_lpair(found,evolve) = _upper_reach_evolve(*_system,evolve,hybrid_remaining_time);
         reach.adjoin(found);
     }
 
-    if (_settings->reachability_restriction) {
-        reach.restrict(*_settings->reachability_restriction);
-        evolve.restrict(*_settings->reachability_restriction);
-    }
+    reach.restrict(_settings->reachability_restriction);
+    evolve.restrict(_settings->reachability_restriction);
 
     reach.recombine();
     evolve.recombine();
@@ -400,7 +388,7 @@ outer_chain_reach(
 		const HybridImageSet& initial_set,
 		ContinuousEvolutionDirection direction) const
 {
-	SetApproximationType initial(_settings->grid);
+	SetApproximationType initial(_settings->reachability_restriction.grid());
     initial.adjoin_outer_approximation(initial_set,_settings->maximum_grid_depth);
 
 	return outer_chain_reach(initial,direction);
@@ -434,10 +422,10 @@ outer_chain_reach(
 
 			reach.adjoin(local_reach);
 		}
-	} catch (ReachOutOfDomainException ex) {
+	} catch (ReachOutOfDomainException& ex) {
 		_system->substitute_all(original_parameters);
 		throw ex;
-	} catch (ReachUnsatisfiesConstraintException ex) {
+	} catch (ReachUnsatisfiesConstraintException& ex) {
 	    _system->substitute_all(original_parameters);
 		throw ex;
 	}
@@ -457,16 +445,11 @@ _outer_chain_reach_splitted(
 		const SetApproximationType& initial,
 		ContinuousEvolutionDirection direction) const
 {
-    bool no_restriction = !_settings->reachability_restriction;
-
-	ARIADNE_ASSERT_MSG(!(direction == DIRECTION_BACKWARD && no_restriction),
-			"The reachability restriction must be set if backward reachability is to be performed.");
-
     const Float& lock_to_grid_time = _settings->lock_to_grid_time;
     const int& lock_to_grid_steps = _settings->lock_to_grid_steps;
     const int& maximum_grid_depth = _settings->maximum_grid_depth;
 
-    HybridGrid grid = _settings->grid;
+    HybridGrid grid = _settings->reachability_restriction.grid();
     SetApproximationType new_final(grid), new_reach(grid), reach(grid), final(grid);
 
     SetApproximationType current_initial = initial;
@@ -487,7 +470,7 @@ _outer_chain_reach_splitted(
 
         static const bool ignore_activations = true;
         make_lpair(new_reach,new_final) = _upper_reach_evolve(sys,current_initial,
-        		hybrid_lock_to_grid_time,maximum_grid_depth,ignore_activations,direction);
+        		hybrid_lock_to_grid_time,ignore_activations,direction);
 
 	    ARIADNE_LOG(3,"Reach size after evolution = "<<new_reach.size());
 	    ARIADNE_LOG(3,"Final size after evolution = "<<new_final.size());
@@ -497,12 +480,10 @@ _outer_chain_reach_splitted(
 	    ARIADNE_LOG(3,"Reach size after removal = "<<new_reach.size());
 	    ARIADNE_LOG(3,"Final size after removal = "<<new_final.size());
 
-	    if (!no_restriction) {
-	    	new_final.restrict(*_settings->reachability_restriction);
-	    	new_reach.restrict(*_settings->reachability_restriction);
-		    ARIADNE_LOG(3,"Reach size after restricting = "<<new_reach.size());
-		    ARIADNE_LOG(3,"Final size after restricting = "<<new_final.size());
-	    }
+	    new_final.restrict(_settings->reachability_restriction);
+	    new_reach.restrict(_settings->reachability_restriction);
+		ARIADNE_LOG(3,"Reach size after restricting = "<<new_reach.size());
+		ARIADNE_LOG(3,"Final size after restricting = "<<new_final.size());
 
 		new_reach.mince(maximum_grid_depth);
 		new_final.mince(maximum_grid_depth);
@@ -511,11 +492,10 @@ _outer_chain_reach_splitted(
 
         current_initial.clear();
         if (direction == DIRECTION_FORWARD)
-        	_outer_chain_reach_forward_pushTargetCells(sys,new_reach,current_initial,no_restriction);
+        	_outer_chain_reach_forward_pushTargetCells(sys,new_reach,current_initial);
         else
         	_outer_chain_reach_backward_pushSourceCells(sys,new_reach,current_initial);
-        if (no_restriction)
-        	_outer_chain_reach_checkFinalCells(new_final);
+
         current_initial.adjoin(new_final);
         current_initial.recombine();
 
@@ -537,17 +517,12 @@ HybridReachabilityAnalyser::
 _outer_chain_reach_forward_pushTargetCells(
 		const SystemType& system,
 		const SetApproximationType& sourceCells,
-		SetApproximationType& result_set,
-		bool use_domain_checking) const
+		SetApproximationType& result_set) const
 {
 	for (SetApproximationType::const_iterator cellbox_it = sourceCells.begin(); cellbox_it != sourceCells.end(); cellbox_it++)
 	{
 		const DiscreteLocation& loc = cellbox_it->first;
 		const Box& bx = cellbox_it->second;
-		const Box& domain = _settings->domain_bounds[loc];
-
-		if (use_domain_checking && bx.disjoint(domain))
-			throw ReachOutOfDomainException("a reach enclosure is outside the domain");
 
 		if (!_outer_chain_reach_isOutsideInvariants(system,loc,bx))
 			_outer_chain_reach_adjoinTargetEnclosure(system,loc,ContinuousEnclosureType(bx),result_set);
@@ -562,7 +537,7 @@ _outer_chain_reach_backward_pushSourceCells(
 		const SetApproximationType& targetCells,
 		SetApproximationType& result_set) const
 {
-    SetApproximationType sourceCellsOverapprox = *_settings->reachability_restriction;
+    SetApproximationType sourceCellsOverapprox = _settings->reachability_restriction;
 
 	// Adopt the minimum granularity when checking the cells
 	sourceCellsOverapprox.mince(_settings->maximum_grid_depth);
@@ -724,21 +699,6 @@ _is_transition_feasible(
 	return result;
 }
 
-void
-HybridReachabilityAnalyser::
-_outer_chain_reach_checkFinalCells(const SetApproximationType& finalCells) const
-{
-	for (HDS::const_iterator cellbox_it = finalCells.begin(); cellbox_it != finalCells.end(); ++cellbox_it) {
-		const DiscreteLocation& loc = cellbox_it->first;
-		const Box& domain = _settings->domain_bounds[loc];
-		const Box& bx = cellbox_it->second;
-
-		if (bx.disjoint(domain)) {
-			throw ReachOutOfDomainException("a final cell is outside the domain");
-		}
-	}
-}
-
 
 std::pair<HybridDenotableSet,HybridFloatVector>
 HybridReachabilityAnalyser::
@@ -754,11 +714,9 @@ _lower_chain_reach_and_epsilon(
 	const uint concurrency = boost::thread::hardware_concurrency() - free_cores;
 	ARIADNE_ASSERT_MSG(concurrency>0 && concurrency <= boost::thread::hardware_concurrency(),"Error: concurrency must be positive and less than the maximum allowed.");
 
-	HybridGrid grid = _settings->grid;
+	HybridGrid grid = _settings->reachability_restriction.grid();
 	TimeType lock_time(_settings->lock_to_grid_time,_settings->lock_to_grid_steps);
 	const int accuracy = _settings->maximum_grid_depth;
-
-	bool have_restriction = _settings->reachability_restriction;
 
     HDS reach(grid);
 	HybridSpace state_space = system.state_space();
@@ -769,12 +727,11 @@ _lower_chain_reach_and_epsilon(
 
     EL initial_enclosures = enclosures_from_split_initial_set_midpoints(initial_set,min_cell_widths(grid,accuracy));
 
-    if (have_restriction)
-    	initial_enclosures = restrict_enclosures(initial_enclosures,*_settings->reachability_restriction);
+    initial_enclosures = restrict_enclosures(initial_enclosures,_settings->reachability_restriction);
 
     ARIADNE_LOG(2,"Computing recurrent evolution...");
 
-    const EvolverPtrType& evolver = _get_tuned_evolver(system,accuracy,EVOLVER_TAB_OFFSET,LOWER_SEMANTICS);
+    const EvolverPtrType& evolver = _get_tuned_evolver(system,EVOLVER_TAB_OFFSET,LOWER_SEMANTICS);
 
     uint i=0;
     while (!initial_enclosures.empty()) {
@@ -793,6 +750,7 @@ _lower_chain_reach_and_epsilon(
 				local_reach,local_epsilon) = worker.get_result();
 
 		epsilon = max_elementwise(epsilon,local_epsilon);
+		local_reach.restrict(_settings->reachability_restriction);
 
 		if (!_settings->constraint_set.empty())
 			_lower_chain_reach_and_epsilon_constraint_check(system,local_reach,local_epsilon);
@@ -800,6 +758,7 @@ _lower_chain_reach_and_epsilon(
 		ARIADNE_LOG(3,"Reach size before removal = " << local_reach.size());
 
 		local_reach.remove(reach);
+
 		ARIADNE_LOG(3,"Reach size after removal  = " << local_reach.size());
 		if (local_reach.empty())
 			break;
@@ -810,9 +769,8 @@ _lower_chain_reach_and_epsilon(
 
 		HUM& adjoined_evolve_sizes = evolve_sizes.first;
 		HUM& superposed_evolve_sizes = evolve_sizes.second;
-		bool use_domain_checking = !have_restriction;
 		_filter_enclosures(final_enclosures,initial_enclosures,
-				adjoined_evolve_sizes,superposed_evolve_sizes,use_domain_checking);
+				adjoined_evolve_sizes,superposed_evolve_sizes);
 	}
 
 	return std::pair<HDS,HybridFloatVector>(reach,epsilon);
@@ -827,7 +785,7 @@ _lower_chain_reach_and_epsilon_constraint_check(
 {
 	ARIADNE_LOG(3,"Checking constraint satisfaction...");
 
-	const HybridGrid& grid = _settings->grid;
+	const HybridGrid& grid = _settings->reachability_restriction.grid();
 	const int accuracy = _settings->maximum_grid_depth;
 
 	HDS residual_reach = reach;
@@ -838,14 +796,13 @@ _lower_chain_reach_and_epsilon_constraint_check(
 	// the epsilon-enlarged one
 	if (!residual_reach.empty()) {
 
-		// Identify the "constrainable" hybrid space given by locations both reachable and under constraint
-		HybridBoxes constrainable_domain_bounds;
+		// Identify the "projected" hybrid space given by locations both reachable and under constraint
+		HybridSpace proj_space;
 		for (HDS::locations_const_iterator loc_it = residual_reach.locations_begin();
 				loc_it != residual_reach.locations_end(); ++loc_it) {
 			if (!loc_it->second.empty() && _settings->constraint_set.find(loc_it->first) != _settings->constraint_set.end())
-				constrainable_domain_bounds[loc_it->first] = _settings->domain_bounds.find(loc_it->first)->second;
+				proj_space[loc_it->first] = loc_it->second.dimension();
 		}
-		HybridSpace proj_space(constrainable_domain_bounds);
 
 		// Project the grid, constraint, residual reach and epsilon
 		HybridGrid proj_grid;
@@ -867,15 +824,11 @@ _lower_chain_reach_and_epsilon_constraint_check(
 
 		// Construct the reachability restriction
 		HDS proj_reachability_restriction(proj_grid);
-		if (!_settings->reachability_restriction) {
-			proj_reachability_restriction.adjoin_outer_approximation(constrainable_domain_bounds,accuracy);
-		} else {
-			for (HybridSpace::const_iterator hs_it = proj_space.begin(); hs_it != proj_space.end(); ++hs_it) {
-				proj_reachability_restriction[hs_it->first] = _settings->reachability_restriction->find(hs_it->first)->second;
-			}
+		for (HybridSpace::const_iterator hs_it = proj_space.begin(); hs_it != proj_space.end(); ++hs_it) {
+			proj_reachability_restriction[hs_it->first] = _settings->reachability_restriction.find(hs_it->first)->second;
 		}
 
-		ARIADNE_LOG(4,"Local reachability restriction size = " << proj_reachability_restriction.size());
+		ARIADNE_LOG(4,"Projected reachability restriction size = " << proj_reachability_restriction.size());
 		HDS possibly_feasible_proj_residual_reach = Ariadne::possibly_feasible_subset(proj_residual_reach,
 				proj_constraint_set,proj_epsilon,proj_reachability_restriction,accuracy);
 
@@ -898,20 +851,13 @@ _filter_enclosures(
 		std::list<EnclosureType>& final_enclosures,
 		std::list<EnclosureType>& initial_enclosures,
 		const std::map<DiscreteLocation,uint>& adjoined_evolve_sizes,
-		const std::map<DiscreteLocation,uint>& superposed_evolve_sizes,
-		bool use_domain_checking) const
+		const std::map<DiscreteLocation,uint>& superposed_evolve_sizes) const
 {
 	while (!final_enclosures.empty()) {
 		EnclosureType encl = final_enclosures.front();
 		final_enclosures.pop_front();
 
 		const DiscreteLocation& loc = encl.location();
-		const Box& encl_box = encl.continuous_state_set().bounding_box();
-
-		if (use_domain_checking && encl_box.disjoint(_settings->domain_bounds[loc])) {
-			ARIADNE_FAIL_MSG("Found an enclosure in location " << loc.name() << " with bounding box " << encl.continuous_state_set().bounding_box() <<
-					" lying outside the domain in lower semantics: the domain is incorrect.");
-		}
 
 		/* If pruning is to be performed, push only a fraction of the final_enclosures into the initial_enclosures;
 		 * otherwise, push indiscriminately.
@@ -931,7 +877,7 @@ std::pair<HybridDenotableSet,HybridFloatVector>
 HybridReachabilityAnalyser::
 lower_chain_reach_and_epsilon(const HybridImageSet& initial_set) const
 {
-	HybridGrid grid = _settings->grid;
+	HybridGrid grid = _settings->reachability_restriction.grid();
 	SetApproximationType reach(grid);
 	HybridSpace state_space = _system->state_space();
 
@@ -965,16 +911,16 @@ lower_chain_reach_and_epsilon(const HybridImageSet& initial_set) const
 
 			reach.adjoin(local_reach);
 			epsilon = max_elementwise(epsilon,local_epsilon);
-
-			//ARIADNE_LOG(2,"Epsilon: " << local_epsilon);
 		}
 
-	} catch (ReachUnsatisfiesConstraintException ex) {
+	} catch (ReachUnsatisfiesConstraintException& ex) {
 		_system->substitute_all(original_parameters);
 		throw ex;
 	}
 
     _system->substitute_all(original_parameters);
+
+    reach.recombine();
 
 	return std::pair<SetApproximationType,HybridFloatVector>(reach,epsilon);
 }
@@ -988,42 +934,21 @@ _getSplitParameterSetList() const
 
     std::list<std::pair<Float,RealParameterSet> > working_scored_parameter_set_list;
 
-    const int& accuracy = _settings->maximum_grid_depth;
-
     RealParameterSet initial_parameter_set = _system->nonsingleton_parameters();
-    remove_nonlocked_parameters(initial_parameter_set,_settings->locked_parameters_ids);
 
-    HybridFloatVector hmad = getHybridMaximumAbsoluteDerivatives(*_system,
-            _settings->reachability_restriction,_settings->domain_bounds);
+    HybridFloatVector hmad = getHybridMidpointAbsoluteDerivatives(*_system,_settings->reachability_restriction);
 
     if (!initial_parameter_set.empty()) {
 
-        SetApproximationType discretised_domain;
-        if (_settings->reachability_restriction) {
-            ARIADNE_LOG(2,"Creating the discretised domain from the reachability restriction...");
-            discretised_domain.adjoin(*_settings->reachability_restriction);
-        } else {
-            ARIADNE_LOG(2,"Creating the discretised domain from the bounding domain...");
-            discretised_domain.adjoin_outer_approximation(_settings->domain_bounds,accuracy);
-        }
-        /* We recombine since large cells lie in the center of the region (at least when the tree set represents a
-         * reachability restriction), and in that region we usually are not interested in having very fine evolution.
-         * This solution accomodates a more reasonable computation time for the split calculation. */
-        discretised_domain.recombine();
+        Float initial_score = _getDerivativeWidthsScore(hmad);
 
-        Float initial_score = _getDerivativeWidthsScore(hmad,discretised_domain);
-
-        ARIADNE_LOG(2,"Discretised domain size: " << discretised_domain.size());
         ARIADNE_LOG(2,"Evaluating split sets...");
 
         working_scored_parameter_set_list.push_back(std::pair<Float,RealParameterSet>(initial_score,initial_parameter_set));
 
         do {
             _updateSplitParameterSetLists(working_scored_parameter_set_list,result_parameter_set_list,
-                    initial_score,hmad,discretised_domain);
-
-            ARIADNE_LOG(3,"Working scored parameter set list size = " << working_scored_parameter_set_list.size());
-            ARIADNE_LOG(3,"Result parameter set list size = " << result_parameter_set_list.size());
+                    initial_score,hmad);
         } while (working_scored_parameter_set_list.size() > 0);
 
     } else {
@@ -1039,16 +964,16 @@ _getSplitParameterSetList() const
 
 Float
 HybridReachabilityAnalyser::
-_getDerivativeWidthsScore(
-        const HybridFloatVector& hmad,
-        const SetApproximationType& discretised_domain) const
+_getDerivativeWidthsScore(const HybridFloatVector& hmad) const
 {
     Float result = 0;
 
+    const SetApproximationType& restriction = _settings->reachability_restriction;
+
     // Reads: \sum_{cells} \sum_{dim} der_widths(cell_loc,dim)/hmad(cell_loc,dim), under hmad(cell_loc,dim) > 0
 
-    for (SetApproximationType::const_iterator cellbox_it = discretised_domain.begin();
-            cellbox_it != discretised_domain.end(); ++cellbox_it) {
+    for (SetApproximationType::const_iterator cellbox_it = restriction.begin();
+            cellbox_it != restriction.end(); ++cellbox_it) {
         const DiscreteLocation& loc = cellbox_it->first;
         const Box& cell_bx = cellbox_it->second;
 
@@ -1062,7 +987,7 @@ _getDerivativeWidthsScore(
         }
     }
 
-    return result/((Float)discretised_domain.size());
+    return result/((Float)restriction.size());
 }
 
 
@@ -1070,17 +995,16 @@ std::pair<Float,Float>
 HybridReachabilityAnalyser::
 _getSplitDerivativeWidthsScores(
         const RealParameter& param,
-        const HybridFloatVector& hmad,
-        const SetApproximationType& discretised_domain) const
+        const HybridFloatVector& hmad) const
 {
     const Interval& param_val = param.value();
-    const Float discretised_domain_size = discretised_domain.size();
+    const SetApproximationType& restriction = _settings->reachability_restriction;
 
     Float left_result = 0;
     Float right_result = 0;
 
-    for (SetApproximationType::const_iterator cellbox_it = discretised_domain.begin();
-            cellbox_it != discretised_domain.end(); ++cellbox_it) {
+    for (SetApproximationType::const_iterator cellbox_it = restriction.begin();
+            cellbox_it != restriction.end(); ++cellbox_it) {
         const DiscreteLocation& loc = cellbox_it->first;
         const Box& cell_bx = cellbox_it->second;
         const Vector<Float>& mad = hmad.find(loc)->second;
@@ -1103,7 +1027,7 @@ _getSplitDerivativeWidthsScores(
         }
     }
 
-    return std::pair<Float,Float>(left_result/discretised_domain_size,right_result/discretised_domain_size);
+    return std::pair<Float,Float>(left_result/restriction.size(),right_result/restriction.size());
 }
 
 
@@ -1113,8 +1037,7 @@ _updateSplitParameterSetLists(
         std::list<std::pair<Float,RealParameterSet> >& working_scored_parameter_set_list,
         std::list<RealParameterSet>& result_parameter_set_list,
         const Float& initial_score,
-        const HybridFloatVector& hmad,
-        const SetApproximationType& discretised_domain) const
+        const HybridFloatVector& hmad) const
 {
     std::pair<Float,RealParameterSet> working_scored_parameter_set = working_scored_parameter_set_list.back();
     working_scored_parameter_set_list.pop_back();
@@ -1133,7 +1056,7 @@ _updateSplitParameterSetLists(
     for (RealParameterSet::const_iterator param_it = working_parameter_set.begin();
             param_it != working_parameter_set.end(); ++param_it) {
 
-        std::pair<Float,Float> local_scores = _getSplitDerivativeWidthsScores(*param_it,hmad,discretised_domain);
+        std::pair<Float,Float> local_scores = _getSplitDerivativeWidthsScores(*param_it,hmad);
 
         if (max(local_scores.first,local_scores.second) < max(best_scores.first,best_scores.second)) {
             best_scores = local_scores;
@@ -1168,17 +1091,21 @@ _updateSplitParameterSetLists(
 }
 
 
-HybridReachabilityAnalyserSettings::HybridReachabilityAnalyserSettings(const SystemType& sys)
-    : lock_to_grid_time(1.0),
+
+HybridReachabilityAnalyserSettings::HybridReachabilityAnalyserSettings(
+		const SystemType& sys,
+		const HybridDenotableSet& restriction,
+		int accuracy)
+    : lock_to_grid_time(getLockToGridTime(sys,restriction)),
       lock_to_grid_steps(1),
-      maximum_grid_depth(6),
-      domain_bounds(unbounded_hybrid_boxes(sys.state_space())),
+      maximum_grid_depth(accuracy),
       constraint_set(),
-      reachability_restriction(),
-      grid(HybridGrid(sys.state_space())),
+      reachability_restriction(restriction),
       splitting_parameters_target_ratio(0.05),
       enable_lower_pruning(true)
 {
+	ARIADNE_ASSERT_MSG(sys.state_space() == restriction.space(),
+			"The system and the reachability restriction must have the same space");
 }
 
 
@@ -1186,11 +1113,9 @@ std::ostream&
 operator<<(std::ostream& os, const HybridReachabilityAnalyserSettings& s)
 {
     os << "DiscreteEvolutionSettings"
-       << "(\n  lock_to_grid_steps=" << s.lock_to_grid_steps
        << ",\n  lock_to_grid_time=" << s.lock_to_grid_time
+       << ",\n  lock_to_grid_steps=" << s.lock_to_grid_steps
        << ",\n  maximum_grid_depth=" << s.maximum_grid_depth
-       << ",\n  bounding_domain=" << s.domain_bounds
-       << ",\n  grid=" << s.grid
        << ",\n  splitting_constants_target_ratio=" << s.splitting_parameters_target_ratio
        << ",\n  enable_lower_pruning=" << s.enable_lower_pruning
        << "\n)\n";
@@ -1432,7 +1357,7 @@ getGrid(
 Float
 getLockToGridTime(
 		const HybridReachabilityAnalyser::SystemType& sys,
-		const HybridBoxes& domain)
+		const HybridDenotableSet& restriction)
 {
 	Float result = 0;
 
@@ -1441,7 +1366,7 @@ getLockToGridTime(
 
 		const DiscreteLocation& loc = hs_it->first;
 		const uint dim = hs_it->second;
-		const Box& loc_domain = domain.find(loc)->second;
+		const Box& loc_domain = restriction.find(loc)->second.bounding_box();
 
 		// Gets the first order derivatives in respect to the dynamic of the location, applied to the corresponding domain
 		Vector<Interval> der_bbx = sys.dynamic_function(loc)(loc_domain);
@@ -1450,6 +1375,61 @@ getLockToGridTime(
 			Float maxAbsDer = abs(der_bbx[i]).upper();
 			if (maxAbsDer > 0)
 				result = max(result,loc_domain[i].width()/maxAbsDer);
+		}
+	}
+
+	return result;
+}
+
+HybridFloatVector
+getHybridMidpointAbsoluteDerivatives(
+		const HybridReachabilityAnalyser::SystemType& sys,
+		const HybridBoxes& bounding_domain)
+{
+	HybridFloatVector result;
+
+	const HybridSpace hspace = sys.state_space();
+	for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); hs_it++) {
+
+		const DiscreteLocation& loc = hs_it->first;
+		const uint dim = hs_it->second;
+
+		// Gets the first order derivatives in respect to the dynamic of the mode, applied to the domain of the corresponding location
+		Vector<Interval> der_bbx = sys.dynamic_function(loc)(bounding_domain.find(loc)->second);
+
+		Vector<Float> local_result(dim);
+		for (uint i=0;i<dim;i++)
+			local_result[i] = abs(der_bbx[i]).midpoint();
+
+		result.insert(make_pair(loc,local_result));
+	}
+
+	return result;
+}
+
+HybridFloatVector
+getHybridMidpointAbsoluteDerivatives(
+		const HybridReachabilityAnalyser::SystemType& sys,
+		const HybridDenotableSet& reachability_restriction)
+{
+	HybridFloatVector result;
+
+	const HybridSpace hspace = sys.state_space();
+	for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); hs_it++) {
+
+		const DiscreteLocation& loc = hs_it->first;
+		const uint dim = hs_it->second;
+
+		Vector<Interval> der_bbx;
+
+		result.insert(make_pair(loc,Vector<Float>(dim)));
+
+		const DenotableSetType& reach = reachability_restriction.find(loc)->second;
+		for (DenotableSetType::const_iterator cells_it = reach.begin(); cells_it != reach.end(); cells_it++) {
+			der_bbx = sys.dynamic_function(loc)(cells_it->box());
+
+			for (uint i=0;i<dim;i++)
+				result[loc][i] = max(result[loc][i], abs(der_bbx[i]).upper());
 		}
 	}
 
@@ -1497,7 +1477,6 @@ getHybridMaximumAbsoluteDerivatives(
 		}
 	}
 
-	// Returns
 	return result;
 }
 
