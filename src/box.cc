@@ -111,6 +111,17 @@ Box Box::project(const std::vector<uint>& dimensions) const {
 	return Box(vec);
 }
 
+Box Box::project(const Vector<uint>& dimensions) const {
+	// ARIADNE_ASSERT(dimensions.size() <= this->size());
+	Vector<Interval> vec(dimensions.size());
+	for (uint i=0; i<dimensions.size();++i) {
+		ARIADNE_ASSERT(dimensions[i] < this->size());
+		vec[i] = (*this)[dimensions[i]];
+	}
+	return Box(vec);
+}
+
+
 Box Box::shrink_in(const Vector<Float>& epsilon) const {
 	ARIADNE_ASSERT(this->size() == epsilon.size());
 	Vector<Interval> vec(this->size());

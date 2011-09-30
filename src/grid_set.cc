@@ -284,7 +284,7 @@ Box Grid::primary_cell() const
 Grid project_down(const Grid& original_grid, const Vector<uint>& indices)
 {
 	uint original_space_size = original_grid.dimension();
-	ARIADNE_ASSERT_MSG(original_space_size >= indices.size(),"The dimension of the projected grid must not be higher than the original grid dimension.");
+	// ARIADNE_ASSERT_MSG(original_space_size >= indices.size(),"The dimension of the projected grid must not be higher than the original grid dimension.");
 	for (Vector<uint>::const_iterator dim_it = indices.begin(); dim_it != indices.end(); ++dim_it) {
 		ARIADNE_ASSERT_MSG(*dim_it < original_space_size,"Index " << *dim_it << " is outside the original space size (" << original_space_size << ")");
 	}

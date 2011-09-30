@@ -229,6 +229,9 @@ class Box
     //! \brief Creates a box with only the dimensions given by \a dimensions. */
     Box project(const std::vector<uint>& dimensions) const;
 
+    //! \brief Creates a box with only the dimensions given by \a dimensions. */
+    Box project(const Vector<uint>& dimensions) const;
+
     //! \brief Creates a box shrinked of \a epsilon[i] on both bounds of each dimension i, with inner approximation. */
     Box shrink_in(const Vector<Float>& epsilon) const;
 

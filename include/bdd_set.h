@@ -142,19 +142,20 @@ class BDDTreeSet : public DrawableInterface {
     BDDTreeSet( const BDDTreeSet & set );
 
     /*! Create a %BDDTreeSet based on \a grid with the given \a root_cell_height and 
-     *  \a root_cell_coordinates. Activate the cells defined by \a enabled_cells.
+     *  \a root_cell_coordinates. Activate the cells defined by \a enabled_cells, and set the \a mince_depth.
      */
     BDDTreeSet( const Grid& grid, const uint root_cell_height, 
-                const array<int>& root_cell_coordinates, const bdd& enabled_cells);
+                const array<int>& root_cell_coordinates, const bdd& enabled_cells, 
+                const int mince_depth = -1 );
 
     /*! A simple constructor that creates the [0, 1]*...*[0, 1] cell in the
      *  \a dimension - dimensional space, with root cell height = 0. 
-     * If enable == true then the cell is enabled.
+     * If enable == true then the root cell is enabled.
      */
     explicit BDDTreeSet( const uint dimension, const bool enable = false );
 
     /*! \brief Construct a set with cells based on \a grid. 
-     * If enable == true then the primary cell is enabled.
+     * If enable == true then the root cell is enabled.
      */
     explicit BDDTreeSet( const Grid& grid, const bool enable = false  );
 
@@ -239,6 +240,18 @@ class BDDTreeSet : public DrawableInterface {
     /*! \brief Tests if two %BDDTreeSets overlap.
      */
     friend bool overlap( const BDDTreeSet& set1, const BDDTreeSet& set2 );
+
+    /*! \brief Tests if a %BDDTreeSet is a subset of another %BDDTreeSet. */
+    tribool subset( const BDDTreeSet& other ) const;
+
+    /*! \brief Tests if a %BDDTreeSet is a superset of a box. */
+    tribool superset( const BDDTreeSet& other ) const;
+
+    /*! \brief Tests if (the closure of) a %BDDTreeSet is disjoint from another %BDDTreeSet. */
+    tribool disjoint( const BDDTreeSet& other  ) const;
+
+    /*! \brief Tests if a %BDDTreeSet overlaps another %BDDTreeSet. */
+    tribool overlaps( const BDDTreeSet& other ) const;
 
     /*! \brief Tests if \a set1 restricts \a set2.
      */
@@ -369,7 +382,7 @@ class BDDTreeSet : public DrawableInterface {
     /*! \brief Restrict to the cells that possibly overlaps with \a set. 
      *  The result is an outer approximation of the intersection with \a set.
      */
-    void outer_restrict( const OvertSetInterface& set );
+    void outer_restrict( const OpenSetInterface& set );
 
     /*! \brief Restrict to the cells that are definitely inside \a set.
      *  The result is an inner approximation of the intersection with \a set.

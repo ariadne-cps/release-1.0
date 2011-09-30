@@ -580,25 +580,25 @@ bdd _adjoin_inner_approximation(const OpenSetInterface& set, const bdd& enabled_
 }
 
 // recursive function that restrict the bdd to the cells that possibly overlaps with a set
-bdd _outer_restrict(const OvertSetInterface& set, const bdd& enabled_cells, const Box& root_cell,
+bdd _outer_restrict(const OpenSetInterface& set, const bdd& enabled_cells, const Box& root_cell,
                        uint depth, uint splitting_coordinate, int root_var)
 {
     // std::cout << "_outer_restrict(" << set << ", " << enabled_cells << ", "
     //            << root_cell << ", " << depth << ", " << splitting_coordinate << ", " << root_var 
     //            << ")" << std::endl;
     // if the bdd is the constant false, do nothing
-    if(enabled_cells == bddfalse) return bddfalse;
+    if(enabled_cells == bddfalse) return enabled_cells;
     // if the set definitely not overlap the root cell, return the empty bdd
     if(!possibly(set.overlaps(root_cell))) {
         // std::cout << "set definitely not overlap the current cell, return false." << std::endl;
         return bddfalse;
     }
-    // if the depth is zero, return the current bdd
-    if(depth == 0) {
-        // std::cout << "depth is zero, return the current bdd." << std::endl;
+    // if the depth is zero, or the set covers the current cell, return the current bdd
+    if(depth == 0 || definitely(set.covers(root_cell))) {
+        // std::cout << "depth is zero, or the set covers the current cell, return the current bdd." << std::endl;
         return enabled_cells;
     }
-    // std::cout << "set possibly overlaps the current cell, go on." << std::endl;
+    // std::cout << "set possibly overlaps the current cell, but possibly not cover it, go on." << std::endl;
     // split the root cell and the bdd, and continue recursively
     std::pair <Box, Box> split_cells = root_cell.split(splitting_coordinate);
     bdd right_branch, left_branch;
@@ -796,6 +796,191 @@ Box _bounding_box(bdd enabled_cells, Box const& cell, uint dim, uint split, int 
     return lbox;
 }
 
+// function that project down a box. 
+// WARNING: the procedure does not check if the set of indices is consistent.
+Box _unchecked_project_down(const Box& original_box, const Vector<uint>& indices)
+{
+    Box new_box(indices.size());
+	for (uint i=0; i < indices.size(); ++i) {
+		new_box[i] = original_box[indices[i]];
+	}
+	return new_box;
+}
+
+
+// Function that computes the new height and root cell coordinates after projecting down
+// WARNING: the procedure does not check if the set of indices is consistent.
+void _project_height_and_coordinates(const Box& old_root_cell, const Vector<uint>& indices, 
+                                const Grid& new_grid, uint& new_height, array<int>& new_coordinates) 
+{
+    // std::cout << "_project_height_and_coordinates(" << old_root_cell << ", " 
+    //           << indices << ", " << new_grid << ", " << new_height << ", " 
+    //           << new_coordinates << ")" << std::endl;
+    // project down the root_cell
+    Box new_root_cell = _unchecked_project_down(old_root_cell, indices);
+    // std::cout << "new_root_cell = " << new_root_cell << std::endl;
+    // get the widths of the root_cell
+    Vector<Float> new_lengths = new_root_cell.widths();
+    // std::cout << "new_lengths = " << new_lengths << std::endl;    
+    // start from height zero, and increase it until the grid cell covers new_lengths 
+    uint dim = new_grid.dimension();
+    Grid root_grid = new_grid;
+    for(new_height = 0; root_grid.lengths() != new_lengths; ++new_height) {
+        // determine which dimension to merge 
+        uint i = _merging_coordinate(new_height, dim);
+        // if the occurrence of the merge is even, shift the origin
+        if((new_height / dim) % 2 == 1) {
+            root_grid.set_origin_coordinate(i, root_grid.origin()[i]-root_grid.lengths()[i]);
+        }
+        root_grid.set_length(i, 2.0*root_grid.lengths()[i]);        
+        // std::cout << "height = " << new_height << ", grid = " << root_grid << std::endl;
+    }
+    // compute the new root cell coordinates
+    new_coordinates = array<int>(dim);
+    for(uint i=0; i < dim; ++i) {
+        new_coordinates[i] = root_grid.subdivision_lower_index(i, new_root_cell[i].midpoint());
+    }        
+    // std::cout << "new_coordinates = " << new_coordinates << std::endl;
+}
+
+// Function that returns the new mince_depth after projecting down to indices
+// WARNING: the procedure does not check if the set of indices is consistent.
+int _project_mince_depth(const int old_mince_depth, uint old_dim, const Vector<uint>& indices) {
+    // the original set was not minced
+    if(old_mince_depth == -1) return -1;
+    // if the original set was minced, compute the new mince_depth
+    uint new_dim = indices.size();
+    int new_mince_depth = (old_mince_depth / old_dim) * new_dim;
+    // if old_mince_depth is not a multiple of old_dim, increase new_mince_depth by new_dim
+    if((old_mince_depth % old_dim) != 0) {
+        new_mince_depth = new_mince_depth + new_dim;
+    }
+    return new_mince_depth;
+}
+
+inline bool _present(int* vars, int varnum, int var) {
+    for(int i = 0; i < varnum; ++i) {
+        if(vars[i] == var) {
+            return true;
+        }
+        if(vars[i] > var) {
+            return false;
+        }
+    }
+    return false;
+}
+
+// Duplicate variable firstvar with secondvar in old_bdd.
+bdd _duplicate_var(const bdd& old_bdd, int firstvar, int secondvar) {
+    if(old_bdd == bddtrue) {
+        return bddtrue;
+    }
+    if(old_bdd == bddfalse) {
+        return bddfalse;
+    }
+    // the root of the bdd is labelled with a var
+    int rootvar = bdd_var(old_bdd);
+    if(rootvar < firstvar) {
+        // the var labelling the bdd is at a lower level, go on recursively
+        return (bdd_nithvar(rootvar) & _duplicate_var(bdd_low(old_bdd), firstvar, secondvar))
+            |  (bdd_ithvar(rootvar) & _duplicate_var(bdd_high(old_bdd), firstvar, secondvar));
+    }
+    // if the var labelling the bdd is either firstvar or higher than firstvar, 
+    // add the term x_firstvar <=> x_secondvar and return
+    return old_bdd & bdd_biimp(bdd_ithvar(firstvar), bdd_ithvar(secondvar));
+}
+
+
+// remove and duplicate variables in old_bdd following indices. 
+// During the procedure indices is modified to avoid duplicated entries.
+// WARNING: the procedure does not check if the set of indices is consistent.
+bdd _project_down_variables(const bdd& old_bdd, uint old_dim, 
+                            const Vector<uint>& indices) 
+{
+    std::cout << "_project_down_variables(" << old_bdd << ", "  
+              << old_dim << ", " << indices << ")" << std::endl; 
+    // the first free var is x_{old_depth}
+    int* vars;
+    int varnum;
+    ARIADNE_ASSERT_MSG(bdd_scanset(bdd_support(old_bdd), vars, varnum) == 0,
+        "Error in scanning the variable set.");
+    int freevar = 0;
+    int lastvar = -1;
+    if(varnum > 0) {
+        lastvar = vars[varnum-1];
+        freevar = lastvar + 1;
+    }
+    // assure that enough variables are present (in the worst case all vars are duplicated).
+    _ensure_bdd_variables(freevar + indices.size() * (freevar / old_dim + 1)); 
+    array<bool> keep(old_dim, false);
+    bddPair* renPairs = bdd_newpair();
+    ARIADNE_ASSERT_MSG(renPairs != NULL, "Cannot allocate a new bddPair.");
+    bdd new_bdd = old_bdd;
+    bdd remove = bddtrue;
+    bdd duplicate = bddtrue;
+    uint new_dim = indices.size();
+    // scan indices to determine which variables to keep and which one to duplicate    
+    for(uint i = 0; i != indices.size(); ++i) {
+        std::cout << "indices[" << i << "] = " << indices[i] << std::endl;
+        if(!keep[indices[i]]) {
+            std::cout << "the variable must be kept." << std::endl;
+            // the variable indices[i] must be kept
+            keep[indices[i]] = true;
+            // add the correct pairs for the renaming
+            int l = 0;
+            for(int k = 0; indices[i] + k <= lastvar ; k += old_dim, l += new_dim) {
+                std::cout << "adding the pair (" << indices[i] + k 
+                          << ", " << i + l << ")" << std::endl;
+                ARIADNE_ASSERT_MSG(bdd_setpair(renPairs, indices[i] + k, i + l) == 0,
+                         "Error in adding a variable pair for the rename.");                    
+            }
+        } else {
+            std::cout << "the variable is duplicated." << std::endl;
+            // the variable indices[i] is duplicated in indices
+            // add the pairs for the renaming and duplicate the var in the bdd
+            uint l = 0;
+            for(int k = 0; indices[i] + k <= lastvar ; k += old_dim, l += new_dim) {
+                // duplicate variable x = indices[i] + k with variable y = freevar
+                // this is done by adding the following term to the BDD:
+                // (FORALL x.old_bdd) OR (old_bdd AND x <=> y)
+                // add the term for the duplication if the var occurs in the bdd
+                std::cout << "duplicating variable " << indices[i] + k << " with " 
+                          << freevar << std::endl;
+                new_bdd = _duplicate_var(new_bdd, indices[i] + k, freevar);
+                std::cout << "new_bdd = " << new_bdd << std::endl;
+                // add the pair for the renaming x_depth / x_{i+k*dim}
+                std::cout << "adding the pair (" << freevar  
+                          << ", " << i + l << ") for renaming" << std::endl;
+                ARIADNE_ASSERT_MSG(bdd_setpair(renPairs, freevar, i + l) == 0,
+                        "Error in adding a variable pair for the rename.");
+                // increase freevar to get the next free variable index
+                freevar++;
+            }
+        }   // if(!keep[indices[i]])
+    }   // for(uint i = 0; i != indices.size(), ++i)  
+    std::cout << "new_bdd = " << new_bdd << std::endl;
+    // scan keep to obtain which variable must be deleted
+    for(uint i = 0; i != keep.size(); ++i) {
+        // if the dimension i must be removed, add all corresponding variables to remove
+        if(!keep[i]) {
+            for(int k = 0; i + k <= lastvar ; k += old_dim) {
+                remove = remove & bdd_ithvar(i + k);
+            }
+        }
+    }
+    std::cout << "remove = " << remove << std::endl;
+    // remove variables by applying the existential quantification 
+    new_bdd = bdd_exist(new_bdd, remove);
+    std::cout << "new_bdd = " << new_bdd << std::endl;
+    // rename the variable to obtain the correct order
+    new_bdd = bdd_replace(new_bdd, renPairs);
+    std::cout << "new_bdd = " << new_bdd << std::endl;
+    // free renPairs
+    bdd_freepair(renPairs);
+    
+    return new_bdd;
+}
+
 
 /************************************* BDDTreeSet **************************************/
 
@@ -821,12 +1006,12 @@ BDDTreeSet::BDDTreeSet( const BDDTreeSet & set )
 
 BDDTreeSet::BDDTreeSet( const Grid& grid, const uint root_cell_height, 
                         const array<int>& root_cell_coordinates, 
-                        const bdd& enabled_cells)
+                        const bdd& enabled_cells, const int mince_depth)
     : _grid(grid)
     , _root_cell_height(root_cell_height)
     , _root_cell_coordinates(root_cell_coordinates)
     , _bdd(enabled_cells)
-    , _mince_depth(-1)
+    , _mince_depth(mince_depth)
 {
     ARIADNE_ASSERT_MSG(root_cell_coordinates.size() == grid.dimension(),
         "root_cell_coordinates and grid must be of the same dimension.");
@@ -901,13 +1086,18 @@ uint BDDTreeSet::depth() const {
     int varnum;
     ARIADNE_ASSERT_MSG(bdd_scanset(bdd_support(this->_bdd), vars, varnum) == 0,
         "Error in scanning the variable set.");
-    // free vars that is not needed: the var number is sufficient
-    free(vars);    
+    if(varnum != 0) {
+        // The depth of the tree is the index of the last variable of the support + 1
+        // std::cout << "vars = " << vars[0] << " ... " << vars[varnum-1] << std::endl;
+        varnum = vars[varnum-1] + 1;
+    }
     // Remove the variables that are necessary to reach the zero level
     varnum = varnum - this->root_cell_height();
-    // If varnum is negative, the variable set is empty
+    // If varnum is negative, the depth is zero
     if(varnum < 0) varnum = 0;
-    // the depth is the maximum between the mince_depth and the number of variables
+    // free vars
+    free(vars);    
+    // the depth is the maximum between the mince_depth and the real depth of the tree
     return max(varnum, this->mince_depth());
 }
 
@@ -1014,6 +1204,21 @@ bool overlap( const BDDTreeSet& set1, const BDDTreeSet& set2 ) {
     return (bdd_and(set3.enabled_cells(), set4.enabled_cells()) != bddfalse);    
 }
 
+tribool BDDTreeSet::subset( const BDDTreeSet& other ) const {
+    return Ariadne::subset(*this, other);
+}
+
+tribool BDDTreeSet::superset( const BDDTreeSet& other ) const{
+    return Ariadne::superset(*this, other);
+}
+
+tribool BDDTreeSet::disjoint( const BDDTreeSet& other  ) const{
+    return Ariadne::disjoint(*this, other);
+}
+
+tribool BDDTreeSet::overlaps( const BDDTreeSet& other ) const{
+    return Ariadne::overlap(*this, other);
+}
 
 bool restricts( const BDDTreeSet& set1, const BDDTreeSet& set2 ) {
     // the two sets must have the same grid
@@ -1025,7 +1230,6 @@ bool restricts( const BDDTreeSet& set1, const BDDTreeSet& set2 ) {
     // To Davide: Is it more efficient doing this check or an inequality one?
     return subset(set2, set2_restricted);
 }
-
 
 tribool BDDTreeSet::subset( const Box& box ) const {
     // raise an error if the current set is zero dimensional
@@ -1386,7 +1590,7 @@ void BDDTreeSet::adjoin_inner_approximation( const OpenSetInterface& set, const 
     this->minimize_height();    
 }
 
-void BDDTreeSet::outer_restrict(const OvertSetInterface& set) {
+void BDDTreeSet::outer_restrict(const OpenSetInterface& set) {
     ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot compare with a zero-dimensional BDDTreeSet.");
     ARIADNE_ASSERT_MSG(this->dimension() == set.dimension(), "Cannot compare sets with different dimensions.");
 
@@ -1606,7 +1810,30 @@ BDDTreeSet definitely_covered_subset(const BDDTreeSet& bdd_set, const Constraint
 // }
 
 BDDTreeSet project_down(const BDDTreeSet& bdd_set, const Vector<uint>& indices) {
-    ARIADNE_NOT_IMPLEMENTED;    
+    // project down the grid
+    Grid new_grid = project_down(bdd_set.grid(), indices);
+    // To simplify the procedure, increase the height of the bdd_set so that the first splitting coordinate is 0
+    BDDTreeSet set = bdd_set;
+    uint height = set.root_cell_height();
+    uint old_dim = set.dimension();
+    uint split = _splitting_coordinate(height, old_dim);
+    if(split > 0) {
+        set.increase_height(height + split);
+    }
+    ARIADNE_ASSERT(_splitting_coordinate(set.root_cell_height(), set.dimension()) == 0);
+    // compute the new height and root cell coordinates
+    uint new_height = 0;
+    array<int> new_coordinates(new_grid.dimension(), 0);
+    _project_height_and_coordinates(set.root_cell(), indices, new_grid, new_height, new_coordinates);
+    // compute the new mince depth
+    uint new_mince_depth = _project_mince_depth(set.mince_depth(), old_dim, indices);
+    // remove, duplicate and rename variables
+    bdd new_bdd = _project_down_variables(set.enabled_cells(), old_dim, indices);
+    
+    // create the new BDDTreeSet
+    set = BDDTreeSet(new_grid, new_height, new_coordinates, new_bdd, new_mince_depth);
+    set.minimize_height();
+    return set;
 }
 
 // tribool covers(const BDDTreeSet& covering_set, const BDDTreeSet& covered_set, const Vector<Float>& eps) {
