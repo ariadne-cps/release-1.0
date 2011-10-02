@@ -66,6 +66,7 @@ typedef boost::shared_ptr<HybridDenotableSet> HybridDenotableSetPtr;
 class HybridGrid;
 class HybridGridCell;
 class HybridDenotableSet;
+class ReachabilityRestriction;
 
 template<class ES> class HybridListSet;
 template<class ES> class HybridDiscretiser;
@@ -83,6 +84,7 @@ class HybridReachabilityAnalyser
     typedef boost::shared_ptr<EvolverInterface<SystemType,EnclosureType> > EvolverPtrType;
   private:
     boost::shared_ptr< SettingsType > _settings;
+    boost::shared_ptr< ReachabilityRestriction > _restriction;
     mutable boost::shared_ptr< SystemType > _system;
   public:
 
@@ -97,8 +99,7 @@ class HybridReachabilityAnalyser
 
     HybridReachabilityAnalyser(
     		const SystemType& system,
-    		const HybridDenotableSet& restriction,
-    		int accuracy);
+    		const ReachabilityRestriction& restriction);
 
     HybridReachabilityAnalyser(
     		const SystemType& system,
@@ -197,6 +198,11 @@ class HybridReachabilityAnalyser
 
   private:
 
+    /*! \brief Returns the accuracy, grid and domain used, taken from the internal restriction */
+    int _accuracy() const;
+    const HybridGrid& _grid() const;
+    HybridBoxes _domain() const;
+
     /*! \brief Plots \a reach in \a plot_dirpath directory, where \a name_prefix as a prefix to the filename */
     void _plot_reach(
     		const SetApproximationType& reach,
@@ -222,51 +228,6 @@ class HybridReachabilityAnalyser
     		const SetApproximationType& initial,
     		ContinuousEvolutionDirection direction) const;
 
-    /*! \brief Pushes into \a result_enclosures the enclosures from \a reachCells.
-     * \details Ignores enclosures that lie outside the domain.
-     */
-    void _outer_chain_reach_forward_pushTargetCells(
-    		const SystemType& system,
-    		const SetApproximationType& reachCells,
-    		SetApproximationType& result_set) const;
-
-    /*! \brief Pushes into \a result_enclosures the source enclosures from \a sourceCellsOverapprox that reach \a reachCells. */
-    void _outer_chain_reach_backward_pushSourceCells(
-    		const SystemType& system,
-    		const SetApproximationType& reachCells,
-    		SetApproximationType& result_set) const;
-
-    /*! \brief Checks whether a box \a bx is outside any invariant from \a invariants. */
-    bool _outer_chain_reach_isOutsideInvariants(
-    		const SystemType& system,
-    		const DiscreteLocation& location,
-    		const Box& bx) const;
-
-    /*! \brief Checks whether the transition of kind \a event_kind, with a given \a activation, is feasible for enclosure \a source under dynamic \a dynamic.
-     * \details By feasibility we mean that, under upper semantics, it would be taken by \a source.
-     */
-    bool _is_transition_feasible(
-    		const ScalarFunction& activation,
-    		EventKind event_kind,
-    		const VectorFunction& dynamic,
-    		const ContinuousEnclosureType& source,
-    		Semantics semantics) const;
-
-    //! \brief Adjoins the target of \a sourceEnclosure into \a result_set.
-    void _outer_chain_reach_adjoinTargetEnclosure(
-    		const SystemType& system,
-    		const DiscreteLocation& sourceLocation,
-    		const ContinuousEnclosureType& sourceEnclosure,
-			SetApproximationType& result_set) const;
-
-    //! \brief Adjoins \a sourceEnclosure into \a result_set if its target overlaps with \a targetCells.
-    void _outer_chain_reach_adjoinSourceEnclosure(
-    		const SystemType& system,
-    		const DiscreteLocation& sourceLocation,
-    		const ContinuousEnclosureType& sourceEnclosure,
-    		const SetApproximationType& targetCells,
-			SetApproximationType& result_set) const;
-
     /*! \brief Gets the lower reach and the epsilon for the \a system.
      * \details The \a constraint_set is checked: if not empty and its epsilon relaxation is not satisfied
      * for the current lower reach, an exception is raised. */
@@ -281,6 +242,13 @@ class HybridReachabilityAnalyser
     		const SystemType& system,
     		const HDS& reach,
     		const HybridFloatVector& epsilon) const;
+
+    /*! \brief Gets whether \a reach has a subset definitely infeasible in respect to the
+     * constraint enlarged by \eps. */
+    bool _has_definitely_infeasible_subset(
+    		const HybridDenotableSet& reach,
+    		const HybridFloatVector& eps,
+    		const HybridSpace& space) const;
 
     /*! \brief Filters \a final_enclosures into \a initial_enclosures.
      * \details The procedure prunes a percentage of the enclosures based on \a adjoined_evolve_sizes and \a superposed_evolve_sizes. */
@@ -334,11 +302,10 @@ class HybridReachabilityAnalyserSettings {
 
   private:
 
-    //! \brief Default constructor based on a system.
+    //! \brief Default constructor based on a system and some bounds.
     HybridReachabilityAnalyserSettings(
     		const SystemType& sys,
-    		const HybridDenotableSet& restriction,
-    		int accuracy);
+    		const HybridBoxes& domain);
 
   public:
 
@@ -359,20 +326,9 @@ class HybridReachabilityAnalyserSettings {
     //! \brief The number of transitions before a discretisation.
     IntType lock_to_grid_steps;
 
-    //! \brief Set the depth used for approximation on a grid for computations using upper semantics.
-    //! \details
-    //! Increasing this value increases the accuracy of the computation.
-    //!  <br>
-    //! This parameter is only used in upper_evolve(), upper_reach() and chain_reach() routines.
-    IntType maximum_grid_depth;
-
     //! \brief Set the constraint set for reachability.
     //! \details Used for early termination of lower chain reachability. An empty constraint set implies no constraint at all.
     HybridConstraintSet constraint_set;
-
-    //! \brief Set the restriction for reachability.
-    //! \details Can be empty for those methods that do not require restriction (i.e., using finite time).
-    HybridDenotableSet reachability_restriction;
 
     //! \brief The parameters that must not be automatically split inside a system.
     Set<Identifier> locked_parameters_ids;
@@ -477,15 +433,6 @@ std::list<EnclosureType> to_enclosures(const HybridDenotableSet& reach);
 std::list<EnclosureType> restrict_enclosures(
 		const std::list<EnclosureType> enclosures,
 		const HybridDenotableSet& restriction);
-
-/*! \brief Gets the subset of \a reach (inside \a reachability_restriction) that satisfy \a constraint
- * under a relaxation of the reachability given by \a eps. */
-HybridDenotableSet possibly_feasible_subset(
-		const HybridDenotableSet& reach,
-		const HybridConstraintSet& constraint,
-		const HybridFloatVector eps,
-		HybridDenotableSet reachability_restriction,
-		int accuracy);
 
 } // namespace Ariadne
 

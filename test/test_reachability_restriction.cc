@@ -43,7 +43,7 @@ class TestReachabilityRestriction {
     void test_copy();
     void test_forward_jump_set();
     void test_backward_jump_set();
-    void test_feasible_projection();
+    void test_projection();
 
     HybridAutomaton _get_system();
     ReachabilityRestriction _get_reference_restriction();
@@ -136,7 +136,7 @@ TestReachabilityRestriction::test()
     ARIADNE_TEST_CALL(test_copy());
     ARIADNE_TEST_CALL(test_forward_jump_set());
     ARIADNE_TEST_CALL(test_backward_jump_set());
-    ARIADNE_TEST_CALL(test_feasible_projection());
+    ARIADNE_TEST_CALL(test_projection());
 }
 
 
@@ -484,7 +484,7 @@ TestReachabilityRestriction::test_backward_jump_set() {
 
 
 void
-TestReachabilityRestriction::test_feasible_projection() {
+TestReachabilityRestriction::test_projection() {
 
 	ReachabilityRestriction rr1 = _get_reference_restriction();
 
@@ -497,6 +497,9 @@ TestReachabilityRestriction::test_feasible_projection() {
 	varlist.append(x);
 	varlist.append(y);
 
+	HybridSpace space;
+	space[q1] = 2;
+
 	ARIADNE_PRINT_TEST_CASE_TITLE("The set has no possibly feasible projection.");
 
 	RealExpression expr1 = x;
@@ -504,15 +507,17 @@ TestReachabilityRestriction::test_feasible_projection() {
 	consexpr1.append(expr1);
 	VectorFunction cons_f1(consexpr1,varlist);
 	Box codomain1(1,2.5,4.0);
-	HybridSpace space1;
-	space1[q1] = 2;
-	HybridConstraintSet constraint1(space1,ConstraintSet(cons_f1,codomain1));
+	HybridConstraintSet constraint1(space,ConstraintSet(cons_f1,codomain1));
 
 	HybridDenotableSet possibly_feasible1 = rr1.possibly_feasible_projection(constraint1);
 	HybridDenotableSet definitely_feasible1 = rr1.definitely_feasible_projection(constraint1);
+	HybridDenotableSet possibly_infeasible1 = rr1.possibly_infeasible_projection(constraint1);
+	HybridDenotableSet definitely_infeasible1 = rr1.definitely_infeasible_projection(constraint1);
 
 	ARIADNE_TEST_ASSERT(possibly_feasible1.empty());
 	ARIADNE_TEST_ASSERT(definitely_feasible1.empty());
+	ARIADNE_TEST_ASSERT(!possibly_infeasible1.empty());
+	ARIADNE_TEST_ASSERT(!definitely_infeasible1.empty());
 
     ARIADNE_PRINT_TEST_CASE_TITLE("The set has only a possibly feasible projection.");
 
@@ -521,28 +526,73 @@ TestReachabilityRestriction::test_feasible_projection() {
 	consexpr2.append(expr2);
 	VectorFunction cons_f2(consexpr2,varlist);
 	Box codomain2(1,0.5,1.0);
-	HybridSpace space2;
-	space2[q1] = 2;
-	HybridConstraintSet constraint2(space2,ConstraintSet(cons_f2,codomain2));
+
+	HybridConstraintSet constraint2(space,ConstraintSet(cons_f2,codomain2));
 
 	HybridDenotableSet possibly_feasible2 = rr1.possibly_feasible_projection(constraint2);
 	HybridDenotableSet definitely_feasible2 = rr1.definitely_feasible_projection(constraint2);
+	HybridDenotableSet possibly_infeasible2 = rr1.possibly_infeasible_projection(constraint2);
+	HybridDenotableSet definitely_infeasible2 = rr1.definitely_infeasible_projection(constraint2);
 
 	ARIADNE_TEST_ASSERT(!possibly_feasible2.empty());
 	ARIADNE_TEST_ASSERT(definitely_feasible2.empty());
+	ARIADNE_TEST_ASSERT(!possibly_infeasible2.empty());
+	ARIADNE_TEST_ASSERT(!definitely_infeasible2.empty());
 
     ARIADNE_PRINT_TEST_CASE_TITLE("The set has a definitely feasible projection.");
 
-	ReachabilityRestriction rr2 = _get_reference_restriction();
-    rr2.refine(4);
+	ReachabilityRestriction rr3 = _get_reference_restriction();
+    rr3.refine(4);
 
-	HybridDenotableSet possibly_feasible3 = rr2.possibly_feasible_projection(constraint2);
-	HybridDenotableSet definitely_feasible3 = rr2.definitely_feasible_projection(constraint2);
+	HybridDenotableSet possibly_feasible3 = rr3.possibly_feasible_projection(constraint2);
+	HybridDenotableSet definitely_feasible3 = rr3.definitely_feasible_projection(constraint2);
+	HybridDenotableSet possibly_infeasible3 = rr3.possibly_infeasible_projection(constraint2);
+	HybridDenotableSet definitely_infeasible3 = rr3.definitely_infeasible_projection(constraint2);
 
 	ARIADNE_TEST_ASSERT(!possibly_feasible3.empty());
 	ARIADNE_TEST_ASSERT(!definitely_feasible3.empty());
+	ARIADNE_TEST_ASSERT(!possibly_infeasible3.empty());
+	ARIADNE_TEST_ASSERT(!possibly_infeasible3.empty());
+
     ARIADNE_TEST_ASSERT(!superset(definitely_feasible3.bounding_box(),possibly_feasible3.bounding_box()));
 
+    ARIADNE_PRINT_TEST_CASE_TITLE("The set has no definitely infeasible projection, but a possibly infeasible one.");
+
+	RealExpression expr4 = x;
+	List<RealExpression> consexpr4;
+	consexpr4.append(expr4);
+	VectorFunction cons_f4(consexpr4,varlist);
+	Box codomain4(1,-1.0,1.0);
+	HybridConstraintSet constraint4(space,ConstraintSet(cons_f4,codomain4));
+
+	HybridDenotableSet possibly_feasible4 = rr3.possibly_feasible_projection(constraint4);
+	HybridDenotableSet definitely_feasible4 = rr3.definitely_feasible_projection(constraint4);
+	HybridDenotableSet possibly_infeasible4 = rr3.possibly_infeasible_projection(constraint4);
+	HybridDenotableSet definitely_infeasible4 = rr3.definitely_infeasible_projection(constraint4);
+
+	ARIADNE_TEST_ASSERT(!possibly_feasible4.empty());
+	ARIADNE_TEST_ASSERT(!definitely_feasible4.empty());
+	ARIADNE_TEST_ASSERT(!possibly_infeasible4.empty());
+	ARIADNE_TEST_ASSERT(definitely_infeasible4.empty());
+
+    ARIADNE_PRINT_TEST_CASE_TITLE("The set has definitely no infeasible projection.");
+
+	RealExpression expr5 = x;
+	List<RealExpression> consexpr5;
+	consexpr5.append(expr5);
+	VectorFunction cons_f5(consexpr5,varlist);
+	Box codomain5(1,-1.5,1.5);
+	HybridConstraintSet constraint5(space,ConstraintSet(cons_f5,codomain5));
+
+	HybridDenotableSet possibly_feasible5 = rr3.possibly_feasible_projection(constraint5);
+	HybridDenotableSet definitely_feasible5 = rr3.definitely_feasible_projection(constraint5);
+	HybridDenotableSet possibly_infeasible5 = rr3.possibly_infeasible_projection(constraint5);
+	HybridDenotableSet definitely_infeasible5 = rr3.definitely_infeasible_projection(constraint5);
+
+	ARIADNE_TEST_ASSERT(!possibly_feasible5.empty());
+	ARIADNE_TEST_ASSERT(!definitely_feasible5.empty());
+	ARIADNE_TEST_ASSERT(possibly_infeasible5.empty());
+	ARIADNE_TEST_ASSERT(definitely_infeasible5.empty());
 }
 
 int main() {

@@ -29,6 +29,7 @@
 #define ARIADNE_VERIFIER_H_
 
 #include "reachability_analyser.h"
+#include "reachability_restriction.h"
 #include "logging.h"
 #include "verification_input.h"
 
@@ -51,16 +52,16 @@ class Verifier
   private:
 
     typedef boost::shared_ptr<ReachabilityAnalyserInterface<SystemType> > AnalyserPtrType;
-    typedef boost::shared_ptr<SetApproximationType> SetApproximationTypePtr;
+    typedef boost::shared_ptr<ReachabilityRestriction> ReachabilityRestrictionPtr;
 
   private:
     boost::shared_ptr<SettingsType> _settings;
     mutable std::string _plot_dirpath;
 
 	/*! \brief "Stateless" fields for holding reachability restrictions between successive internal calls. */
-	mutable SetApproximationTypePtr _safety_reachability_restriction;
-	mutable SetApproximationTypePtr _dominating_reachability_restriction;
-	mutable SetApproximationTypePtr _dominated_reachability_restriction;
+	mutable ReachabilityRestrictionPtr _safety_restriction;
+	mutable ReachabilityRestrictionPtr _dominating_restriction;
+	mutable ReachabilityRestrictionPtr _dominated_restriction;
 
   public:
 
@@ -146,7 +147,6 @@ class Verifier
 	 * \details The \a constants are substituted into the system. */
 	bool _safety_proving_once(
 	        SafetyVerificationInput& verInput,
-			const unsigned int& accuracy,
 			const RealParameterSet& params) const;
 
 	/*! \brief Prove (once, i.e. for a given grid depth) that the reachable set of \a system starting in \a initial_set
@@ -154,7 +154,6 @@ class Verifier
 	 * \details The \a params are substituted into the system. */
 	bool _safety_disproving_once(
 	        SafetyVerificationInput& verInput,
-	        const unsigned int& accuracy,
 			const RealParameterSet& params) const;
 
     /*! \brief Attempt (once, i.e. for a given grid depth) to verify that the reachable set of \a system starting in \a initial_set
@@ -162,7 +161,6 @@ class Verifier
      * \details The \a params are substituted into the system. */
     tribool _safety_once(
             SafetyVerificationInput& verInput,
-            const unsigned int& accuracy,
 			const RealParameterSet& constants) const;
 
 	/*! \brief Performs iterative safety verification where \a parameter is substituted into the system.
@@ -187,13 +185,11 @@ class Verifier
 	/*! \brief Performs backward refinement of the safety reachability restriction. */
 	void _safety_proving_once_backward_refinement(
 	        SafetyVerificationInput& verInput,
-	        const unsigned int& accuracy,
 	        const RealParameterSet& params) const;
 
 	/*! \brief Performs forward analysis for safety proving. */
 	bool _safety_proving_once_forward_analysis(
 	        SafetyVerificationInput& verInput,
-	        const unsigned int& accuracy,
 	        const RealParameterSet& params) const;
 
 	//@}
@@ -227,34 +223,30 @@ class Verifier
 			const RealParameterSet& params) const;
 
 	/*! \brief Performs the proving part of dominance checking.
-	 * \details Tries proving only once, in respect to the current grid depth. */
+	 * \details Tries proving only once, in respect to the current restriction accuracy. */
 	bool _dominance_proving_once(
 			DominanceVerificationInput& dominating,
 			DominanceVerificationInput& dominated,
-			const RealParameterSet& params,
-			const unsigned int& accuracy) const;
+			const RealParameterSet& params) const;
 
 	/*! \brief Performs the disproving part of dominance checking.
-	 * \details Tries disproving only once, in respect to the current grid depth. */
+	 * \details Tries disproving only once, in respect to the current restriction accuracy. */
 	bool _dominance_disproving_once(
 			DominanceVerificationInput& dominating,
 			DominanceVerificationInput& dominated,
-			const RealParameterSet& params,
-			const unsigned int& accuracy) const;
+			const RealParameterSet& params) const;
 
 	/*! \brief Gets the flattened lower reach and the epsilon of the \a dominanceSystem type. */
 	std::pair<DenotableSetType,Vector<Float> > _dominance_flattened_lower_reach_and_epsilon(
 			DominanceVerificationInput& verInput,
 			const RealParameterSet& params,
-			DominanceSystem dominanceSystem,
-			const unsigned int& accuracy) const;
+			DominanceSystem dominanceSystem) const;
 
 	/*! \brief Gets the flattened outer reach of the \a dominanceSystem type. */
 	DenotableSetType _dominance_flattened_outer_reach(
 			DominanceVerificationInput& verInput,
 			const RealParameterSet& params,
-			DominanceSystem dominanceSystem,
-			const unsigned int& accuracy) const;
+			DominanceSystem dominanceSystem) const;
 
 	//@}
 
@@ -265,9 +257,8 @@ class Verifier
     AnalyserPtrType _get_tuned_analyser(
             const SystemType& sys,
             const Set<Identifier>& locked_params_ids,
-            const SetApproximationTypePtr& reachability_restriction,
+            const ReachabilityRestrictionPtr& restriction,
             const HybridConstraintSet& constraint_set,
-            int accuracy,
             unsigned ADD_TAB_OFFSET,
             bool enable_lower_reach_restriction_check,
             Semantics semantics) const;
@@ -283,27 +274,8 @@ class Verifier
 	/*! \brief Utility function generalising the safety and dominance cases. */
 	void _init_restriction(
 			const VerificationInput& verInput,
-			SetApproximationTypePtr& reachability_restriction,
+			ReachabilityRestrictionPtr& restriction,
 			bool EQUAL_GRID_FOR_ALL_LOCATIONS) const;
-
-	/*! \brief Refines the safety restriction by restricting in respect to the discretised \a domain at the given \a accuracy.
-	 *  \details Skips this operation if the safety restriction is already inside the \a domain, since it would yield the original restriction. */
-	void _refine_safety_restriction(
-			const HybridBoxes& domain,
-			int accuracy) const;
-
-	/*! \brief Refines the dominance restriction by restricting in respect to the discretised \a domain at the given \a accuracy.
-	 *  \details Skips this operation if the safety restriction is already inside the \a domain, since it would yield the original restriction. */
-	void _refine_dominance_restriction(
-			const HybridBoxes& domain,
-			int accuracy,
-			DominanceSystem dominanceSystem) const;
-
-	/*! \brief Utility function generalising the safety and dominance cases. */
-	void _refine_restriction(
-			const HybridBoxes& domain,
-			int accuracy,
-			SetApproximationTypePtr& reachability_restriction) const;
 
 	// Reached region plotting methods
 	void _plot_dirpath_init(std::string basename) const;

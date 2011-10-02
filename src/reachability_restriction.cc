@@ -51,7 +51,8 @@ ReachabilityRestriction(const ReachabilityRestriction& other) :
 	_domain(other._domain),
 	_grid(other._grid),
 	_accuracy(other._accuracy),
-	_set(other._set)
+	_set(other._set),
+	_calculus(other._calculus)
 {
 
 }
@@ -340,6 +341,52 @@ definitely_feasible_projection(const HybridConstraintSet& constraint) const
 			_insert_domain_discretisation(loc);
 
 		result.insert(make_pair(loc,definitely_covered_subset(_set[loc],cons_it->second)));
+	}
+
+	return result;
+}
+
+
+HybridDenotableSet
+ReachabilityRestriction::
+possibly_infeasible_projection(const HybridConstraintSet& constraint) const
+{
+	HybridDenotableSet result;
+
+	for (HybridConstraintSet::const_iterator cons_it = constraint.begin(); cons_it != constraint.end(); ++cons_it) {
+		const DiscreteLocation& loc = cons_it->first;
+		ARIADNE_ASSERT_MSG(this->has_location(loc), "The constraint has location " << loc.name() << ", but the restriction does not.");
+		if (!this->has_discretised(loc))
+			_insert_domain_discretisation(loc);
+
+		DenotableSetType definitely_covered = definitely_covered_subset(_set[loc],cons_it->second);
+		DenotableSetType possibly_infeasible = _set[loc];
+		possibly_infeasible.remove(definitely_covered);
+
+		result.insert(make_pair(loc,possibly_infeasible));
+	}
+
+	return result;
+}
+
+
+HybridDenotableSet
+ReachabilityRestriction::
+definitely_infeasible_projection(const HybridConstraintSet& constraint) const
+{
+	HybridDenotableSet result;
+
+	for (HybridConstraintSet::const_iterator cons_it = constraint.begin(); cons_it != constraint.end(); ++cons_it) {
+		const DiscreteLocation& loc = cons_it->first;
+		ARIADNE_ASSERT_MSG(this->has_location(loc), "The constraint has location " << loc.name() << ", but the restriction does not.");
+		if (!this->has_discretised(loc))
+			_insert_domain_discretisation(loc);
+
+		DenotableSetType possibly_overlapping = possibly_overlapping_subset(_set[loc],cons_it->second);
+		DenotableSetType definitely_infeasible = _set[loc];
+		definitely_infeasible.remove(possibly_overlapping);
+
+		result.insert(make_pair(loc,definitely_infeasible));
 	}
 
 	return result;

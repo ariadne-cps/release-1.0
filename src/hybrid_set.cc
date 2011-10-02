@@ -260,6 +260,8 @@ HybridDenotableSet possibly_overlapping_subset(const HybridDenotableSet& hdenota
     	HybridConstraintSet::locations_const_iterator cs_it = cons_set.find(gts_it->first);
     	if (cs_it != cons_set.locations_end())
     		result[gts_it->first] = possibly_overlapping_subset(gts_it->second,cs_it->second);
+    	else
+    		result[gts_it->first] = gts_it->second;
     }
 
 	return result;
@@ -274,6 +276,8 @@ HybridDenotableSet definitely_covered_subset(const HybridDenotableSet& hdenotabl
     	HybridConstraintSet::locations_const_iterator cs_it = cons_set.find(gts_it->first);
     	if (cs_it != cons_set.locations_end())
     		result[gts_it->first] = definitely_covered_subset(gts_it->second,cs_it->second);
+    	else
+    		result[gts_it->first] = gts_it->second;
     }
 
 	return result;

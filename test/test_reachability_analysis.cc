@@ -135,7 +135,6 @@ class TestReachabilityAnalysis
 
     	HybridReachabilityAnalyser analyser(build_analyser());
 
-    	cout << "Reachability restriction bbox = " << analyser.settings().reachability_restriction.bounding_box() << "\n";
         DiscreteLocation loc(1);
         Box graphics_box(2,-1.0,2.1,-0.5,1.1);
         cout << "Computing timed evolve set" << endl;

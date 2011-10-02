@@ -56,6 +56,9 @@ class ReachabilityRestriction
 	//! \brief Copy constructor.
 	ReachabilityRestriction(const ReachabilityRestriction& other);
 
+	//! \brief Cloner.
+	ReachabilityRestriction* clone() const { return new ReachabilityRestriction(*this); }
+
 	virtual ~ReachabilityRestriction() { }
 
 	//@}
@@ -64,7 +67,7 @@ class ReachabilityRestriction
     //! \name Getters
 
 	//! \brief Return the grid as exposed by the given domain.
-	HybridGrid grid() const { return _grid; }
+	const HybridGrid& grid() const { return _grid; }
 
 	//! \brief Return the hybrid space where the restriction is defined.
 	HybridSpace space() const { return _grid.state_space(); }
@@ -140,6 +143,16 @@ class ReachabilityRestriction
 	//! \details The result in general is a projection since \a constraint is allowed to be on a subspace of the hybrid
 	//! space of the restriction.
 	HybridDenotableSet definitely_feasible_projection(const HybridConstraintSet& constraint) const;
+
+	//! \brief Computes the subset that is possibly infeasible in respect to \a constraint.
+	//! \details The result in general is a projection since \a constraint is allowed to be on a subspace of the hybrid
+	//! space of the restriction.
+	HybridDenotableSet possibly_infeasible_projection(const HybridConstraintSet& constraint) const;
+
+	//! \brief Computes the subset that is definitely infeasible in respect to \a constraint.
+	//! \details The result in general is a projection since \a constraint is allowed to be on a subspace of the hybrid
+	//! space of the restriction.
+	HybridDenotableSet definitely_infeasible_projection(const HybridConstraintSet& constraint) const;
 
 	//@}
 
