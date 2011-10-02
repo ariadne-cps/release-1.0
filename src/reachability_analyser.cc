@@ -116,7 +116,7 @@ _get_tuned_evolver(
     evolver->verbosity = this->verbosity - ADD_TAB_OFFSET;
     evolver->tab_offset = this->tab_offset + ADD_TAB_OFFSET;
 
-    HybridFloatVector hmad = getHybridMidpointAbsoluteDerivatives(sys,_settings->reachability_restriction);
+    HybridFloatVector hmad = getHybridMidpointAbsoluteDerivatives(sys,_settings->reachability_restriction.bounding_box());
 
     evolver->tune_settings(_settings->reachability_restriction.grid(),hmad,
     		_settings->maximum_grid_depth,this->free_cores,semantics);
@@ -949,7 +949,7 @@ _getSplitParameterSetList() const
 
     RealParameterSet initial_parameter_set = _system->nonsingleton_parameters();
 
-    HybridFloatVector hmad = getHybridMidpointAbsoluteDerivatives(*_system,_settings->reachability_restriction);
+    HybridFloatVector hmad = getHybridMidpointAbsoluteDerivatives(*_system,_settings->reachability_restriction.bounding_box());
 
     if (!initial_parameter_set.empty()) {
 
@@ -981,26 +981,24 @@ _getDerivativeWidthsScore(const HybridFloatVector& hmad) const
 {
     Float result = 0;
 
-    const SetApproximationType& restriction = _settings->reachability_restriction;
+    const HybridBoxes& restriction_bounding = _settings->reachability_restriction.bounding_box();
 
-    // Reads: \sum_{cells} \sum_{dim} der_widths(cell_loc,dim)/hmad(cell_loc,dim), under hmad(cell_loc,dim) > 0
+    for (HybridBoxes::const_iterator bounding_it = restriction_bounding.begin();
+            bounding_it != restriction_bounding.end(); ++bounding_it) {
+        const DiscreteLocation& loc = bounding_it->first;
+        const Box& bbx = bounding_it->second;
 
-    for (SetApproximationType::const_iterator cellbox_it = restriction.begin();
-            cellbox_it != restriction.end(); ++cellbox_it) {
-        const DiscreteLocation& loc = cellbox_it->first;
-        const Box& cell_bx = cellbox_it->second;
-
-        Vector<Float> der_widths = getDerivativeWidths(*_system,loc,cell_bx);
+        Vector<Float> der_widths = getDerivativeWidths(*_system,loc,bbx);
         Vector<Float> mad = hmad.find(loc)->second;
 
-        for (unsigned i=0; i < cell_bx.size(); ++i) {
+        for (unsigned i=0; i < bbx.size(); ++i) {
             if (mad[i] > 0) {
                 result += der_widths[i]/mad[i];
             }
         }
     }
 
-    return result/((Float)restriction.size());
+    return result/((Float)restriction_bounding.size());
 }
 
 
@@ -1011,15 +1009,15 @@ _getSplitDerivativeWidthsScores(
         const HybridFloatVector& hmad) const
 {
     const Interval& param_val = param.value();
-    const SetApproximationType& restriction = _settings->reachability_restriction;
+    const HybridBoxes& restriction_bounding = _settings->reachability_restriction.bounding_box();
 
     Float left_result = 0;
     Float right_result = 0;
 
-    for (SetApproximationType::const_iterator cellbox_it = restriction.begin();
-            cellbox_it != restriction.end(); ++cellbox_it) {
-        const DiscreteLocation& loc = cellbox_it->first;
-        const Box& cell_bx = cellbox_it->second;
+    for (HybridBoxes::const_iterator bounding_it = restriction_bounding.begin();
+            bounding_it != restriction_bounding.end(); ++bounding_it) {
+        const DiscreteLocation& loc = bounding_it->first;
+        const Box& cell_bx = bounding_it->second;
         const Vector<Float>& mad = hmad.find(loc)->second;
 
         Interval left_half_val = Interval(param_val.lower(),param_val.midpoint());
@@ -1030,7 +1028,7 @@ _getSplitDerivativeWidthsScores(
         Vector<Float> right_der_widths = getDerivativeWidths(*_system,loc,cell_bx);
         _system->substitute(param);
 
-        ARIADNE_LOG(5,"Box " << *cellbox_it << ": " << left_der_widths << ", " << right_der_widths);
+        ARIADNE_LOG(5,"Box " << *bounding_it << ": " << left_der_widths << ", " << right_der_widths);
 
         for (unsigned i=0; i < cell_bx.size(); ++i) {
             if (mad[i] > 0) {
@@ -1040,7 +1038,7 @@ _getSplitDerivativeWidthsScores(
         }
     }
 
-    return std::pair<Float,Float>(left_result/restriction.size(),right_result/restriction.size());
+    return std::pair<Float,Float>(left_result/restriction_bounding.size(),right_result/restriction_bounding.size());
 }
 
 
@@ -1109,7 +1107,7 @@ HybridReachabilityAnalyserSettings::HybridReachabilityAnalyserSettings(
 		const SystemType& sys,
 		const HybridDenotableSet& restriction,
 		int accuracy)
-    : lock_to_grid_time(getLockToGridTime(sys,restriction)),
+    : lock_to_grid_time(getLockToGridTime(sys,restriction.bounding_box())),
       lock_to_grid_steps(1),
       maximum_grid_depth(accuracy),
       constraint_set(),
@@ -1371,7 +1369,7 @@ getGrid(
 Float
 getLockToGridTime(
 		const HybridReachabilityAnalyser::SystemType& sys,
-		const HybridDenotableSet& restriction)
+		const HybridBoxes& domain)
 {
 	Float result = 0;
 
@@ -1380,7 +1378,7 @@ getLockToGridTime(
 
 		const DiscreteLocation& loc = hs_it->first;
 		const uint dim = hs_it->second;
-		const Box& loc_domain = restriction.find(loc)->second.bounding_box();
+		const Box& loc_domain = domain.find(loc)->second;
 
 		// Gets the first order derivatives in respect to the dynamic of the location, applied to the corresponding domain
 		Vector<Interval> der_bbx = sys.dynamic_function(loc)(loc_domain);
@@ -1421,34 +1419,6 @@ getHybridMidpointAbsoluteDerivatives(
 	return result;
 }
 
-HybridFloatVector
-getHybridMidpointAbsoluteDerivatives(
-		const HybridReachabilityAnalyser::SystemType& sys,
-		const HybridDenotableSet& reachability_restriction)
-{
-	HybridFloatVector result;
-
-	const HybridSpace hspace = sys.state_space();
-	for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); hs_it++) {
-
-		const DiscreteLocation& loc = hs_it->first;
-		const uint dim = hs_it->second;
-
-		Vector<Interval> der_bbx;
-
-		result.insert(make_pair(loc,Vector<Float>(dim)));
-
-		const DenotableSetType& reach = reachability_restriction.find(loc)->second;
-		for (DenotableSetType::const_iterator cells_it = reach.begin(); cells_it != reach.end(); cells_it++) {
-			der_bbx = sys.dynamic_function(loc)(cells_it->box());
-
-			for (uint i=0;i<dim;i++)
-				result[loc][i] = max(result[loc][i], abs(der_bbx[i]).upper());
-		}
-	}
-
-	return result;
-}
 
 HybridFloatVector
 getHybridMaximumAbsoluteDerivatives(

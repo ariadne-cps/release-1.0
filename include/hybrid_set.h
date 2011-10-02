@@ -646,7 +646,14 @@ class HybridDenotableSet
         return this->find(q)->second;
     }
 
-    void clear() {
+    virtual size_t size() const {
+        size_t result=0;
+        for(locations_const_iterator loc_iter=this->locations_begin();
+            loc_iter!=this->locations_end(); ++loc_iter) {
+            result+=loc_iter->second.size(); }
+        return result; }
+
+    virtual void clear() {
     	for(locations_iterator loc_iter=this->locations_begin(); loc_iter!=this->locations_end(); ++loc_iter) {
     		loc_iter->second.clear();
     	}
@@ -658,12 +665,6 @@ class HybridDenotableSet
             if(!loc_iter->second.empty()) { return false; } }
         return true; }
 
-    size_t size() const {
-        size_t result=0;
-        for(locations_const_iterator loc_iter=this->locations_begin();
-            loc_iter!=this->locations_end(); ++loc_iter) {
-            result+=loc_iter->second.size(); }
-        return result; }
 
     HybridListSet<Box> boxes() const {
         HybridListSet<Box> result;
@@ -747,73 +748,6 @@ class HybridDenotableSet
     */
 };
 
-
-//! A hybrid denotable set used as a restriction, with facilities to avoid unnecessary discretisations.
-class HybridRestrictionSet
-	: public HybridDenotableSet
-{
-  public:
-	typedef HybridDenotableSet::iterator locations_iterator;
-	typedef HybridDenotableSet::locations_const_iterator locations_const_iterator;
-	typedef HybridDenotableSet::const_iterator const_iterator;
-  public:
-
-	HybridRestrictionSet(
-			const HybridBoxes& domain,
-			const HybridGrid& grid,
-			int accuracy);
-
-	virtual ~HybridRestrictionSet() { }
-
-	//! \brief (override) Return the grid as exposed by the given domain.
-	HybridGrid grid() const { return _grid; }
-
-	//! \brief Return the accuracy
-	//! \details This is not mandatory to expose this information, but useful
-	//! for adopting the %HybridRestrictionSet as the accuracy reference.
-	int accuracy() const { return _accuracy; }
-
-	//! \brief Whether location \a q has already been discretised.
-	bool has_discretised(DiscreteLocation q) const;
-
-	//! \brief Whether location \a q is present in the space of the set.
-	bool has_location(DiscreteLocation q) const;
-
-	//! \brief Refine the content at the given accuracy.
-	//! \details Does not perform the operation on non-discretised locations or locations where the
-	//! restriction set does not cross the domain border.
-	void refine(int accuracy);
-
-	//! \brief Return an overapproximation of the bounding box of the restriction.
-	//! \details Does not discretise if not necessary: hence the result for non-discretised locations
-	//! is a reasonable overapproximation.
-	Box bounding_box(DiscreteLocation q) const;
-
-	//! \brief (override) Return the set by reference.
-	//! \details Discretises if the location has not been discretised yet.
-	DenotableSetType& operator[](DiscreteLocation q);
-
-	//! \brief (override) Return the set by constant reference.
-	//! \details Discretises if the location has not been discretised yet.
-    const DenotableSetType& operator[](DiscreteLocation q) const;
-
-  private:
-
-    //! \brief Insert the discretisation at location q.
-    //! \details It is assumed, not checked, that in location q no discretisation has already been performed.
-    //! This operation will overwrite the existing content, in that case. It is const for compatibility with
-    //! the operator[] const method, and it const-casts this to work the problem around.
-    void _insert_domain_discretisation(DiscreteLocation q) const;
-
-  private:
-
-	// The domain that would be discretised into the related denotable set
-	HybridBoxes _domain;
-	// The grid used
-	HybridGrid _grid;
-	// The accuracy to be used when operating with the set
-	int _accuracy;
-};
 
 
 template<class DS, class HBS> inline

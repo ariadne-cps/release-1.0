@@ -157,10 +157,10 @@ _safety_proving_once(
 	ARIADNE_LOG(4,"Performing outer reachability analysis...");
 
 	try {
-		if (_settings->enable_backward_refinement_for_safety_proving)
-		    _safety_proving_once_backward_refinement(verInput,accuracy,params);
-
 		result = _safety_proving_once_forward_analysis(verInput,accuracy,params);
+
+		if (!indeterminate(result) && _settings->enable_backward_refinement_for_safety_proving)
+		    _safety_proving_once_backward_refinement(verInput,accuracy,params);
 
 	} catch (ReachOutOfDomainException& ex) {
 		ARIADNE_LOG(5, "The outer reached region is partially out of the domain (skipped).");

@@ -446,7 +446,7 @@ Grid getGrid(
 	ASSUMPTION: the continuous variables are preserved in order and quantity between discrete states. */
 Float getLockToGridTime(
 		const HybridReachabilityAnalyser::SystemType& system,
-		const HybridDenotableSet& restriction);
+		const HybridBoxes& domain);
 
 /*! \brief Get the hybrid midpoint absolute derivatives of \system given a domain \a domain_constraint box.
  * \details ASSUMPTION: the continuous variables are preserved in order and quantity between discrete states. */
@@ -454,13 +454,6 @@ HybridFloatVector
 getHybridMidpointAbsoluteDerivatives(
 		const HybridReachabilityAnalyser::SystemType& sys,
 		const HybridBoxes& bounding_domain);
-
-/*! \brief Get the hybrid midpoint absolute derivatives of \system given a domain \a domain_constraint reachable set.
- * \details ASSUMPTION: the continuous variables are preserved in order and quantity between discrete states. */
-HybridFloatVector
-getHybridMidpointAbsoluteDerivatives(
-		const HybridReachabilityAnalyser::SystemType& sys,
-		const HybridDenotableSet& bounding_domain);
 
 /*! \brief Get the hybrid maximum absolute derivatives of \system given a previously computed outer approximation
  *  \a outer_approximation and a domain \a domain_constraint.

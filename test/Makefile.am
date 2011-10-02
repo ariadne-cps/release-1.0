@@ -40,6 +40,7 @@ check_PROGRAMS = \
 	test_hybrid_io_automaton \
 	test_hybrid_evolution \
 	test_discretised_evolution \
+	test_reachability_restriction \
 	test_reachability_analysis \
 	test_serialization \
 	test_graphics \
@@ -80,6 +81,7 @@ test_hybrid_io_automaton_SOURCES=test_hybrid_io_automaton.cc
 test_hybrid_set_SOURCES=test_hybrid_set.cc
 test_hybrid_evolution_SOURCES=test_hybrid_evolution.cc
 test_discretised_evolution_SOURCES=test_discretised_evolution.cc
+test_reachability_restriction_SOURCES=test_reachability_restriction.cc
 test_reachability_analysis_SOURCES=test_reachability_analysis.cc
 test_serialization_SOURCES=test_serialization.cc
 test_graphics_SOURCES=test_graphics.cc

@@ -77,6 +77,7 @@ using std::ofstream; using std::ifstream;
 #include "hybrid_evolver.h"
 #include "parametric.h"
 #include "reachability_analyser.h"
+#include "reachability_restriction.h"
 #include "verifier.h"
 
 #include "serialization.h"
