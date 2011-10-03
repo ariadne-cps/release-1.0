@@ -101,7 +101,8 @@ class ModelSet
  
 
 
-//! \brief A set defined as the preimage of a box (the \em codomain) under a continuous function. The set is described as \f$S=f^{-1}(B) = \{ x \mid f(x)\in B\}\f$ where \f$B\f$ is the codomain and \f$f\f$ the function.
+//! \brief A set defined as the preimage of a box (the \em codomain) under a continuous function. 
+//! The set is described as \f$S=f^{-1}(B) = \{ x \mid f(x)\in B\}\f$ where \f$B\f$ is the codomain and \f$f\f$ the function.
 class ConstraintSet
     : public RegularSetInterface
 {
@@ -142,7 +143,7 @@ class BoundedConstraintSet
 	BoundedConstraintSet();
 
 	//! \brief Construct from a domain box only
-	BoundedConstraintSet(const Box& bx);
+	explicit BoundedConstraintSet(const Box& bx);
 
 	//! \brief Construct the preimage of \a codom under \a fn.
 	BoundedConstraintSet(
