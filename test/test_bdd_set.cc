@@ -803,7 +803,7 @@ void test_iterators_conversions_drawing() {
 
 }
 
-void test_complex_operations() {
+void test_projection() {
     ARIADNE_PRINT_TEST_COMMENT("Testing projections.");
     // Project down a zero-dimensional set should raise an error
     BDDTreeSet set1(0);
@@ -929,8 +929,69 @@ void test_complex_operations() {
     
 }
 
-int main() {
+void test_restriction() {
+    ARIADNE_PRINT_TEST_COMMENT("Testing restriction with a ConstraintSet.");
+    //  Create the ImageSet to discretise
+    RealVariable x("x");
+    RealVariable y("y");
+	List<RealVariable> varlist;
+	varlist.append(x);
+	varlist.append(y);
+	RealExpression f_x = (y+1.0)*x + 5.0*y + 5.0;
+	RealExpression f_y = -(y+1.0)*x + 5.0*y + 5.0;
+	List<RealExpression> expr;
+	expr.append(f_x);
+	expr.append(f_y);
+	VectorFunction f(expr,varlist);
+	Box dom(2, -1.0,1.0, -1.0,1.0);
+	ImageSet is1(dom, f);
+    BDDTreeSet set1(2);
+    set1.adjoin_outer_approximation(is1, 2);
+    plot("test_bdd_set_restriction_is1",PlanarProjectionMap(2,0,1),set1.bounding_box(),Colour(1,0,1),set1);
+    
+    // Create the ConstraintSet for the Restriction
+    RealExpression invf_x = -x + 9.5;
+	RealExpression invf_y = -y + 9.5;
+    expr.clear();
+    expr.append(invf_x);
+	expr.append(invf_y);
+	VectorFunction invf(expr,varlist);
+	ConstraintSet cs1(invf, Box::upper_quadrant(2));
 
+    // Testing outer restriction
+    BDDTreeSet set0(0);
+    ARIADNE_TEST_FAIL(set0.outer_restrict(cs1));
+    BDDTreeSet set3(3, true);
+    ARIADNE_TEST_FAIL(set3.outer_restrict(cs1));    
+    BDDTreeSet set2(2, false); 
+    set2.outer_restrict(cs1);
+    ARIADNE_TEST_ASSERT(set2.empty());
+    set2 = set1;
+    set2.outer_restrict(cs1);
+    plot("test_bdd_set_outer_restrict_cs1",PlanarProjectionMap(2,0,1),set1.bounding_box(),Colour(1,0,1),set2);
+    ARIADNE_TEST_ASSERT(set2.bounding_box().covers(Box(2, 0.0,9.5, 0.0,9.5)));
+    ARIADNE_TEST_ASSERT(set2.subset(set1));
+    ARIADNE_TEST_ASSERT(!set1.subset(set2));
+
+    // Testing inner restriction
+    ARIADNE_TEST_FAIL(set0.inner_restrict(cs1));
+    ARIADNE_TEST_FAIL(set3.inner_restrict(cs1));    
+    set2.clear(); 
+    set2.inner_restrict(cs1);
+    ARIADNE_TEST_ASSERT(set2.empty());
+    set2 = set1;
+    set2.inner_restrict(cs1);
+    ARIADNE_TEST_ASSERT(!set2.empty());
+    plot("test_bdd_set_inner_restrict_cs1",PlanarProjectionMap(2,0,1),set1.bounding_box(),Colour(1,0,1),set2);
+    ARIADNE_TEST_ASSERT(set2.bounding_box().inside(Box(2, -1.0,9.5, -1.0,9.5)));
+    ARIADNE_TEST_ASSERT(set2.subset(set1));
+    ARIADNE_TEST_ASSERT(!set1.subset(set2));
+    
+}
+
+
+int main() {
+/*
     test_constructors();
     test_properties_subdivisions();
     test_predicates();
@@ -938,7 +999,9 @@ int main() {
     test_box_approximations();
     test_set_approximations();
     test_iterators_conversions_drawing();
-    test_complex_operations();
+    test_projection();
+*/
+    test_restriction();
 
     return ARIADNE_TEST_FAILURES;
 }

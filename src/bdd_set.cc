@@ -584,8 +584,8 @@ bdd _outer_restrict(const OpenSetInterface& set, const bdd& enabled_cells, const
                        uint depth, uint splitting_coordinate, int root_var)
 {
     // std::cout << "_outer_restrict(" << set << ", " << enabled_cells << ", "
-    //            << root_cell << ", " << depth << ", " << splitting_coordinate << ", " << root_var 
-    //            << ")" << std::endl;
+    //           << root_cell << ", " << depth << ", " << splitting_coordinate << ", " << root_var 
+    //           << ")" << std::endl;
     // if the bdd is the constant false, do nothing
     if(enabled_cells == bddfalse) return enabled_cells;
     // if the set definitely not overlap the root cell, return the empty bdd
@@ -624,18 +624,17 @@ bdd _inner_restrict(const OpenSetInterface& set, const bdd& enabled_cells, const
                        uint depth, uint splitting_coordinate, int root_var)
 {
     // std::cout << "_inner_restrict(" << set << ", " << enabled_cells << ", "
-    //            << root_cell << ", " << splitting_coordinate << ", " << root_var 
-    //            << ")" << std::endl;
+    //           << root_cell << ", " << depth << ", " << splitting_coordinate << ", " << root_var 
+    //           << ")" << std::endl;
     // if the bdd is the constant false, do nothing
     if(enabled_cells == bddfalse) return bddfalse;
-    tribool test = set.covers(root_cell);
-    // if the set definitely not covers the root cell, return the empty bdd
-    if(!possibly(test)) {
-        // std::cout << "set definitely not cover the current cell, return false." << std::endl;
+    // if the set is definitely disjoint form the root cell, return the empty bdd
+    if(!possibly(set.overlaps(root_cell))) {
+        // std::cout << "set definitely disjoint from the current cell, return false." << std::endl;
         return bddfalse;
     }
     // if the set definitely covers the root cell, return the current bdd
-    if(definitely(test)) {
+    if(definitely(set.covers(root_cell))) {
         // std::cout << "set definitely cover the current cell, return the current bdd." << std::endl;
         return enabled_cells;    
     }
