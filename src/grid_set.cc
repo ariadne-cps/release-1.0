@@ -3131,19 +3131,10 @@ void draw(CanvasInterface& theGraphic, const GridTreeSet& theGridTreeSet) {
     }
 }
 
+
 void draw(CanvasInterface& theGraphic, const CompactSetInterface& theSet) {
     static const int DRAWING_DEPTH=16;
     draw(theGraphic,outer_approximation(theSet,Grid(theSet.dimension()),DRAWING_DEPTH));
-}
-
-bool restricts( const GridTreeSet& set1, const GridTreeSet& set2 ) {
-    // the two sets must have the same grid
-    ARIADNE_ASSERT_MSG(set1.grid() == set2.grid(), "Cannot restrict a GridTreeSet with a different grid.");
-
-    GridTreeSet set2_restricted = set1;
-    set2_restricted.restrict(set1);
-
-    return subset(set2, set2_restricted);
 }
 
 
@@ -3231,11 +3222,11 @@ GridTreeSet project_down(
 	return result;
 }
 
-GridTreeSet possibly_overlapping_subset(const GridTreeSet& denotable_set, const ConstraintSet& cons_set)
+GridTreeSet possibly_overlapping_subset(const GridTreeSet& grid_set, const ConstraintSet& cons_set)
 {
-	GridTreeSet result(denotable_set.grid());
+	GridTreeSet result(grid_set.grid());
 
-	for (GridTreeSet::const_iterator cell_it = denotable_set.begin(); cell_it != denotable_set.end(); ++cell_it) {
+	for (GridTreeSet::const_iterator cell_it = grid_set.begin(); cell_it != grid_set.end(); ++cell_it) {
 		if (possibly(cons_set.overlaps(cell_it->box())))
 			result.adjoin(*cell_it);
 	}
@@ -3244,11 +3235,11 @@ GridTreeSet possibly_overlapping_subset(const GridTreeSet& denotable_set, const 
 }
 
 
-GridTreeSet definitely_covered_subset(const GridTreeSet& denotable_set, const ConstraintSet& cons_set)
+GridTreeSet definitely_covered_subset(const GridTreeSet& grid_set, const ConstraintSet& cons_set)
 {
-	GridTreeSet result(denotable_set.grid());
+	GridTreeSet result(grid_set.grid());
 
-	for (GridTreeSet::const_iterator cell_it = denotable_set.begin(); cell_it != denotable_set.end(); ++cell_it) {
+	for (GridTreeSet::const_iterator cell_it = grid_set.begin(); cell_it != grid_set.end(); ++cell_it) {
 		if (definitely(cons_set.covers(cell_it->box())))
 			result.adjoin(*cell_it);
 	}

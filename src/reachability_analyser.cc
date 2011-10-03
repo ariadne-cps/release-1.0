@@ -186,7 +186,9 @@ initial_cells_set(const HybridImageSet& initial_enclosure_set) const
 
     result.adjoin_outer_approximation(initial_enclosure_set,_accuracy());
 
-    return _restriction->apply_to(result);
+    _restriction->apply_to(result);
+
+    return result;
 }
 
 
@@ -213,7 +215,9 @@ _upper_reach_evolve(
 	HDS& reach = result.first;
 	HDS& evolve = result.second;
 
-	ARIADNE_LOG(4,"Evolving and discretising...");
+	ARIADNE_LOG(3,"Evolving and discretising...");
+
+	ARIADNE_LOG(4,"Initial size = " << initial_set.size());
 
 	const uint concurrency = boost::thread::hardware_concurrency() - free_cores;
 	ARIADNE_ASSERT_MSG(concurrency>0 && concurrency <= boost::thread::hardware_concurrency(),"Error: concurrency must be positive and less than the maximum allowed.");
@@ -280,7 +284,7 @@ lower_reach_evolve(
         	ARIADNE_ASSERT_MSG(!_restriction->restricts(local_reach), "The lower reach is not inside the reachability restriction. Check the bounding domain used.");
         }
 
-        local_reach = _restriction->apply_to(local_reach);
+        _restriction->apply_to(local_reach);
 
         reach.adjoin(local_reach);
         evolve.adjoin(local_evolve);
@@ -385,8 +389,8 @@ upper_reach_evolve(
         reach.adjoin(found);
     }
 
-    reach = _restriction->apply_to(reach);
-    evolve = _restriction->apply_to(evolve);
+    _restriction->apply_to(reach);
+    _restriction->apply_to(evolve);
 
     reach.recombine();
     evolve.recombine();
@@ -427,23 +431,15 @@ outer_chain_reach(
 
 	std::list<RealParameterSet> split_parameter_set_list = _getSplitParameterSetList();
 
-	try {
-		uint i = 0;
-		for (std::list<RealParameterSet>::const_iterator set_it = split_parameter_set_list.begin(); set_it != split_parameter_set_list.end(); ++set_it) {
-			ARIADNE_LOG(1,"Split parameter set #" << ++i << "/" << split_parameter_set_list.size() << " : " << *set_it);
+	uint i = 0;
+	for (std::list<RealParameterSet>::const_iterator set_it = split_parameter_set_list.begin(); set_it != split_parameter_set_list.end(); ++set_it) {
+		ARIADNE_LOG(1,"Split parameter set #" << ++i << "/" << split_parameter_set_list.size() << " : " << *set_it);
 
-			_system->substitute_all(*set_it);
+		_system->substitute_all(*set_it);
 
-			SetApproximationType local_reach = _outer_chain_reach_splitted(*_system,initial,direction);
+		SetApproximationType local_reach = _outer_chain_reach_splitted(*_system,initial,direction);
 
-			reach.adjoin(local_reach);
-		}
-	} catch (ReachOutOfDomainException& ex) {
-		_system->substitute_all(original_parameters);
-		throw ex;
-	} catch (ReachUnsatisfiesConstraintException& ex) {
-	    _system->substitute_all(original_parameters);
-		throw ex;
+		reach.adjoin(local_reach);
 	}
 
 	_system->substitute_all(original_parameters);
@@ -481,34 +477,33 @@ _outer_chain_reach_splitted(
 	{
     	ARIADNE_LOG(2,"Iteration " << i++);
 
-        ARIADNE_LOG(3,"Initial set size = " << current_initial.size());
-
         static const bool ignore_activations = true;
         make_lpair(new_reach,new_final) = _upper_reach_evolve(sys,current_initial,
         		hybrid_lock_to_grid_time,ignore_activations,direction);
 
-	    ARIADNE_LOG(3,"Reach size after evolution = "<<new_reach.size());
-	    ARIADNE_LOG(3,"Final size after evolution = "<<new_final.size());
+        ARIADNE_LOG(3,"Removing the previously reached and final sets...");
 
         new_final.remove(final);
 		new_reach.remove(reach);
-	    ARIADNE_LOG(3,"Reach size after removal = "<<new_reach.size());
-	    ARIADNE_LOG(3,"Final size after removal = "<<new_final.size());
+	    ARIADNE_LOG(4,"Reach size after removal = "<<new_reach.size());
+	    ARIADNE_LOG(4,"Final size after removal = "<<new_final.size());
 
-	    new_final = _restriction->apply_to(new_final);
-	    new_reach = _restriction->apply_to(new_reach);
-		ARIADNE_LOG(3,"Reach size after restricting = "<<new_reach.size());
-		ARIADNE_LOG(3,"Final size after restricting = "<<new_final.size());
+	    ARIADNE_LOG(3,"Restricting the reach and final sets...");
+
+	    _restriction->apply_to(new_final);
+	    _restriction->apply_to(new_reach);
+		ARIADNE_LOG(4,"Reach size after restricting = "<<new_reach.size());
+		ARIADNE_LOG(4,"Final size after restricting = "<<new_final.size());
+
+		ARIADNE_LOG(3,"Determining the new initial set from the jump sets...");
 
 		new_reach.mince(_accuracy());
 		new_final.mince(_accuracy());
-		ARIADNE_LOG(3,"Reach size after mincing = "<<new_reach.size());
-		ARIADNE_LOG(3,"Final size after mincing = "<<new_final.size());
+		ARIADNE_LOG(4,"Reach size after mincing = "<<new_reach.size());
+		ARIADNE_LOG(4,"Final size after mincing = "<<new_final.size());
 
-        if (direction == DIRECTION_FORWARD)
-        	current_initial = _restriction->forward_jump_set(new_reach,sys);
-        else
-        	current_initial = _restriction->backward_jump_set(new_reach,sys);
+       	current_initial = (direction == DIRECTION_FORWARD ?
+       			_restriction->forward_jump_set(new_reach,sys) : _restriction->backward_jump_set(new_reach,sys));
 
         current_initial.adjoin(new_final);
         current_initial.recombine();
@@ -552,7 +547,7 @@ _lower_chain_reach_and_epsilon(
 
     EL initial_enclosures = enclosures_from_split_initial_set_midpoints(initial_set,min_cell_widths(grid,_accuracy()));
 
-    initial_enclosures = _restriction->apply_to(initial_enclosures);
+    initial_enclosures = _restriction->filter(initial_enclosures);
 
     ARIADNE_LOG(2,"Computing recurrent evolution...");
 
@@ -580,7 +575,7 @@ _lower_chain_reach_and_epsilon(
 	    	ARIADNE_ASSERT_MSG(!_restriction->restricts(local_reach),
 	    			"The lower reach is not inside the reachability restriction. Check the bounding domain used.");
 	    }
-		local_reach = _restriction->apply_to(local_reach);
+		_restriction->apply_to(local_reach);
 
 		if (!_settings->constraint_set.empty())
 			_lower_chain_reach_and_epsilon_constraint_check(system,local_reach,local_epsilon);

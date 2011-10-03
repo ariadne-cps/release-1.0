@@ -2379,10 +2379,6 @@ template<class A> void serialize(A& archive, Ariadne::GridTreeSet& set, const un
     ARIADNE_NOT_IMPLEMENTED;
 }
 
-/*! \brief Checks if \a set1 restricts \a set2
- * \details Throws error if the two grids do not match.
- */
-bool restricts( const GridTreeSet& set1, const GridTreeSet& set2 );
 
 //! \brief Whether \a cons_set is disjoint from \a grid_set.
 tribool disjoint(const ConstraintSet& cons_set, const GridTreeSet& grid_set);
@@ -2391,18 +2387,17 @@ tribool overlaps(const ConstraintSet& cons_set, const GridTreeSet& grid_set);
 //! \brief Whether \a cons_set covers \a grid_set.
 tribool covers(const ConstraintSet& cons_set, const GridTreeSet& grid_set);
 
-//! \brief Projects \a cell using the given \a indices and with the \a projected_grid.
-//! \details No check is performed as to the consistency of the arguments.
-GridCell project_down_unchecked(const GridCell& cell, const Grid& projected_grid, const Vector<uint>& indices);
-
-//! \brief Projects \a grid_set using the given \a indices.
-//! \details The \a resulting set cannot have a larger dimension than the original set.
-GridTreeSet project_down(const GridTreeSet& grid_set, const Vector<uint>& indices);
-
 //! \brief Evaluates \a grid_set on \a cons_set in order to obtain (a superset of) the overlapping subset.
 GridTreeSet possibly_overlapping_subset(const GridTreeSet& grid_set, const ConstraintSet& cons_set);
 //! \brief Applies \a cons_set to \a grid_set in order to obtain the definitely covered subset.
 GridTreeSet definitely_covered_subset(const GridTreeSet& grid_set, const ConstraintSet& cons_set);
+
+//! \brief Projects \a cell using the given \a indices and with the \a projected_grid.
+//! \details No check is performed as to the consistency of the arguments.
+GridCell project_down_unchecked(const GridCell& cell, const Grid& projected_grid, const Vector<uint>& indices);
+//! \brief Projects \a grid_set using the given \a indices.
+//! \details The \a resulting set cannot have a larger dimension than the original set.
+GridTreeSet project_down(const GridTreeSet& grid_set, const Vector<uint>& indices);
 
 } // namespace Ariadne
 

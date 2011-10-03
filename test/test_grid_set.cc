@@ -3087,6 +3087,8 @@ void test_constraintset_vs_gridtreeset_operations()
 
 	ARIADNE_TEST_EQUAL(possibly_overlapping_subset(gts4,cons).size(),3);
 	ARIADNE_TEST_EQUAL(definitely_covered_subset(gts4,cons).size(),3);
+
+
 }
 
 

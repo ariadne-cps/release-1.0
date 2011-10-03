@@ -227,4 +227,96 @@ ConstraintSet::write(std::ostream& os) const
 }
 
 
+BoundedConstraintSet::BoundedConstraintSet()
+    : _domain(), _function(new VectorScalingFunction()), _codomain()
+{
+}
+
+
+BoundedConstraintSet::BoundedConstraintSet(const Box& bx)
+    : _domain(bx), _function(VectorFunction(0u,bx.dimension())), _codomain()
+{
+}
+
+
+BoundedConstraintSet::BoundedConstraintSet(
+		const Vector<Interval>& dom,
+		const VectorFunction& fn,
+		const Vector<Interval>& codom)
+    : _domain(dom), _function(fn), _codomain(codom)
+{
+	ARIADNE_ASSERT(dom.size()==fn.argument_size());
+    ARIADNE_ASSERT(codom.size()==fn.result_size());
+}
+
+BoundedConstraintSet*
+BoundedConstraintSet::clone() const
+{
+    return new BoundedConstraintSet(*this);
+}
+
+
+uint
+BoundedConstraintSet::dimension() const
+{
+    return this->_function.argument_size();
+}
+
+
+Box
+BoundedConstraintSet::bounding_box() const
+{
+    Box result=this->_domain;
+    result.widen();
+    return result;
+}
+
+
+tribool
+BoundedConstraintSet::disjoint(const Box& bx) const
+{
+	if (this->dimension() == 0)
+		return true;
+    if(Ariadne::disjoint(this->domain(),bx)) { return true; }
+    return ImageSet(bx,this->_function).disjoint(this->_codomain);
+}
+
+
+tribool
+BoundedConstraintSet::overlaps(const Box& bx) const
+{
+	if (this->dimension() == 0)
+		return false;
+    if(Ariadne::disjoint(this->domain(),bx)) { return false; }
+    return ImageSet(bx,this->_function).overlaps(this->_codomain);
+}
+
+
+tribool
+BoundedConstraintSet::covers(const Box& bx) const
+{
+	if (this->dimension() == 0)
+		return false;
+    if(!Ariadne::covers(this->domain(),bx)) { return false; }
+    return Ariadne::approximate_inside(this->_function.evaluate(bx), this->_codomain);
+}
+
+tribool
+BoundedConstraintSet::inside(const Box& bx) const
+{
+	if (this->dimension() == 0)
+		return false;
+    if(Ariadne::inside(this->domain(),bx)) { return true; }
+    return indeterminate;
+}
+
+
+std::ostream&
+BoundedConstraintSet::write(std::ostream& os) const
+{
+    return os << "BoundedConstraintSet( domain=" << this->_domain <<
+    		", function=" << this->_function << ", codomain=" << this->_codomain << ")";
+}
+
+
 } // namespace Ariadne

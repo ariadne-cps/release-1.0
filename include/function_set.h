@@ -129,6 +129,52 @@ class ConstraintSet
     std::ostream& write(std::ostream&) const;
 };
 
+
+//! \brief A set defined as the preimage of a box (the \em codomain) under a continuous function, bounded inside a \em domain. The set is described as \f$S=f^{-1}(B) = \{ x \mid f(x)\in B\}\f$ where \f$B\f$ is the codomain and \f$f\f$ the function.
+class BoundedConstraintSet
+	: public LocatedSetInterface
+{
+	Vector<Interval> _domain;
+	VectorFunction _function;
+	Vector<Interval> _codomain;
+  public:
+	//! \brief Default constructor constructs the singleton in \f$\R^0\f$.
+	BoundedConstraintSet();
+
+	//! \brief Construct from a domain box only
+	BoundedConstraintSet(const Box& bx);
+
+	//! \brief Construct the preimage of \a codom under \a fn.
+	BoundedConstraintSet(
+			const Vector<Interval>& dom,
+			const VectorFunction& fn,
+			const Vector<Interval>& codom);
+
+	//! \brief Clone the set
+	BoundedConstraintSet* clone() const;
+
+	//! \brief The domain of the set.
+	const Vector<Interval>& domain() const { return this->_domain; }
+	//! \brief The function used to define the set.
+	const VectorFunction& function() const { return this->_function; }
+	//! \brief The codomain of the set.
+	const Vector<Interval>& codomain() const { return this->_codomain; }
+
+	//! \brief Equality operator. Compares functions by referential equality.
+	bool operator==(const BoundedConstraintSet& cons_set) const {
+		return this->_domain==cons_set._domain && this->_codomain==cons_set._codomain && this->_function.pointer()==cons_set._function.pointer(); }
+
+	uint dimension() const;
+    Box bounding_box() const;
+
+	tribool disjoint(const Box&) const;
+	tribool overlaps(const Box&) const;
+	tribool covers(const Box&) const;
+	tribool inside(const Box&) const;
+
+	std::ostream& write(std::ostream&) const;
+};
+
 } // namespace Ariadne 
 
 #endif

@@ -72,28 +72,41 @@ void TestFunctionSet::test_constraint_set_1D()
 
 	ConstraintSet cons(cons_f,codomain);
 
+	ARIADNE_PRINT_TEST_CASE_TITLE("Definitely overlaps case");
+
 	Box check_box1(1,-0.1,1.1);
     ARIADNE_TEST_ASSERT(definitely(cons.overlaps(check_box1)));
     ARIADNE_TEST_ASSERT(!possibly(cons.disjoint(check_box1)));
     ARIADNE_TEST_ASSERT(!possibly(cons.covers(check_box1)));
+
+    ARIADNE_PRINT_TEST_CASE_TITLE("Definitely disjoint case");
+
     Box check_box2(1,-1.0,-0.1);
     ARIADNE_TEST_ASSERT(!possibly(cons.overlaps(check_box2)));
     ARIADNE_TEST_ASSERT(definitely(cons.disjoint(check_box2)));
     ARIADNE_TEST_ASSERT(!possibly(cons.covers(check_box2)));
+
+    ARIADNE_PRINT_TEST_CASE_TITLE("Definitely covers case");
+
     Box check_box3(1,0.1,0.9);
     ARIADNE_TEST_ASSERT(definitely(cons.overlaps(check_box3)));
     ARIADNE_TEST_ASSERT(!possibly(cons.disjoint(check_box3)));
     ARIADNE_TEST_ASSERT(definitely(cons.covers(check_box3)));
+
+    ARIADNE_PRINT_TEST_CASE_TITLE("Definitely not covers case");
+
     Box check_box4(1,1.0,2.0);
     ARIADNE_TEST_ASSERT(indeterminate(cons.overlaps(check_box4)));
     ARIADNE_TEST_ASSERT(indeterminate(cons.disjoint(check_box4)));
     ARIADNE_TEST_ASSERT(!possibly(cons.covers(check_box4)));
+
+    ARIADNE_PRINT_TEST_CASE_TITLE("Definitely not disjoint case");
+
     Box check_box5(1,0.0,1.0);
     ARIADNE_TEST_ASSERT(definitely(cons.overlaps(check_box5)));
     ARIADNE_TEST_ASSERT(!possibly(cons.disjoint(check_box5)));
     ARIADNE_TEST_ASSERT(indeterminate(cons.covers(check_box5)));
 }
-
 
 int main() {
     TestFunctionSet().test();

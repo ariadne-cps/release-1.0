@@ -104,7 +104,7 @@ _safety_nosplitting(
 
 		ARIADNE_LOG(2, "Accuracy " << accuracy);
 
-		_safety_restriction->refine(accuracy);
+		_safety_restriction->refine_at(accuracy);
 
 		tribool result = _safety_once(verInput,params);
 
@@ -210,7 +210,7 @@ _safety_proving_once_backward_refinement(
 
     SetApproximationType backward_reach = analyser->outer_chain_reach(backward_initial,DIRECTION_BACKWARD);
 
-    _safety_restriction->update(backward_reach);
+    _safety_restriction->update_with(backward_reach);
 
     ARIADNE_LOG(6,"Reachability size: " << backward_reach.size());
 
@@ -257,7 +257,7 @@ _safety_proving_once_forward_analysis(
     if (_settings->plot_results)
         _plot_reach(forward_reach,"forward",_safety_restriction->accuracy());
 
-    _safety_restriction->update(forward_reach);
+    _safety_restriction->update_with(forward_reach);
 
     return definitely(covers(safety_constraint,forward_reach));
 }
@@ -426,8 +426,8 @@ Verifier::_dominance(
 	{
 		ARIADNE_LOG(2, "Accuracy " << accuracy);
 
-		_dominating_restriction->refine(accuracy);
-		_dominated_restriction->refine(accuracy);
+		_dominating_restriction->refine_at(accuracy);
+		_dominated_restriction->refine_at(accuracy);
 
 		if (_dominance_proving_once(dominating, dominated, params)) {
 			ARIADNE_LOG(2, "Dominates.");
@@ -593,7 +593,7 @@ _dominance_flattened_outer_reach(
 
 	SetApproximationType reach = analyser->outer_chain_reach(verInput.getInitialSet(),DIRECTION_FORWARD);
 
-	restriction->update(reach);
+	restriction->update_with(reach);
 
 	if (_settings->plot_results)
 		_plot_dominance(reach,dominanceSystem,restriction->accuracy(),UPPER_SEMANTICS);

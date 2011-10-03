@@ -32,7 +32,7 @@ lengths() const
 	std::map<DiscreteLocation,Vector<Float> > result;
 
 	for (HybridGrid::const_iterator it = this->begin(); it != this->end(); ++it)
-		result.insert(std::pair<DiscreteLocation,Vector<Float> >(it->first,it->second.lengths()));
+		result.insert(make_pair(it->first,it->second.lengths()));
 
 	return result;
 }
@@ -45,10 +45,10 @@ HybridConstraintSet(const HybridVectorFunction& func,const HybridBoxes& codomain
 	for (HybridBoxes::const_iterator cod_it = codomain.begin(); cod_it != codomain.end(); ++cod_it) {
 		HybridVectorFunction::const_iterator func_it = func.find(cod_it->first);
 		ARIADNE_ASSERT_MSG(func_it != func.end(), "No function for location " << cod_it->first.name() << " is present.");
-		this->insert(std::pair<DiscreteLocation,ConstraintSet>(
-				cod_it->first,ConstraintSet(func_it->second,cod_it->second)));
+		this->insert(make_pair(cod_it->first,ConstraintSet(func_it->second,cod_it->second)));
 	}
 }
+
 
 HybridConstraintSet::
 HybridConstraintSet(const HybridSpace& hspace, ConstraintSet constraint)
@@ -56,7 +56,40 @@ HybridConstraintSet(const HybridSpace& hspace, ConstraintSet constraint)
 	for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
 		ARIADNE_ASSERT_MSG(hs_it->second == constraint.function().argument_size(),
 				"The continuous space would not match the constraint function.");
-		this->insert(std::pair<DiscreteLocation,ConstraintSet>(hs_it->first,constraint));
+		this->insert(make_pair(hs_it->first,constraint));
+	}
+}
+
+
+HybridBoundedConstraintSet::
+HybridBoundedConstraintSet(
+		const HybridBoxes& domain,
+		const HybridVectorFunction& func,
+		const HybridBoxes& codomain)
+{
+	ARIADNE_ASSERT_MSG(domain.size() == func.size(), "The domain and functions have different sizes.");
+	ARIADNE_ASSERT_MSG(codomain.size() == func.size(), "The codomain and functions have different sizes.");
+
+	for (HybridBoxes::const_iterator cod_it = codomain.begin(); cod_it != codomain.end(); ++cod_it) {
+		HybridBoxes::const_iterator dom_it = domain.find(cod_it->first);
+		ARIADNE_ASSERT_MSG(dom_it != domain.end(), "No domain for location " << cod_it->first.name() << " is present.");
+		HybridVectorFunction::const_iterator func_it = func.find(cod_it->first);
+		ARIADNE_ASSERT_MSG(func_it != func.end(), "No function for location " << cod_it->first.name() << " is present.");
+
+		this->insert(make_pair(cod_it->first,BoundedConstraintSet(dom_it->second,func_it->second,cod_it->second)));
+	}
+}
+
+
+HybridBoundedConstraintSet::
+HybridBoundedConstraintSet(
+		const HybridSpace& hspace,
+		BoundedConstraintSet constraint)
+{
+	for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
+		ARIADNE_ASSERT_MSG(hs_it->second == constraint.function().argument_size(),
+				"The continuous space would not match the constraint function.");
+		this->insert(make_pair(hs_it->first,constraint));
 	}
 }
 
@@ -198,17 +231,6 @@ bool subset(const HybridDenotableSet& theSet1, const HybridDenotableSet& theSet2
 	return true;
 }
 
-bool restricts(const HybridDenotableSet& hgts1, const HybridDenotableSet& hgts2) {
-	ARIADNE_ASSERT_MSG(hgts1.grid() == hgts2.grid(), "For a restriction the grids of the two sets must be equal.");
-    for(HybridDenotableSet::locations_const_iterator loc_iter=hgts1.locations_begin();
-    		loc_iter!=hgts1.locations_end(); ++loc_iter) {
-        if (restricts(loc_iter->second,hgts2.find(loc_iter->first)->second))
-        	return true;
-    }
-    return false;
-}
-
-
 tribool disjoint(const HybridConstraintSet& cons_set, const HybridDenotableSet& grid_set)
 {
     tribool result = true;
@@ -249,6 +271,25 @@ tribool covers(const HybridConstraintSet& cons_set, const HybridDenotableSet& gr
     }
     return result;
 
+}
+
+HybridDenotableSet
+outer_approximation(
+		const HybridBoundedConstraintSet& hbcs,
+        const HybridGrid& hgr,
+        const int accuracy)
+{
+    HybridDenotableSet result(hgr);
+
+    for (HybridBoundedConstraintSet::const_iterator cons_it = hbcs.begin(); cons_it != hbcs.end(); ++cons_it) {
+    	const DiscreteLocation& loc = cons_it->first;
+    	const HybridGrid::const_iterator hgr_it = hgr.find(loc);
+    	ARIADNE_ASSERT_MSG(hgr_it != hgr.end(),
+    			"The location " << loc.name() << " of the BoundedConstraintSet was not found in the target space.");
+    	result[loc] = outer_approximation(cons_it->second,hgr_it->second,accuracy);
+    }
+
+    return result;
 }
 
 

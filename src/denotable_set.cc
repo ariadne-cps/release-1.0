@@ -39,7 +39,10 @@
 namespace Ariadne {
 
 
-Box eps_codomain(const DenotableSetType& denotable_set, const Vector<Float> eps, const VectorFunction& func)
+Box eps_codomain(
+		const DenotableSetType& denotable_set,
+		const Vector<Float> eps,
+		const VectorFunction& func)
 {
 	ARIADNE_ASSERT(denotable_set.dimension() == func.argument_size());
 	ARIADNE_ASSERT(denotable_set.dimension() == eps.size());
@@ -55,7 +58,10 @@ Box eps_codomain(const DenotableSetType& denotable_set, const Vector<Float> eps,
 	return result;
 }
 
-tribool covers(const DenotableSetType& covering_set, const DenotableSetType& covered_set, const Vector<Float>& eps)
+tribool covers(
+		const DenotableSetType& covering_set,
+		const DenotableSetType& covered_set,
+		const Vector<Float>& eps)
 {
 	ARIADNE_ASSERT_MSG(covering_set.dimension() == covered_set.dimension(),"The two sets must have the same dimensions.");
 	ARIADNE_ASSERT_MSG(covering_set.dimension() == eps.size(),"The vector eps must have the same dimension of the sets");
@@ -80,7 +86,10 @@ tribool covers(const DenotableSetType& covering_set, const DenotableSetType& cov
 	return result;
 }
 
-tribool inside(const DenotableSetType& covered_set, const DenotableSetType& covering_set, const Vector<Float>& eps, int accuracy)
+tribool inside(
+		const DenotableSetType& covered_set,
+		const DenotableSetType& covering_set,
+		const Vector<Float>& eps, int accuracy)
 {
 	ARIADNE_ASSERT_MSG(covering_set.dimension() == covered_set.dimension(),"The two sets must have the same dimensions.");
 	ARIADNE_ASSERT_MSG(covering_set.dimension() == eps.size(),"The vector eps must have the same dimension of the sets");
@@ -107,6 +116,22 @@ tribool inside(const DenotableSetType& covered_set, const DenotableSetType& cove
 	}
 
 	return result;
+}
+
+DenotableSetType outer_approximation(
+		const BoundedConstraintSet& bnd_cons_set,
+		const Grid& grid,
+		int accuracy)
+{
+	ARIADNE_ASSERT_MSG(bnd_cons_set.domain().size() == grid.dimension(),
+			"The constraint domain and the grid dimensions do not match.");
+
+	DenotableSetType domain_approximation(grid);
+	domain_approximation.adjoin_outer_approximation(bnd_cons_set.bounding_box(),accuracy);
+
+	ConstraintSet cons_set(bnd_cons_set.function(),bnd_cons_set.codomain());
+
+	return possibly_overlapping_subset(domain_approximation,cons_set);
 }
 
 

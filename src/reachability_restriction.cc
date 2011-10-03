@@ -91,7 +91,7 @@ has_location(DiscreteLocation q) const
 
 void
 ReachabilityRestriction::
-update(const HybridDenotableSet& set)
+update_with(const HybridDenotableSet& set)
 {
 	ARIADNE_ASSERT_MSG(_grid == set.grid(), "You cannot update a restriction with a set having a mismatched grid.");
 
@@ -108,7 +108,7 @@ update(const HybridDenotableSet& set)
 
 void
 ReachabilityRestriction::
-refine(int accuracy)
+refine_at(int accuracy)
 {
 	_accuracy = accuracy;
 
@@ -128,36 +128,36 @@ refine(int accuracy)
 }
 
 
-HybridDenotableSet
+void
 ReachabilityRestriction::
-apply_to(const HybridDenotableSet& set) const
+apply_to(HybridDenotableSet& set) const
 {
 	ARIADNE_ASSERT_MSG(_grid == set.grid(), "You cannot apply a restriction to a set with a mismatching grid.");
 
-	HybridDenotableSet result = set;
-
-	for (HybridDenotableSet::locations_iterator result_it = result.locations_begin(); result_it != result.locations_end(); ++result_it) {
+	for (HybridDenotableSet::locations_iterator result_it = set.locations_begin(); result_it != set.locations_end(); ++result_it) {
 		const DiscreteLocation& loc = result_it->first;
 
-		DenotableSetType& local_result = result_it->second;
+		DenotableSetType& local_set = result_it->second;
 
-		// If the domain covers the result, no restriction is required. Otherwise we discretise, if necessary, and restrict.
-		if (!this->has_discretised(loc) && this->_bounding_box(loc).covers(local_result.bounding_box())) {
+		if (!local_set.empty()) {
 
-		} else {
-			if (!this->has_discretised(loc))
-				_insert_domain_discretisation(loc);
+			// If the domain covers the result, no restriction is required. Otherwise we discretise, if necessary, and restrict.
+			if (!this->has_discretised(loc) && this->_bounding_box(loc).covers(local_set.bounding_box())) {
 
-			local_result.restrict(_set[loc]);
+			} else {
+				if (!this->has_discretised(loc))
+					_insert_domain_discretisation(loc);
+
+				local_set.restrict(_set[loc]);
+			}
 		}
 	}
-	return result;
 }
 
 
 std::list<EnclosureType>
 ReachabilityRestriction::
-apply_to(const std::list<EnclosureType>& enclosures) const
+filter(const std::list<EnclosureType>& enclosures) const
 {
 	std::list<EnclosureType> result;
 
@@ -253,7 +253,9 @@ forward_jump_set(
 		}
 	}
 
-	return this->apply_to(result);
+	this->apply_to(result);
+
+	return result;
 }
 
 HybridDenotableSet

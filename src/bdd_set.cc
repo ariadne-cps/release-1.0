@@ -1214,17 +1214,6 @@ tribool BDDTreeSet::overlaps( const BDDTreeSet& other ) const{
     return Ariadne::overlap(*this, other);
 }
 
-bool restricts( const BDDTreeSet& set1, const BDDTreeSet& set2 ) {
-    // the two sets must have the same grid
-    ARIADNE_ASSERT_MSG(set1.grid() == set2.grid(), "Cannot restrict a BDDTreeSet with a different grid.");
-
-    BDDTreeSet set2_restricted = set1;
-    set2_restricted.restrict(set1);
-
-    // To Davide: Is it more efficient doing this check or an inequality one?
-    return subset(set2, set2_restricted);
-}
-
 tribool BDDTreeSet::subset( const Box& box ) const {
     // raise an error if the current set is zero dimensional
     ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot test for subset of a zero-dimensional set.");

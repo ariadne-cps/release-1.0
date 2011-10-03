@@ -335,7 +335,7 @@ class VerifierSettings {
     bool use_param_midpoints_for_disproving;
 
     /*/ \brief Enable backward refinement of reachability when safety proving.
-     * \details The refinement itself is done only after a reachability restriction is available. */
+     * \details If disabled, it is possible for safety disproving to check whether the domain is incorrect. */
     bool enable_backward_refinement_for_safety_proving;
 };
 

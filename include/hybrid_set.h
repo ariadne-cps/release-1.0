@@ -282,6 +282,7 @@ class HybridImageSet
 
 
 //! A set comprising a ConstraintSet in each location.
+//! The semantics for an absent location is that no constraint is present (i.e., satisfaction returns true for each point of a set)
 class HybridConstraintSet
     : public std::map<DiscreteLocation,ConstraintSet>
     , public HybridRegularSetInterface
@@ -349,6 +350,106 @@ class HybridConstraintSet
     }
 
 };
+
+
+//! A set comprising a BoundedConstraintSet in each location.
+//! The semantics for an absent location is that the domain is empty, or equivalently that no set is present
+//! (satisfaction of the constraint would yield false for all points of another set)
+class HybridBoundedConstraintSet
+	: public std::map<DiscreteLocation,BoundedConstraintSet>
+	, public HybridLocatedSetInterface
+{
+  public:
+	typedef std::map<DiscreteLocation,BoundedConstraintSet>::iterator locations_iterator;
+	typedef std::map<DiscreteLocation,BoundedConstraintSet>::const_iterator locations_const_iterator;
+	locations_iterator locations_begin() {
+		return this->std::map<DiscreteLocation,BoundedConstraintSet>::begin(); }
+	locations_iterator locations_end() {
+		return this->std::map<DiscreteLocation,BoundedConstraintSet>::end(); }
+	locations_const_iterator locations_begin() const {
+		return this->std::map<DiscreteLocation,BoundedConstraintSet>::begin(); }
+	locations_const_iterator locations_end() const {
+		return this->std::map<DiscreteLocation,BoundedConstraintSet>::end(); }
+
+	using std::map<DiscreteLocation,BoundedConstraintSet>::insert;
+
+	HybridBoundedConstraintSet() { }
+	/** \brief Constructs from a \a domain, \a codomain and some functions \a func.
+	 * \details The \a func can be a superset of \a codomain, meaning that the absence of codomain
+	   for a location is equivalent to the absence of constraint. On the other hand, functions for all
+	   the locations of \a codomain must be explicitated. */
+	HybridBoundedConstraintSet(
+			const HybridBoxes& domain,
+			const HybridVectorFunction& func,
+			const HybridBoxes& codomain);
+
+	/** \brief Constructs from a \a constraint, copied in all locations from \a hspace */
+	HybridBoundedConstraintSet(
+			const HybridSpace& hspace,
+			BoundedConstraintSet constraint);
+
+	virtual HybridBoundedConstraintSet* clone() const { return new HybridBoundedConstraintSet(*this); }
+	virtual HybridSpace space() const { return HybridSpace(*this); }
+	virtual BoundedConstraintSet& operator[](DiscreteLocation q) {
+		return this->std::map<DiscreteLocation,BoundedConstraintSet>::operator[](q); }
+	virtual BoundedConstraintSet const& operator[](DiscreteLocation q) const {
+		ARIADNE_ASSERT(this->find(q)!=this->locations_end());
+		return this->find(q)->second; }
+
+	virtual HybridVectorFunction functions() const {
+		HybridVectorFunction result;
+		for (HybridBoundedConstraintSet::const_iterator loc_it = this->begin(); loc_it != this->end(); ++loc_it)
+			result.insert(std::pair<DiscreteLocation,VectorFunction>(loc_it->first,loc_it->second.function()));
+		return result;
+	}
+
+	virtual tribool overlaps(const HybridBox& hbx) const {
+		locations_const_iterator loc_iter=this->find(hbx.first);
+		if (loc_iter!=this->locations_end()) return loc_iter->second.overlaps(hbx.second);
+		else return false; }
+	virtual tribool disjoint(const HybridBox& hbx) const {
+		locations_const_iterator loc_iter=this->find(hbx.first);
+		if (loc_iter!=this->locations_end()) return loc_iter->second.disjoint(hbx.second);
+		else return true; }
+	virtual tribool covers(const HybridBox& hbx) const {
+		locations_const_iterator loc_iter=this->find(hbx.first);
+		if (loc_iter!=this->locations_end()) return loc_iter->second.covers(hbx.second);
+		else return false; }
+    virtual tribool inside(const HybridBoxes& hbx) const  {
+		tribool result = true;
+        for(HybridBoxes::const_iterator loc_iter=hbx.begin(); loc_iter!=hbx.end(); ++loc_iter) {
+        	locations_const_iterator this_iter = this->find(loc_iter->first);
+        	if (this_iter == this->locations_end())
+        		return false;
+        	else {
+        		tribool current_result = possibly(this_iter->second.inside(loc_iter->second));
+        		if (!possibly(current_result))
+        			return false;
+        		else if (indeterminate(current_result))
+        			result = indeterminate;
+        	}
+		}
+		return result; }
+
+	virtual HybridBoxes bounding_box() const {
+		HybridBoxes result;
+		for (HybridBoundedConstraintSet::const_iterator loc_it = this->begin(); loc_it != this->end(); ++loc_it)
+			result.insert(std::pair<DiscreteLocation,Box>(loc_it->first,loc_it->second.bounding_box()));
+		return result;
+	}
+
+	virtual std::ostream& write(std::ostream& os) const {
+		os << "HybridBoundedConstraintSet(";
+		for(locations_const_iterator loc_iter=this->begin(); loc_iter!=this->locations_end(); ++loc_iter) {
+		  if (loc_iter!=this->begin()) os << ", ";
+		  os << loc_iter->first << ":" << loc_iter->second;
+		}
+		os << ")";
+		return os;
+	}
+
+};
+
 
 //! A set comprising a %ListSet in each location.
 template<class ES>
@@ -906,13 +1007,16 @@ outer_approximation(const HybridBasicSet<ES>& hs,
     return result;
 }
 
+//! \brief Create an outer approximation of \a hbcs using the grid \hgr under some \a accuracy.
+HybridDenotableSet
+outer_approximation(
+		const HybridBoundedConstraintSet& hbcs,
+        const HybridGrid& hgr,
+        const int accuracy);
+
 //! \brief Checks if \a theSet1 is a subset of \a theSet2.
 //! \details If the sets do not have the same grid, an error is raised.
 bool subset(const HybridDenotableSet& theSet1, const HybridDenotableSet& theSet2);
-
-//! \brief Checks if \a theSet1 restricts \a theSet2.
-//! \details If the sets do not have the same grid, an error is raised.
-bool restricts(const HybridDenotableSet& hgts1, const HybridDenotableSet& hgts2);
 
 //! \brief Whether \a cons_set is disjoint from \a grid_set.
 //! \details Note that if \a cons_set does not have one location of \a grid_set, then for that location the result is true.

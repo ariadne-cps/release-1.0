@@ -182,7 +182,7 @@ TestReachabilityRestriction::test_refine() {
 	DiscreteLocation q2(2);
 
     HybridBoxes prerefine_boxes = rr1.bounding_box();
-    rr1.refine(2);
+    rr1.refine_at(2);
 
 	ARIADNE_PRINT_TEST_CASE_TITLE("Accuracy change");
 
@@ -218,7 +218,8 @@ TestReachabilityRestriction::test_apply_to() {
 	set_to_restrict1_boxToAdjoin[q1] = Box(2,-0.4,0.5,-1.0,0.0);
 	set_to_restrict1_boxToAdjoin[q2] = Box(3,0.9,1.0,-0.4,-0.2,1.2,1.3);
 	set_to_restrict1.adjoin_outer_approximation(set_to_restrict1_boxToAdjoin,accuracy);
-	HybridDenotableSet restricted_set1 = rr1.apply_to(set_to_restrict1);
+	HybridDenotableSet restricted_set1 = set_to_restrict1;
+	rr1.apply_to(restricted_set1);
 	ARIADNE_TEST_ASSERT(restricted_set1 == set_to_restrict1);
 	ARIADNE_TEST_ASSERT(!rr1.has_discretised(q1));
 	ARIADNE_TEST_ASSERT(!rr1.has_discretised(q2));
@@ -232,15 +233,17 @@ TestReachabilityRestriction::test_apply_to() {
 	set_to_restrict2_boxToAdjoin[q1] = Box(2,-0.4,0.5,-1.0,4.0);
 	set_to_restrict2_boxToAdjoin[q2] = Box(3,0.9,1.0,-0.4,-0.2,1.2,1.3);
 	set_to_restrict2.adjoin_outer_approximation(set_to_restrict2_boxToAdjoin,accuracy);
-	HybridDenotableSet restricted_set2 = rr2.apply_to(set_to_restrict2);
+	HybridDenotableSet restricted_set2 = set_to_restrict2;
+	rr2.apply_to(restricted_set2);
 	ARIADNE_TEST_ASSERT(set_to_restrict2 == restricted_set2);
 	ARIADNE_TEST_ASSERT(rr2.has_discretised(q1));
 	ARIADNE_TEST_ASSERT(!rr2.has_discretised(q2));
 
 	ARIADNE_PRINT_TEST_CASE_TITLE("Apply to a HybridDenotableSet that WOULD be restricted thanks to a finer restriction accuracy");
 
-	rr2.refine(2);
-	HybridDenotableSet restricted_set3 = rr2.apply_to(set_to_restrict2);
+	rr2.refine_at(2);
+	HybridDenotableSet restricted_set3 = set_to_restrict2;
+	rr2.apply_to(restricted_set3);
 	ARIADNE_TEST_ASSERT(set_to_restrict2 != restricted_set3);
 
 	ARIADNE_PRINT_TEST_CASE_TITLE("Apply to a list of enclosures that would not be restricted thanks to inclusion test");
@@ -251,7 +254,7 @@ TestReachabilityRestriction::test_apply_to() {
 	enclosures1.push_back(EnclosureType(q1,ContinuousEnclosureType(Box(2,-0.4,0.5,-1.0,0.0))));
 	enclosures1.push_back(EnclosureType(q2,ContinuousEnclosureType(Box(3,0.9,1.0,-0.4,-0.2,1.2,1.3))));
 
-	std::list<EnclosureType> restricted_enclosures1 = rr3.apply_to(enclosures1);
+	std::list<EnclosureType> restricted_enclosures1 = rr3.filter(enclosures1);
 	ARIADNE_TEST_ASSERT(restricted_enclosures1.size() == enclosures1.size());
 	ARIADNE_TEST_ASSERT(!rr3.has_discretised(q1));
 	ARIADNE_TEST_ASSERT(!rr3.has_discretised(q2));
@@ -262,7 +265,7 @@ TestReachabilityRestriction::test_apply_to() {
 	enclosures1.push_back(EnclosureType(q1,ContinuousEnclosureType(Box(2,-0.4,0.5,-1.0,0.0))));
 	enclosures2.push_back(EnclosureType(q2,ContinuousEnclosureType(Box(3,-5.0,-4.0,-10.0,-9.0,8.0,8.1))));
 
-	std::list<EnclosureType> restricted_enclosures2 = rr3.apply_to(enclosures2);
+	std::list<EnclosureType> restricted_enclosures2 = rr3.filter(enclosures2);
 	ARIADNE_TEST_ASSERT(restricted_enclosures2.size() != enclosures2.size());
 	ARIADNE_TEST_ASSERT(!rr3.has_discretised(q1));
 	ARIADNE_TEST_ASSERT(rr3.has_discretised(q2));
@@ -328,7 +331,7 @@ TestReachabilityRestriction::test_update() {
 	full_boxes.insert(make_pair(q2,Box(3,0.8,1.0,-0.4,-0.3,1.1,1.2)));
 	set1.adjoin_outer_approximation(full_boxes,accuracy);
 	HybridBoxes preupdate_bb = rr1.bounding_box();
-	rr1.update(set1);
+	rr1.update_with(set1);
 	ARIADNE_TEST_ASSERT(superset(preupdate_bb,rr1.bounding_box()));
 	ARIADNE_TEST_ASSERT(rr1.has_discretised(q1));
 	ARIADNE_TEST_ASSERT(rr1.has_discretised(q2));
@@ -343,7 +346,7 @@ TestReachabilityRestriction::test_update() {
 	HybridBoxes q3_boxes;
 	q3_boxes.insert(make_pair(q3,Box(1,0.5,0.6)));
 	set2.adjoin_outer_approximation(q3_boxes,accuracy);
-	ARIADNE_TEST_FAIL(rr2.update(set2));
+	ARIADNE_TEST_FAIL(rr2.update_with(set2));
 }
 
 
@@ -363,7 +366,7 @@ TestReachabilityRestriction::test_copy() {
 
 	ARIADNE_PRINT_TEST_CASE_TITLE("Invariance of the origin after a refinement of the copy");
 
-    rr2.refine(2);
+    rr2.refine_at(2);
     ARIADNE_TEST_EQUAL(rr1.accuracy(),1);
 
     ARIADNE_PRINT_TEST_CASE_TITLE("Invariance of the origin after a discretisation on the copy");
@@ -374,7 +377,7 @@ TestReachabilityRestriction::test_copy() {
 	boxes.insert(make_pair(q2,Box(3,-1.0,1.1,0.0,0.1,-1.0,1.0)));
 
 	set1.adjoin_outer_approximation(boxes,rr1.accuracy());
-	rr2.update(set1);
+	rr2.update_with(set1);
 	ARIADNE_TEST_ASSERT(!rr1.has_discretised(q1));
 	ARIADNE_TEST_ASSERT(!rr1.has_discretised(q2));
 }
@@ -403,7 +406,7 @@ TestReachabilityRestriction::test_forward_jump_set() {
 	Box update_set_bx2 = domain[q2];
 	update_set[q1].adjoin_over_approximation(update_set_bx1,accuracy);
 	update_set[q2].adjoin_over_approximation(update_set_bx2,accuracy);
-	rr1.update(update_set);
+	rr1.update_with(update_set);
 
 	HybridAutomaton sys = _get_system();
 
@@ -459,7 +462,7 @@ TestReachabilityRestriction::test_backward_jump_set() {
 	Box update_set_bx2 = domain[q2];
 	update_set[q1].adjoin_over_approximation(update_set_bx1,accuracy);
 	update_set[q2].adjoin_over_approximation(update_set_bx2,accuracy);
-	rr1.update(update_set);
+	rr1.update_with(update_set);
 
 	HybridAutomaton sys = _get_system();
 
@@ -542,7 +545,7 @@ TestReachabilityRestriction::test_projection() {
     ARIADNE_PRINT_TEST_CASE_TITLE("The set has a definitely feasible projection.");
 
 	ReachabilityRestriction rr3 = _get_reference_restriction();
-    rr3.refine(4);
+    rr3.refine_at(4);
 
 	HybridDenotableSet possibly_feasible3 = rr3.possibly_feasible_projection(constraint2);
 	HybridDenotableSet definitely_feasible3 = rr3.definitely_feasible_projection(constraint2);

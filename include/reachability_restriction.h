@@ -101,12 +101,12 @@ class ReachabilityRestriction
 
     //! \brief Update the content with the given \a set.
     //! \details Only the locations present in \a set are updated.
-    void update(const HybridDenotableSet& set);
+    void update_with(const HybridDenotableSet& set);
 
 	//! \brief Refine the content at the given accuracy.
 	//! \details Does not perform the operation on non-discretised locations or locations where the
 	//! restriction set does not cross the domain border.
-	void refine(int accuracy);
+	void refine_at(int accuracy);
 
 	//@}
 
@@ -114,10 +114,11 @@ class ReachabilityRestriction
 	//! \name Restricting operations
 
 	//! \brief Apply the restriction to \a set.
-	HybridDenotableSet apply_to(const HybridDenotableSet& set) const;
+	void apply_to(HybridDenotableSet& set) const;
 
-	//! \brief Apply the restriction to a list of enclosures
-	std::list<EnclosureType> apply_to(const std::list<EnclosureType>& enclosures) const;
+	//! \brief Apply the restriction to a list of enclosures.
+	//! \details This method differs in signature from apply_to since we need to produce a new list set.
+	std::list<EnclosureType> filter(const std::list<EnclosureType>& enclosures) const;
 
 	//@}
 
@@ -135,23 +136,19 @@ class ReachabilityRestriction
 			const HybridAutomatonInterface& sys) const;
 
 	//! \brief Computes the subset that is possibly feasible in respect to \a constraint.
-	//! \details The result in general is a projection since \a constraint is allowed to be on a subspace of the hybrid
-	//! space of the restriction.
+	//! \details The result is given as the projection on the \a constraint subspace.
 	HybridDenotableSet possibly_feasible_projection(const HybridConstraintSet& constraint) const;
 
 	//! \brief Computes the subset that is definitely feasible in respect to \a constraint.
-	//! \details The result in general is a projection since \a constraint is allowed to be on a subspace of the hybrid
-	//! space of the restriction.
+	//! \details The result is given as the projection on the \a constraint subspace.
 	HybridDenotableSet definitely_feasible_projection(const HybridConstraintSet& constraint) const;
 
 	//! \brief Computes the subset that is possibly infeasible in respect to \a constraint.
-	//! \details The result in general is a projection since \a constraint is allowed to be on a subspace of the hybrid
-	//! space of the restriction.
+	//! \details The result is given as the projection on the \a constraint subspace.
 	HybridDenotableSet possibly_infeasible_projection(const HybridConstraintSet& constraint) const;
 
 	//! \brief Computes the subset that is definitely infeasible in respect to \a constraint.
-	//! \details The result in general is a projection since \a constraint is allowed to be on a subspace of the hybrid
-	//! space of the restriction.
+	//! \details The result is given as the projection on the \a constraint subspace.
 	HybridDenotableSet definitely_infeasible_projection(const HybridConstraintSet& constraint) const;
 
 	//@}
