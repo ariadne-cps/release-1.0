@@ -876,9 +876,6 @@ void test_complex_operations() {
     ARIADNE_TEST_EQUAL(set2, set3);
 
     // test duplication of variables
-    enabled_cells = bdd_nithvar(0) & (bdd_ithvar(2) | bdd_ithvar(3));
-    set1 = BDDTreeSet(Grid(2), 2, array<int>(2, 1,0), enabled_cells);
-
     indices = Vector<uint>(3);
     indices[0] = 0;
     indices[1] = 1;
@@ -902,11 +899,38 @@ void test_complex_operations() {
     std::cout << std::endl;
 
     ARIADNE_TEST_EQUAL(set2, set3);
+
+    // test projection of a minced set
+    indices = Vector<uint>(3);
+    indices[0] = 2;
+    indices[1] = 0;
+    indices[2] = 2;
+    set1.mince(1);
+    set2 = project_down(set1, indices);
+    std::cout << "Set2 = ";
+    for(BDDTreeSet::const_iterator it = set2.begin(); it != set2.end(); it++) {
+        std::cout << *it << ", ";
+    }
+    std::cout << std::endl;
+    
+    set3 = BDDTreeSet(Grid(3), false);
+    for(BDDTreeSet::const_iterator it = set1.begin(); it != set1.end(); it++) {
+        Box bx = it->project(indices);
+        set3.adjoin_lower_approximation(bx, 2);
+    }
+    set3.mince(1);
+    std::cout << "Set3 = ";
+    for(BDDTreeSet::const_iterator it = set3.begin(); it != set3.end(); it++) {
+        std::cout << *it << ", ";
+    }
+    std::cout << std::endl;
+
+    ARIADNE_TEST_EQUAL(set2, set3);
     
 }
 
 int main() {
-/*
+
     test_constructors();
     test_properties_subdivisions();
     test_predicates();
@@ -914,7 +938,6 @@ int main() {
     test_box_approximations();
     test_set_approximations();
     test_iterators_conversions_drawing();
-*/
     test_complex_operations();
 
     return ARIADNE_TEST_FAILURES;

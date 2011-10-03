@@ -870,24 +870,19 @@ inline bool _present(int* vars, int varnum, int var) {
     return false;
 }
 
-// Duplicate variable firstvar with secondvar in old_bdd.
-bdd _duplicate_var(const bdd& old_bdd, int firstvar, int secondvar) {
-    if(old_bdd == bddtrue) {
-        return bddtrue;
+// Compute the term to duplicate variable firstvar with secondvar in old_bdd.
+inline bdd _duplicate_var(const bdd& old_bdd, int firstvar, int secondvar, int lastvar, int mince_depth) {
+    bdd res = bdd_biimp(bdd_ithvar(firstvar), bdd_ithvar(secondvar));
+    // if the index of the variable is greater than the mince_depth,
+    // add the term "OR FORALL (firstvar,...,lastvar).old_bdd
+    if(firstvar > mince_depth) {
+        bdd vars = bddtrue;
+        for(int i = firstvar; i <= lastvar; ++i) {
+            vars = vars & bdd_ithvar(i);
+        }
+        res = res | bdd_forall(old_bdd, vars);
     }
-    if(old_bdd == bddfalse) {
-        return bddfalse;
-    }
-    // the root of the bdd is labelled with a var
-    int rootvar = bdd_var(old_bdd);
-    if(rootvar < firstvar) {
-        // the var labelling the bdd is at a lower level, go on recursively
-        return (bdd_nithvar(rootvar) & _duplicate_var(bdd_low(old_bdd), firstvar, secondvar))
-            |  (bdd_ithvar(rootvar) & _duplicate_var(bdd_high(old_bdd), firstvar, secondvar));
-    }
-    // if the var labelling the bdd is either firstvar or higher than firstvar, 
-    // add the term x_firstvar <=> x_secondvar and return
-    return old_bdd & bdd_biimp(bdd_ithvar(firstvar), bdd_ithvar(secondvar));
+    return res;
 }
 
 
@@ -895,10 +890,10 @@ bdd _duplicate_var(const bdd& old_bdd, int firstvar, int secondvar) {
 // During the procedure indices is modified to avoid duplicated entries.
 // WARNING: the procedure does not check if the set of indices is consistent.
 bdd _project_down_variables(const bdd& old_bdd, uint old_dim, 
-                            const Vector<uint>& indices) 
+                            const Vector<uint>& indices, int mince_depth) 
 {
-    std::cout << "_project_down_variables(" << old_bdd << ", "  
-              << old_dim << ", " << indices << ")" << std::endl; 
+    // std::cout << "_project_down_variables(" << old_bdd << ", "  
+    //           << old_dim << ", " << indices << ")" << std::endl; 
     // the first free var is x_{old_depth}
     int* vars;
     int varnum;
@@ -921,36 +916,35 @@ bdd _project_down_variables(const bdd& old_bdd, uint old_dim,
     uint new_dim = indices.size();
     // scan indices to determine which variables to keep and which one to duplicate    
     for(uint i = 0; i != indices.size(); ++i) {
-        std::cout << "indices[" << i << "] = " << indices[i] << std::endl;
+        // std::cout << "indices[" << i << "] = " << indices[i] << std::endl;
         if(!keep[indices[i]]) {
-            std::cout << "the variable must be kept." << std::endl;
+            // std::cout << "the variable must be kept." << std::endl;
             // the variable indices[i] must be kept
             keep[indices[i]] = true;
             // add the correct pairs for the renaming
             int l = 0;
             for(int k = 0; indices[i] + k <= lastvar ; k += old_dim, l += new_dim) {
-                std::cout << "adding the pair (" << indices[i] + k 
-                          << ", " << i + l << ")" << std::endl;
+                // std::cout << "adding the pair (" << indices[i] + k 
+                //           << ", " << i + l << ")" << std::endl;
                 ARIADNE_ASSERT_MSG(bdd_setpair(renPairs, indices[i] + k, i + l) == 0,
                          "Error in adding a variable pair for the rename.");                    
             }
         } else {
-            std::cout << "the variable is duplicated." << std::endl;
+            // std::cout << "the variable is duplicated." << std::endl;
             // the variable indices[i] is duplicated in indices
             // add the pairs for the renaming and duplicate the var in the bdd
             uint l = 0;
             for(int k = 0; indices[i] + k <= lastvar ; k += old_dim, l += new_dim) {
                 // duplicate variable x = indices[i] + k with variable y = freevar
                 // this is done by adding the following term to the BDD:
-                // (FORALL x.old_bdd) OR (old_bdd AND x <=> y)
-                // add the term for the duplication if the var occurs in the bdd
-                std::cout << "duplicating variable " << indices[i] + k << " with " 
-                          << freevar << std::endl;
-                new_bdd = _duplicate_var(new_bdd, indices[i] + k, freevar);
-                std::cout << "new_bdd = " << new_bdd << std::endl;
+                // (FORALL (x..x_max).old_bdd) OR (x <=> y)
+                // std::cout << "duplicating variable " << indices[i] + k << " with " 
+                //           << freevar << std::endl;
+                duplicate = duplicate & _duplicate_var(old_bdd, indices[i] + k, freevar, lastvar, mince_depth);
+                // std::cout << "duplicate = " << duplicate << std::endl;
                 // add the pair for the renaming x_depth / x_{i+k*dim}
-                std::cout << "adding the pair (" << freevar  
-                          << ", " << i + l << ") for renaming" << std::endl;
+                // std::cout << "adding the pair (" << freevar  
+                //           << ", " << i + l << ") for renaming" << std::endl;
                 ARIADNE_ASSERT_MSG(bdd_setpair(renPairs, freevar, i + l) == 0,
                         "Error in adding a variable pair for the rename.");
                 // increase freevar to get the next free variable index
@@ -958,7 +952,7 @@ bdd _project_down_variables(const bdd& old_bdd, uint old_dim,
             }
         }   // if(!keep[indices[i]])
     }   // for(uint i = 0; i != indices.size(), ++i)  
-    std::cout << "new_bdd = " << new_bdd << std::endl;
+    // std::cout << "duplicate = " << duplicate << std::endl;
     // scan keep to obtain which variable must be deleted
     for(uint i = 0; i != keep.size(); ++i) {
         // if the dimension i must be removed, add all corresponding variables to remove
@@ -968,13 +962,13 @@ bdd _project_down_variables(const bdd& old_bdd, uint old_dim,
             }
         }
     }
-    std::cout << "remove = " << remove << std::endl;
+    // std::cout << "remove = " << remove << std::endl;
     // remove variables by applying the existential quantification 
-    new_bdd = bdd_exist(new_bdd, remove);
-    std::cout << "new_bdd = " << new_bdd << std::endl;
+    new_bdd = bdd_appex(new_bdd, duplicate, bddop_and, remove);
+    // std::cout << "new_bdd = " << new_bdd << std::endl;
     // rename the variable to obtain the correct order
     new_bdd = bdd_replace(new_bdd, renPairs);
-    std::cout << "new_bdd = " << new_bdd << std::endl;
+    // std::cout << "new_bdd = " << new_bdd << std::endl;
     // free renPairs
     bdd_freepair(renPairs);
     
@@ -1828,8 +1822,7 @@ BDDTreeSet project_down(const BDDTreeSet& bdd_set, const Vector<uint>& indices) 
     // compute the new mince depth
     uint new_mince_depth = _project_mince_depth(set.mince_depth(), old_dim, indices);
     // remove, duplicate and rename variables
-    bdd new_bdd = _project_down_variables(set.enabled_cells(), old_dim, indices);
-    
+    bdd new_bdd = _project_down_variables(set.enabled_cells(), old_dim, indices, set.root_cell_height() + set.mince_depth());
     // create the new BDDTreeSet
     set = BDDTreeSet(new_grid, new_height, new_coordinates, new_bdd, new_mince_depth);
     set.minimize_height();
