@@ -58,6 +58,20 @@ ReachabilityRestriction(const ReachabilityRestriction& other) :
 }
 
 
+ReachabilityRestriction::
+ReachabilityRestriction(
+		const HybridDenotableSet& set,
+		int accuracy) :
+	_domain(set.bounding_box()),
+	_grid(set.grid()),
+	_accuracy(accuracy),
+	_set(set),
+	_calculus(new TaylorCalculus())
+{
+
+}
+
+
 HybridBoxes
 ReachabilityRestriction::
 bounding_box() const
@@ -74,6 +88,14 @@ bounding_box() const
 
 bool
 ReachabilityRestriction::
+has_location(DiscreteLocation q) const
+{
+	return (_domain.find(q) != _domain.end());
+}
+
+
+bool
+ReachabilityRestriction::
 has_discretised(DiscreteLocation q) const
 {
     ARIADNE_ASSERT_MSG(this->has_location(q), "The location " << q << " was not found in the HybridRestrictionSet.");
@@ -83,9 +105,14 @@ has_discretised(DiscreteLocation q) const
 
 bool
 ReachabilityRestriction::
-has_location(DiscreteLocation q) const
+has_empty(DiscreteLocation q) const
 {
-	return (_domain.find(q) != _domain.end());
+	ARIADNE_ASSERT_MSG(this->has_location(q), "The location " << q << " was not found in the HybridRestrictionSet.");
+
+	if (!this->has_discretised(q))
+		return false;
+
+	return _set[q].empty();
 }
 
 
@@ -216,10 +243,88 @@ restricts(const HybridDenotableSet& set) const
 }
 
 
+tribool
+ReachabilityRestriction::
+disjoint(const HybridBox& hbx) const
+{
+	tribool result;
+
+	const DiscreteLocation& loc = hbx.first;
+	const Box& bx = hbx.second;
+
+    if (!this->has_location(loc))
+    	return true;
+	else {
+		if (this->_bounding_box(loc).disjoint(bx))
+			return true;
+		else {
+			if (!this->has_discretised(loc))
+				_insert_domain_discretisation(loc);
+
+			result = _set.find(loc)->second.disjoint(bx);
+		}
+	}
+
+    return result;
+}
+
+
+tribool
+ReachabilityRestriction::
+overlaps(const HybridBox& hbx) const
+{
+	tribool result;
+
+	const DiscreteLocation& loc = hbx.first;
+	const Box& bx = hbx.second;
+
+    if (!this->has_location(loc))
+    	return false;
+	else {
+		if (!this->_bounding_box(loc).overlaps(bx))
+			return false;
+		else {
+			if (!this->has_discretised(loc))
+				_insert_domain_discretisation(loc);
+
+			result = _set.find(loc)->second.overlaps(bx);
+		}
+	}
+
+    return result;
+}
+
+
+tribool
+ReachabilityRestriction::
+superset(const HybridBox& hbx) const
+{
+	tribool result;
+
+	const DiscreteLocation& loc = hbx.first;
+	const Box& bx = hbx.second;
+
+    if (!this->has_location(loc))
+    	return false;
+	else {
+		if (!this->_bounding_box(loc).superset(bx))
+			return false;
+		else {
+			if (!this->has_discretised(loc))
+				_insert_domain_discretisation(loc);
+
+			result = _set.find(loc)->second.superset(bx);
+		}
+	}
+
+    return result;
+}
+
+
 HybridDenotableSet
 ReachabilityRestriction::
 forward_jump_set(
-		const HybridDenotableSet& set,
+		const HybridDenotableSet& src_set,
 		const HybridAutomatonInterface& sys) const
 {
 	/*
@@ -233,12 +338,12 @@ forward_jump_set(
 	 *  apply the restriction on the result
 	 */
 
-	ARIADNE_ASSERT_MSG(set.grid() == _grid, "To create a forward jump set, the target set grid must match the restriction grid.");
+	ARIADNE_ASSERT_MSG(src_set.grid() == _grid, "To create a forward jump set, the source set grid must match the restriction grid.");
 
 	HybridDenotableSet result(_grid);
 
-	for (HybridDenotableSet::locations_const_iterator src_loc_it = set.locations_begin();
-			src_loc_it != set.locations_end(); ++src_loc_it) {
+	for (HybridDenotableSet::locations_const_iterator src_loc_it = src_set.locations_begin();
+			src_loc_it != src_set.locations_end(); ++src_loc_it) {
 
 		const DiscreteLocation& src_location = src_loc_it->first;
 		const DenotableSetType& src_cells = src_loc_it->second;
@@ -542,8 +647,6 @@ _is_transition_feasible(
 	const bool is_urgent = (event_kind == URGENT);
 
 	tribool is_guard_active = _calculus->active(VectorFunction(1,activation),source);
-
-	ARIADNE_LOG(6,"Guard activity: " << is_guard_active);
 
 	/*
 	 * a) If the guard is definitely active and the transition is urgent, then we are definitely outside the related invariant

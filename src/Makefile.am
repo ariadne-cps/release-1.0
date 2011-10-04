@@ -47,6 +47,7 @@ SRC = \
 	hybrid_io_automaton.cc \
 	orbit.cc \
 	hybrid_evolver-image.cc \
+	set_checker.cc \
 	reachability_restriction.cc \
 	reachability_analyser.cc \
 	logging.cc \

@@ -28,6 +28,10 @@
 
 namespace Ariadne {
 
+// definition of the approximation semantics
+enum ApprSemantics {AS_OUTER, AS_INNER};
+
+
 /********************************** Utility functions **********************************/
 // The silent Garbage Collector Handler
 void _silent_gbchandler(int pre, bddGbcStat *s) {
@@ -579,13 +583,14 @@ bdd _adjoin_inner_approximation(const OpenSetInterface& set, const bdd& enabled_
     return (bdd_nithvar(root_var) & left_branch) | (bdd_ithvar(root_var) & right_branch);
 }
 
-// recursive function that restrict the bdd to the cells that possibly overlaps with a set
-bdd _outer_restrict(const OpenSetInterface& set, const bdd& enabled_cells, const Box& root_cell,
-                       uint depth, uint splitting_coordinate, int root_var)
+// recursive function that restrict the bdd to the cells that possibly overlaps with a set, for AS_OUTER semantics,
+// or to the cells that are definitely inside the set, for AS_INNER semantics
+bdd _approximate_restrict(const OpenSetInterface& set, const bdd& enabled_cells, const Box& root_cell,
+                       const uint depth, const uint splitting_coordinate, const int root_var, const ApprSemantics semantics)
 {
-    // std::cout << "_outer_restrict(" << set << ", " << enabled_cells << ", "
-    //           << root_cell << ", " << depth << ", " << splitting_coordinate << ", " << root_var 
-    //           << ")" << std::endl;
+    // std::cout << "_approximate_restrict(" << set << ", " << enabled_cells << ", "
+    //           << root_cell << ", " << depth << ", " << splitting_coordinate << ", " << root_var << ", "
+    //           << (semantics == AS_INNER ? "AS_INNER" : "AS_OUTER") << ")" << std::endl;
     // if the bdd is the constant false, do nothing
     if(enabled_cells == bddfalse) return enabled_cells;
     // if the set definitely not overlap the root cell, return the empty bdd
@@ -593,10 +598,20 @@ bdd _outer_restrict(const OpenSetInterface& set, const bdd& enabled_cells, const
         // std::cout << "set definitely not overlap the current cell, return false." << std::endl;
         return bddfalse;
     }
-    // if the depth is zero, or the set covers the current cell, return the current bdd
-    if(depth == 0 || definitely(set.covers(root_cell))) {
-        // std::cout << "depth is zero, or the set covers the current cell, return the current bdd." << std::endl;
+    // if set covers the current cell, return the current bdd
+    if(definitely(set.covers(root_cell))) {
+        // std::cout << "the set covers the current cell, return the current bdd." << std::endl;
         return enabled_cells;
+    }    
+    // if the depth is zero, return the empty bdd for inner semantics, and the current bdd for outer semantics
+    if(depth == 0) {
+        if(semantics == AS_INNER) {
+            // std::cout << "depth is 0 and the set possibly not cover the current cell, skip it." << std::endl;
+            return bddfalse;
+        } else {
+            // std::cout << "depth is 0 and the set possibly overlaps the current cell, return the current bdd." << std::endl;
+            return enabled_cells;        
+        }
     }
     // std::cout << "set possibly overlaps the current cell, but possibly not cover it, go on." << std::endl;
     // split the root cell and the bdd, and continue recursively
@@ -612,38 +627,46 @@ bdd _outer_restrict(const OpenSetInterface& set, const bdd& enabled_cells, const
         left_branch = bdd_low(enabled_cells);
         right_branch = bdd_high(enabled_cells);
     }
-    left_branch = _outer_restrict(set, left_branch, split_cells.first, depth - 1,
-                                    (splitting_coordinate + 1) % set.dimension(), root_var + 1);
-    right_branch = _outer_restrict(set, right_branch, split_cells.second, depth - 1,
-                                    (splitting_coordinate + 1) % set.dimension(), root_var + 1);
+    left_branch = _approximate_restrict(set, left_branch, split_cells.first, depth - 1,
+                                    (splitting_coordinate + 1) % set.dimension(), root_var + 1, semantics);
+    right_branch = _approximate_restrict(set, right_branch, split_cells.second, depth - 1,
+                                    (splitting_coordinate + 1) % set.dimension(), root_var + 1, semantics);
     return (bdd_nithvar(root_var) & left_branch) | (bdd_ithvar(root_var) & right_branch);
 }
 
-// recursive function that restrict the bdd to the cells that are definitely inside a set
-bdd _inner_restrict(const OpenSetInterface& set, const bdd& enabled_cells, const Box& root_cell,
-                       uint depth, uint splitting_coordinate, int root_var)
+// recursive function that restrict the bdd to the cells that possibly respect a property, for AS_OUTER semantics,
+// or to the cells that definitely respect it, for AS_INNER semantics
+bdd _approximate_restrict(const SetCheckerInterface& checker, const bdd& enabled_cells, const Box& root_cell,
+                       const uint depth, const uint splitting_coordinate, const int root_var, const ApprSemantics semantics)
 {
-    // std::cout << "_inner_restrict(" << set << ", " << enabled_cells << ", "
-    //           << root_cell << ", " << depth << ", " << splitting_coordinate << ", " << root_var 
-    //           << ")" << std::endl;
+    // std::cout << "_approximate_restrict(checker, " << enabled_cells << ", "
+    //           << root_cell << ", " << depth << ", " << splitting_coordinate << ", " << root_var << ", "
+    //           << (semantics == AS_INNER ? "AS_INNER" : "AS_OUTER") << ")" << std::endl;
     // if the bdd is the constant false, do nothing
-    if(enabled_cells == bddfalse) return bddfalse;
-    // if the set is definitely disjoint form the root cell, return the empty bdd
-    if(!possibly(set.overlaps(root_cell))) {
-        // std::cout << "set definitely disjoint from the current cell, return false." << std::endl;
+    if(enabled_cells == bddfalse) return enabled_cells;
+    // get the value of the property for the root cell
+    tribool prop = checker.check(root_cell);
+    // if the current cell definitely not respect the property, return the empty bdd
+    if(!possibly(prop)) {
+        // std::cout << "the current cell do not respect the property, return false." << std::endl;
         return bddfalse;
     }
-    // if the set definitely covers the root cell, return the current bdd
-    if(definitely(set.covers(root_cell))) {
-        // std::cout << "set definitely cover the current cell, return the current bdd." << std::endl;
-        return enabled_cells;    
-    }
-    // if the depth is zero, return the empty bdd
+    // if the current cell definitely respects the property, return the current bdd
+    if(definitely(prop)) {
+        // std::cout << "the current cell definitely respects the property, return the current bdd." << std::endl;
+        return enabled_cells;
+    }    
+    // if the depth is zero, return the empty bdd for inner semantics, and the current bdd for outer semantics
     if(depth == 0) {
-        // std::cout << "depth is 0 and the set possibly not cover the current cell, skip it." << std::endl;
-        return bddfalse;
+        if(semantics == AS_INNER) {
+            // std::cout << "depth is 0 and the current cell possibly do not respect the property, skip it." << std::endl;
+            return bddfalse;
+        } else {
+            // std::cout << "depth is 0 and the current cell possibly respects the property, return the current bdd." << std::endl;
+            return enabled_cells;        
+        }
     }
-    // std::cout << "set possibly covers the current cell, go on." << std::endl;
+    // std::cout << "the current cell possibly respects the property, go on." << std::endl;
     // split the root cell and the bdd, and continue recursively
     std::pair <Box, Box> split_cells = root_cell.split(splitting_coordinate);
     bdd right_branch, left_branch;
@@ -657,14 +680,13 @@ bdd _inner_restrict(const OpenSetInterface& set, const bdd& enabled_cells, const
         left_branch = bdd_low(enabled_cells);
         right_branch = bdd_high(enabled_cells);
     }
-    left_branch = _inner_restrict(set, left_branch, split_cells.first, depth - 1,
-                                    (splitting_coordinate + 1) % set.dimension(), root_var + 1);
-    right_branch = _inner_restrict(set, right_branch, split_cells.second, depth - 1,
-                                    (splitting_coordinate + 1) % set.dimension(), root_var + 1);
+    uint dim = root_cell.dimension();
+    left_branch = _approximate_restrict(checker, left_branch, split_cells.first, depth - 1,
+                                    (splitting_coordinate + 1) % dim, root_var + 1, semantics);
+    right_branch = _approximate_restrict(checker, right_branch, split_cells.second, depth - 1,
+                                    (splitting_coordinate + 1) % dim, root_var + 1, semantics);
     return (bdd_nithvar(root_var) & left_branch) | (bdd_ithvar(root_var) & right_branch);
 }
-
-
 
 
 // Function that increments a BDDTreeSet iterator
@@ -1585,7 +1607,7 @@ void BDDTreeSet::outer_restrict(const OpenSetInterface& set) {
     uint i = _splitting_coordinate(height, dim);
     uint depth = this->depth();
     // call to worker procedure that computes the new bdd
-    this->_bdd = _outer_restrict(set, this->enabled_cells(), this->root_cell(), height + depth, i, 0);
+    this->_bdd = _approximate_restrict(set, this->enabled_cells(), this->root_cell(), height + depth, i, 0, AS_OUTER);
     // minimize the result
     this->minimize_height();    
 }
@@ -1603,7 +1625,41 @@ void BDDTreeSet::inner_restrict(const OpenSetInterface& set) {
     uint i = _splitting_coordinate(height, dim);
     uint depth = this->depth();
     // call to worker procedure that computes the new bdd
-    this->_bdd = _inner_restrict(set, this->enabled_cells(), this->root_cell(), height + depth, i, 0);
+    this->_bdd = _approximate_restrict(set, this->enabled_cells(), this->root_cell(), height + depth, i, 0, AS_INNER);
+    // minimize the result
+    this->minimize_height();    
+}
+
+void BDDTreeSet::outer_restrict(const SetCheckerInterface& checker, const uint accuracy) {
+    ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot compare with a zero-dimensional BDDTreeSet.");
+
+    // Do nothing if the bdd set is empty
+    if(this->empty()) return;
+
+    // determine which dimension to split first 
+    uint height = this->root_cell_height();
+    uint dim = this->dimension();
+    uint i = _splitting_coordinate(height, dim);
+    // call to worker procedure that computes the new bdd
+    this->_bdd = _approximate_restrict(checker, this->enabled_cells(), this->root_cell(), 
+                                       height + dim*accuracy, i, 0, AS_OUTER);
+    // minimize the result
+    this->minimize_height();    
+}
+
+void BDDTreeSet::inner_restrict(const SetCheckerInterface& checker, const uint accuracy) {
+    ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot compare with a zero-dimensional BDDTreeSet.");
+
+    // Do nothing if the bdd set is empty
+    if(this->empty()) return;
+
+    // determine which dimension to split first 
+    uint height = this->root_cell_height();
+    uint dim = this->dimension();
+    uint i = _splitting_coordinate(height, dim);
+    // call to worker procedure that computes the new bdd
+    this->_bdd = _approximate_restrict(checker, this->enabled_cells(), this->root_cell(), 
+                                       height + dim*accuracy, i, 0, AS_INNER);
     // minimize the result
     this->minimize_height();    
 }

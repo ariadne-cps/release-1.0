@@ -47,6 +47,7 @@
 #include "set_interface.h"
 #include "taylor_set.h"
 #include "function_set.h"
+#include "set_checker.h"
 
 #include "grid.h"
 #include "graphics_interface.h"
@@ -374,7 +375,7 @@ class BDDTreeSet : public DrawableInterface {
      */
     void adjoin_inner_approximation( const OpenSetInterface& set, const Box& bounding_box, const uint subdiv );
 
-    /*! \brief Restrict to the cells that possibly overlaps with \a set. 
+    /*! \brief Restrict to the cells that possibly overlap with \a set.
      *  The result is an outer approximation of the intersection with \a set.
      */
     void outer_restrict( const OpenSetInterface& set );
@@ -383,6 +384,17 @@ class BDDTreeSet : public DrawableInterface {
      *  The result is an inner approximation of the intersection with \a set.
      */
     void inner_restrict( const OpenSetInterface& set );
+
+    /*! \brief Restrict to the cells that possibly respect the property \a checker, with a given \a accuracy. 
+     *  The result is an outer approximation of the intersection with the set of points respecting the property.
+     */
+    void outer_restrict( const SetCheckerInterface& checker, const uint accuracy );
+
+    /*! \brief Restrict to the cells that definitely respect the property \a checker, with a given \a accuracy.
+     *  The result is an inner approximation of the intersection with the set of points respecting the property.
+     */
+    void inner_restrict( const SetCheckerInterface& checker, const uint accuracy );
+
 
     //@}
 

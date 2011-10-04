@@ -984,6 +984,7 @@ outer_approximation(const ListSet<HybridBasicSet<ES> >& hls,
                 result.insert(make_pair(loc,DenotableSetType(hgr[loc])));
             }
             DenotableSetType& gts=result[loc];
+            Box bbx = es.bounding_box();
             gts.adjoin_outer_approximation(es.bounding_box(),accuracy);
         }
     return result;

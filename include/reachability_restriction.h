@@ -25,8 +25,8 @@
  *  \brief Allows a computationally flexible domain discretisation and set restricting operations.
  */
 
-#ifndef REACHABILITY_RESTRICTION_H
-#define REACHABILITY_RESTRICTION_H
+#ifndef ARIADNE_REACHABILITY_RESTRICTION_H
+#define ARIADNE_REACHABILITY_RESTRICTION_H
 
 #include "taylor_set.h"
 #include "hybrid_set.h"
@@ -44,6 +44,26 @@ class ReachabilityRestriction
 {
   public:
 
+	tribool (Ariadne::ReachabilityRestriction::*check)(const Box&);
+
+	tribool alwaysTrue(const Box& bx) {
+		return true;
+	}
+
+	tribool alwaysFalse(const Box& bx) {
+		return true;
+	}
+
+	tribool hasAccuracyGreaterThanZero(const Box& bx) {
+		return (_accuracy > 0);
+	}
+
+	tribool hasAccuracyGreaterThanTwo(const Box& bx) {
+		return (_accuracy > 2);
+	}
+
+  public:
+
 	//@{
 	//! \name Constructors and destructors
 
@@ -55,6 +75,12 @@ class ReachabilityRestriction
 
 	//! \brief Copy constructor.
 	ReachabilityRestriction(const ReachabilityRestriction& other);
+
+	//! \brief Constructs from a given \a set with a specified \a accuracy.
+	//! \details This essentially allows to use ReachabilityRestriction in place of HybridDenotableSet.
+	ReachabilityRestriction(
+			const HybridDenotableSet& set,
+			int accuracy);
 
 	//! \brief Cloner.
 	ReachabilityRestriction* clone() const { return new ReachabilityRestriction(*this); }
@@ -85,11 +111,14 @@ class ReachabilityRestriction
 	//@{
 	//! \name Predicates
 
+	//! \brief Whether location \a q is present in the space of the set.
+	bool has_location(DiscreteLocation q) const;
+
 	//! \brief Whether location \a q has already been discretised.
 	bool has_discretised(DiscreteLocation q) const;
 
-	//! \brief Whether location \a q is present in the space of the set.
-	bool has_location(DiscreteLocation q) const;
+	//! \brief Whether the restriction is empty (i.e., it restricts to the empty set) at location \a q.
+	bool has_empty(DiscreteLocation q) const;
 
 	//! \brief Whether applying the restriction to \a set would affect it.
 	bool restricts(const HybridDenotableSet& set) const;
@@ -121,6 +150,12 @@ class ReachabilityRestriction
 	std::list<EnclosureType> filter(const std::list<EnclosureType>& enclosures) const;
 
 	//@}
+
+	//! \name HybridBox checks
+
+    tribool disjoint(const HybridBox& hbx) const;
+    tribool overlaps(const HybridBox& hbx) const;
+    tribool superset(const HybridBox& hbx) const;
 
 	//@{
 	//! \name Set computations
@@ -168,23 +203,20 @@ class ReachabilityRestriction
 
 	//! \brief Whether there is a feasible transition from the restriction set at \a src_location towards \a trg_set.
 	//! \details This is a rough check using only the bounding domain of the restriction.
-	bool
-	_has_feasible_transition(
+	bool _has_feasible_transition(
 			const DiscreteLocation& src_location,
 			const HybridDenotableSet& trg_set,
 			const HybridAutomatonInterface& sys) const;
 
 	//! \brief Checks \a src_enclosure's jump sets from \a src_location. Adjoins all found jump sets to \a set_to_adjoin.
-	void
-	_adjoin_forward_jump_sets(
+	void _adjoin_forward_jump_sets(
 			const DiscreteLocation& src_location,
 			const ContinuousEnclosureType& src_enclosure,
 			const HybridAutomatonInterface& sys,
 			HybridDenotableSet& result_set) const;
 
 	//! \brief Checks if \a src_enclosure's jump set from \a src_location intersects \a trg_set. If it does, adjoins it to \a set_to_adjoin.
-	void
-	_adjoin_src_of_forward_jump_sets(
+	void _adjoin_src_of_forward_jump_sets(
 			const DiscreteLocation& src_location,
 			const ContinuousEnclosureType& src_enclosure,
 			const HybridAutomatonInterface& sys,
@@ -193,16 +225,14 @@ class ReachabilityRestriction
 
 	//! \brief Whether the transition specified by \a activation would be possible from \a source.
 	//! \details It depends on the \a event_kind and the direction of the \a dynamic.
-	bool
-	_is_transition_feasible(
+	bool _is_transition_feasible(
 			const ScalarFunction& activation,
 			EventKind event_kind,
 			const VectorFunction& dynamic,
 			const ContinuousEnclosureType& source) const;
 
 	//! \brief Whether the box \bx is definitely outside the invariants in the given \a location according to \a sys.
-	bool
-	_is_outside_invariants(
+	bool _is_outside_invariants(
 			const DiscreteLocation& location,
 			const Box& bx,
 			const HybridAutomatonInterface& sys) const;
@@ -231,4 +261,4 @@ is_positively_crossing(
 
 }
 
-#endif /* REACHABILITY_RESTRICTION_H */
+#endif /* ARIADNE_REACHABILITY_RESTRICTION_H */
