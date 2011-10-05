@@ -155,10 +155,25 @@ _safety_proving_once(
 	ARIADNE_LOG(4,"Performing outer reachability analysis...");
 
 	try {
-		result = _safety_proving_once_forward_analysis(verInput,params);
+
+	    ARIADNE_LOG(5,"Computing the initial set...");
+
+	    SetApproximationType forward_initial(_safety_restriction->grid());
+	    forward_initial.adjoin_outer_approximation(verInput.getInitialSet(),_safety_restriction->accuracy());
+	    _safety_restriction->apply_to(forward_initial);
+
+	    if (forward_initial.empty()) {
+	        throw EmptyInitialCellSetException("The initial cell set for forward reachability is empty (skipped).");
+	    } else {
+	        ARIADNE_LOG(6,"Forward initial set size: " << forward_initial.size());
+	        if (_settings->plot_results)
+	            _plot_reach(forward_initial,"initial",_safety_restriction->accuracy());
+	    }
+
+		result = _safety_proving_once_forward_analysis(verInput.getSystem(),forward_initial,verInput.getSafetyConstraint(),params);
 
 		if (!indeterminate(result) && _settings->enable_backward_refinement_for_safety_proving)
-		    _safety_proving_once_backward_refinement(verInput,params);
+		    _safety_proving_once_backward_refinement(verInput.getSystem(),forward_initial,verInput.getSafetyConstraint(),params);
 
 	} catch (ReachOutOfDomainException& ex) {
 		ARIADNE_LOG(5, "The outer reached region is partially out of the domain (skipped).");
@@ -181,22 +196,22 @@ _safety_proving_once(
 void
 Verifier::
 _safety_proving_once_backward_refinement(
-        SafetyVerificationInput& verInput,
+		const SystemType& sys,
+		const SetApproximationType& initial_set,
+		const HybridConstraintSet& safety_constraint,
         const RealParameterSet& params) const
 {
     const unsigned ANALYSER_TAB_OFFSET = 5;
     const bool ENABLE_LOWER_REACH_RESTRICTION_CHECK = false;
 
-    const HybridConstraintSet& safety_constraint = verInput.getSafetyConstraint();
-
     ARIADNE_LOG(5,"Creating the analyser for backward reachability...");
 
-    AnalyserPtrType analyser = _get_tuned_analyser(verInput.getSystem(),parameters_identifiers(params),_safety_restriction,
+    AnalyserPtrType analyser = _get_tuned_analyser(sys,parameters_identifiers(params),_safety_restriction,
     		safety_constraint,ANALYSER_TAB_OFFSET,ENABLE_LOWER_REACH_RESTRICTION_CHECK,UPPER_SEMANTICS);
 
     ARIADNE_LOG(5,"Computing the initial set...");
 
-    SetApproximationType backward_initial = analyser->initial_cells_set(safety_constraint);
+    SetApproximationType backward_initial = _safety_restriction->possibly_infeasible_projection(safety_constraint);
 
     if (backward_initial.empty()) {
         throw EmptyInitialCellSetException("The initial cell set for backward reachability is empty (skipped).");
@@ -214,6 +229,12 @@ _safety_proving_once_backward_refinement(
 
     ARIADNE_LOG(6,"Reachability size: " << backward_reach.size());
 
+    SetApproximationType reached_initial = initial_set;
+    _safety_restriction->apply_to(reached_initial);
+    if (reached_initial.empty()) {
+        throw EmptyInitialCellSetException("The initial set is now outside the reachability restriction (skipped).");
+    }
+
     if (_settings->plot_results)
         _plot_reach(backward_reach,"backward",_safety_restriction->accuracy());
 }
@@ -222,35 +243,22 @@ _safety_proving_once_backward_refinement(
 bool
 Verifier::
 _safety_proving_once_forward_analysis(
-        SafetyVerificationInput& verInput,
+		const SystemType& sys,
+		const SetApproximationType& initial_set,
+		const HybridConstraintSet& safety_constraint,
         const RealParameterSet& params) const
 {
     const unsigned ANALYSER_TAB_OFFSET = 5;
     const bool ENABLE_LOWER_REACH_RESTRICTION_CHECK = !_settings->enable_backward_refinement_for_safety_proving;
 
-    const HybridImageSet& initial_set = verInput.getInitialSet();
-    const HybridConstraintSet& safety_constraint = verInput.getSafetyConstraint();
-
     ARIADNE_LOG(5,"Creating the analyser for forward reachability...");
 
-    AnalyserPtrType analyser = _get_tuned_analyser(verInput.getSystem(),parameters_identifiers(params),_safety_restriction,
+    AnalyserPtrType analyser = _get_tuned_analyser(sys,parameters_identifiers(params),_safety_restriction,
     		safety_constraint,ANALYSER_TAB_OFFSET,ENABLE_LOWER_REACH_RESTRICTION_CHECK,UPPER_SEMANTICS);
-
-    ARIADNE_LOG(5,"Computing the initial set...");
-
-    SetApproximationType forward_initial = analyser->initial_cells_set(initial_set);
-
-    if (forward_initial.empty()) {
-        throw EmptyInitialCellSetException("The initial cell set for forward reachability is empty (skipped).");
-    } else {
-        ARIADNE_LOG(6,"Forward initial set size: " << forward_initial.size());
-        if (_settings->plot_results)
-            _plot_reach(forward_initial,"initial",_safety_restriction->accuracy());
-    }
 
     ARIADNE_LOG(5,"Retrieving forward reachability...");
 
-    SetApproximationType forward_reach = analyser->outer_chain_reach(forward_initial,DIRECTION_FORWARD);
+    SetApproximationType forward_reach = analyser->outer_chain_reach(initial_set,DIRECTION_FORWARD);
 
     ARIADNE_LOG(6,"Reachability size: " << forward_reach.size());
 

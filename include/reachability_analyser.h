@@ -178,12 +178,6 @@ class HybridReachabilityAnalyser
             bool enable_lower_reach_restriction_check,
             Semantics semantics);
 
-    /*! \brief Produces the starting cells from an enclosure set. */
-    virtual SetApproximationType initial_cells_set(const HybridImageSet& initial_enclosure_set) const;
-
-    /*! \brief Produces the starting cells from a constraint set. */
-    virtual SetApproximationType initial_cells_set(const HybridConstraintSet& initial_constraint_set) const;
-  
   public:
 
     typedef HybridTime T;

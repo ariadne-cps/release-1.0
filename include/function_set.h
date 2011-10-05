@@ -111,6 +111,9 @@ class ConstraintSet
   public:
     //! \brief Default constructor constructs the singleton in \f$\R^0\f$.
     ConstraintSet();
+    //! \brief Constructor for the \f$\R^as\f$ constraint set.
+    //! \details The codomain has dimension zero.
+    ConstraintSet(uint dom_dim);
     //! \brief Construct the preimage of \a codom under \a fn.
     ConstraintSet(const VectorFunction& fn, const Vector<Interval>& codom);
     //! \brief The codomain of the set.

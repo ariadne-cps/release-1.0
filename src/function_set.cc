@@ -178,6 +178,10 @@ ConstraintSet::ConstraintSet()
 {
 }
 
+ConstraintSet::ConstraintSet(uint dom_dim)
+	: _function(VectorFunction(0u,dom_dim)), _codomain()
+{
+}
 
 ConstraintSet::ConstraintSet(const VectorFunction& fn, const Vector<Interval>& codom)
     : _function(fn), _codomain(codom)

@@ -1842,14 +1842,16 @@ tribool covers(const ConstraintSet& cons_set, const BDDTreeSet& bdd_set) {
 BDDTreeSet possibly_overlapping_subset(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set) {
     // make a copy of bdd_set
     BDDTreeSet result = bdd_set;
-    result.outer_restrict(cons_set);
+    if (cons_set.codomain().size() != 0)
+    	result.outer_restrict(cons_set);
     return result;
 }
 
 BDDTreeSet definitely_covered_subset(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set) {
     // make a copy of bdd_set
     BDDTreeSet result = bdd_set;
-    result.inner_restrict(cons_set);
+    if (cons_set.codomain().size() != 0)
+    	result.inner_restrict(cons_set);
     return result;
 }
 

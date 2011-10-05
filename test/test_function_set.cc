@@ -50,7 +50,7 @@ class TestFunctionSet
     void test();
   private:
     void test_constraint_set_empty();
-    void test_constraint_set_full();
+    void test_constraint_set_full_space();
     void test_constraint_set_0D();
     void test_constraint_set_1D();
 };
@@ -59,7 +59,7 @@ class TestFunctionSet
 void TestFunctionSet::test()
 {
 	ARIADNE_TEST_CALL(test_constraint_set_empty());
-	ARIADNE_TEST_CALL(test_constraint_set_full());
+	ARIADNE_TEST_CALL(test_constraint_set_full_space());
 	ARIADNE_TEST_CALL(test_constraint_set_0D());
     ARIADNE_TEST_CALL(test_constraint_set_1D());
 }
@@ -82,19 +82,16 @@ void TestFunctionSet::test_constraint_set_empty()
 }
 
 
-void TestFunctionSet::test_constraint_set_full()
+void TestFunctionSet::test_constraint_set_full_space()
 {
-	uint rs = 0;
-	uint as = 1;
-	VectorFunction cons_f(rs,as);
-	Box codomain(0);
+	uint as = 2;
 
-	ConstraintSet cons(cons_f,codomain);
+	ConstraintSet cons(as);
 
-	Box check_bx(1,0.0,1.0);
+	Box check_bx(2,0.0,1.0,0.0,1.0);
 
 	ARIADNE_TEST_EQUAL(cons.codomain().size(),0);
-	ARIADNE_TEST_EQUAL(cons.function().argument_size(),1);
+	ARIADNE_TEST_EQUAL(cons.function().argument_size(),2);
 	ARIADNE_TEST_ASSERT(definitely(cons.covers(check_bx)));
 	ARIADNE_TEST_ASSERT(definitely(!cons.disjoint(check_bx)));
 	ARIADNE_TEST_ASSERT(definitely(cons.overlaps(check_bx)));

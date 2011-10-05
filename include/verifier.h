@@ -184,12 +184,16 @@ class Verifier
 
 	/*! \brief Performs backward refinement of the safety reachability restriction. */
 	void _safety_proving_once_backward_refinement(
-	        SafetyVerificationInput& verInput,
+	        const SystemType& sys,
+	        const SetApproximationType& initial_set,
+	        const HybridConstraintSet& constraint,
 	        const RealParameterSet& params) const;
 
 	/*! \brief Performs forward analysis for safety proving. */
 	bool _safety_proving_once_forward_analysis(
-	        SafetyVerificationInput& verInput,
+	        const SystemType& sys,
+	        const SetApproximationType& initial_set,
+	        const HybridConstraintSet& constraint,
 	        const RealParameterSet& params) const;
 
 	//@}

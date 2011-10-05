@@ -178,28 +178,6 @@ _plot_reach(
 }
 
 
-HybridDenotableSet
-HybridReachabilityAnalyser::
-initial_cells_set(const HybridImageSet& initial_enclosure_set) const
-{
-    SetApproximationType result(_grid());
-
-    result.adjoin_outer_approximation(initial_enclosure_set,_accuracy());
-
-    _restriction->apply_to(result);
-
-    return result;
-}
-
-
-HybridDenotableSet
-HybridReachabilityAnalyser::
-initial_cells_set(const HybridConstraintSet& initial_constraint_set) const
-{
-    return _restriction->possibly_infeasible_projection(initial_constraint_set);
-}
-
-
 std::pair<HybridDenotableSet,HybridDenotableSet>
 HybridReachabilityAnalyser::
 _upper_reach_evolve(
@@ -562,8 +540,7 @@ _lower_chain_reach_and_epsilon(
 	    }
 		_restriction->apply_to(local_reach);
 
-		if (!_settings->constraint_set.empty())
-			_lower_chain_reach_and_epsilon_constraint_check(system,local_reach,local_epsilon);
+		_lower_chain_reach_and_epsilon_constraint_check(system,local_reach,local_epsilon);
 
 		ARIADNE_LOG(3,"Reach size before removal = " << local_reach.size());
 
@@ -599,7 +576,7 @@ _lower_chain_reach_and_epsilon_constraint_check(
 	HDS possibly_feasible_reach = possibly_overlapping_subset(reach,_settings->constraint_set);
 	definitely_infeasible_reach.remove(possibly_feasible_reach);
 
-	// It is not necessary to check for eps-infeasible cells if no infeasible cells are present
+	// It is not necessary to check for eps-infeasible cells if no definitely infeasible cells are present
 	if (!definitely_infeasible_reach.empty()) {
 
 		// Identify the subspace of those locations where infeasible cells were found
@@ -906,7 +883,7 @@ HybridReachabilityAnalyserSettings::HybridReachabilityAnalyserSettings(
 		const HybridBoxes& domain)
     : lock_to_grid_time(getLockToGridTime(sys,domain)),
       lock_to_grid_steps(1),
-      constraint_set(),
+      constraint_set(sys.state_space()),
       splitting_parameters_target_ratio(0.05),
       enable_lower_reach_restriction_check(false),
       enable_lower_pruning(true)

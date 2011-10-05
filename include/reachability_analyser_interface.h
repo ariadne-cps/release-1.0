@@ -121,12 +121,6 @@ template<class SYS> class ReachabilityAnalyserInterface
             bool enable_lower_reach_restriction_check,
             Semantics semantics) = 0;
 
-    /*! \brief Produce the starting cells from an enclosure set. */
-    virtual SetApproximationType initial_cells_set(const HybridImageSet& initial_enclosure_set) const = 0;
-
-    /*! \brief Produce the starting cells from a constraint set. */
-    virtual SetApproximationType initial_cells_set(const HybridConstraintSet& initial_constraint_set) const = 0;
-
     //@}
     
 };

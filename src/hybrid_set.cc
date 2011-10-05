@@ -61,6 +61,15 @@ HybridConstraintSet(const HybridSpace& hspace, ConstraintSet constraint)
 }
 
 
+HybridConstraintSet::
+HybridConstraintSet(const HybridSpace& hspace)
+{
+	for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
+		this->insert(make_pair(hs_it->first,ConstraintSet(hs_it->second)));
+	}
+}
+
+
 HybridBoundedConstraintSet::
 HybridBoundedConstraintSet(
 		const HybridBoxes& domain,
@@ -90,6 +99,26 @@ HybridBoundedConstraintSet(
 		ARIADNE_ASSERT_MSG(hs_it->second == constraint.function().argument_size(),
 				"The continuous space would not match the constraint function.");
 		this->insert(make_pair(hs_it->first,constraint));
+	}
+}
+
+
+HybridBoundedConstraintSet::
+HybridBoundedConstraintSet(const HybridSpace& hspace, const Box& domain_bx)
+{
+	for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
+		ARIADNE_ASSERT_MSG(hs_it->second == domain_bx.dimension(),
+				"The box dimension does not match location " << hs_it->first.name() << " dimension.");
+		this->insert(make_pair(hs_it->first,BoundedConstraintSet(domain_bx)));
+	}
+}
+
+
+HybridBoundedConstraintSet::
+HybridBoundedConstraintSet(const HybridBoxes& domain_boxes)
+{
+	for (HybridBoxes::const_iterator hbx_it = domain_boxes.begin(); hbx_it != domain_boxes.end(); ++hbx_it) {
+		this->insert(make_pair(hbx_it->first,BoundedConstraintSet(hbx_it->second)));
 	}
 }
 
@@ -233,6 +262,8 @@ bool subset(const HybridDenotableSet& theSet1, const HybridDenotableSet& theSet2
 
 tribool disjoint(const HybridConstraintSet& cons_set, const HybridDenotableSet& grid_set)
 {
+	ARIADNE_ASSERT_MSG(cons_set.space() == grid_set.space(), "The denotable set and constraint set have mismatched spaces.");
+
     tribool result = true;
 
     for (HybridDenotableSet::locations_const_iterator gts_it = grid_set.locations_begin(); gts_it != grid_set.locations_end(); ++gts_it) {
@@ -257,6 +288,8 @@ tribool overlaps(const HybridConstraintSet& cons_set, const HybridDenotableSet& 
 
 tribool covers(const HybridConstraintSet& cons_set, const HybridDenotableSet& grid_set)
 {
+	ARIADNE_ASSERT_MSG(cons_set.space() == grid_set.space(), "The denotable set and constraint set have mismatched spaces.");
+
     tribool result = true;
 
     for (HybridDenotableSet::locations_const_iterator gts_it = grid_set.locations_begin(); gts_it != grid_set.locations_end(); ++gts_it) {
@@ -279,13 +312,13 @@ outer_approximation(
         const HybridGrid& hgr,
         const int accuracy)
 {
+	ARIADNE_ASSERT_MSG(hbcs.space() == hgr.state_space(), "The grid and bounded constraint set have mismatched spaces.");
+
     HybridDenotableSet result(hgr);
 
     for (HybridBoundedConstraintSet::const_iterator cons_it = hbcs.begin(); cons_it != hbcs.end(); ++cons_it) {
     	const DiscreteLocation& loc = cons_it->first;
     	const HybridGrid::const_iterator hgr_it = hgr.find(loc);
-    	ARIADNE_ASSERT_MSG(hgr_it != hgr.end(),
-    			"The location " << loc.name() << " of the BoundedConstraintSet was not found in the target space.");
     	result[loc] = outer_approximation(cons_it->second,hgr_it->second,accuracy);
     }
 
@@ -293,27 +326,29 @@ outer_approximation(
 }
 
 
-HybridDenotableSet possibly_overlapping_subset(const HybridDenotableSet& hdenotable_set, const HybridConstraintSet& cons_set)
+HybridDenotableSet possibly_overlapping_subset(const HybridDenotableSet& hds_set, const HybridConstraintSet& cons_set)
 {
-	HybridDenotableSet result(hdenotable_set.grid());
+	ARIADNE_ASSERT_MSG(cons_set.space() == hds_set.space(), "The denotable set and constraint set have mismatched spaces.");
 
-    for (HybridDenotableSet::locations_const_iterator gts_it = hdenotable_set.locations_begin(); gts_it != hdenotable_set.locations_end(); ++gts_it) {
+	HybridDenotableSet result(hds_set.grid());
+
+    for (HybridDenotableSet::locations_const_iterator gts_it = hds_set.locations_begin(); gts_it != hds_set.locations_end(); ++gts_it) {
     	HybridConstraintSet::locations_const_iterator cs_it = cons_set.find(gts_it->first);
-    	if (cs_it != cons_set.locations_end())
-    		result[gts_it->first] = possibly_overlapping_subset(gts_it->second,cs_it->second);
-    	else
-    		result[gts_it->first] = gts_it->second;
+
+    	result[gts_it->first] = possibly_overlapping_subset(gts_it->second,cs_it->second);
     }
 
 	return result;
 }
 
 
-HybridDenotableSet definitely_covered_subset(const HybridDenotableSet& hdenotable_set, const HybridConstraintSet& cons_set)
+HybridDenotableSet definitely_covered_subset(const HybridDenotableSet& hds_set, const HybridConstraintSet& cons_set)
 {
-	HybridDenotableSet result(hdenotable_set.grid());
+	ARIADNE_ASSERT_MSG(cons_set.space() == hds_set.space(), "The denotable set and constraint set have mismatched spaces.");
 
-    for (HybridDenotableSet::locations_const_iterator gts_it = hdenotable_set.locations_begin(); gts_it != hdenotable_set.locations_end(); ++gts_it) {
+	HybridDenotableSet result(hds_set.grid());
+
+    for (HybridDenotableSet::locations_const_iterator gts_it = hds_set.locations_begin(); gts_it != hds_set.locations_end(); ++gts_it) {
     	HybridConstraintSet::locations_const_iterator cs_it = cons_set.find(gts_it->first);
     	if (cs_it != cons_set.locations_end())
     		result[gts_it->first] = definitely_covered_subset(gts_it->second,cs_it->second);

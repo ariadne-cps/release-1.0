@@ -302,14 +302,14 @@ class HybridConstraintSet
 	using std::map<DiscreteLocation,ConstraintSet>::insert;
 
 	HybridConstraintSet() { }
-	/** \brief Constructs from a \a codomain and some functions \a func.
-	 * \details The \a func can be a superset of \a codomain, meaning that the absence of codomain
-	   for a location is equivalent to the absence of constraint. On the other hand, functions for all
-	   the locations of \a codomain must be explicitated. */
+	//! \brief Constructs from a hybrid \a codomain and some functions \a func.
 	HybridConstraintSet(const HybridVectorFunction& func, const HybridBoxes& codomain);
 
 	/** \brief Constructs from a \a constraint, copied in all locations from \a hspace */
 	HybridConstraintSet(const HybridSpace& hspace, ConstraintSet constraint);
+
+	//! \brief Constructs a full-space constraint set in the given \a hspace.
+	HybridConstraintSet(const HybridSpace& hspace);
 
     virtual HybridConstraintSet* clone() const { return new HybridConstraintSet(*this); }
     virtual HybridSpace space() const { return HybridSpace(*this); }
@@ -374,10 +374,7 @@ class HybridBoundedConstraintSet
 	using std::map<DiscreteLocation,BoundedConstraintSet>::insert;
 
 	HybridBoundedConstraintSet() { }
-	/** \brief Constructs from a \a domain, \a codomain and some functions \a func.
-	 * \details The \a func can be a superset of \a codomain, meaning that the absence of codomain
-	   for a location is equivalent to the absence of constraint. On the other hand, functions for all
-	   the locations of \a codomain must be explicitated. */
+	//! \brief Constructs from a \a domain, \a codomain and some functions \a func.
 	HybridBoundedConstraintSet(
 			const HybridBoxes& domain,
 			const HybridVectorFunction& func,
@@ -387,6 +384,14 @@ class HybridBoundedConstraintSet
 	HybridBoundedConstraintSet(
 			const HybridSpace& hspace,
 			BoundedConstraintSet constraint);
+
+	//! \brief Constructs from domain boxes
+	HybridBoundedConstraintSet(const HybridBoxes& domain_boxes);
+
+	//! \brief Constructs from a single box extended to the \a hspace.
+	HybridBoundedConstraintSet(
+			const HybridSpace& hspace,
+			const Box& domain_box);
 
 	virtual HybridBoundedConstraintSet* clone() const { return new HybridBoundedConstraintSet(*this); }
 	virtual HybridSpace space() const { return HybridSpace(*this); }
@@ -1020,13 +1025,10 @@ outer_approximation(
 bool subset(const HybridDenotableSet& theSet1, const HybridDenotableSet& theSet2);
 
 //! \brief Whether \a cons_set is disjoint from \a grid_set.
-//! \details Note that if \a cons_set does not have one location of \a grid_set, then for that location the result is true.
 tribool disjoint(const HybridConstraintSet& cons_set, const HybridDenotableSet& grid_set);
 //! \brief Whether \a cons_set overlaps with \a grid_set.
-//! \details Note that if \a cons_set does not have one location of \a grid_set, then for that location the result is false.
 tribool overlaps(const HybridConstraintSet& cons_set, const HybridDenotableSet& grid_set);
 //! \brief Whether \a cons_set covers \a grid_set.
-//! \details Note that if \a cons_set does not have one location of \a grid_set, then for that location the result is true.
 tribool covers(const HybridConstraintSet& cons_set, const HybridDenotableSet& grid_set);
 
 //! \brief Evaluates \a grid_set on \a cons_set in order to obtain (a superset of) the overlapping subset.
