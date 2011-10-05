@@ -217,7 +217,7 @@ _upper_reach_evolve(
 HybridReachabilityAnalyser::SetApproximationType
 HybridReachabilityAnalyser::
 lower_evolve(
-        const HybridImageSet& initial_set,
+        const HybridBoundedConstraintSet& initial_set,
         const TimeType& time) const
 {
 	return lower_reach_evolve(initial_set,time).second;
@@ -227,7 +227,7 @@ lower_evolve(
 HybridReachabilityAnalyser::SetApproximationType
 HybridReachabilityAnalyser::
 lower_reach(
-        const HybridImageSet& initial_set,
+        const HybridBoundedConstraintSet& initial_set,
         const TimeType& time) const
 {
 	return lower_reach_evolve(initial_set,time).first;
@@ -237,7 +237,7 @@ lower_reach(
 std::pair<HybridReachabilityAnalyser::SetApproximationType,HybridReachabilityAnalyser::SetApproximationType>
 HybridReachabilityAnalyser::
 lower_reach_evolve(
-        const HybridImageSet& initial_set,
+        const HybridBoundedConstraintSet& initial_set,
         const TimeType& time) const
 {
     const unsigned EVOLVER_TAB_OFFSET = 3;
@@ -248,7 +248,7 @@ lower_reach_evolve(
 
     HDS reach(grid); HDS evolve(grid);
 
-    list<EnclosureType> initial_enclosures = enclosures_from_split_initial_set_midpoints(initial_set,min_cell_widths(grid,_accuracy()));
+    list<EnclosureType> initial_enclosures = _enclosures_from_discretised_initial_set_midpoints(initial_set);
 
     const EvolverPtrType& evolver = _get_tuned_evolver(*_system,EVOLVER_TAB_OFFSET,LOWER_SEMANTICS);
 	ARIADNE_LOG(3,"Computing evolution...");
@@ -278,7 +278,7 @@ lower_reach_evolve(
 HybridReachabilityAnalyser::SetApproximationType
 HybridReachabilityAnalyser::
 upper_evolve(
-        const HybridImageSet& initial_set,
+        const HybridBoundedConstraintSet& initial_set,
         const TimeType& time) const
 {
     ARIADNE_LOG(2,"HybridReachabilityAnalyser::upper_evolve(set,time)");
@@ -294,7 +294,7 @@ upper_evolve(
 HybridReachabilityAnalyser::SetApproximationType
 HybridReachabilityAnalyser::
 upper_reach(
-        const HybridImageSet& initial_set,
+        const HybridBoundedConstraintSet& initial_set,
         const TimeType& time) const
 {
     ARIADNE_LOG(2,"HybridReachabilityAnalyser::upper_reach(set,time)");
@@ -309,7 +309,7 @@ upper_reach(
 std::pair<HybridReachabilityAnalyser::SetApproximationType,HybridReachabilityAnalyser::SetApproximationType>
 HybridReachabilityAnalyser::
 upper_reach_evolve(
-        const HybridImageSet& initial_set,
+        const HybridBoundedConstraintSet& initial_set,
         const TimeType& time) const
 {
     const unsigned EVOLVER_TAB_OFFSET = 4;
@@ -319,7 +319,7 @@ upper_reach_evolve(
 
     HybridGrid grid = _grid();
 
-    HDS initial(grid),found(grid),evolve(grid),reach(grid);
+    HDS found(grid),evolve(grid),reach(grid);
 
     Float real_time=time.continuous_time();
     uint discrete_steps=time.discrete_time();
@@ -337,7 +337,7 @@ upper_reach_evolve(
     ARIADNE_LOG(3,"time_steps="<<time_steps<<"  lock_to_grid_time="<<lock_to_grid_time);
 
     ARIADNE_LOG(3,"Computing initial evolution...");
-    initial.adjoin_outer_approximation(initial_set,_accuracy());
+    HDS initial = _restriction->possibly_feasible_projection(initial_set);
     ARIADNE_LOG(4,"initial.size()="<<initial.size());
 
     const EvolverPtrType& evolver = _get_tuned_evolver(*_system,EVOLVER_TAB_OFFSET,UPPER_SEMANTICS);
@@ -377,11 +377,10 @@ upper_reach_evolve(
 HybridReachabilityAnalyser::SetApproximationType
 HybridReachabilityAnalyser::
 outer_chain_reach(
-		const HybridImageSet& initial_set,
+		const HybridBoundedConstraintSet& initial_set,
 		ContinuousEvolutionDirection direction) const
 {
-	SetApproximationType initial(_grid());
-    initial.adjoin_outer_approximation(initial_set,_accuracy());
+	SetApproximationType initial = _restriction->possibly_feasible_projection(initial_set);
 
 	return outer_chain_reach(initial,direction);
 }
@@ -488,7 +487,7 @@ std::pair<HybridDenotableSet,HybridFloatVector>
 HybridReachabilityAnalyser::
 _lower_chain_reach_and_epsilon(
 		const SystemType& system,
-		const HybridImageSet& initial_set) const
+		const HybridBoundedConstraintSet& initial_set) const
 {
     const unsigned EVOLVER_TAB_OFFSET = 3;
 
@@ -508,7 +507,7 @@ _lower_chain_reach_and_epsilon(
 	for (HybridSpace::const_iterator hs_it = state_space.begin(); hs_it != state_space.end(); ++hs_it)
 		epsilon.insert(std::pair<DiscreteLocation,Vector<Float> >(hs_it->first,Vector<Float>(hs_it->second)));
 
-    EL initial_enclosures = enclosures_from_split_initial_set_midpoints(initial_set,min_cell_widths(grid,_accuracy()));
+    EL initial_enclosures = _enclosures_from_discretised_initial_set_midpoints(initial_set);
 
     initial_enclosures = _restriction->filter(initial_enclosures);
 
@@ -668,7 +667,7 @@ _filter_enclosures(
 
 std::pair<HybridDenotableSet,HybridFloatVector>
 HybridReachabilityAnalyser::
-lower_chain_reach_and_epsilon(const HybridImageSet& initial_set) const
+lower_chain_reach_and_epsilon(const HybridBoundedConstraintSet& initial_set) const
 {
 	HybridGrid grid = _grid();
 	SetApproximationType reach(grid);
@@ -946,24 +945,6 @@ remove_nonlocked_parameters(
             }
         }
     }
-}
-
-
-list<EnclosureType> enclosures_of_domains_midpoints(
-		const list<HybridBox>& domains,
-		const HybridImageSet& img_set)
-{
-	list<EnclosureType> result;
-
-	for (list<HybridBox>::const_iterator box_it = domains.begin(); box_it != domains.end(); ++box_it) {
-		const DiscreteLocation& loc = box_it->first;
-		const Box& domain = box_it->second;
-		const VectorFunction& func = img_set.find(loc)->second.function();
-		Vector<Interval> domain_centre_box(domain.centre());
-		result.push_back(EnclosureType(loc,ContinuousEnclosureType(func,domain_centre_box)));
-	}
-
-	return result;
 }
 
 
@@ -1257,44 +1238,28 @@ getHybridMaximumAbsoluteDerivatives(
 
 
 list<EnclosureType>
-enclosures_from_split_initial_set_midpoints(
-		const HybridImageSet initial_set,
-		const HybridFloatVector max_cell_widths)
+HybridReachabilityAnalyser::
+_enclosures_from_discretised_initial_set_midpoints(const HybridBoundedConstraintSet initial_set) const
 {
 	list<EnclosureType> result;
 
-	for(HybridImageSet::locations_const_iterator loc_iter=initial_set.locations_begin();
-		 loc_iter!=initial_set.locations_end(); ++loc_iter) {
-		const DiscreteLocation& loc = loc_iter->first;
-		const ImageSet& img_set = loc_iter->second;
-		const VectorFunction& img_func = img_set.function();
-		Vector<Float> local_max_cell_widths = max_cell_widths.find(loc)->second;
+	HybridDenotableSet discretised_initial_set = _restriction->possibly_feasible_projection(initial_set);
 
-		list<Box> temporaries;
-		temporaries.push_back(img_set.domain());
+	for(HybridDenotableSet::const_iterator cell_it=discretised_initial_set.begin();
+		 cell_it!=discretised_initial_set.end(); ++cell_it) {
 
-		/* While there are boxes:
-		 * a) pick one, pop it and check it against the max_cell_widths
-		 * 	 i) if larger, split it and put the couple into the temporaries
-		 *   ii) if not, push the image resulting from the centre of such domain
-		 */
-		while (!temporaries.empty()) {
-			Box domain = temporaries.back();
-			temporaries.pop_back();
-			Box codomain = img_func.evaluate(domain);
+		const DiscreteLocation& loc = cell_it->first;
+		const Box& cell_bx = cell_it->second.box();
+		const BoundedConstraintSet loc_initial_set = initial_set.find(loc)->second;
 
-			bool hasBeenSplit = false;
-			for (uint dim=0; dim < codomain.size(); ++dim) {
-				if (codomain[dim].width() > local_max_cell_widths[dim]) {
-					std::pair<Box,Box> split_boxes = domain.split(dim);
-					temporaries.push_back(split_boxes.first);
-					temporaries.push_back(split_boxes.second);
-					hasBeenSplit = true;
-					break;
-				}
-			}
-			if (!hasBeenSplit)
-				result.push_back(EnclosureType(loc,ContinuousEnclosureType(img_func,domain.centre())));
+		Box cell_domain_intersection = intersection(cell_bx,loc_initial_set.domain());
+		Box midpoint_box(cell_domain_intersection.centre());
+
+		tribool disjoint = loc_initial_set.disjoint(midpoint_box);
+
+		if ((loc_initial_set.codomain().empty() && possibly(!disjoint)) ||
+			(!loc_initial_set.codomain().empty() && definitely(!disjoint))) {
+			result.push_back(EnclosureType(loc,ContinuousEnclosureType(midpoint_box)));
 		}
 	}
 
@@ -1308,22 +1273,6 @@ to_enclosures(const HybridDenotableSet& reach)
 
 	for (HybridDenotableSet::const_iterator cell_it = reach.begin(); cell_it != reach.end(); ++cell_it)
 		result.push_back(EnclosureType(cell_it->first,cell_it->second));
-
-	return result;
-}
-
-std::list<EnclosureType>
-restrict_enclosures(
-		const std::list<EnclosureType> enclosures,
-		const HybridDenotableSet& restriction)
-{
-	std::list<EnclosureType> result;
-
-	for (std::list<EnclosureType>::const_iterator encl_it = enclosures.begin(); encl_it != enclosures.end(); ++encl_it) {
-		HybridBox hbox(encl_it->first,encl_it->second.bounding_box());
-		if (possibly(restriction.overlaps(hbox)))
-			result.push_back(*encl_it);
-	}
 
 	return result;
 }

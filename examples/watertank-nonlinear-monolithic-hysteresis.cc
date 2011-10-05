@@ -36,7 +36,7 @@ int main(int argc,char *argv[])
 	HybridAutomaton system = getWatertankNonlinearMonolithicHysteresis();
 
 	// The initial values
-	HybridImageSet initial_set;
+	HybridBoundedConstraintSet initial_set(system.state_space());
 	initial_set[DiscreteLocation("opened")] = Box(2, 6.00,7.5, 1.0,1.0);
 	initial_set[DiscreteLocation("closed")] = Box(2, 6.00,7.5, 0.0,0.0);
 

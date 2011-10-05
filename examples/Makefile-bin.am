@@ -7,14 +7,12 @@ bin_PROGRAMS= 	tutorial \
 		watertank-aasap \
 		watertank-monolithic-dominance \
 		watertank-nonlinear-monolithic-dominance \
-		boost_power_converter \
 		bouncingball 3bouncingballs ecoli sinusoid-sin \
 		rectifier springs \
 		cmos_inverter_analoginput robotarm \
 		fb_refinement traffic-arbitrator4
 
 tutorial_SOURCES= tutorial.cc 
-boost_power_converter_SOURCES= boost_power_converter.cc
 bouncingball_SOURCES= bouncingball.cc
 ecoli_SOURCES= ecoli.cc
 3bouncingballs_SOURCES= 3bouncingballs.cc

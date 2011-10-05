@@ -186,7 +186,7 @@ int main(int argc,char *argv[])
     system.new_forced_transition(recovered34,recovery34,cruiseStart,identity,recovered34_g);
 
     // The initial values
-    HybridImageSet initial_set;
+    HybridBoundedConstraintSet initial_set(system.state_space());
     initial_set[cruiseStart] = Box(3, alpha_initial_l,alpha_initial_u, alpha_initial_l,alpha_initial_u, alpha_initial_l,alpha_initial_u);
 
     // The domain

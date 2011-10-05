@@ -125,6 +125,9 @@ class ConstraintSet
     bool operator==(const ConstraintSet& cons_set) const {
         return this->_codomain==cons_set._codomain && this->_function.pointer()==cons_set._function.pointer(); }
 
+    //! \brief Checks emptiness of the set, possibly iff the codomain is empty.
+    bool empty() const;
+
     ConstraintSet* clone() const;
     uint dimension() const;
     tribool disjoint(const Box&) const;
@@ -146,7 +149,7 @@ class BoundedConstraintSet
 	BoundedConstraintSet();
 
 	//! \brief Construct from a domain box only
-	explicit BoundedConstraintSet(const Box& bx);
+	BoundedConstraintSet(const Box& bx);
 
 	//! \brief Construct the preimage of \a codom under \a fn.
 	BoundedConstraintSet(
@@ -171,11 +174,15 @@ class BoundedConstraintSet
 	uint dimension() const;
     Box bounding_box() const;
 
+    //! \brief Checks emptiness of the set.
+    tribool empty() const;
+
 	tribool disjoint(const Box&) const;
 	tribool overlaps(const Box&) const;
 	tribool covers(const Box&) const;
 	tribool inside(const Box&) const;
 
+    void draw(CanvasInterface&) const;
 	std::ostream& write(std::ostream&) const;
 };
 

@@ -125,14 +125,58 @@ class ReachabilityRestriction
 
 	//@}
 
-	//! \name HybridBox checks
+	//! \name Hybrid box checks
 
     tribool disjoint(const HybridBox& hbx) const;
     tribool overlaps(const HybridBox& hbx) const;
     tribool superset(const HybridBox& hbx) const;
 
+    //@}
+
+    //@{
+
+	//! \name Feasibility projection for bounded constraint sets.
+
+	//! \brief Computes the subset that is possibly feasible in respect to \a constraint_set.
+	//! \details The result is given as the projection on the \a constraint_set subspace.
+	HybridDenotableSet possibly_feasible_projection(const HybridConstraintSet& constraint_set) const;
+
+	//! \brief Computes the subset that is definitely feasible in respect to \a constraint_set.
+	//! \details The result is given as the projection on the \a constraint_set subspace.
+	HybridDenotableSet definitely_feasible_projection(const HybridConstraintSet& constraint_set) const;
+
+	//! \brief Computes the subset that is possibly infeasible in respect to \a constraint_set.
+	//! \details The result is given as the projection on the \a constraint_set subspace.
+	HybridDenotableSet possibly_infeasible_projection(const HybridConstraintSet& constraint_set) const;
+
+	//! \brief Computes the subset that is definitely infeasible in respect to \a constraint_set.
+	//! \details The result is given as the projection on the \a constraint_set subspace.
+	HybridDenotableSet definitely_infeasible_projection(const HybridConstraintSet& constraint_set) const;
+
 	//@{
-	//! \name Set computations
+
+	//! \name Feasibility projection for bounded constraint sets.
+
+	//! \brief Computes the subset that is possibly feasible in respect to \a constraint_set.
+	//! \details The result is given as the projection on the \a constraint_set subspace.
+	HybridDenotableSet possibly_feasible_projection(const HybridBoundedConstraintSet& constraint_set) const;
+
+	//! \brief Computes the subset that is definitely feasible in respect to \a constraint_set.
+	//! \details The result is given as the projection on the \a constraint_set subspace.
+	HybridDenotableSet definitely_feasible_projection(const HybridBoundedConstraintSet& constraint_set) const;
+
+	//! \brief Computes the subset that is possibly infeasible in respect to \a constraint_set.
+	//! \details The result is given as the projection on the \a constraint_set subspace.
+	HybridDenotableSet possibly_infeasible_projection(const HybridBoundedConstraintSet& constraint_set) const;
+
+	//! \brief Computes the subset that is definitely infeasible in respect to \a constraint_set.
+	//! \details The result is given as the projection on the \a constraint_set subspace.
+	HybridDenotableSet definitely_infeasible_projection(const HybridBoundedConstraintSet& constraint_set) const;
+
+	//@}
+
+	//@{
+	//! \name Discrete jump set computations
 
 	//! \brief Compute the set obtained performing forward jumps from \a set in respect to the transitions in \a sys.
 	HybridDenotableSet forward_jump_set(
@@ -144,23 +188,9 @@ class ReachabilityRestriction
 			const HybridDenotableSet& set,
 			const HybridAutomatonInterface& sys) const;
 
-	//! \brief Computes the subset that is possibly feasible in respect to \a constraint.
-	//! \details The result is given as the projection on the \a constraint subspace.
-	HybridDenotableSet possibly_feasible_projection(const HybridConstraintSet& constraint) const;
-
-	//! \brief Computes the subset that is definitely feasible in respect to \a constraint.
-	//! \details The result is given as the projection on the \a constraint subspace.
-	HybridDenotableSet definitely_feasible_projection(const HybridConstraintSet& constraint) const;
-
-	//! \brief Computes the subset that is possibly infeasible in respect to \a constraint.
-	//! \details The result is given as the projection on the \a constraint subspace.
-	HybridDenotableSet possibly_infeasible_projection(const HybridConstraintSet& constraint) const;
-
-	//! \brief Computes the subset that is definitely infeasible in respect to \a constraint.
-	//! \details The result is given as the projection on the \a constraint subspace.
-	HybridDenotableSet definitely_infeasible_projection(const HybridConstraintSet& constraint) const;
-
 	//@}
+
+	std::ostream& write(std::ostream&) const;
 
   private:
 

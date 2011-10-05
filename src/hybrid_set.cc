@@ -113,6 +113,14 @@ HybridBoundedConstraintSet(const HybridSpace& hspace, const Box& domain_bx)
 	}
 }
 
+HybridBoundedConstraintSet::
+HybridBoundedConstraintSet(const HybridSpace& hspace)
+{
+	for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
+		this->insert(make_pair(hs_it->first,BoundedConstraintSet(Box::empty_box(hs_it->second))));
+	}
+}
+
 
 HybridBoundedConstraintSet::
 HybridBoundedConstraintSet(const HybridBoxes& domain_boxes)
@@ -304,25 +312,6 @@ tribool covers(const HybridConstraintSet& cons_set, const HybridDenotableSet& gr
     }
     return result;
 
-}
-
-HybridDenotableSet
-outer_approximation(
-		const HybridBoundedConstraintSet& hbcs,
-        const HybridGrid& hgr,
-        const int accuracy)
-{
-	ARIADNE_ASSERT_MSG(hbcs.space() == hgr.state_space(), "The grid and bounded constraint set have mismatched spaces.");
-
-    HybridDenotableSet result(hgr);
-
-    for (HybridBoundedConstraintSet::const_iterator cons_it = hbcs.begin(); cons_it != hbcs.end(); ++cons_it) {
-    	const DiscreteLocation& loc = cons_it->first;
-    	const HybridGrid::const_iterator hgr_it = hgr.find(loc);
-    	result[loc] = outer_approximation(cons_it->second,hgr_it->second,accuracy);
-    }
-
-    return result;
 }
 
 

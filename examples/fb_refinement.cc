@@ -86,7 +86,7 @@ int main(int argc,char *argv[])
 
 
 	// The initial values
-	HybridImageSet initial_set;
+	HybridBoundedConstraintSet initial_set(system.state_space());
 	initial_set[DiscreteLocation("first")] = Box(2, -0.4,0.4, -0.4,0.4);
 
 	// The domain
@@ -108,7 +108,7 @@ int main(int argc,char *argv[])
 	Verifier verifier;
 	verifier.verbosity = verifierVerbosity;
 	verifier.settings().time_limit_for_outcome = 60;
-	verifier.settings().enable_backward_refinement_for_safety_proving = false;
+	verifier.settings().enable_backward_refinement_for_safety_proving = true;
 	verifier.settings().plot_results = true;
 
 	SafetyVerificationInput verInput(system, initial_set, domain, safety_constraint);

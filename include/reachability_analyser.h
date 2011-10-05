@@ -124,39 +124,39 @@ class HybridReachabilityAnalyser
     //! \name Evaluation of systems on abstract sets
     /*! \brief Compute a lower-approximation to the set obtained by evolving \a system for \a time starting in \a initial_set. */
     virtual SetApproximationType lower_evolve(
-            const HybridImageSet& initial_set,
+            const HybridBoundedConstraintSet& initial_set,
             const TimeType& time) const;
   
     /*! \brief Compute a lower-approximation to the reachable set of \a system starting in \a initial_set up to \a time (discrete part only). */
     virtual SetApproximationType lower_reach(
-            const HybridImageSet& initial_set,
+            const HybridBoundedConstraintSet& initial_set,
             const TimeType& time) const;
   
     /*! \brief Compute a lower-approximation to the reachable and evolved sets of \a system starting in \a initial_set up to \a time. */
     virtual std::pair<SetApproximationType,SetApproximationType> lower_reach_evolve(
-            const HybridImageSet& initial_set,
+            const HybridBoundedConstraintSet& initial_set,
             const TimeType& time) const;
   
     /*! \brief Compute an approximation to the set obtained by iterating \a time times \a system starting in \a initial_set. */
     virtual SetApproximationType upper_evolve(
-            const HybridImageSet& initial_set,
+            const HybridBoundedConstraintSet& initial_set,
             const TimeType& time) const;
   
     /*! \brief Compute an approximation to the reachable set of \a system starting in \a initial_set iterating at most \a time times. */
     virtual SetApproximationType upper_reach(
-            const HybridImageSet& initial_set,
+            const HybridBoundedConstraintSet& initial_set,
             const TimeType& timeType) const;
   
     /*! \brief Compute an approximation to the reachable and evolved sets of \a system starting in \a initial_set iterating at most \a time times. */
     virtual std::pair<SetApproximationType,SetApproximationType> upper_reach_evolve(
-            const HybridImageSet& initial_set,
+            const HybridBoundedConstraintSet& initial_set,
             const TimeType& time) const;
 
     /*! \brief Compute an outer-approximation to the chain-reachable set of \a system starting in \a initial_set with a given \a direction, using
      * upper semantics.
      * \return The reach set. */
     virtual SetApproximationType outer_chain_reach(
-			const HybridImageSet& initial_set,
+			const HybridBoundedConstraintSet& initial_set,
 			ContinuousEvolutionDirection direction = DIRECTION_FORWARD) const;
 
     virtual SetApproximationType outer_chain_reach(
@@ -166,7 +166,7 @@ class HybridReachabilityAnalyser
     /*! \brief Compute the epsilon lower bounds of \a system starting in \a initial_set.
      * \return The reach and the epsilon values. */
     virtual std::pair<SetApproximationType,HybridFloatVector> lower_chain_reach_and_epsilon(
-            const HybridImageSet& initial_set) const;
+            const HybridBoundedConstraintSet& initial_set) const;
 
     //@}
 
@@ -227,7 +227,7 @@ class HybridReachabilityAnalyser
      * for the current lower reach, an exception is raised. */
     std::pair<SetApproximationType,HybridFloatVector> _lower_chain_reach_and_epsilon(
     		const SystemType& system,
-    		const HybridImageSet& initial_set) const;
+    		const HybridBoundedConstraintSet& initial_set) const;
 
     /*! \brief Checks whether \a reach with \a epsilon satisfies the constraint.
      * \details Throws ReachUnsatisfiesConstraintException if it doesn't.
@@ -282,6 +282,10 @@ class HybridReachabilityAnalyser
             SplittingHalf half,
             const HybridFloatVector& max_der_widths,
             const HybridFloatVector& mid_der_widths) const;
+
+    //! \brief Creates enclosures from the midpoints of the discretisation of \a initial_set.
+    list<EnclosureType>
+    _enclosures_from_discretised_initial_set_midpoints(const HybridBoundedConstraintSet initial_set) const;
 };
 
 
@@ -414,19 +418,8 @@ getHybridMaximumAbsoluteDerivatives(
 		const HybridDenotableSetPtr& outer_approximation,
 		const HybridBoxes& domain_constraint);
 
-//! \brief Creates enclosures from splitting \a initial_set in respect to \a max_cell_widths
-list<EnclosureType>
-enclosures_from_split_initial_set_midpoints(
-		const HybridImageSet initial_set,
-		const HybridFloatVector max_cell_widths);
-
 //! \brief Copies the \a reach set into enclosures.
 std::list<EnclosureType> to_enclosures(const HybridDenotableSet& reach);
-
-/*! \brief Restricts the \a enclosures to those possibly overlapping \a restriction */
-std::list<EnclosureType> restrict_enclosures(
-		const std::list<EnclosureType> enclosures,
-		const HybridDenotableSet& restriction);
 
 } // namespace Ariadne
 

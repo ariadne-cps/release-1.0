@@ -118,22 +118,6 @@ tribool inside(
 	return result;
 }
 
-DenotableSetType outer_approximation(
-		const BoundedConstraintSet& bnd_cons_set,
-		const Grid& grid,
-		int accuracy)
-{
-	ARIADNE_ASSERT_MSG(bnd_cons_set.domain().size() == grid.dimension(),
-			"The constraint domain and the grid dimensions do not match.");
-
-	DenotableSetType domain_approximation(grid);
-	domain_approximation.adjoin_outer_approximation(bnd_cons_set.bounding_box(),accuracy);
-
-	ConstraintSet cons_set(bnd_cons_set.function(),bnd_cons_set.codomain());
-
-	return possibly_overlapping_subset(domain_approximation,cons_set);
-}
-
 
 } // namespace Ariadne
 

@@ -322,7 +322,14 @@ class HybridConstraintSet
     virtual HybridVectorFunction functions() const {
     	HybridVectorFunction result;
     	for (HybridConstraintSet::const_iterator loc_it = this->begin(); loc_it != this->end(); ++loc_it)
-    		result.insert(std::pair<DiscreteLocation,VectorFunction>(loc_it->first,loc_it->second.function()));
+    		result.insert(make_pair(loc_it->first,loc_it->second.function()));
+    	return result;
+    }
+
+    virtual HybridBoxes codomain() const {
+    	HybridBoxes result;
+    	for (HybridConstraintSet::const_iterator loc_it = this->begin(); loc_it != this->end(); ++loc_it)
+    		result.insert(make_pair(loc_it->first,loc_it->second.codomain()));
     	return result;
     }
 
@@ -385,8 +392,11 @@ class HybridBoundedConstraintSet
 			const HybridSpace& hspace,
 			BoundedConstraintSet constraint);
 
-	//! \brief Constructs from domain boxes
+	//! \brief Constructs from domain boxes.
 	HybridBoundedConstraintSet(const HybridBoxes& domain_boxes);
+
+	//! \brief Constructs an empty set, where all domains are empty.
+	HybridBoundedConstraintSet(const HybridSpace& hspace);
 
 	//! \brief Constructs from a single box extended to the \a hspace.
 	HybridBoundedConstraintSet(
@@ -401,12 +411,26 @@ class HybridBoundedConstraintSet
 		ARIADNE_ASSERT(this->find(q)!=this->locations_end());
 		return this->find(q)->second; }
 
+    virtual HybridBoxes domain() const {
+    	HybridBoxes result;
+    	for (HybridBoundedConstraintSet::const_iterator loc_it = this->begin(); loc_it != this->end(); ++loc_it)
+    		result.insert(make_pair(loc_it->first,loc_it->second.domain()));
+    	return result;
+    }
+
 	virtual HybridVectorFunction functions() const {
 		HybridVectorFunction result;
 		for (HybridBoundedConstraintSet::const_iterator loc_it = this->begin(); loc_it != this->end(); ++loc_it)
 			result.insert(std::pair<DiscreteLocation,VectorFunction>(loc_it->first,loc_it->second.function()));
 		return result;
 	}
+
+    virtual HybridBoxes codomain() const {
+    	HybridBoxes result;
+    	for (HybridBoundedConstraintSet::const_iterator loc_it = this->begin(); loc_it != this->end(); ++loc_it)
+    		result.insert(make_pair(loc_it->first,loc_it->second.codomain()));
+    	return result;
+    }
 
 	virtual tribool overlaps(const HybridBox& hbx) const {
 		locations_const_iterator loc_iter=this->find(hbx.first);
@@ -1013,12 +1037,6 @@ outer_approximation(const HybridBasicSet<ES>& hs,
     return result;
 }
 
-//! \brief Create an outer approximation of \a hbcs using the grid \hgr under some \a accuracy.
-HybridDenotableSet
-outer_approximation(
-		const HybridBoundedConstraintSet& hbcs,
-        const HybridGrid& hgr,
-        const int accuracy);
 
 //! \brief Checks if \a theSet1 is a subset of \a theSet2.
 //! \details If the sets do not have the same grid, an error is raised.

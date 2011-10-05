@@ -34,7 +34,7 @@ namespace Ariadne {
 
 VerificationInput::VerificationInput(
 		SystemType& system,
-		HybridImageSet& initial_set,
+		HybridBoundedConstraintSet& initial_set,
 		HybridBoxes& domain) :
 		_system(system),
 		_initial_set(initial_set),
@@ -47,13 +47,8 @@ VerificationInput::VerificationInput(
 void VerificationInput::_check_fields() const
 {
 	HybridSpace hspace = _system.state_space();
-	for (HybridImageSet::const_iterator it = _initial_set.begin(); it != _initial_set.end(); ++it) {
-		HybridSpace::const_iterator hspace_it = hspace.find(it->first);
-		ARIADNE_ASSERT_MSG(hspace_it != hspace.end(),
-						   "The location " << it->first.name() << "is not present into the system.");
-		ARIADNE_ASSERT_MSG(hspace_it->second == it->second.dimension(),
-						   "The dimension of the continuous space in the initial set for location " << it->first.name() << " does not match the system space");
-	}
+	ARIADNE_ASSERT_MSG(hspace == _initial_set.space(), "The initial set space and the system space do not match.");
+
 	for (HybridSpace::const_iterator hspace_it = hspace.begin(); hspace_it != hspace.end(); ++hspace_it) {
 		HybridBoxes::const_iterator domain_it = _domain.find(hspace_it->first);
 		ARIADNE_ASSERT_MSG(domain_it != _domain.end(),
@@ -74,7 +69,7 @@ VerificationInput::write(std::ostream& os) const
 
 SafetyVerificationInput::SafetyVerificationInput(
 		SystemType& system,
-		HybridImageSet& initial_set,
+		HybridBoundedConstraintSet& initial_set,
 		HybridBoxes& domain,
 		HybridConstraintSet& safety_constraint) :
 		VerificationInput(system,initial_set,domain),
@@ -88,16 +83,8 @@ void SafetyVerificationInput::_check_fields() const
 {
 	VerificationInput::_check_fields();
 
-	HybridSpace hspace = getSystem().state_space();
-
-	for (HybridConstraintSet::const_iterator constraint_it = _safety_constraint.begin();
-			constraint_it != _safety_constraint.end(); ++constraint_it) {
-		HybridSpace::const_iterator space_it = hspace.find(constraint_it->first);
-		ARIADNE_ASSERT_MSG(space_it != hspace.end(),
-						   "The location " << constraint_it->first.name() << "is not present into the hybrid space of the system.");
-		ARIADNE_ASSERT_MSG(space_it->second == constraint_it->second.function().argument_size(),
-						   "The dimension of the continuous space for location " << space_it->first.name() << " does not match the argument size of the constraint.");
-	}
+	ARIADNE_ASSERT_MSG(_system.state_space() == _safety_constraint.space(),
+			"The system space and the constraint space do not match.");
 }
 
 
@@ -112,7 +99,7 @@ SafetyVerificationInput::write(std::ostream& os) const
 
 DominanceVerificationInput::DominanceVerificationInput(
 		SystemType& system,
-		HybridImageSet& initial_set,
+		HybridBoundedConstraintSet& initial_set,
 		HybridBoxes& domain,
 		Vector<uint>& projection) :
 		VerificationInput(system,initial_set,domain),

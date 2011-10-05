@@ -278,7 +278,7 @@ int main()
 
     analyser.verbosity=VERBOSITY;
 
-    HybridImageSet initial_set;
+    HybridBoundedConstraintSet initial_set(rectifier.state_space());
     initial_set[offoff]=initial_box;
     HybridTime reach_time(TIME_LIMIT,TRAN_LIMIT);
 

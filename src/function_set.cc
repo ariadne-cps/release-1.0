@@ -202,6 +202,12 @@ ConstraintSet::dimension() const
     return this->_function.argument_size();
 }
 
+bool
+ConstraintSet::empty() const
+{
+	return this->_codomain.empty();
+}
+
 
 tribool
 ConstraintSet::disjoint(const Box& bx) const
@@ -267,6 +273,16 @@ BoundedConstraintSet::dimension() const
 }
 
 
+tribool
+BoundedConstraintSet::empty() const
+{
+	if (this->_domain.empty() || this->_codomain.empty())
+		return true;
+
+	return indeterminate;
+}
+
+
 Box
 BoundedConstraintSet::bounding_box() const
 {
@@ -314,6 +330,12 @@ BoundedConstraintSet::inside(const Box& bx) const
     return indeterminate;
 }
 
+
+void
+BoundedConstraintSet::draw(CanvasInterface& os) const
+{
+    return this->bounding_box().draw(os);
+}
 
 std::ostream&
 BoundedConstraintSet::write(std::ostream& os) const

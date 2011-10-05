@@ -39,19 +39,20 @@ class VerificationInput
 {
   public:
 	typedef HybridAutomatonInterface SystemType;
-  private:
+  protected:
 	SystemType& _system;
-	HybridImageSet& _initial_set;
+  private:
+	HybridBoundedConstraintSet& _initial_set;
 	HybridBoxes& _domain;
 
   public:
 	SystemType& getSystem() const { return _system; }
-	HybridImageSet& getInitialSet() const { return _initial_set; }
+	HybridBoundedConstraintSet& getInitialSet() const { return _initial_set; }
 	HybridBoxes& getDomain() const { return _domain; }
 
 	VerificationInput(
 			SystemType& system,
-			HybridImageSet& initial_set,
+			HybridBoundedConstraintSet& initial_set,
 			HybridBoxes& domain);
 
 	virtual std::ostream& write(std::ostream&) const;
@@ -77,7 +78,7 @@ class SafetyVerificationInput : public VerificationInput
 
 	SafetyVerificationInput(
 			SystemType& system,
-			HybridImageSet& initial_set,
+			HybridBoundedConstraintSet& initial_set,
 			HybridBoxes& domain,
 			HybridConstraintSet& safety_constraint);
 
@@ -109,7 +110,7 @@ class DominanceVerificationInput : public VerificationInput
 
 	DominanceVerificationInput(
 			SystemType& system,
-			HybridImageSet& initial_set,
+			HybridBoundedConstraintSet& initial_set,
 			HybridBoxes& domain,
 			Vector<uint>& projection);
 

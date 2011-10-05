@@ -47,7 +47,7 @@ using Ariadne::Models::Henon;
 
 class TestReachabilityAnalysis 
 {  
-    HybridImageSet initial_set;
+    HybridBoundedConstraintSet initial_set;
     HybridTime reach_time;
  
     typedef TaylorSet EnclosureType;
@@ -92,9 +92,11 @@ class TestReachabilityAnalysis
     {
         cout << "Done initialising variables\n";
 
-        ImageSet initial_box(make_box("[2.0,2.0]x[0.0,0.0]"));
         DiscreteLocation location(1);
-        initial_set[location]=initial_box;
+        HybridSpace hspace;
+        hspace.insert(make_pair(location,2));
+        initial_set = HybridBoundedConstraintSet(hspace);
+        initial_set[location]=Box(2,2.0,2.0,0.0,0.0);
         cout << "Done creating initial set\n" << endl;
 
         cout << "initial_set=" << initial_set << endl;
@@ -108,26 +110,14 @@ class TestReachabilityAnalysis
         g.write(name);
     }
 
-    template<class S, class IS> void plot(const char* name, const Box& bounding_box, const S& set, const IS& initial_set) {
-        Figure g;
-        g.set_bounding_box(bounding_box);
-        g << fill_colour(white) << bounding_box;
-        g << line_style(true);
-        g << fill_colour(red) << set;
-        g << fill_colour(blue);
-        g << initial_set;
-        g.write(name);
-    }
-
-    template<class ES, class RS, class IS> void plot(const char* name, const Box& bounding_box, 
-                                                     const ES& evolve_set, const RS& reach_set, const IS& initial_set) {
+    template<class ES, class RS> void plot(const char* name, const Box& bounding_box,
+                                                     const ES& evolve_set, const RS& reach_set) {
         Figure g;
         g.set_bounding_box(bounding_box);
         g << fill_colour(white) << bounding_box;
         g << line_style(true);
         g << fill_colour(green) << reach_set;
         g << fill_colour(red) << evolve_set;
-        g << fill_colour(blue) << initial_set;
         g.write(name);
     }
 
@@ -147,7 +137,7 @@ class TestReachabilityAnalysis
         cout << "Reached " << lower_reach.size() << " cells " << endl << endl;
         //ARIADNE_TEST_EQUAL(lower_evolve.size(),1);
         //ARIADNE_TEST_EQUAL(lower_reach.size(),173);
-        plot("test_reachability_analyser-map_lower_reach_evolve.png",graphics_box,lower_evolve,lower_reach,initial_set);
+        plot("test_reachability_analyser-map_lower_reach_evolve.png",graphics_box,lower_evolve,lower_reach);
     }
   
     void test_upper_reach_evolve() {  
@@ -163,13 +153,12 @@ class TestReachabilityAnalysis
         // cout << "upper_reach_set="<<upper_reach_set<<std::endl;
  
         const DenotableSetType& upper_evolve=upper_evolve_set[loc];
-        const DenotableSetType& upper_reach=upper_reach_set[loc];
-        ImageSet& initial=initial_set[loc];
+        const DenotableSetType& upper_reach=upper_reach_set[loc];;
         cout << "Evolved to " << upper_evolve.size() << " cells"  << endl;
         cout << "Reached " << upper_reach.size() << " cells" << endl << endl;
         //ARIADNE_TEST_EQUAL(upper_evolve.size(),6);
         //ARIADNE_TEST_EQUAL(upper_reach.size(),240);
-        plot("test_reachability_analyser-map_upper_reach_evolve.png",graphics_box,upper_evolve,upper_reach,initial);
+        plot("test_reachability_analyser-map_upper_reach_evolve.png",graphics_box,upper_evolve,upper_reach);
     }
   
     void test_chain_reach() {  
@@ -183,7 +172,7 @@ class TestReachabilityAnalysis
         HybridDenotableSet chain_reach_set=analyser.outer_chain_reach(initial_set);
         cout << "Reached " << chain_reach_set.size() << " cells" << endl << endl;
         //ARIADNE_TEST_EQUAL(chain_reach_set.size(),277);
-        plot("test_reachability_analyser-map_chain_reach.png",graphics_box,chain_reach_set[loc],initial_set[loc]);
+        plot("test_reachability_analyser-map_chain_reach.png",graphics_box,chain_reach_set[loc]);
     }
   
     void test() {

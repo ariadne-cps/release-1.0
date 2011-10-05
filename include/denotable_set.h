@@ -53,9 +53,6 @@ tribool covers(const DenotableSetType& covering_set, const DenotableSetType& cov
 //! epsilon-enlargement of \a covering_set, the two sets can feature different grids.
 tribool inside(const DenotableSetType& covered_set, const DenotableSetType& covering_set, const Vector<Float>& eps, int accuracy);
 
-//! \brief Outer approximation of \a cons_set using \a grid with a given \a accuracy.
-DenotableSetType outer_approximation(const BoundedConstraintSet& cons_set, const Grid& grid, int accuracy);
-
 }
 
 #endif /* DENOTABLE_SET_H */

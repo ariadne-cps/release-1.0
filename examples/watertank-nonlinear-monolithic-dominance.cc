@@ -37,10 +37,10 @@ int main(int argc,char *argv[])
 	HybridAutomaton system_pr = Ariadne::getWatertankNonlinearMonolithicProportional();
 
 	// The initial values
-	HybridImageSet initial_hy;
+	HybridBoundedConstraintSet initial_hy(system_hy.state_space());
 	initial_hy[DiscreteLocation("opened")] = Box(2, 6.0,7.5, 1.0,1.0);
 	initial_hy[DiscreteLocation("closed")] = Box(2, 6.0,7.5, 0.0,0.0);
-	HybridImageSet initial_pr;
+	HybridBoundedConstraintSet initial_pr(system_pr.state_space());
 	initial_pr[DiscreteLocation(1)] = Box(2, 6.75,6.75, 0.0,1.0);
 	initial_pr[DiscreteLocation(2)] = Box(2, 6.75,6.75, 0.0,1.0);
 	initial_pr[DiscreteLocation(3)] = Box(2, 6.75,6.75, 0.0,1.0);

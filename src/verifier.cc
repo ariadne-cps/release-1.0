@@ -158,9 +158,7 @@ _safety_proving_once(
 
 	    ARIADNE_LOG(5,"Computing the initial set...");
 
-	    SetApproximationType forward_initial(_safety_restriction->grid());
-	    forward_initial.adjoin_outer_approximation(verInput.getInitialSet(),_safety_restriction->accuracy());
-	    _safety_restriction->apply_to(forward_initial);
+	    SetApproximationType forward_initial = _safety_restriction->possibly_feasible_projection(verInput.getInitialSet());
 
 	    if (forward_initial.empty()) {
 	        throw EmptyInitialCellSetException("The initial cell set for forward reachability is empty (skipped).");
@@ -281,7 +279,7 @@ _safety_disproving_once(
     const bool ENABLE_LOWER_REACH_RESTRICTION_CHECK = !_settings->enable_backward_refinement_for_safety_proving;
 
     SystemType& sys = verInput.getSystem();
-    const HybridImageSet& initial_set = verInput.getInitialSet();
+    const HybridBoundedConstraintSet& initial_set = verInput.getInitialSet();
     const HybridConstraintSet& safety_constraint = verInput.getSafetyConstraint();
 
 	RealParameterSet original_params = sys.parameters();

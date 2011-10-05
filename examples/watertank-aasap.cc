@@ -216,7 +216,7 @@ int main(int argc,char *argv[])
 	// Verification information
 
 	// The initial values
-	HybridImageSet initial_set;
+	HybridBoundedConstraintSet initial_set(system.state_space());
 	initial_set[DiscreteLocation("flow,idle,shallow,nothing")] = Box(6, 0.0,0.0, 0.0,0.0, 0.0,0.0, 0.0,0.0, 6.0,6.0, 1.0,1.0);
 
 	// The safety constraint

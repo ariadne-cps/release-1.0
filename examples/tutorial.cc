@@ -225,13 +225,14 @@ void compute_reachable_sets()
 	domain[1] = bbx;
 	domain[2] = bbx;
 
+	HybridAutomaton system = create_heating_system();
     // Create a ReachabilityAnalyser object
-    HybridReachabilityAnalyser analyser(create_heating_system(),domain,maximum_grid_depth);
+    HybridReachabilityAnalyser analyser(system,domain,maximum_grid_depth);
 
     //*(analyser.settings().grid)=HybridGrid(heating_system.state_space());
 
     // Define the initial set
-    HybridImageSet initial_set;
+    HybridBoundedConstraintSet initial_set(system.state_space());
     DiscreteLocation heater_off(2);
     Box initial_box(2, 0.0,0.015625/4, 16.0,16.0+0.0625/16);
     initial_set[heater_off]=initial_box;

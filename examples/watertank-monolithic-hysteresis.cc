@@ -37,20 +37,9 @@ int main(int argc,char *argv[])
 	HybridAutomaton system = Ariadne::getWatertankMonolithicHysteresis();
 
 	// The initial values
-	HybridImageSet initial_set;
+	HybridBoundedConstraintSet initial_set(system.state_space());
 	initial_set[DiscreteLocation("opened")] = Box(2, 6.0,7.5, 1.0,1.0);
 	initial_set[DiscreteLocation("closed")] = Box(2, 6.0,7.5, 0.0,0.0);
-/*
-	HybridBoundedConstraintSet initial_set2;
-	initial_set2[DiscreteLocation("opened")] = Box(2, 6.0,7.5, 1.0,1.0);
-	initial_set2[DiscreteLocation("closed")] = Box(2, 6.0,7.5, 0.0,0.0);
-
-	cout << initial_set2 << "\n";
-
-	ConstraintSet cs;
-
-	cout << cs << "\n";
-*/
 
 	// The domain
 	HybridBoxes domain = bounding_boxes(system.state_space(),Box(2,4.5,9.0,-0.1,1.1));

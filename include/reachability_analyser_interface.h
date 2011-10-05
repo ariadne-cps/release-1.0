@@ -62,39 +62,39 @@ template<class SYS> class ReachabilityAnalyserInterface
     //! \name Evaluation of systems on abstract sets
     /*! \brief Compute a lower-approximation to the set obtained by evolving \a system for \a time starting in \a initial_set. */
     virtual SetApproximationType lower_evolve(
-            const HybridImageSet& initial_set,
+            const HybridBoundedConstraintSet& initial_set,
             const TimeType& time) const = 0;
 
     /*! \brief Compute a lower-approximation to the reachable set of \a system starting in \a initial_set up to \a time (discrete part only). */
     virtual SetApproximationType lower_reach(
-            const HybridImageSet& initial_set,
+            const HybridBoundedConstraintSet& initial_set,
             const TimeType& time) const = 0;
 
     /*! \brief Compute a lower-approximation to the reachable and evolved sets of \a system starting in \a initial_set up to \a time. */
     virtual std::pair<SetApproximationType,SetApproximationType> lower_reach_evolve(
-            const HybridImageSet& initial_set,
+            const HybridBoundedConstraintSet& initial_set,
             const TimeType& time) const = 0;
 
     /*! \brief Compute an approximation to the set obtained by iterating \a time times \a system starting in \a initial_set. */
     virtual SetApproximationType upper_evolve(
-            const HybridImageSet& initial_set,
+            const HybridBoundedConstraintSet& initial_set,
             const TimeType& time) const = 0;
 
     /*! \brief Compute an approximation to the reachable set of \a system starting in \a initial_set iterating at most \a time times. */
     virtual SetApproximationType upper_reach(
-            const HybridImageSet& initial_set,
+            const HybridBoundedConstraintSet& initial_set,
             const TimeType& timeType) const = 0;
 
     /*! \brief Compute an approximation to the reachable and evolved sets of \a system starting in \a initial_set iterating at most \a time times. */
     virtual std::pair<SetApproximationType,SetApproximationType> upper_reach_evolve(
-            const HybridImageSet& initial_set,
+            const HybridBoundedConstraintSet& initial_set,
             const TimeType& time) const = 0;
 
     /*! \brief Compute an outer-approximation to the chain-reachable set of \a system starting in \a initial_set with a given \a direction, using
      * upper semantics.
      * \return The reach set. */
     virtual SetApproximationType outer_chain_reach(
-            const HybridImageSet& initial_set,
+            const HybridBoundedConstraintSet& initial_set,
             ContinuousEvolutionDirection direction = DIRECTION_FORWARD) const = 0;
 
     virtual SetApproximationType outer_chain_reach(
@@ -104,7 +104,7 @@ template<class SYS> class ReachabilityAnalyserInterface
     /*! \brief Compute the epsilon lower bounds of \a system starting in \a initial_set.
      * \return The reach and the epsilon values. */
     virtual std::pair<SetApproximationType,HybridFloatVector> lower_chain_reach_and_epsilon(
-            const HybridImageSet& initial_set) const = 0;
+            const HybridBoundedConstraintSet& initial_set) const = 0;
 
     //@}
     
