@@ -3140,6 +3140,10 @@ void draw(CanvasInterface& theGraphic, const CompactSetInterface& theSet) {
 
 tribool disjoint(const ConstraintSet& cons_set, const GridTreeSet& grid_set)
 {
+    // If the constraint set has a zero-dimensional codomain, the test is false:
+    // a ConstraintSet with zero-dimensional codomain represents the entire space.
+    if(cons_set.codomain().size() == 0) return false;
+
 	if (cons_set.disjoint(grid_set.bounding_box()))
 		return true;
 
@@ -3165,6 +3169,10 @@ tribool overlaps(const ConstraintSet& cons_set, const GridTreeSet& grid_set)
 
 tribool covers(const ConstraintSet& cons_set, const GridTreeSet& grid_set)
 {
+    // If the constraint set has a zero-dimensional codomain, the test is true:
+    // a ConstraintSet with zero-dimensional codomain represents the entire space.
+    if(cons_set.codomain().size() == 0) return true;
+    
 	if (grid_set.empty())
 		return true;
 	if (cons_set.covers(grid_set.bounding_box()))

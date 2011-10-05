@@ -216,6 +216,10 @@ void test_predicates() {
     varlist.append(RealVariable("z"));
 	invf = VectorFunction(expr,varlist);
     ConstraintSet cs2(invf, dom);        
+    // create the full-space constraint set
+    expr.clear();
+    VectorFunction zerof(0,2);
+    ConstraintSet cs3(zerof, Box(0));
     // testing w.r.t. a zero-dimensional set or box should raise an error
     ARIADNE_TEST_FAIL(set0.subset(Box(2, 0.0,1.0, 0.0,1.0)));
     ARIADNE_TEST_FAIL(set1.subset(Box(0)));
@@ -229,6 +233,8 @@ void test_predicates() {
     Box ebx = Box::empty_box(2);
     ARIADNE_TEST_ASSERT(!possibly(set2.subset(ebx)));
     ARIADNE_TEST_ASSERT(definitely(covers(cs1, set1)));
+    // test with the full-space constraint set
+    ARIADNE_TEST_ASSERT(definitely(covers(cs3, set2)));
     // test with a general set
     enabled_cells = bdd_ithvar(0) & bdd_nithvar(1) & (bdd_ithvar(3) & bdd_ithvar(4));    
     set2 = BDDTreeSet(Grid(2), 3, array<int>(2, 1,1), enabled_cells);
@@ -289,6 +295,9 @@ void test_predicates() {
     ebx = Box::empty_box(2);
     ARIADNE_TEST_ASSERT(definitely(set2.disjoint(ebx)));
     ARIADNE_TEST_ASSERT(!possibly(set2.overlaps(ebx)));
+    // test with the full-space constraint set
+    ARIADNE_TEST_ASSERT(definitely(overlaps(cs3, set2)));
+    ARIADNE_TEST_ASSERT(!possibly(disjoint(cs3, set2)));
     // test with a general set
     enabled_cells = bdd_ithvar(0) & bdd_nithvar(1) & (bdd_ithvar(3) | bdd_ithvar(4));    
     set2 = BDDTreeSet(Grid(2), 3, array<int>(2, 1,1), enabled_cells);
@@ -661,6 +670,10 @@ void test_set_approximations() {
 	expr.append(invf_y);
 	VectorFunction invf(expr,varlist);
     ConstraintSet cs1(invf, dom);
+    // create the full-space constraint set
+    expr.clear();
+    VectorFunction zerof(0,2);
+    ConstraintSet cs3(zerof, Box(0));
     
     // raise an error if the set is zero-dimensional
     BDDTreeSet set0;
@@ -705,6 +718,12 @@ void test_set_approximations() {
     BDDTreeSet set2i = set1i;
     set2i.adjoin_inner_approximation(ebx, 0, 5);
     ARIADNE_TEST_EQUAL(set1i, set2i);
+
+    // test adjoin with the full-space constraint set
+    set2i = set1i;
+    set2i.adjoin_inner_approximation(cs3, 0, 2);
+    ARIADNE_TEST_EQUAL(set1i.root_cell(), set2i.root_cell());
+    ARIADNE_TEST_EQUAL(set2i.enabled_cells(), bddtrue);
     
     // adjoin to a non-empty BDDTreeSet
 	f_x = -0.25*x - 0.5*y;
