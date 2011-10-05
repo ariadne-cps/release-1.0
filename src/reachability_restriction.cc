@@ -22,7 +22,7 @@
  */
  
 #include "reachability_restriction.h"
-#include "taylor_calculus.h"
+#include "set_checker.h"
 
 namespace Ariadne {
 
@@ -34,8 +34,7 @@ ReachabilityRestriction(
 		int accuracy) :
 		_domain(domain),
 		_grid(grid),
-		_accuracy(accuracy),
-		_calculus(new TaylorCalculus())
+		_accuracy(accuracy)
 {
 	for (HybridBoxes::const_iterator loc_it = domain.begin(); loc_it != domain.end(); ++loc_it) {
 		HybridGrid::const_iterator grid_it = grid.find(loc_it->first);
@@ -51,22 +50,7 @@ ReachabilityRestriction(const ReachabilityRestriction& other) :
 	_domain(other._domain),
 	_grid(other._grid),
 	_accuracy(other._accuracy),
-	_set(other._set),
-	_calculus(other._calculus)
-{
-
-}
-
-
-ReachabilityRestriction::
-ReachabilityRestriction(
-		const HybridDenotableSet& set,
-		int accuracy) :
-	_domain(set.bounding_box()),
-	_grid(set.grid()),
-	_accuracy(accuracy),
-	_set(set),
-	_calculus(new TaylorCalculus())
+	_set(other._set)
 {
 
 }
@@ -324,40 +308,39 @@ superset(const HybridBox& hbx) const
 HybridDenotableSet
 ReachabilityRestriction::
 forward_jump_set(
-		const HybridDenotableSet& src_set,
+		const HybridDenotableSet& set,
 		const HybridAutomatonInterface& sys) const
 {
-	/*
-	 * \forall DiscreteLocation l1 in set locations {
-	 * 		\forall cells c in set[l1] not outside invariants {
-	 * 			\forall possibly active transition t to location l2 whose reset is not outside invariants {
-	 * 				adjoin reset(c) to result
-	 * 			}
-	 * 		}
-	 * 	}
-	 *  apply the restriction on the result
-	 */
-
-	ARIADNE_ASSERT_MSG(src_set.grid() == _grid, "To create a forward jump set, the source set grid must match the restriction grid.");
+	ARIADNE_ASSERT_MSG(set.grid() == _grid, "To create a forward jump set, the set grid must match the restriction grid.");
 
 	HybridDenotableSet result(_grid);
 
-	for (HybridDenotableSet::locations_const_iterator src_loc_it = src_set.locations_begin();
-			src_loc_it != src_set.locations_end(); ++src_loc_it) {
+	for (HybridDenotableSet::locations_const_iterator src_loc_it = set.locations_begin();
+			src_loc_it != set.locations_end(); ++src_loc_it) {
 
 		const DiscreteLocation& src_location = src_loc_it->first;
-		const DenotableSetType& src_cells = src_loc_it->second;
 
-		for (DenotableSetType::const_iterator src_cell_it = src_cells.begin(); src_cell_it != src_cells.end(); ++src_cell_it) {
+		Set<DiscreteEvent> events = sys.events(src_location);
+		for (Set<DiscreteEvent>::const_iterator event_it = events.begin(); event_it != events.end(); ++event_it) {
+			const DiscreteEvent event = *event_it;
+			EventKind kind = sys.event_kind(src_location,event);
+			if (kind == URGENT || kind == PERMISSIVE) {
+				const DiscreteLocation trg_location = sys.target(src_location,event);
+				const Grid& trg_grid = _grid.find(trg_location)->second;
 
-			Box src_cell_bx = src_cell_it->box();
-			const ContinuousEnclosureType src_enclosure(src_cell_bx);
+				DenotableSetType event_feasible_src_set = src_loc_it->second;
+				ForwardDiscreteJumpSetChecker checker(src_location,sys,event);
+				event_feasible_src_set.outer_restrict(checker,_accuracy);
 
-			if (!_is_outside_invariants(src_location,src_cell_bx,sys))
-				_adjoin_forward_jump_sets(src_location,src_enclosure,sys,result);
+				DenotableSetType event_feasible_trg_set = checker.get_reset(
+						event_feasible_src_set,event,trg_grid,_accuracy);
+
+				result[trg_location].adjoin(event_feasible_trg_set);
+			}
 		}
 	}
 
+	// It can still be the case that the discretisation in the target location introduces cells outside the restriction
 	this->apply_to(result);
 
 	return result;
@@ -369,47 +352,24 @@ backward_jump_set(
 		const HybridDenotableSet& set,
 		const HybridAutomatonInterface& sys) const
 {
-	/*
-	 * \forall DiscreteLocation l1 in non-empty restriction locations {
-	 * 		if \exists transition t1 to location l2 in targetCells and r_t1(bounding[l1]) intersects targetCells[l2] {
-	 * 			if not discretised[l2]
-	 * 				discretise in l2
-	 * 			\forall cells c in restriction[l2] not outside invariants {
-	 * 				if \exists possibly active transition t whose reset overlaps targetCells[l2] {
-	 * 					adjoin c to result
-	 * 					break cells scan
-	 * 				}
-	 * 			}
-	 * 		}
-	 * 	}
-	 */
-
 	ARIADNE_ASSERT_MSG(set.grid() == _grid, "To create a backward jump set, the target set grid must match the restriction grid.");
 
 	HybridDenotableSet result(_grid);
 
 	HybridSpace space = _grid.state_space();
-	for (HybridSpace::const_iterator src_space_it = space.begin(); src_space_it != space.end(); ++src_space_it) {
+	for (HybridSpace::const_iterator loc_it = space.begin(); loc_it != space.end(); ++loc_it) {
 
-		const DiscreteLocation& src_location = src_space_it->first;
-		if (!(this->has_discretised(src_location) && _set[src_location].empty())) {
+		const DiscreteLocation& src_location = loc_it->first;
 
-			if (_has_feasible_transition(src_location,set,sys)) {
+		//! TODO: should be improved, since we need all locations discretised
+		if (!has_discretised(src_location))
+			_insert_domain_discretisation(src_location);
 
-				if (!this->has_discretised(src_location))
-					_insert_domain_discretisation(src_location);
+		DenotableSetType src_set = _set[src_location];
 
-				DenotableSetType src_cells = _set[src_location];
-				for (DenotableSetType::const_iterator src_cell_it = src_cells.begin(); src_cell_it != src_cells.end(); ++src_cell_it) {
-
-					Box src_cell_bx = src_cell_it->box();
-					const ContinuousEnclosureType src_enclosure(src_cell_bx);
-
-					if (!_is_outside_invariants(src_location,src_cell_bx,sys))
-						_adjoin_src_of_forward_jump_sets(src_location,src_enclosure,sys,set,result);
-				}
-			}
-		}
+		BackwardDiscreteJumpSetChecker checker(src_location,sys,set);
+		src_set.outer_restrict(checker,_accuracy);
+		result[src_location] = src_set;
 	}
 
 	return result;
@@ -530,185 +490,6 @@ _bounding_box(DiscreteLocation q) const
     	}
     	return result;
     }
-}
-
-
-bool
-ReachabilityRestriction::
-_has_feasible_transition(
-		const DiscreteLocation& src_location,
-		const HybridDenotableSet& trg_set,
-		const HybridAutomatonInterface& sys) const
-{
-	const ContinuousEnclosureType src_enclosure(this->bounding_box().at(src_location));
-	const Set<DiscreteEvent> events = sys.events(src_location);
-
-	for (Set<DiscreteEvent>::const_iterator event_it = events.begin(); event_it != events.end(); ++event_it) {
-
-		const DiscreteEvent event = *event_it;
-		EventKind kind = sys.event_kind(src_location,event);
-
-		if (kind == URGENT || kind == PERMISSIVE) {
-
-			DiscreteLocation trg_location = sys.target(src_location,event);
-
-			if (!trg_set[trg_location].empty()) {
-
-				const ContinuousEnclosureType target_encl = _calculus->reset_step(
-						sys.reset_function(src_location,event),src_enclosure);
-
-				const HybridBox target_hbounding(trg_location,target_encl.bounding_box());
-
-				if (possibly(trg_set.overlaps(target_hbounding)))
-					return true;
-			}
-		}
-	}
-	return false;
-}
-
-void
-ReachabilityRestriction::
-_adjoin_forward_jump_sets(
-		const DiscreteLocation& src_location,
-		const ContinuousEnclosureType& src_enclosure,
-		const HybridAutomatonInterface& sys,
-		HybridDenotableSet& result_set) const
-{
-	Set<DiscreteEvent> events = sys.events(src_location);
-	for (Set<DiscreteEvent>::const_iterator event_it = events.begin(); event_it != events.end(); ++event_it) {
-		const DiscreteEvent event = *event_it;
-		EventKind kind = sys.event_kind(src_location,event);
-		if (kind == URGENT || kind == PERMISSIVE) {
-
-			RealScalarFunction guard = sys.guard_function(src_location,event);
-			RealVectorFunction dynamic = sys.dynamic_function(src_location);
-
-			if (_is_transition_feasible(guard,kind,dynamic,src_enclosure)) {
-				const DiscreteLocation& target_loc = sys.target(src_location,event);
-				const ContinuousEnclosureType target_encl = _calculus->reset_step(
-						sys.reset_function(src_location,event),src_enclosure);
-
-				if (!_is_outside_invariants(target_loc,target_encl.bounding_box(),sys))
-					result_set[target_loc].adjoin_outer_approximation(target_encl,_accuracy);
-			}
-		}
-	}
-}
-
-
-void
-ReachabilityRestriction::
-_adjoin_src_of_forward_jump_sets(
-		const DiscreteLocation& src_location,
-		const ContinuousEnclosureType& src_enclosure,
-		const HybridAutomatonInterface& sys,
-		const HybridDenotableSet& trg_set,
-		HybridDenotableSet& set_to_adjoin) const
-{
-	const Set<DiscreteEvent> events = sys.events(src_location);
-
-	// In order to add a source hybrid box, just one possibly overlapping target enclosure suffices
-	for (Set<DiscreteEvent>::const_iterator event_it = events.begin(); event_it != events.end(); ++event_it) {
-		const DiscreteEvent event = *event_it;
-		EventKind kind = sys.event_kind(src_location,event);
-		if (kind == URGENT || kind == PERMISSIVE) {
-
-			RealScalarFunction guard = sys.guard_function(src_location,event);
-			RealVectorFunction dynamic = sys.dynamic_function(src_location);
-
-			if (_is_transition_feasible(guard,kind,dynamic,src_enclosure)) {
-				const DiscreteLocation& target_loc = sys.target(src_location,event);
-				const ContinuousEnclosureType image_encl = _calculus->reset_step(
-						sys.reset_function(src_location,event),src_enclosure);
-				const HybridBox image_hbx(target_loc,image_encl.bounding_box());
-
-				if (possibly(trg_set.overlaps(image_hbx))) {
-					set_to_adjoin[src_location].adjoin_outer_approximation(src_enclosure,_accuracy);
-					break;
-				}
-			}
-		}
-	}
-
-}
-
-
-bool
-ReachabilityRestriction::
-_is_transition_feasible(
-		const ScalarFunction& activation,
-		EventKind event_kind,
-		const VectorFunction& dynamic,
-		const ContinuousEnclosureType& source) const
-{
-	bool result = false;
-
-	const bool is_urgent = (event_kind == URGENT);
-
-	tribool is_guard_active = _calculus->active(VectorFunction(1,activation),source);
-
-	/*
-	 * a) If the guard is definitely active and the transition is urgent, then we are definitely outside the related invariant
-	 * b) If the transition is not urgent, it suffices to have a possibly active guard: we then must perform the transition
-	 * c) If the transition is urgent and the guard is only possibly active, we check the crossing:
-	 *    i) If it is negative, then no transition is possible
-	 *	 ii) If it is possibly positive, then we must take the transition
-	 */
-
-	if (definitely(is_guard_active) && is_urgent) {
-		result = false;
-	} else if (possibly(is_guard_active) && !is_urgent) {
-		result = true;
-	} else if (possibly(is_guard_active) && is_urgent) {
-		tribool positive_crossing = is_positively_crossing(source.bounding_box(),dynamic,activation);
-		result = possibly(positive_crossing);
-	} else {
-		result = false;
-	}
-
-	return result;
-}
-
-
-bool
-ReachabilityRestriction::
-_is_outside_invariants(
-		const DiscreteLocation& location,
-		const Box& bx,
-		const HybridAutomatonInterface& sys) const
-{
-	Set<DiscreteEvent> events = sys.events(location);
-	for (Set<DiscreteEvent>::const_iterator event_it = events.begin(); event_it != events.end(); ++event_it) {
-		const DiscreteEvent event = *event_it;
-		EventKind kind = sys.event_kind(location,event);
-		if (kind == INVARIANT) {
-			const ScalarFunction& activation = sys.invariant_function(location,event);
-			tribool is_active = _calculus->active(VectorFunction(1,activation),bx);
-			if (definitely(is_active)) {
-				return true;
-			}
-		}
-	}
-
-	return false;
-}
-
-
-tribool
-is_positively_crossing(
-		const Box& set_bounds,
-		const RealVectorFunction& dynamic,
-		const RealScalarFunction& activation)
-{
-    RealScalarFunction derivative=lie_derivative(activation,dynamic);
-    Interval derivative_range = derivative.evaluate(set_bounds);
-
-    if (derivative_range.lower() > 0)
-    	return true;
-    else if (derivative_range.upper() < 0)
-    	return false;
-    else return indeterminate;
 }
 
 

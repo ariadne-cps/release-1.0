@@ -47,7 +47,6 @@
 #include "set_interface.h"
 #include "taylor_set.h"
 #include "function_set.h"
-#include "set_checker.h"
 
 #include "grid.h"
 #include "graphics_interface.h"
@@ -69,6 +68,7 @@ class Grid;
 // class BDDCell;
 class BDDTreeSet;
 class BDDTreeConstIterator;
+class SetCheckerInterface;
 struct PathElement;
 
 /*Declarations of classes in other files*/

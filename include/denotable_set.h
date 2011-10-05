@@ -28,13 +28,14 @@
 #ifndef DENOTABLE_SET_H
 #define DENOTABLE_SET_H
 
-#include "bdd_set.h"
 #include "grid_set.h"
+#include "bdd_set.h"
 
 using namespace std;
 using namespace Ariadne;
 
 namespace Ariadne {
+
 
 typedef BDDTreeSet DenotableSetType;
 //typedef GridTreeSet DenotableSetType;

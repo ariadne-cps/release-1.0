@@ -44,26 +44,6 @@ class ReachabilityRestriction
 {
   public:
 
-	tribool (Ariadne::ReachabilityRestriction::*check)(const Box&);
-
-	tribool alwaysTrue(const Box& bx) {
-		return true;
-	}
-
-	tribool alwaysFalse(const Box& bx) {
-		return true;
-	}
-
-	tribool hasAccuracyGreaterThanZero(const Box& bx) {
-		return (_accuracy > 0);
-	}
-
-	tribool hasAccuracyGreaterThanTwo(const Box& bx) {
-		return (_accuracy > 2);
-	}
-
-  public:
-
 	//@{
 	//! \name Constructors and destructors
 
@@ -75,12 +55,6 @@ class ReachabilityRestriction
 
 	//! \brief Copy constructor.
 	ReachabilityRestriction(const ReachabilityRestriction& other);
-
-	//! \brief Constructs from a given \a set with a specified \a accuracy.
-	//! \details This essentially allows to use ReachabilityRestriction in place of HybridDenotableSet.
-	ReachabilityRestriction(
-			const HybridDenotableSet& set,
-			int accuracy);
 
 	//! \brief Cloner.
 	ReachabilityRestriction* clone() const { return new ReachabilityRestriction(*this); }
@@ -201,42 +175,6 @@ class ReachabilityRestriction
 	//! is a reasonable overapproximation.
 	Box _bounding_box(DiscreteLocation q) const;
 
-	//! \brief Whether there is a feasible transition from the restriction set at \a src_location towards \a trg_set.
-	//! \details This is a rough check using only the bounding domain of the restriction.
-	bool _has_feasible_transition(
-			const DiscreteLocation& src_location,
-			const HybridDenotableSet& trg_set,
-			const HybridAutomatonInterface& sys) const;
-
-	//! \brief Checks \a src_enclosure's jump sets from \a src_location. Adjoins all found jump sets to \a set_to_adjoin.
-	void _adjoin_forward_jump_sets(
-			const DiscreteLocation& src_location,
-			const ContinuousEnclosureType& src_enclosure,
-			const HybridAutomatonInterface& sys,
-			HybridDenotableSet& result_set) const;
-
-	//! \brief Checks if \a src_enclosure's jump set from \a src_location intersects \a trg_set. If it does, adjoins it to \a set_to_adjoin.
-	void _adjoin_src_of_forward_jump_sets(
-			const DiscreteLocation& src_location,
-			const ContinuousEnclosureType& src_enclosure,
-			const HybridAutomatonInterface& sys,
-			const HybridDenotableSet& trg_set,
-			HybridDenotableSet& set_to_adjoin) const;
-
-	//! \brief Whether the transition specified by \a activation would be possible from \a source.
-	//! \details It depends on the \a event_kind and the direction of the \a dynamic.
-	bool _is_transition_feasible(
-			const ScalarFunction& activation,
-			EventKind event_kind,
-			const VectorFunction& dynamic,
-			const ContinuousEnclosureType& source) const;
-
-	//! \brief Whether the box \bx is definitely outside the invariants in the given \a location according to \a sys.
-	bool _is_outside_invariants(
-			const DiscreteLocation& location,
-			const Box& bx,
-			const HybridAutomatonInterface& sys) const;
-
   private:
 
 	// The domain that would be discretised into the related denotable set
@@ -247,17 +185,8 @@ class ReachabilityRestriction
 	int _accuracy;
 	// The internal set
 	HybridDenotableSet _set;
-	// A calculus for activation/reset operations on sets
-	boost::shared_ptr<CalculusInterface<TaylorModel> > _calculus;
 };
 
-
-//! \brief Whether the crossing of \a activation under \a dynamic is positive for a given \a set_bounds.
-tribool
-is_positively_crossing(
-		const Box& set_bounds,
-		const RealVectorFunction& dynamic,
-		const RealScalarFunction& activation);
 
 }
 

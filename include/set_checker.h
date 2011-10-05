@@ -28,8 +28,9 @@
 #ifndef ARIADNE_SET_CHECKER_H
 #define ARIADNE_SET_CHECKER_H
 
-#include "tribool.h"
 #include <boost/shared_ptr.hpp>
+#include "tribool.h"
+#include "denotable_set.h"
 #include "hybrid_automaton_interface.h"
 
 namespace Ariadne {
@@ -43,6 +44,7 @@ class TaylorSet;
 template<class T> class HybridBasicSet;
 class ConstraintSet;
 
+typedef HybridBasicSet<Box> HybridBox;
 typedef TaylorSet ContinuousEnclosureType;
 typedef HybridBasicSet<ContinuousEnclosureType> EnclosureType;
 
@@ -87,8 +89,6 @@ class DiscreteJumpSetCheckerBase : public SetCheckerInterface
 	DiscreteLocation _location;
 	//! The system defining the transitions
     boost::shared_ptr<HybridAutomatonInterface> _sys;
-    //! A reachability restriction
-    boost::shared_ptr<ReachabilityRestriction> _restriction;
     //! A calculus for performing activation and reset operations on transitions
     boost::shared_ptr<CalculusInterface<TaylorModel> > _calculus;
 
@@ -97,17 +97,12 @@ class DiscreteJumpSetCheckerBase : public SetCheckerInterface
     //! \brief Assign the basic fields.
     DiscreteJumpSetCheckerBase(
     		const DiscreteLocation& loc,
-    		const HybridAutomatonInterface& sys,
-    		boost::shared_ptr<ReachabilityRestriction> restriction);
+    		const HybridAutomatonInterface& sys);
 
     //! \brief Virtual destructor.
     virtual ~DiscreteJumpSetCheckerBase() { }
 
   protected:
-
-	//! \brief Whether there is a feasible transition from \a src_bx at the \a _src_location.
-	//! \details This is a rough check using only the bounding domain of the restriction.
-	bool _has_feasible_transitions(const Box& src_bx) const;
 
 	//! \brief Whether the transition specified by \a activation would be possible from \a source.
 	//! \details It depends on the \a event_kind and the direction of the \a dynamic.
@@ -145,22 +140,57 @@ class ForwardDiscreteJumpSetChecker : public DiscreteJumpSetCheckerBase
 	ForwardDiscreteJumpSetChecker(
     		const DiscreteLocation& loc,
     		const HybridAutomatonInterface& sys,
-    		boost::shared_ptr<ReachabilityRestriction> restriction,
 			DiscreteEvent event);
 
 	//! \brief Check whether \a bx allows a target set for a specific event.
 	virtual tribool check(const Box& bx) const;
+
+	//! \brief Get back the set resulting from resetting \a src_set from _location according to \a event.
+	//! \details This method is useful since checking for this class is followed by reset application.
+	//! While not directly associated with the checking routines, the method keeps logic and support variables
+	//! confined in this class.
+	DenotableSetType get_reset(
+			const DenotableSetType& src_set,
+			DiscreteEvent event,
+			const Grid& trg_grid,
+			int accuracy) const;
 };
 
 
 //! \brief Handles the case of backward jumps.
 class BackwardDiscreteJumpSetChecker : public DiscreteJumpSetCheckerBase
 {
+  private:
+
+    //! The starting set for backward jumps.
+    boost::shared_ptr<HybridDenotableSet> _starting_set;
+
   public:
+
+	//! \brief Constructor from base.
+	BackwardDiscreteJumpSetChecker(
+    		const DiscreteLocation& loc,
+    		const HybridAutomatonInterface& sys,
+    		const HybridDenotableSet& reset_restriction);
 
 	//! \brief Check whether \a bx is reached by backward transitions from the location in the object.
 	virtual tribool check(const Box& bx) const;
+
+  private:
+
+	//! \brief Whether there is a feasible transition from \a src_bx at the \a _src_location.
+	//! \details This is a rough check using only the bounding domain of the restriction.
+	bool _has_feasible_transitions(const Box& src_bx) const;
+
+	//! brief Whether \a src_hbx is covered by a backward transition from the target set.
+	tribool _is_covered_backward(const HybridBox& src_hbx) const;
 };
+
+tribool
+_is_positively_crossing(
+		const Box& set_bounds,
+		const RealVectorFunction& dynamic,
+		const RealScalarFunction& activation);
 
 
 } // namespace Ariadne

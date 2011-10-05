@@ -415,11 +415,12 @@ TestReachabilityRestriction::test_forward_jump_set() {
 	HybridDenotableSet set1(grid);
 	Box bx1(2,0.0,1.0,0.0,1.0);
 	set1[q1].adjoin_over_approximation(bx1,accuracy);
+
 	HybridDenotableSet forward_jump_set1 = rr1.forward_jump_set(set1,sys);
 
 	ARIADNE_TEST_ASSERT(forward_jump_set1.empty());
 
-    ARIADNE_PRINT_TEST_CASE_TITLE("The set has no forward jump set due to source invariants.");
+    ARIADNE_PRINT_TEST_CASE_TITLE("The set has no forward jump set due to invariants associated with urgent transitions.");
 
 	HybridDenotableSet set2(grid);
 	Box bx2(2,5.0,8.0,6.0,7.0);
@@ -469,7 +470,7 @@ TestReachabilityRestriction::test_backward_jump_set() {
     ARIADNE_PRINT_TEST_CASE_TITLE("The set has no backward jump set.");
 
 	HybridDenotableSet set1(grid);
-	Box bx1(2,9.0,9.5,8.0,8.5);
+	Box bx1(2,5.0,9.0,6.0,10.0);
 	set1[q2].adjoin_over_approximation(bx1,accuracy);
 	HybridDenotableSet backward_jump_set1 = rr1.backward_jump_set(set1,sys);
 
@@ -478,7 +479,7 @@ TestReachabilityRestriction::test_backward_jump_set() {
 	ARIADNE_PRINT_TEST_CASE_TITLE("The set has a backward jump set");
 
 	HybridDenotableSet set2(grid);
-	Box bx2(2,5.0,9.0,6.0,10.0);
+	Box bx2(2,5.0,7.0,2.0,5.0);
 	set2[q2].adjoin_over_approximation(bx2,accuracy);
 	HybridDenotableSet backward_jump_set2 = rr1.backward_jump_set(set2,sys);
 

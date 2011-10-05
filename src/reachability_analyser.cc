@@ -773,8 +773,6 @@ _getSplitParameterSetList() const
 
         Float initial_score = _getDerivativeWidthsScore(hmad);
 
-        ARIADNE_LOG(2,"Evaluating split sets...");
-
         working_scored_parameter_set_list.push_back(std::pair<Float,RealParameterSet>(initial_score,initial_parameter_set));
 
         do {
@@ -804,13 +802,16 @@ _getDerivativeWidthsScore(const HybridFloatVector& hmad) const
         const DiscreteLocation& loc = domain_it->first;
         const Box& bbx = domain_it->second;
 
-        Vector<Float> der_widths = getDerivativeWidths(*_system,loc,bbx);
-        Vector<Float> mad = hmad.find(loc)->second;
+        // If the domain is empty, there is no need to calculate anything there (indeed, it would give an error)
+        if (!bbx.empty()) {
+			Vector<Float> der_widths = getDerivativeWidths(*_system,loc,bbx);
+			Vector<Float> mad = hmad.find(loc)->second;
 
-        for (unsigned i=0; i < bbx.size(); ++i) {
-            if (mad[i] > 0) {
-                result += der_widths[i]/mad[i];
-            }
+			for (unsigned i=0; i < bbx.size(); ++i) {
+				if (mad[i] > 0) {
+					result += der_widths[i]/mad[i];
+				}
+			}
         }
     }
 
@@ -831,24 +832,24 @@ _getSplitDerivativeWidthsScores(
     HybridBoxes domain = _domain();
     for (HybridBoxes::const_iterator domain_it = domain.begin(); domain_it != domain.end(); ++domain_it) {
         const DiscreteLocation& loc = domain_it->first;
-        const Box& cell_bx = domain_it->second;
+        const Box& domain_box = domain_it->second;
         const Vector<Float>& mad = hmad.find(loc)->second;
 
-        Interval left_half_val = Interval(param_val.lower(),param_val.midpoint());
-        _system->substitute(RealParameter(param.name(),left_half_val));
-        Vector<Float> left_der_widths = getDerivativeWidths(*_system,loc,cell_bx);
-        Interval right_half_val = Interval(param_val.midpoint(),param_val.upper());
-        _system->substitute(RealParameter(param.name(),right_half_val));
-        Vector<Float> right_der_widths = getDerivativeWidths(*_system,loc,cell_bx);
-        _system->substitute(param);
+        if (!domain_box.empty()) {
+			Interval left_half_val = Interval(param_val.lower(),param_val.midpoint());
+			_system->substitute(RealParameter(param.name(),left_half_val));
+			Vector<Float> left_der_widths = getDerivativeWidths(*_system,loc,domain_box);
+			Interval right_half_val = Interval(param_val.midpoint(),param_val.upper());
+			_system->substitute(RealParameter(param.name(),right_half_val));
+			Vector<Float> right_der_widths = getDerivativeWidths(*_system,loc,domain_box);
+			_system->substitute(param);
 
-        ARIADNE_LOG(5,"Box " << *domain_it << ": " << left_der_widths << ", " << right_der_widths);
-
-        for (unsigned i=0; i < cell_bx.size(); ++i) {
-            if (mad[i] > 0) {
-                left_result += left_der_widths[i]/mad[i];
-                right_result += right_der_widths[i]/mad[i];
-            }
+			for (unsigned i=0; i < domain_box.size(); ++i) {
+				if (mad[i] > 0) {
+					left_result += left_der_widths[i]/mad[i];
+					right_result += right_der_widths[i]/mad[i];
+				}
+			}
         }
     }
 
@@ -1199,13 +1200,17 @@ getLockToGridTime(
 		const uint dim = hs_it->second;
 		const Box& loc_domain = domain.find(loc)->second;
 
-		// Gets the first order derivatives in respect to the dynamic of the location, applied to the corresponding domain
-		Vector<Interval> der_bbx = sys.dynamic_function(loc)(loc_domain);
+		// The domain can be empty, when constructed from an empty reachability
+		if (!loc_domain.empty()) {
 
-		for (uint i=0;i<dim;i++) {
-			Float maxAbsDer = abs(der_bbx[i]).upper();
-			if (maxAbsDer > 0)
-				result = max(result,loc_domain[i].width()/maxAbsDer);
+			// Gets the first order derivatives in respect to the dynamic of the location, applied to the corresponding domain
+			Vector<Interval> der_bbx = sys.dynamic_function(loc)(loc_domain);
+
+			for (uint i=0;i<dim;i++) {
+				Float maxAbsDer = abs(der_bbx[i]).upper();
+				if (maxAbsDer > 0)
+					result = max(result,loc_domain[i].width()/maxAbsDer);
+			}
 		}
 	}
 
@@ -1224,13 +1229,20 @@ getHybridMidpointAbsoluteDerivatives(
 
 		const DiscreteLocation& loc = hs_it->first;
 		const uint dim = hs_it->second;
+		HybridBoxes::const_iterator domain_box_it = bounding_domain.find(loc);
 
-		// Gets the first order derivatives in respect to the dynamic of the mode, applied to the domain of the corresponding location
-		Vector<Interval> der_bbx = sys.dynamic_function(loc)(bounding_domain.find(loc)->second);
+		ARIADNE_ASSERT_MSG(domain_box_it != bounding_domain.end(),
+				"The system state space and the domain space do not match.");
 
-		Vector<Float> local_result(dim);
-		for (uint i=0;i<dim;i++)
-			local_result[i] = abs(der_bbx[i]).midpoint();
+		const Box& domain_box = domain_box_it->second;
+
+		Vector<Float> local_result(dim,0);
+
+		if (!domain_box.empty()) {
+			Vector<Interval> der_bbx = sys.dynamic_function(loc)(domain_box);
+			for (uint i=0;i<dim;i++)
+				local_result[i] = abs(der_bbx[i]).midpoint();
+		}
 
 		result.insert(make_pair(loc,local_result));
 	}

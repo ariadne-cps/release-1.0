@@ -25,6 +25,7 @@
 #include <bdd.h>
 
 #include "bdd_set.h"
+#include "set_checker.h"
 
 namespace Ariadne {
 

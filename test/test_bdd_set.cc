@@ -37,7 +37,7 @@
 #include "formula.h"
 #include "expression.h"
 #include "function_set.h"
-
+#include "set_checker.h"
 
 #include "test.h"
 

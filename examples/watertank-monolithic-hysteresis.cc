@@ -40,6 +40,17 @@ int main(int argc,char *argv[])
 	HybridImageSet initial_set;
 	initial_set[DiscreteLocation("opened")] = Box(2, 6.0,7.5, 1.0,1.0);
 	initial_set[DiscreteLocation("closed")] = Box(2, 6.0,7.5, 0.0,0.0);
+/*
+	HybridBoundedConstraintSet initial_set2;
+	initial_set2[DiscreteLocation("opened")] = Box(2, 6.0,7.5, 1.0,1.0);
+	initial_set2[DiscreteLocation("closed")] = Box(2, 6.0,7.5, 0.0,0.0);
+
+	cout << initial_set2 << "\n";
+
+	ConstraintSet cs;
+
+	cout << cs << "\n";
+*/
 
 	// The domain
 	HybridBoxes domain = bounding_boxes(system.state_space(),Box(2,4.5,9.0,-0.1,1.1));
@@ -66,7 +77,6 @@ int main(int argc,char *argv[])
 
 	Verifier verifier;
 	verifier.verbosity = verb;
-	verifier.settings().maximum_parameter_depth = 3;
 	verifier.settings().time_limit_for_outcome = 60;
 	verifier.settings().plot_results = false;
 
