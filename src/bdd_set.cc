@@ -1793,6 +1793,9 @@ tribool disjoint(const ConstraintSet& cons_set, const BDDTreeSet& bdd_set) {
     ARIADNE_ASSERT_MSG(bdd_set.dimension() != 0, "Cannot compare with a zero-dimensional BDDTreeSet.");
     ARIADNE_ASSERT_MSG(bdd_set.dimension() == cons_set.dimension(), "Cannot compare sets with different dimensions.");
 
+    // If the constraint set has a zero-dimensional codomain, the test is false:
+    // a ConstraintSet with zero-dimensional codomain represents the entire space.
+    if(cons_set.codomain().size() == 0) return false;
     // If the constraint set has an empty codomain, the test is true
     if(cons_set.codomain().empty()) return true;
         
@@ -1816,6 +1819,12 @@ tribool covers(const ConstraintSet& cons_set, const BDDTreeSet& bdd_set) {
     // std::cout << "covers(" << cons_set << ", " << bdd_set << ")" << std::endl;
     ARIADNE_ASSERT_MSG(bdd_set.dimension() != 0, "Cannot compare with a zero-dimensional BDDTreeSet.");
     ARIADNE_ASSERT_MSG(bdd_set.dimension() == cons_set.dimension(), "Cannot compare sets with different dimensions.");
+
+    // If the constraint set has a zero-dimensional codomain, the test is true:
+    // a ConstraintSet with zero-dimensional codomain represents the entire space.
+    if(cons_set.codomain().size() == 0) return true;
+    // If the constraint set has an empty codomain, the test is true only if the BDDTreeSet is empty
+    if(cons_set.codomain().empty()) return bdd_set.empty();
 
     // compute the first splitting coordinate
     uint dim = bdd_set.dimension();

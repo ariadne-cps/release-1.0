@@ -198,7 +198,7 @@ void test_predicates() {
     ARIADNE_TEST_ASSERT(!disjoint(set2,set2));
     ARIADNE_TEST_ASSERT(overlap(set2,set2));    
     
-    // Test subset inclusion with Box and ConstrainedSet
+    // Test subset inclusion with Box and ConstraintSet
     ConstraintSet cs0;
     RealVariable x("x");
     RealVariable y("y");
@@ -930,7 +930,7 @@ void test_projection() {
 }
 
 void test_restriction() {
-    ARIADNE_PRINT_TEST_COMMENT("Testing restriction with a ConstraintSet.");
+    ARIADNE_PRINT_TEST_COMMENT("Testing restriction with a ConstraintSet and a Checker.");
     //  Create the ImageSet to discretise
     RealVariable x("x");
     RealVariable y("y");
@@ -949,7 +949,7 @@ void test_restriction() {
     set1.adjoin_outer_approximation(is1, 2);
     plot("test_bdd_set_restriction_is1",PlanarProjectionMap(2,0,1),set1.bounding_box(),Colour(1,0,1),set1);
     
-    // Create the ConstraintSet for the Restriction
+    // Create the ConstraintSet for the Restriction and the corresponding checker
     RealExpression invf_x = -x + 9.5;
 	RealExpression invf_y = -y + 9.5;
     expr.clear();
@@ -957,14 +957,19 @@ void test_restriction() {
 	expr.append(invf_y);
 	VectorFunction invf(expr,varlist);
 	ConstraintSet cs1(invf, Box::upper_quadrant(2));
+	ConstraintSetChecker checker1(cs1);
 
     // Testing outer restriction
     BDDTreeSet set0(0);
     ARIADNE_TEST_FAIL(set0.outer_restrict(cs1));
+    ARIADNE_TEST_FAIL(set0.outer_restrict(checker1, 2));
     BDDTreeSet set3(3, true);
     ARIADNE_TEST_FAIL(set3.outer_restrict(cs1));    
+    ARIADNE_TEST_FAIL(set0.outer_restrict(checker1, 2));
     BDDTreeSet set2(2, false); 
     set2.outer_restrict(cs1);
+    ARIADNE_TEST_ASSERT(set2.empty());
+    set2.outer_restrict(checker1, 2);
     ARIADNE_TEST_ASSERT(set2.empty());
     set2 = set1;
     set2.outer_restrict(cs1);
@@ -972,12 +977,21 @@ void test_restriction() {
     ARIADNE_TEST_ASSERT(set2.bounding_box().covers(Box(2, 0.0,9.5, 0.0,9.5)));
     ARIADNE_TEST_ASSERT(set2.subset(set1));
     ARIADNE_TEST_ASSERT(!set1.subset(set2));
-
+    set3 = set1;
+    set3.outer_restrict(checker1, 2);
+    plot("test_bdd_set_outer_restrict_checker1",PlanarProjectionMap(2,0,1),set1.bounding_box(),Colour(1,0,1),set3);
+    ARIADNE_TEST_EQUAL(set2, set3);
+    
     // Testing inner restriction
     ARIADNE_TEST_FAIL(set0.inner_restrict(cs1));
+    ARIADNE_TEST_FAIL(set0.inner_restrict(checker1, 2));
+    set3 = BDDTreeSet(3, true);
     ARIADNE_TEST_FAIL(set3.inner_restrict(cs1));    
+    ARIADNE_TEST_FAIL(set3.inner_restrict(checker1, 2));    
     set2.clear(); 
     set2.inner_restrict(cs1);
+    ARIADNE_TEST_ASSERT(set2.empty());
+    set2.inner_restrict(checker1, 2);
     ARIADNE_TEST_ASSERT(set2.empty());
     set2 = set1;
     set2.inner_restrict(cs1);
@@ -986,12 +1000,16 @@ void test_restriction() {
     ARIADNE_TEST_ASSERT(set2.bounding_box().inside(Box(2, -1.0,9.5, -1.0,9.5)));
     ARIADNE_TEST_ASSERT(set2.subset(set1));
     ARIADNE_TEST_ASSERT(!set1.subset(set2));
+    set3 = set1;
+    set3.inner_restrict(checker1, 2);
+    plot("test_bdd_set_inner_restrict_checker1",PlanarProjectionMap(2,0,1),set1.bounding_box(),Colour(1,0,1),set3);
+    ARIADNE_TEST_EQUAL(set2, set3);
     
 }
 
 
 int main() {
-/*
+
     test_constructors();
     test_properties_subdivisions();
     test_predicates();
@@ -1000,7 +1018,6 @@ int main() {
     test_set_approximations();
     test_iterators_conversions_drawing();
     test_projection();
-*/
     test_restriction();
 
     return ARIADNE_TEST_FAILURES;
