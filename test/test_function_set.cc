@@ -49,13 +49,69 @@ class TestFunctionSet
   public:
     void test();
   private:
+    void test_constraint_set_empty();
+    void test_constraint_set_full();
+    void test_constraint_set_0D();
     void test_constraint_set_1D();
 };
 
+
 void TestFunctionSet::test()
 {
+	ARIADNE_TEST_CALL(test_constraint_set_empty());
+	ARIADNE_TEST_CALL(test_constraint_set_full());
+	ARIADNE_TEST_CALL(test_constraint_set_0D());
     ARIADNE_TEST_CALL(test_constraint_set_1D());
 }
+
+
+void TestFunctionSet::test_constraint_set_empty()
+{
+	uint rs = 1;
+	uint as = 1;
+	VectorFunction cons_f(rs,as);
+	Box empty_box = Box::empty_box(1);
+
+	ConstraintSet cons(cons_f,empty_box);
+
+	Box check_bx(1,0.0,1.0);
+
+	ARIADNE_TEST_ASSERT(definitely(!cons.covers(check_bx)));
+	ARIADNE_TEST_ASSERT(definitely(cons.disjoint(check_bx)));
+	ARIADNE_TEST_ASSERT(definitely(!cons.overlaps(check_bx)));
+}
+
+
+void TestFunctionSet::test_constraint_set_full()
+{
+	uint rs = 0;
+	uint as = 1;
+	VectorFunction cons_f(rs,as);
+	Box codomain(0);
+
+	ConstraintSet cons(cons_f,codomain);
+
+	Box check_bx(1,0.0,1.0);
+
+	ARIADNE_TEST_EQUAL(cons.codomain().size(),0);
+	ARIADNE_TEST_EQUAL(cons.function().argument_size(),1);
+	ARIADNE_TEST_ASSERT(definitely(cons.covers(check_bx)));
+	ARIADNE_TEST_ASSERT(definitely(!cons.disjoint(check_bx)));
+	ARIADNE_TEST_ASSERT(definitely(cons.overlaps(check_bx)));
+}
+
+
+void TestFunctionSet::test_constraint_set_0D()
+{
+	ConstraintSet cons;
+
+	Box check_bx(0);
+
+	ARIADNE_TEST_ASSERT(definitely(cons.covers(check_bx)));
+	ARIADNE_TEST_ASSERT(definitely(!cons.disjoint(check_bx)));
+	ARIADNE_TEST_ASSERT(definitely(cons.overlaps(check_bx)));
+}
+
 
 void TestFunctionSet::test_constraint_set_1D()
 {
@@ -72,41 +128,43 @@ void TestFunctionSet::test_constraint_set_1D()
 
 	ConstraintSet cons(cons_f,codomain);
 
-	ARIADNE_PRINT_TEST_CASE_TITLE("Definitely overlaps case");
+	ARIADNE_PRINT_TEST_CASE_TITLE("Definitely overlaps");
 
 	Box check_box1(1,-0.1,1.1);
     ARIADNE_TEST_ASSERT(definitely(cons.overlaps(check_box1)));
     ARIADNE_TEST_ASSERT(!possibly(cons.disjoint(check_box1)));
     ARIADNE_TEST_ASSERT(!possibly(cons.covers(check_box1)));
 
-    ARIADNE_PRINT_TEST_CASE_TITLE("Definitely disjoint case");
+    ARIADNE_PRINT_TEST_CASE_TITLE("Definitely disjoint");
 
     Box check_box2(1,-1.0,-0.1);
     ARIADNE_TEST_ASSERT(!possibly(cons.overlaps(check_box2)));
     ARIADNE_TEST_ASSERT(definitely(cons.disjoint(check_box2)));
     ARIADNE_TEST_ASSERT(!possibly(cons.covers(check_box2)));
 
-    ARIADNE_PRINT_TEST_CASE_TITLE("Definitely covers case");
+    ARIADNE_PRINT_TEST_CASE_TITLE("Definitely covers");
 
     Box check_box3(1,0.1,0.9);
     ARIADNE_TEST_ASSERT(definitely(cons.overlaps(check_box3)));
     ARIADNE_TEST_ASSERT(!possibly(cons.disjoint(check_box3)));
     ARIADNE_TEST_ASSERT(definitely(cons.covers(check_box3)));
 
-    ARIADNE_PRINT_TEST_CASE_TITLE("Definitely not covers case");
+    ARIADNE_PRINT_TEST_CASE_TITLE("Definitely not covers");
 
     Box check_box4(1,1.0,2.0);
     ARIADNE_TEST_ASSERT(indeterminate(cons.overlaps(check_box4)));
     ARIADNE_TEST_ASSERT(indeterminate(cons.disjoint(check_box4)));
     ARIADNE_TEST_ASSERT(!possibly(cons.covers(check_box4)));
 
-    ARIADNE_PRINT_TEST_CASE_TITLE("Definitely not disjoint case");
+    ARIADNE_PRINT_TEST_CASE_TITLE("Definitely not disjoint");
 
     Box check_box5(1,0.0,1.0);
     ARIADNE_TEST_ASSERT(definitely(cons.overlaps(check_box5)));
     ARIADNE_TEST_ASSERT(!possibly(cons.disjoint(check_box5)));
     ARIADNE_TEST_ASSERT(indeterminate(cons.covers(check_box5)));
 }
+
+
 
 int main() {
     TestFunctionSet().test();

@@ -398,9 +398,9 @@ struct VectorOfScalarFunctionBody
     : VectorFunctionTemplate<VectorOfScalarFunctionBody>
 {
     VectorOfScalarFunctionBody(uint rs, uint as)
-        : _vec(rs,ScalarFunction(as)) { }
+        : _as(as), _vec(rs,ScalarFunction(as)) { }
     VectorOfScalarFunctionBody(uint rs, const ScalarFunction& f)
-        : _vec(rs,f) { }
+        : _as(f.argument_size()), _vec(rs,f) { }
 
     void set(uint i, const ScalarFunction& f) {
         this->_vec[i]=f; }
@@ -425,7 +425,7 @@ struct VectorOfScalarFunctionBody
     virtual uint result_size() const {
         return _vec.size(); }
     virtual uint argument_size() const {
-        if(_vec.size()==0) { return 0; } return _vec[0].argument_size(); }
+        return _as; }
 
     virtual ScalarFunction operator[](uint i) const {
         return ScalarFunction(this->_vec[i]); }
@@ -442,6 +442,7 @@ struct VectorOfScalarFunctionBody
         for(uint i=0; i!=r.size(); ++i) {
             r[i]=_vec[i].evaluate(x); } }
 
+    uint _as;
     Vector<ScalarFunction> _vec;
 };
 

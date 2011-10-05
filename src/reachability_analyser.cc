@@ -290,9 +290,6 @@ lower_reach_evolve(
         evolve.adjoin(local_evolve);
     }
 
-    reach.recombine();
-    evolve.recombine();
-
     ARIADNE_LOG(3,"Reach size = " << reach.size());
     ARIADNE_LOG(3,"Final size = " << evolve.size());
 
@@ -392,9 +389,6 @@ upper_reach_evolve(
     _restriction->apply_to(reach);
     _restriction->apply_to(evolve);
 
-    reach.recombine();
-    evolve.recombine();
-
     ARIADNE_LOG(4,"Reach size = " << reach.size());
     ARIADNE_LOG(4,"Final size = " << evolve.size());
 
@@ -488,31 +482,22 @@ _outer_chain_reach_splitted(
 	    ARIADNE_LOG(4,"Reach size after removal = "<<new_reach.size());
 	    ARIADNE_LOG(4,"Final size after removal = "<<new_final.size());
 
-	    ARIADNE_LOG(3,"Restricting the reach and final sets...");
+	    ARIADNE_LOG(3,"Restricting the resulting reached and final sets...");
 
 	    _restriction->apply_to(new_final);
 	    _restriction->apply_to(new_reach);
 		ARIADNE_LOG(4,"Reach size after restricting = "<<new_reach.size());
 		ARIADNE_LOG(4,"Final size after restricting = "<<new_final.size());
 
-		ARIADNE_LOG(3,"Determining the new initial set from the jump sets...");
+        reach.adjoin(new_reach);
+		final.adjoin(new_final);
 
-		new_reach.mince(_accuracy());
-		new_final.mince(_accuracy());
-		ARIADNE_LOG(4,"Reach size after mincing = "<<new_reach.size());
-		ARIADNE_LOG(4,"Final size after mincing = "<<new_final.size());
+		ARIADNE_LOG(3,"Determining the new initial set from the jump sets...");
 
        	current_initial = (direction == DIRECTION_FORWARD ?
        			_restriction->forward_jump_set(new_reach,sys) : _restriction->backward_jump_set(new_reach,sys));
 
         current_initial.adjoin(new_final);
-        current_initial.recombine();
-
-        reach.adjoin(new_reach);
-		final.adjoin(new_final);
-
-		reach.recombine();
-		final.recombine();
     }
 
 	ARIADNE_LOG(2,"Found a total of " << reach.size() << " reached cells.");
@@ -750,8 +735,6 @@ lower_chain_reach_and_epsilon(const HybridImageSet& initial_set) const
 	}
 
     _system->substitute_all(original_parameters);
-
-    reach.recombine();
 
 	return std::pair<SetApproximationType,HybridFloatVector>(reach,epsilon);
 }
