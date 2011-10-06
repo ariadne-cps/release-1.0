@@ -126,13 +126,13 @@ void TestHybridSimulator::test() const
     // Define the initial box
     Point initial_point(2, -0.00, 0.50);
     cout << "initial_point=" << initial_point << endl;
-    HybridPoint initial_hybrid_point(location1,initial_point);
+    LocalisedPoint initial_hybrid_point(location1,initial_point);
     HybridTime simulation_time(0.25,1);
 
   
     // Compute the reachable sets
     cout << "Computing orbit... "<<std::flush;
-    Orbit<HybridPoint> hybrid_orbit=simulator.orbit(automaton,initial_hybrid_point,simulation_time);
+    Orbit<LocalisedPoint> hybrid_orbit=simulator.orbit(automaton,initial_hybrid_point,simulation_time);
     cout << "done"<<std::endl;
 
     ARIADNE_TEST_PRINT(hybrid_orbit);

@@ -1236,7 +1236,7 @@ getHybridMaximumAbsoluteDerivatives(
 }
 
 
-list<EnclosureType>
+list<LocalisedEnclosureType>
 HybridReachabilityAnalyser::
 _enclosures_from_discretised_initial_set_midpoints(const HybridBoundedConstraintSet initial_set) const
 {
@@ -1261,13 +1261,13 @@ _enclosures_from_discretised_initial_set_midpoints(const HybridBoundedConstraint
 	return result;
 }
 
-std::list<EnclosureType>
+std::list<LocalisedEnclosureType>
 to_enclosures(const HybridDenotableSet& reach)
 {
-	std::list<EnclosureType> result;
+	std::list<LocalisedEnclosureType> result;
 
 	for (HybridDenotableSet::const_iterator cell_it = reach.begin(); cell_it != reach.end(); ++cell_it)
-		result.push_back(EnclosureType(cell_it->first,cell_it->second));
+		result.push_back(LocalisedEnclosureType(cell_it->first,cell_it->second));
 
 	return result;
 }

@@ -108,6 +108,8 @@ class HybridSpace
         return this->std::map<DiscreteLocation,uint>::end(); }
 };
 
+
+
 HybridBoxes
 hull(const HybridBoxes& box1, const HybridBoxes& box2);
 
@@ -115,7 +117,7 @@ bool
 superset(const HybridBoxes& box1, const HybridBoxes& box2);
 
 bool
-covers(const HybridBoxes& hboxes, const HybridBox& hbox);
+covers(const HybridBoxes& hboxes, const LocalisedBox& hbox);
 
 HybridBoxes
 shrink_in(const HybridBoxes& box, const HybridFloatVector& epsilon);
@@ -241,13 +243,13 @@ class HybridImageSet
     virtual ImageSet const& operator[](DiscreteLocation q) const {
         ARIADNE_ASSERT(this->find(q)!=this->locations_end());
         return this->find(q)->second; }
-    virtual tribool overlaps(const HybridBox& hbx) const {
-        locations_const_iterator loc_iter=this->find(hbx.first);
-        if (loc_iter!=this->locations_end()) return loc_iter->second.overlaps(hbx.second);
+    virtual tribool overlaps(const LocalisedBox& lbx) const {
+        locations_const_iterator loc_iter=this->find(lbx.first);
+        if (loc_iter!=this->locations_end()) return loc_iter->second.overlaps(lbx.second);
 		else return false; }
-    virtual tribool disjoint(const HybridBox& hbx) const {
-        locations_const_iterator loc_iter=this->find(hbx.first);
-        if (loc_iter!=this->locations_end()) return loc_iter->second.disjoint(hbx.second);
+    virtual tribool disjoint(const LocalisedBox& lbx) const {
+        locations_const_iterator loc_iter=this->find(lbx.first);
+        if (loc_iter!=this->locations_end()) return loc_iter->second.disjoint(lbx.second);
 		else return true; } 
     virtual tribool inside(const HybridBoxes& hbx) const  {
 		tribool result = true; // Initially assumed as true
@@ -333,15 +335,15 @@ class HybridConstraintSet
     	return result;
     }
 
-    virtual tribool overlaps(const HybridBox& hbx) const {
+    virtual tribool overlaps(const LocalisedBox& hbx) const {
         locations_const_iterator loc_iter=this->find(hbx.first);
         if (loc_iter!=this->locations_end()) return loc_iter->second.overlaps(hbx.second);
 		else return false; }
-    virtual tribool disjoint(const HybridBox& hbx) const {
+    virtual tribool disjoint(const LocalisedBox& hbx) const {
         locations_const_iterator loc_iter=this->find(hbx.first);
         if (loc_iter!=this->locations_end()) return loc_iter->second.disjoint(hbx.second);
 		else return true; }
-    virtual tribool covers(const HybridBox& hbx) const {
+    virtual tribool covers(const LocalisedBox& hbx) const {
         locations_const_iterator loc_iter=this->find(hbx.first);
         if (loc_iter!=this->locations_end()) return loc_iter->second.covers(hbx.second);
 		else return false; }
@@ -432,15 +434,15 @@ class HybridBoundedConstraintSet
     	return result;
     }
 
-	virtual tribool overlaps(const HybridBox& hbx) const {
+	virtual tribool overlaps(const LocalisedBox& hbx) const {
 		locations_const_iterator loc_iter=this->find(hbx.first);
 		if (loc_iter!=this->locations_end()) return loc_iter->second.overlaps(hbx.second);
 		else return false; }
-	virtual tribool disjoint(const HybridBox& hbx) const {
+	virtual tribool disjoint(const LocalisedBox& hbx) const {
 		locations_const_iterator loc_iter=this->find(hbx.first);
 		if (loc_iter!=this->locations_end()) return loc_iter->second.disjoint(hbx.second);
 		else return true; }
-	virtual tribool covers(const HybridBox& hbx) const {
+	virtual tribool covers(const LocalisedBox& hbx) const {
 		locations_const_iterator loc_iter=this->find(hbx.first);
 		if (loc_iter!=this->locations_end()) return loc_iter->second.covers(hbx.second);
 		else return false; }
@@ -642,7 +644,7 @@ class HybridGridCell
         : std::pair<DiscreteLocation,GridCell>(hgc) { }
     HybridGridCell(const std::pair<const DiscreteLocation,GridCell>& hgc)
         : std::pair<DiscreteLocation,GridCell>(hgc.first,hgc.second) { }
-    HybridBox box() const { return HybridBox(this->first,this->second.box()); }
+    LocalisedBox box() const { return LocalisedBox(this->first,this->second.box()); }
 };
 
 class HybridDenotableSet;
@@ -672,7 +674,7 @@ class HybridDenotableSet
   public:
     typedef std::map<DiscreteLocation,DenotableSetType>::iterator locations_iterator;
     typedef std::map<DiscreteLocation,DenotableSetType>::const_iterator locations_const_iterator;
-    typedef HybridSetConstIterator<DenotableSetType,HybridBox> const_iterator;
+    typedef HybridSetConstIterator<DenotableSetType,LocalisedBox> const_iterator;
   public:
     locations_iterator locations_begin() {
         return this->std::map<DiscreteLocation,DenotableSetType>::begin(); }
@@ -815,7 +817,7 @@ class HybridDenotableSet
     HybridDenotableSet* clone() const { return new HybridDenotableSet(*this); }
     HybridSpace space() const { return HybridSpace(*this); }
 
-    tribool disjoint(const HybridBox& hbx) const {
+    tribool disjoint(const LocalisedBox& hbx) const {
         locations_const_iterator loc_iter = this->find( hbx.first );
         if (loc_iter != this->locations_end())
 			return loc_iter->second.disjoint( hbx.second );
@@ -823,7 +825,7 @@ class HybridDenotableSet
 			return true;
     }
 
-    tribool overlaps(const HybridBox& hbx) const {
+    tribool overlaps(const LocalisedBox& hbx) const {
         locations_const_iterator loc_iter = this->find( hbx.first );
         if (loc_iter != this->locations_end())
 			return loc_iter->second.overlaps( hbx.second );
@@ -831,7 +833,7 @@ class HybridDenotableSet
 			return false;
     }
 
-    tribool superset(const HybridBox& hbx) const {
+    tribool superset(const LocalisedBox& hbx) const {
         locations_const_iterator loc_iter=this->find(hbx.first);
         if (loc_iter != this->locations_end())
 			return loc_iter->second.superset( hbx.second );

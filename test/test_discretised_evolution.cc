@@ -71,7 +71,7 @@ void TestDiscretisedEvolution::test() const
 void TestDiscretisedEvolution::test_hybrid_time() const
 {
     typedef TaylorSet EnclosureType;
-    typedef HybridBasicSet<EnclosureType> HybridEnclosureType;
+    typedef HybridBasicSet<EnclosureType> LocalisedEnclosureType;
 
     cout << __PRETTY_FUNCTION__ << endl;
 
@@ -113,7 +113,7 @@ void TestDiscretisedEvolution::test_hybrid_time() const
     GridCell initial_cell=*approx_tree_set.begin();
     HybridGridCell hybrid_initial_cell(location,initial_cell);
     cout << "hybrid_initial_cell=" << hybrid_initial_cell << endl << endl;
-    HybridBox hybrid_initial_set=hybrid_initial_cell.box();
+    LocalisedBox hybrid_initial_set=hybrid_initial_cell.box();
     cout << "hybrid_initial_set=" << hybrid_initial_set << endl << endl;
     //[1.00098:1.00122],
     HybridTime htime(time,steps);
@@ -122,8 +122,8 @@ void TestDiscretisedEvolution::test_hybrid_time() const
     // Compute the reachable sets
     cout << "Computing evolution... " << flush;
     // evolver.verbosity=1;
-    HybridEnclosureType hybrid_initial_enclosure(hybrid_initial_cell.first,EnclosureType(hybrid_initial_cell.second.box()));
-    Orbit<HybridEnclosureType> evolve_orbit = evolver.orbit(hybrid_initial_enclosure,htime,UPPER_SEMANTICS);
+    LocalisedEnclosureType hybrid_initial_enclosure(hybrid_initial_cell.first,EnclosureType(hybrid_initial_cell.second.box()));
+    Orbit<LocalisedEnclosureType> evolve_orbit = evolver.orbit(hybrid_initial_enclosure,htime,UPPER_SEMANTICS);
     cout << "done." << endl;
 
     cout << "enclosure_orbit="<<evolve_orbit<<endl;

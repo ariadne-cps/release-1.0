@@ -46,8 +46,8 @@ class HybridSpace;
 class DiscreteLocation;
 template<class BS> class HybridBasicSet;
 
-typedef HybridBasicSet<Point> HybridPoint;
-typedef HybridBasicSet<Box> HybridBox;
+typedef HybridBasicSet<Point> LocalisedPoint;
+typedef HybridBasicSet<Box> LocalisedBox;
 
 typedef std::map<DiscreteLocation,Box> HybridBoxes;
 
@@ -80,7 +80,7 @@ class HybridOvertSetInterface
 {
   public:
     virtual HybridOvertSetInterface* clone() const = 0;
-    virtual tribool overlaps(const HybridBox& bx) const = 0;
+    virtual tribool overlaps(const LocalisedBox& bx) const = 0;
     virtual OvertSetInterface const& operator[](DiscreteLocation) const = 0;
 };
 
@@ -90,7 +90,7 @@ class HybridOpenSetInterface
 {
   public:
     virtual HybridOpenSetInterface* clone() const = 0;
-    virtual tribool covers(const HybridBox& bx) const = 0;
+    virtual tribool covers(const LocalisedBox& bx) const = 0;
     virtual OpenSetInterface const& operator[](DiscreteLocation) const = 0;
 };
 
@@ -100,7 +100,7 @@ class HybridClosedSetInterface
 {
   public:
     virtual HybridClosedSetInterface* clone() const = 0;
-    virtual tribool disjoint(const HybridBox& bx) const = 0;
+    virtual tribool disjoint(const LocalisedBox& bx) const = 0;
     virtual ClosedSetInterface const& operator[](DiscreteLocation) const = 0;
 };
 

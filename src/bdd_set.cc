@@ -945,7 +945,7 @@ bdd _project_down_variables(const bdd& old_bdd, uint old_dim,
     for(int i = 0; i < keep.size(); ++i) {
         // if the dimension i must be removed, add all corresponding variables to remove
         if(!keep[i]) {
-            for(int k = 0; i + k <= lastvar ; k += old_dim) {
+            for(int k = 0; (int)i + k <= lastvar ; k += old_dim) {
                 remove = remove & bdd_ithvar(i + k);
             }
         }

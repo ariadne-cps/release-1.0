@@ -68,7 +68,7 @@ _is_transition_taken(
 		const ScalarFunction& activation,
 		EventKind event_kind,
 		const VectorFunction& dynamic,
-		const ContinuousEnclosureType& src_encl) const
+		const EnclosureType& src_encl) const
 {
 	tribool result;
 
@@ -184,13 +184,13 @@ check(const Box& bx) const
 	RealScalarFunction guard = _sys->guard_function(_location,_event);
 	RealVectorFunction dynamic = _sys->dynamic_function(_location);
 
-	ContinuousEnclosureType src_enclosure(bx);
+	EnclosureType src_enclosure(bx);
 
 	tribool is_transition_taken = _is_transition_taken(guard,kind,dynamic,src_enclosure);
 
 	if (possibly(is_transition_taken)) {
 		const DiscreteLocation& trg_location = _sys->target(_location,_event);
-		const ContinuousEnclosureType trg_enclosure = _calculus->reset_step(
+		const EnclosureType trg_enclosure = _calculus->reset_step(
 				_sys->reset_function(_location,_event),src_enclosure);
 
 		tribool is_outside_any_trg_invariant = _is_outside_any_invariant(trg_location,trg_enclosure.bounding_box());
@@ -216,8 +216,8 @@ get_reset(
 	DenotableSetType result(trg_grid);
 
 	for (DenotableSetType::const_iterator cell_it = src_set.begin(); cell_it != src_set.end(); ++cell_it) {
-		ContinuousEnclosureType src_enclosure(cell_it->box());
-		ContinuousEnclosureType trg_enclosure = _calculus->reset_step(
+		EnclosureType src_enclosure(cell_it->box());
+		EnclosureType trg_enclosure = _calculus->reset_step(
 				_sys->reset_function(_location,event),src_enclosure);
 		result.adjoin_outer_approximation(trg_enclosure,accuracy);
 	}
@@ -258,7 +258,7 @@ check(const Box& bx) const
 
 	const Set<DiscreteEvent> events = _sys->events(_location);
 
-	ContinuousEnclosureType src_encl(bx);
+	EnclosureType src_encl(bx);
 
 	tribool result = false;
 
@@ -274,14 +274,14 @@ check(const Box& bx) const
 
 			if (possibly(is_transition_taken)) {
 				const DiscreteLocation trg_location = _sys->target(_location,event);
-				const ContinuousEnclosureType trg_enclosure = _calculus->reset_step(
+				const EnclosureType trg_enclosure = _calculus->reset_step(
 						_sys->reset_function(_location,event),src_encl);
 				const Box trg_bbx = trg_enclosure.bounding_box();
 
 				tribool is_outside_any_trg_invariant = _is_outside_any_invariant(trg_location,trg_bbx);
 
 				if (possibly(!is_outside_any_trg_invariant)) {
-					const HybridBox trg_hbbx(trg_location,trg_enclosure.bounding_box());
+					const LocalisedBox trg_hbbx(trg_location,trg_enclosure.bounding_box());
 
 					tribool is_covered_backward = _is_covered_backward(trg_hbbx);
 
@@ -307,7 +307,7 @@ check(const Box& bx) const
 
 tribool
 BackwardDiscreteJumpSetChecker::
-_is_covered_backward(const HybridBox& src_hbx) const {
+_is_covered_backward(const LocalisedBox& src_hbx) const {
 
 	if (definitely(_starting_set->superset(src_hbx)))
 		return true;
@@ -323,7 +323,7 @@ bool
 BackwardDiscreteJumpSetChecker::
 _has_feasible_transitions(const Box& src_bx) const
 {
-	const ContinuousEnclosureType src_enclosure(src_bx);
+	const EnclosureType src_enclosure(src_bx);
 	const Set<DiscreteEvent> events = _sys->events(_location);
 
 	for (Set<DiscreteEvent>::const_iterator event_it = events.begin(); event_it != events.end(); ++event_it) {
@@ -338,7 +338,7 @@ _has_feasible_transitions(const Box& src_bx) const
 
 			if (!trg_restriction.empty()) {
 
-				const ContinuousEnclosureType trg_enclosure = _calculus->reset_step(
+				const EnclosureType trg_enclosure = _calculus->reset_step(
 						_sys->reset_function(_location,event),src_enclosure);
 
 				Box trg_enclosure_bx = trg_enclosure.bounding_box();

@@ -1738,6 +1738,7 @@ tribool GridTreeSubset::overlaps( const BinaryTreeNode* pCurrentNode, const Grid
     return result;
 }
 
+
 void GridTreeSubset::draw(CanvasInterface& theGraphic) const {
     for(GridTreeSubset::const_iterator iter=this->begin(); iter!=this->end(); ++iter) {
         iter->box().draw(theGraphic);
@@ -1822,6 +1823,7 @@ GridTreeSet::~GridTreeSet() {
         GridTreeSubset::_pRootTreeNode = NULL;
     }
 }
+
     
 void GridTreeSet::up_to_primary_cell( const uint toPCellHeight ){
     const uint fromPCellHeight = this->cell().height();

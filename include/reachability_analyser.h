@@ -56,11 +56,11 @@ class DiscreteLocation;
 class HybridReachabilityAnalyserSettings;
 
 template<class BS> class HybridBasicSet;
-typedef HybridBasicSet<Box> HybridBox;
+typedef HybridBasicSet<Box> LocalisedBox;
 typedef std::map<DiscreteLocation,Vector<Float> > HybridFloatVector;
 typedef std::map<Identifier,int> ParameterIdIntMap;
-typedef HybridEvolver::EnclosureType EnclosureType;
-typedef HybridEvolver::ContinuousEnclosureType ContinuousEnclosureType;
+typedef HybridEvolver::EnclosureType LocalisedEnclosureType;
+typedef HybridEvolver::ContinuousEnclosureType EnclosureType;
 typedef boost::shared_ptr<HybridDenotableSet> HybridDenotableSetPtr;
 
 class HybridGrid;
@@ -417,7 +417,7 @@ getHybridMaximumAbsoluteDerivatives(
 		const HybridBoxes& domain_constraint);
 
 //! \brief Copies the \a reach set into enclosures.
-std::list<EnclosureType> to_enclosures(const HybridDenotableSet& reach);
+std::list<LocalisedEnclosureType> to_enclosures(const HybridDenotableSet& reach);
 
 } // namespace Ariadne
 

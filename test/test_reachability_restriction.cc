@@ -250,22 +250,22 @@ TestReachabilityRestriction::test_apply_to() {
 
 	ReachabilityRestriction rr3 = _get_reference_restriction();
 
-	std::list<EnclosureType> enclosures1;
-	enclosures1.push_back(EnclosureType(q1,ContinuousEnclosureType(Box(2,-0.4,0.5,-1.0,0.0))));
-	enclosures1.push_back(EnclosureType(q2,ContinuousEnclosureType(Box(3,0.9,1.0,-0.4,-0.2,1.2,1.3))));
+	std::list<LocalisedEnclosureType> enclosures1;
+	enclosures1.push_back(LocalisedEnclosureType(q1,EnclosureType(Box(2,-0.4,0.5,-1.0,0.0))));
+	enclosures1.push_back(LocalisedEnclosureType(q2,EnclosureType(Box(3,0.9,1.0,-0.4,-0.2,1.2,1.3))));
 
-	std::list<EnclosureType> restricted_enclosures1 = rr3.filter(enclosures1);
+	std::list<LocalisedEnclosureType> restricted_enclosures1 = rr3.filter(enclosures1);
 	ARIADNE_TEST_ASSERT(restricted_enclosures1.size() == enclosures1.size());
 	ARIADNE_TEST_ASSERT(!rr3.has_discretised(q1));
 	ARIADNE_TEST_ASSERT(!rr3.has_discretised(q2));
 
 	ARIADNE_PRINT_TEST_CASE_TITLE("Apply to a list of enclosures that would be restricted");
 
-	std::list<EnclosureType> enclosures2;
-	enclosures1.push_back(EnclosureType(q1,ContinuousEnclosureType(Box(2,-0.4,0.5,-1.0,0.0))));
-	enclosures2.push_back(EnclosureType(q2,ContinuousEnclosureType(Box(3,-5.0,-4.0,-10.0,-9.0,8.0,8.1))));
+	std::list<LocalisedEnclosureType> enclosures2;
+	enclosures1.push_back(LocalisedEnclosureType(q1,EnclosureType(Box(2,-0.4,0.5,-1.0,0.0))));
+	enclosures2.push_back(LocalisedEnclosureType(q2,EnclosureType(Box(3,-5.0,-4.0,-10.0,-9.0,8.0,8.1))));
 
-	std::list<EnclosureType> restricted_enclosures2 = rr3.filter(enclosures2);
+	std::list<LocalisedEnclosureType> restricted_enclosures2 = rr3.filter(enclosures2);
 	ARIADNE_TEST_ASSERT(restricted_enclosures2.size() != enclosures2.size());
 	ARIADNE_TEST_ASSERT(!rr3.has_discretised(q1));
 	ARIADNE_TEST_ASSERT(rr3.has_discretised(q2));

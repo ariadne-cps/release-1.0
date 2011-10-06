@@ -76,12 +76,12 @@ class HybridTime;
 class DiscreteLocation;
 template<class BS> class HybridBasicSet;
 
-typedef HybridBasicSet<Point> HybridPoint;
-typedef HybridBasicSet<Box> HybridBox;
-typedef HybridBasicSet<TaylorSet> HybridTaylorSet;
-typedef HybridBasicSet<InterpolatedCurve> HybridInterpolatedCurve;
+typedef HybridBasicSet<Point> LocalisedPoint;
+typedef HybridBasicSet<Box> LocalisedBox;
+typedef HybridBasicSet<TaylorSet> LocalisedTaylorSet;
+typedef HybridBasicSet<InterpolatedCurve> LocalisedInterpolatedCurve;
 typedef ListSet<TaylorSet> TaylorSetList;
-typedef ListSet<HybridTaylorSet> HybridTaylorSetList;
+typedef ListSet<LocalisedTaylorSet> HybridTaylorSetList;
 
 template<class ES> std::ostream& operator<<(std::ostream&, const Orbit<ES>&);
 
@@ -97,16 +97,16 @@ class Orbit<Point>
 };
 
 template<>
-class Orbit<HybridPoint>
+class Orbit<LocalisedPoint>
 {
   public:
-    Orbit(const HybridPoint& hpt);
-    void insert(HybridTime ht, HybridPoint& hpt);
+    Orbit(const LocalisedPoint& hpt);
+    void insert(HybridTime ht, LocalisedPoint& hpt);
     uint size() const;
     const InterpolatedCurve& curve(uint m) const;
-    const std::vector<HybridInterpolatedCurve>& curves() const { return *this->_curves; }
+    const std::vector<LocalisedInterpolatedCurve>& curves() const { return *this->_curves; }
   private:
-    boost::shared_ptr<std::vector<HybridInterpolatedCurve> > _curves;
+    boost::shared_ptr<std::vector<LocalisedInterpolatedCurve> > _curves;
 };
 
 template<class ES>
@@ -164,24 +164,24 @@ class Orbit<TaylorSet>
 };
 
 template<>
-class Orbit<HybridTaylorSet>
+class Orbit<LocalisedTaylorSet>
 {
     class Data;
     typedef HybridTaylorSetList list_set_const_iterator;
   public:
-    typedef HybridTaylorSet EnclosureType;
+    typedef LocalisedTaylorSet EnclosureType;
     typedef HybridTaylorSetList EnclosureListType;
 
-    Orbit(const HybridTaylorSet&);
-    void adjoin_reach(const HybridTaylorSet& set);
-    void adjoin_intermediate(const HybridTaylorSet& set);
-    void adjoin_final(const HybridTaylorSet& set);
+    Orbit(const LocalisedTaylorSet&);
+    void adjoin_reach(const LocalisedTaylorSet& set);
+    void adjoin_intermediate(const LocalisedTaylorSet& set);
+    void adjoin_final(const LocalisedTaylorSet& set);
 
     void adjoin_reach(const HybridTaylorSetList& set);
     void adjoin_intermediate(const HybridTaylorSetList& set);
     void adjoin_final(const HybridTaylorSetList& set);
 
-    HybridTaylorSet const& initial() const;
+    LocalisedTaylorSet const& initial() const;
     HybridTaylorSetList const& reach() const;
     HybridTaylorSetList const& intermediate() const;
     HybridTaylorSetList const& final() const;
@@ -191,7 +191,7 @@ class Orbit<HybridTaylorSet>
 
 template<class ES> std::ostream& operator<<(std::ostream& os, const Orbit< ES >& orb);
 template<> std::ostream& operator<<(std::ostream& os, const Orbit<TaylorSet>& orb);
-template<> std::ostream& operator<<(std::ostream& os, const Orbit<HybridTaylorSet>& orb);
+template<> std::ostream& operator<<(std::ostream& os, const Orbit<LocalisedTaylorSet>& orb);
 
 template<class ES>
 std::ostream& 
@@ -207,7 +207,7 @@ operator<<(std::ostream& os, const Orbit< ES >& orb)
 
 template<> 
 std::ostream& 
-operator<<(std::ostream& os, const Orbit< HybridPoint >& orb);
+operator<<(std::ostream& os, const Orbit< LocalisedPoint >& orb);
 
 
 

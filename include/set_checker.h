@@ -44,9 +44,9 @@ class TaylorSet;
 template<class T> class HybridBasicSet;
 class ConstraintSet;
 
-typedef HybridBasicSet<Box> HybridBox;
-typedef TaylorSet ContinuousEnclosureType;
-typedef HybridBasicSet<ContinuousEnclosureType> EnclosureType;
+typedef HybridBasicSet<Box> LocalisedBox;
+typedef TaylorSet EnclosureType;
+typedef HybridBasicSet<EnclosureType> LocalisedEnclosureType;
 
 
 //! \brief Interface for performing checks on sets.
@@ -110,7 +110,7 @@ class DiscreteJumpSetCheckerBase : public SetCheckerInterface
 			const ScalarFunction& activation,
 			EventKind event_kind,
 			const VectorFunction& dynamic,
-			const ContinuousEnclosureType& source) const;
+			const EnclosureType& source) const;
 
 	//! \brief Whether the box \bx is outside any invariant in the given \a location.
 	tribool _is_outside_any_invariant(
@@ -183,7 +183,7 @@ class BackwardDiscreteJumpSetChecker : public DiscreteJumpSetCheckerBase
 	bool _has_feasible_transitions(const Box& src_bx) const;
 
 	//! brief Whether \a src_hbx is covered by a backward transition from the target set.
-	tribool _is_covered_backward(const HybridBox& src_hbx) const;
+	tribool _is_covered_backward(const LocalisedBox& src_hbx) const;
 };
 
 tribool

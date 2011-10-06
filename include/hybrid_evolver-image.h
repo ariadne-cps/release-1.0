@@ -63,7 +63,7 @@ class ImageSetHybridEvolverSettings;
  * The actual evolution steps are performed by the HybridEvolver class.
  */
 class ImageSetHybridEvolver
-    : public EvolverBase<HybridAutomatonInterface,HybridTaylorSet>
+    : public EvolverBase<HybridAutomatonInterface,LocalisedTaylorSet>
 {
     typedef ScalarFunction ScalarFunctionType;
     typedef VectorFunction VectorFunctionType;
@@ -85,8 +85,8 @@ class ImageSetHybridEvolver
     typedef HybridAutomatonInterface SystemType;
     typedef TaylorSet ContinuousEnclosureType;
     typedef TaylorSet TimedSetModelType;
-    typedef HybridBasicSet<TaylorSet> HybridEnclosureType;
-    typedef HybridEnclosureType EnclosureType;
+    typedef HybridBasicSet<TaylorSet> LocalisedEnclosureType;
+    typedef LocalisedEnclosureType EnclosureType;
     typedef Orbit<EnclosureType> OrbitType;
     typedef ListSet<EnclosureType> EnclosureListType;
     typedef Float ContinuousTimeType;

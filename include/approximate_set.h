@@ -124,8 +124,8 @@ class HybridInnerApproximation
     HybridInnerApproximation* clone() const { return new HybridInnerApproximation(*this); }
     HybridSpace space() const { return HybridSpace(this->_concrete_set); }
     InnerApproximation const& operator[](DiscreteLocation q) const { return this->_concrete_set.find(q)->second; }
-    tribool overlaps(const HybridBox& bx) const { return this->_concrete_set.find(bx.first)->second.overlaps(bx.second); }
-    tribool covers(const HybridBox& bx) const { return this->_concrete_set.find(bx.first)->second.covers(bx.second); }
+    tribool overlaps(const LocalisedBox& bx) const { return this->_concrete_set.find(bx.first)->second.overlaps(bx.second); }
+    tribool covers(const LocalisedBox& bx) const { return this->_concrete_set.find(bx.first)->second.covers(bx.second); }
     std::ostream& write(std::ostream& os) const { return os << this->_concrete_set; }
   private:
     std::map<DiscreteLocation,InnerApproximation> _concrete_set;
@@ -141,7 +141,7 @@ class HybridLowerApproximation
     HybridLowerApproximation* clone() const { return new HybridLowerApproximation(*this); }
     HybridSpace space() const { return HybridSpace(this->_concrete_set); }
     LowerApproximation const& operator[](DiscreteLocation q) const { return this->_concrete_set.find(q)->second; }
-    tribool overlaps(const HybridBox& bx) const { return this->_concrete_set.find(bx.first)->second.overlaps(bx.second); }
+    tribool overlaps(const LocalisedBox& bx) const { return this->_concrete_set.find(bx.first)->second.overlaps(bx.second); }
     std::ostream& write(std::ostream& os) const { return os << this->_concrete_set; }
   private:
     std::map<DiscreteLocation,LowerApproximation> _concrete_set;
@@ -157,7 +157,7 @@ class HybridOuterApproximation
     HybridOuterApproximation* clone() const { return new HybridOuterApproximation(*this); }
     HybridSpace space() const { return HybridSpace(this->_concrete_set); }
     OuterApproximation const& operator[](DiscreteLocation q) const { return this->_concrete_set.find(q)->second; }
-    tribool disjoint(const HybridBox& hbx) const { return this->_concrete_set.find(hbx.first)->second.disjoint(hbx.second); }
+    tribool disjoint(const LocalisedBox& hbx) const { return this->_concrete_set.find(hbx.first)->second.disjoint(hbx.second); }
     std::ostream& write(std::ostream& os) const { return os << this->_concrete_set; }
     tribool inside(const HybridBoxes& hbxs) const;
     HybridBoxes bounding_box() const;
@@ -173,8 +173,8 @@ class HybridMetricApproximation
     HybridMetricApproximation* clone() const { return new HybridMetricApproximation(*this); }
     HybridSpace space() const { return HybridSpace(this->_concrete_set); }
     MetricApproximation const& operator[](DiscreteLocation q) const { return this->_concrete_set.find(q)->second; }
-    tribool overlaps(const HybridBox& bx) const { return this->_concrete_set.find(bx.first)->second.overlaps(bx.second); }
-    tribool disjoint(const HybridBox& hbx) const { return this->_concrete_set.find(hbx.first)->second.disjoint(hbx.second); }
+    tribool overlaps(const LocalisedBox& bx) const { return this->_concrete_set.find(bx.first)->second.overlaps(bx.second); }
+    tribool disjoint(const LocalisedBox& hbx) const { return this->_concrete_set.find(hbx.first)->second.disjoint(hbx.second); }
     tribool inside(const HybridBoxes& hbxs) const { return reinterpret_cast<const HybridOuterApproximation&>(*this).inside(hbxs); }
     HybridBoxes bounding_box() const { return reinterpret_cast<const HybridOuterApproximation&>(*this).bounding_box(); };
     std::ostream& write(std::ostream& os) const { return os << this->_concrete_set; }

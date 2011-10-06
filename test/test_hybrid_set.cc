@@ -117,21 +117,21 @@ TestHybridSet::test_hybrid_list_set()
     ARIADNE_TEST_FAIL(hls[loc1].adjoin(bx3)); // Should fail due to incompatible dimensions
     ARIADNE_TEST_EXECUTE(hls.insert(make_pair(loc2,ListSet<Box>(bx3))));
     ARIADNE_TEST_EXECUTE(hls[loc2].adjoin(bx4));
-    ARIADNE_TEST_EXECUTE(hls.adjoin(HybridBox(loc1,bx2)));
+    ARIADNE_TEST_EXECUTE(hls.adjoin(LocalisedBox(loc1,bx2)));
     ARIADNE_TEST_EXECUTE(hls.adjoin(loc2,bx5));
 
     ARIADNE_TEST_PRINT(hls);
 
     HybridListSet<Box>::const_iterator iter=hls.begin();
-    ARIADNE_TEST_EQUAL(*iter,HybridBox(loc1,bx1));
+    ARIADNE_TEST_EQUAL(*iter,LocalisedBox(loc1,bx1));
     ++iter;
-    ARIADNE_TEST_EQUAL(*iter,HybridBox(loc1,bx2));
+    ARIADNE_TEST_EQUAL(*iter,LocalisedBox(loc1,bx2));
     ++iter;
-    ARIADNE_TEST_EQUAL(*iter,HybridBox(loc2,bx3));
+    ARIADNE_TEST_EQUAL(*iter,LocalisedBox(loc2,bx3));
     ++iter;
-    ARIADNE_TEST_EQUAL(*iter,HybridBox(loc2,bx4));
+    ARIADNE_TEST_EQUAL(*iter,LocalisedBox(loc2,bx4));
     ++iter;
-    ARIADNE_TEST_EQUAL(*iter,HybridBox(loc2,bx5));
+    ARIADNE_TEST_EQUAL(*iter,LocalisedBox(loc2,bx5));
     ++iter;
     ARIADNE_TEST_ASSERT(iter==hls.end());
 

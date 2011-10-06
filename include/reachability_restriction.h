@@ -36,8 +36,8 @@ using namespace Ariadne;
 
 namespace Ariadne {
 
-typedef TaylorSet ContinuousEnclosureType;
-typedef HybridBasicSet<ContinuousEnclosureType> EnclosureType;
+typedef TaylorSet EnclosureType;
+typedef HybridBasicSet<EnclosureType> LocalisedEnclosureType;
 
 //! A structure for holding a restriction to reachability, with facilities to avoid unnecessary discretisations.
 class ReachabilityRestriction
@@ -121,15 +121,15 @@ class ReachabilityRestriction
 
 	//! \brief Apply the restriction to a list of enclosures.
 	//! \details This method differs in signature from apply_to since we need to produce a new list set.
-	std::list<EnclosureType> filter(const std::list<EnclosureType>& enclosures) const;
+	std::list<LocalisedEnclosureType> filter(const std::list<LocalisedEnclosureType>& enclosures) const;
 
 	//@}
 
 	//! \name Hybrid box checks
 
-    tribool disjoint(const HybridBox& hbx) const;
-    tribool overlaps(const HybridBox& hbx) const;
-    tribool superset(const HybridBox& hbx) const;
+    tribool disjoint(const LocalisedBox& hbx) const;
+    tribool overlaps(const LocalisedBox& hbx) const;
+    tribool superset(const LocalisedBox& hbx) const;
 
     //@}
 

@@ -83,6 +83,7 @@ class GridTreeConstIterator;
 
 /*Declarations of classes in other files*/
 template<class BS> class ListSet;
+class SetCheckerInterface;
 
 std::ostream& operator<<(std::ostream& output_stream, const BinaryTreeNode & binary_tree );
 std::ostream& operator<<(std::ostream& os, const GridCell& theGridCell);
@@ -1197,6 +1198,16 @@ class GridTreeSet : public GridTreeSubset {
 
     /*! \brief Restrict to (make inplace intersection with) another grid paving set. */
     void restrict( const GridTreeSubset& theOtherSubPaving );
+
+    /*! \brief Restrict to the cells that possibly respect the property \a checker, with a given \a accuracy.
+     *  The result is an outer approximation of the intersection with the set of points respecting the property.
+     */
+    void outer_restrict( const SetCheckerInterface& checker, const uint accuracy );
+
+    /*! \brief Restrict to the cells that definitely respect the property \a checker, with a given \a accuracy.
+     *  The result is an inner approximation of the intersection with the set of points respecting the property.
+     */
+    void inner_restrict( const SetCheckerInterface& checker, const uint accuracy );
 
     /*! \brief Remove cells in another grid paving set. */
     void remove( const GridTreeSubset& theOtherSubPaving );

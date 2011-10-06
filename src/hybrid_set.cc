@@ -162,7 +162,7 @@ superset(const HybridBoxes& box1, const HybridBoxes& box2)
 
 
 bool
-covers(const HybridBoxes& hboxes, const HybridBox& hbox)
+covers(const HybridBoxes& hboxes, const LocalisedBox& hbox)
 {
 	HybridBoxes::const_iterator hboxes_in_location = hboxes.find(hbox.first);
 	ARIADNE_ASSERT_MSG(hboxes_in_location != hboxes.end(),

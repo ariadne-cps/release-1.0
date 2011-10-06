@@ -170,13 +170,13 @@ apply_to(HybridDenotableSet& set) const
 }
 
 
-std::list<EnclosureType>
+std::list<LocalisedEnclosureType>
 ReachabilityRestriction::
-filter(const std::list<EnclosureType>& enclosures) const
+filter(const std::list<LocalisedEnclosureType>& enclosures) const
 {
-	std::list<EnclosureType> result;
+	std::list<LocalisedEnclosureType> result;
 
-	for (std::list<EnclosureType>::const_iterator encl_it = enclosures.begin(); encl_it != enclosures.end(); ++encl_it) {
+	for (std::list<LocalisedEnclosureType>::const_iterator encl_it = enclosures.begin(); encl_it != enclosures.end(); ++encl_it) {
 		const DiscreteLocation& loc = encl_it->first;
 		ARIADNE_ASSERT_MSG(this->has_location(loc),
 				"The location " << loc.name() << " is not present in the ReachabilityRestriction: cannot apply the restriction.");
@@ -185,13 +185,13 @@ filter(const std::list<EnclosureType>& enclosures) const
 
 		// If the domain covers the local enclosure, no restriction is required. Otherwise we discretise, if necessary, and restrict.
 		if (!this->has_discretised(loc) && this->_bounding_box(loc).covers(encl_bb)) {
-			result.push_back(EnclosureType(loc,encl_it->second));
+			result.push_back(LocalisedEnclosureType(loc,encl_it->second));
 		} else {
 			if (!this->has_discretised(loc))
 				_insert_domain_discretisation(loc);
 
 			if (possibly(_set[loc].overlaps(encl_bb)))
-				result.push_back(EnclosureType(loc,encl_it->second));
+				result.push_back(LocalisedEnclosureType(loc,encl_it->second));
 		}
 	}
 
@@ -233,7 +233,7 @@ restricts(const HybridDenotableSet& set) const
 
 tribool
 ReachabilityRestriction::
-disjoint(const HybridBox& hbx) const
+disjoint(const LocalisedBox& hbx) const
 {
 	tribool result;
 
@@ -259,7 +259,7 @@ disjoint(const HybridBox& hbx) const
 
 tribool
 ReachabilityRestriction::
-overlaps(const HybridBox& hbx) const
+overlaps(const LocalisedBox& hbx) const
 {
 	tribool result;
 
@@ -285,7 +285,7 @@ overlaps(const HybridBox& hbx) const
 
 tribool
 ReachabilityRestriction::
-superset(const HybridBox& hbx) const
+superset(const LocalisedBox& hbx) const
 {
 	tribool result;
 

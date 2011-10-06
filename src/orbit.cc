@@ -48,24 +48,24 @@ Orbit<Point>::insert(Time t, const Point& pt)
 }
 
 
-Orbit<HybridPoint>::Orbit(const HybridPoint& pt)
-    : _curves(new std::vector<HybridInterpolatedCurve>(1u,make_pair(pt.first,InterpolatedCurve(pt.second))))
+Orbit<LocalisedPoint>::Orbit(const LocalisedPoint& pt)
+    : _curves(new std::vector<LocalisedInterpolatedCurve>(1u,make_pair(pt.first,InterpolatedCurve(pt.second))))
 { }
 
 uint
-Orbit<HybridPoint>::size() const
+Orbit<LocalisedPoint>::size() const
 {
     return this->_curves->size();
 }
 
 const InterpolatedCurve& 
-Orbit<HybridPoint>::curve(uint m) const
+Orbit<LocalisedPoint>::curve(uint m) const
 {
     return (*this->_curves)[m].second; 
 }
 
 void 
-Orbit<HybridPoint>::insert(HybridTime ht, HybridPoint& hpt)
+Orbit<LocalisedPoint>::insert(HybridTime ht, LocalisedPoint& hpt)
 {
     ARIADNE_ASSERT((uint)ht.discrete_time()<=this->size());
     if(this->size()==ht.discrete_time()) {
@@ -78,7 +78,7 @@ Orbit<HybridPoint>::insert(HybridTime ht, HybridPoint& hpt)
 
 template<> 
 std::ostream& 
-operator<<(std::ostream& os, const Orbit< HybridPoint >& orb)
+operator<<(std::ostream& os, const Orbit< LocalisedPoint >& orb)
 {
     return os << orb.curves();
 }
@@ -174,88 +174,88 @@ final() const
 
 
 
-struct Orbit<HybridTaylorSet>::Data {
-    Data(const HybridTaylorSet& initial_set) 
+struct Orbit<LocalisedTaylorSet>::Data {
+    Data(const LocalisedTaylorSet& initial_set) 
         : initial(initial_set) { }
-    HybridTaylorSet initial;
+    LocalisedTaylorSet initial;
     HybridTaylorSetList reach;
     HybridTaylorSetList intermediate;
     HybridTaylorSetList final;
 };
 
-Orbit<HybridTaylorSet>::
-Orbit(const HybridTaylorSet& initial_set)
+Orbit<LocalisedTaylorSet>::
+Orbit(const LocalisedTaylorSet& initial_set)
     : _data(new Data(initial_set))
 {
 }
 
 void
-Orbit<HybridTaylorSet>::
-adjoin_reach(const HybridTaylorSet& set)
+Orbit<LocalisedTaylorSet>::
+adjoin_reach(const LocalisedTaylorSet& set)
 {
     this->_data->reach.adjoin(set);
 }
 
 void
-Orbit<HybridTaylorSet>::
-adjoin_intermediate(const HybridTaylorSet& set)
+Orbit<LocalisedTaylorSet>::
+adjoin_intermediate(const LocalisedTaylorSet& set)
 {
     this->_data->intermediate.adjoin(set);
 }
 
 void
-Orbit<HybridTaylorSet>::
-adjoin_final(const HybridTaylorSet& set)
+Orbit<LocalisedTaylorSet>::
+adjoin_final(const LocalisedTaylorSet& set)
 {
     this->_data->final.adjoin(set);
 }
 
 
 void
-Orbit<HybridTaylorSet>::
+Orbit<LocalisedTaylorSet>::
 adjoin_reach(const HybridTaylorSetList& list_set)
 {
     this->_data->reach.adjoin(list_set);
 }
 
 void
-Orbit<HybridTaylorSet>::
+Orbit<LocalisedTaylorSet>::
 adjoin_intermediate(const HybridTaylorSetList& list_set)
 {
     this->_data->intermediate.adjoin(list_set);
 }
 
 void
-Orbit<HybridTaylorSet>::
+Orbit<LocalisedTaylorSet>::
 adjoin_final(const HybridTaylorSetList& list_set)
 {
     this->_data->final.adjoin(list_set);
 }
 
 
-HybridTaylorSet const&
-Orbit<HybridTaylorSet>::
+LocalisedTaylorSet const&
+Orbit<LocalisedTaylorSet>::
 initial() const
 {
     return this->_data->initial;
 }
 
 HybridTaylorSetList const&
-Orbit<HybridTaylorSet>::
+Orbit<LocalisedTaylorSet>::
 reach() const
 {
     return this->_data->reach;
 }
 
 HybridTaylorSetList const&
-Orbit<HybridTaylorSet>::
+Orbit<LocalisedTaylorSet>::
 intermediate() const
 {
     return this->_data->intermediate;
 }
 
 HybridTaylorSetList const&
-Orbit<HybridTaylorSet>::
+Orbit<LocalisedTaylorSet>::
 final() const
 {
     return this->_data->final;
@@ -277,9 +277,9 @@ operator<<(std::ostream& os, const Orbit<TaylorSet>& orb)
 
 template<> 
 std::ostream& 
-operator<<(std::ostream& os, const Orbit<HybridTaylorSet>& orb)
+operator<<(std::ostream& os, const Orbit<LocalisedTaylorSet>& orb)
 {
-    os << "Orbit(\n  initial=" << Orbit<HybridTaylorSet>::EnclosureListType(orb.initial()).bounding_boxes()
+    os << "Orbit(\n  initial=" << Orbit<LocalisedTaylorSet>::EnclosureListType(orb.initial()).bounding_boxes()
        << "\n  intermediate=" << orb.intermediate().bounding_boxes()
        << "\n  reach=" << orb.reach().bounding_boxes()
        << "\n  final=" << orb.final().bounding_boxes()
@@ -296,7 +296,7 @@ void draw(CanvasInterface& graphic, const Orbit<TaylorSet>& orbit)
 
 
 
-void draw(CanvasInterface& graphic, const Orbit<HybridPoint>& orbit)
+void draw(CanvasInterface& graphic, const Orbit<LocalisedPoint>& orbit)
 {
     for(uint i=0; i<=orbit.size(); ++i) {
         orbit.curve(i).draw(graphic);

@@ -51,7 +51,7 @@ class TestReachabilityAnalysis
     HybridTime reach_time;
  
     typedef TaylorSet EnclosureType;
-    typedef HybridBasicSet<TaylorSet> HybridEnclosureType;
+    typedef HybridBasicSet<TaylorSet> LocalisedEnclosureType;
 
   public:
 
