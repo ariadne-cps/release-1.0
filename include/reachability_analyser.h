@@ -239,7 +239,7 @@ class HybridReachabilityAnalyser
 
     /*! \brief Gets whether \a reach has a subset definitely infeasible in respect to the
      * constraint enlarged by \eps. */
-    bool _has_definitely_infeasible_subset(
+    bool _has_eps_definitely_infeasible_subset(
     		const HybridDenotableSet& reach,
     		const HybridFloatVector& eps,
     		const HybridSpace& space) const;
@@ -331,17 +331,15 @@ class HybridReachabilityAnalyserSettings {
     //! \brief The parameters that must not be automatically split inside a system.
     Set<Identifier> locked_parameters_ids;
 
-    //! \brief The target ratio of derivatives widthd to obtain when splitting parameters (must be > 0).
+    //! \brief The target ratio of derivatives width to obtain when splitting parameters (must be > 0).
     RealType splitting_parameters_target_ratio;
 
     //! \brief Checks whether the restriction would affect the lower reach and issues an error if it does.
     //! \details Useful to validate the restriction used.
     bool enable_lower_reach_restriction_check;
 
-    //! \brief Enable the pruning of the trajectories when too large.
+    //! \brief Enable the pruning of the trajectories in lower semantics when too many.
     //! \details The pruning is done probabilistically.
-    //! <br>
-    //! This parameter is used only under lower semantics.
     bool enable_lower_pruning;
 
 };

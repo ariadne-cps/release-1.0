@@ -158,7 +158,7 @@ _safety_proving_once(
 
 	    ARIADNE_LOG(5,"Computing the initial set...");
 
-	    SetApproximationType forward_initial = _safety_restriction->possibly_feasible_projection(verInput.getInitialSet());
+	    SetApproximationType forward_initial = _safety_restriction->outer_intersection_with(verInput.getInitialSet());
 
 	    if (forward_initial.empty()) {
 	        throw EmptyInitialCellSetException("The initial cell set for forward reachability is empty (skipped).");
@@ -209,7 +209,7 @@ _safety_proving_once_backward_refinement(
 
     ARIADNE_LOG(5,"Computing the initial set...");
 
-    SetApproximationType backward_initial = _safety_restriction->possibly_infeasible_projection(safety_constraint);
+    SetApproximationType backward_initial = _safety_restriction->outer_difference_from(safety_constraint);
 
     if (backward_initial.empty()) {
         throw EmptyInitialCellSetException("The initial cell set for backward reachability is empty (skipped).");

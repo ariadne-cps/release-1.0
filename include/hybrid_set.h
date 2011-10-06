@@ -1049,17 +1049,21 @@ tribool overlaps(const HybridConstraintSet& cons_set, const HybridDenotableSet& 
 //! \brief Whether \a cons_set covers \a grid_set.
 tribool covers(const HybridConstraintSet& cons_set, const HybridDenotableSet& grid_set);
 
-//! \brief Evaluates \a grid_set on \a cons_set in order to obtain (a superset of) the overlapping subset.
-HybridDenotableSet possibly_overlapping_subset(const HybridDenotableSet& grid_set, const HybridConstraintSet& cons_set);
-//! \brief Applies \a cons_set to \a grid_set in order to obtain the covered subset.
-HybridDenotableSet definitely_covered_subset(const HybridDenotableSet& grid_set, const HybridConstraintSet& cons_set);
+//! \brief An outer approximation of the intersection of \a den_set with \a cons_set.
+HybridDenotableSet outer_intersection(const HybridDenotableSet& den_set, const HybridConstraintSet& cons_set);
+//! \brief An inner approximation of the intersection of \a den_set with \a cons_set.
+HybridDenotableSet inner_intersection(const HybridDenotableSet& den_set, const HybridConstraintSet& cons_set);
+//! \brief An outer approximation of the difference of \a den_set with \a cons_set.
+HybridDenotableSet outer_difference(const HybridDenotableSet& den_set, const HybridConstraintSet& cons_set);
+//! \brief An inner approximation of the difference of \a den_set with \a cons_set.
+HybridDenotableSet inner_difference(const HybridDenotableSet& den_set, const HybridConstraintSet& cons_set);
 
 //! \brief Evaluates the codomain of the function \a func applied on the cells of \a grid_set, each widened by \a eps.
 HybridBoxes eps_codomain(const HybridDenotableSet& grid_set, const HybridFloatVector& eps, const HybridVectorFunction& func);
 
 //! \brief Projects \a grid_set using the given \a indices, also flattening the set in respect to the hybrid space.
 //! \details The \a grid_set must have the same grid for all locations.
-DenotableSetType flatten_and_project_down(const HybridDenotableSet& grid_set, const Vector<uint>& indices);
+DenotableSetType flatten_and_project_down(const HybridDenotableSet& den_set, const Vector<uint>& indices);
 
 } // namespace Ariadne
 

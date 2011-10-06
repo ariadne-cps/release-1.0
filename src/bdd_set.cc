@@ -1794,14 +1794,9 @@ tribool disjoint(const ConstraintSet& cons_set, const BDDTreeSet& bdd_set) {
     ARIADNE_ASSERT_MSG(bdd_set.dimension() != 0, "Cannot compare with a zero-dimensional BDDTreeSet.");
     ARIADNE_ASSERT_MSG(bdd_set.dimension() == cons_set.dimension(), "Cannot compare sets with different dimensions.");
 
-    // If the bdd set is empty, the test is true.
     if(bdd_set.empty()) return true;
-
-    // If the constraint set has a zero-dimensional codomain, the test is false:
-    // a ConstraintSet with zero-dimensional codomain represents the entire space.
-    if(cons_set.codomain().size() == 0) return false;
-    // If the constraint set has an empty codomain, the test is true
-    if(cons_set.codomain().empty()) return true;
+    if(cons_set.unconstrained()) return false;
+    if(cons_set.empty()) return true;
         
     // compute the first splitting coordinate
     uint dim = bdd_set.dimension();
@@ -1824,14 +1819,9 @@ tribool covers(const ConstraintSet& cons_set, const BDDTreeSet& bdd_set) {
     ARIADNE_ASSERT_MSG(bdd_set.dimension() != 0, "Cannot compare with a zero-dimensional BDDTreeSet.");
     ARIADNE_ASSERT_MSG(bdd_set.dimension() == cons_set.dimension(), "Cannot compare sets with different dimensions.");
 
-    // If the bdd set is empty, the test is true.
     if(bdd_set.empty()) return true;
-
-    // If the constraint set has a zero-dimensional codomain, the test is true:
-    // a ConstraintSet with zero-dimensional codomain represents the entire space.
-    if(cons_set.codomain().size() == 0) return true;
-    // If the constraint set has an empty codomain, the test is false.
-    if(cons_set.codomain().empty()) return false;
+    if(cons_set.unconstrained()) return true;
+    if(cons_set.empty()) return false;
 
     // compute the first splitting coordinate
     uint dim = bdd_set.dimension();
@@ -1845,18 +1835,18 @@ tribool covers(const ConstraintSet& cons_set, const BDDTreeSet& bdd_set) {
     return _subset(bdd_set.root_cell(), bdd_set.enabled_cells(), 0, splitting_coordinate, cons_set);        
 }
 
-BDDTreeSet possibly_overlapping_subset(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set) {
+BDDTreeSet outer_intersection(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set) {
     // make a copy of bdd_set
     BDDTreeSet result = bdd_set;
-    if (cons_set.codomain().size() != 0)
+    if (!cons_set.unconstrained())
     	result.outer_restrict(cons_set);
     return result;
 }
 
-BDDTreeSet definitely_covered_subset(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set) {
+BDDTreeSet inner_intersection(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set) {
     // make a copy of bdd_set
     BDDTreeSet result = bdd_set;
-    if (cons_set.codomain().size() != 0)
+    if (!cons_set.unconstrained())
     	result.inner_restrict(cons_set);
     return result;
 }

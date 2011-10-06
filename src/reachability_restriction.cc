@@ -23,6 +23,7 @@
  
 #include "reachability_restriction.h"
 #include "set_checker.h"
+#include "denotable_set.h"
 
 namespace Ariadne {
 
@@ -381,21 +382,21 @@ backward_jump_set(
 
 HybridDenotableSet
 ReachabilityRestriction::
-possibly_feasible_projection(const HybridConstraintSet& constraint_set) const
+outer_intersection_with(const HybridConstraintSet& constraint_set) const
 {
 	HybridDenotableSet result;
 
 	for (HybridConstraintSet::const_iterator cons_it = constraint_set.begin(); cons_it != constraint_set.end(); ++cons_it) {
 		const DiscreteLocation& loc = cons_it->first;
-		ARIADNE_ASSERT_MSG(this->has_location(loc), "The constraint has location " << loc.name() << ", but the restriction does not.");
+		if (this->has_location(loc)) {
+			if (this->has_empty(loc)) {
+				result.insert(make_pair(loc,DenotableSetType(_grid.find(loc)->second)));
+			} else {
+				if (!this->has_discretised(loc))
+					_insert_domain_discretisation(loc);
 
-		if (this->has_empty(loc)) {
-			result.insert(make_pair(loc,DenotableSetType(_grid.find(loc)->second)));
-		} else {
-			if (!this->has_discretised(loc))
-				_insert_domain_discretisation(loc);
-
-			result.insert(make_pair(loc,possibly_overlapping_subset(_set[loc],cons_it->second)));
+				result.insert(make_pair(loc,Ariadne::outer_intersection(_set[loc],cons_it->second)));
+			}
 		}
 	}
 
@@ -405,21 +406,21 @@ possibly_feasible_projection(const HybridConstraintSet& constraint_set) const
 
 HybridDenotableSet
 ReachabilityRestriction::
-definitely_feasible_projection(const HybridConstraintSet& constraint_set) const
+inner_intersection_with(const HybridConstraintSet& constraint_set) const
 {
 	HybridDenotableSet result;
 
 	for (HybridConstraintSet::const_iterator cons_it = constraint_set.begin(); cons_it != constraint_set.end(); ++cons_it) {
 		const DiscreteLocation& loc = cons_it->first;
-		ARIADNE_ASSERT_MSG(this->has_location(loc), "The constraint has location " << loc.name() << ", but the restriction does not.");
+		if (this->has_location(loc)) {
+			if (this->has_empty(loc)) {
+				result.insert(make_pair(loc,DenotableSetType(_grid.find(loc)->second)));
+			} else {
+				if (!this->has_discretised(loc))
+					_insert_domain_discretisation(loc);
 
-		if (this->has_empty(loc)) {
-			result.insert(make_pair(loc,DenotableSetType(_grid.find(loc)->second)));
-		} else {
-			if (!this->has_discretised(loc))
-				_insert_domain_discretisation(loc);
-
-			result.insert(make_pair(loc,definitely_covered_subset(_set[loc],cons_it->second)));
+				result.insert(make_pair(loc,Ariadne::inner_intersection(_set[loc],cons_it->second)));
+			}
 		}
 	}
 
@@ -429,25 +430,28 @@ definitely_feasible_projection(const HybridConstraintSet& constraint_set) const
 
 HybridDenotableSet
 ReachabilityRestriction::
-possibly_infeasible_projection(const HybridConstraintSet& constraint_set) const
+outer_difference_from(const HybridConstraintSet& constraint_set) const
 {
 	HybridDenotableSet result;
 
-	for (HybridConstraintSet::const_iterator cons_it = constraint_set.begin(); cons_it != constraint_set.end(); ++cons_it) {
-		const DiscreteLocation& loc = cons_it->first;
-		ARIADNE_ASSERT_MSG(this->has_location(loc), "The constraint has location " << loc.name() << ", but the restriction does not.");
+	HybridSpace space = _grid.state_space();
+
+	for (HybridGrid::const_iterator grid_it = _grid.begin(); grid_it != _grid.end(); ++grid_it) {
+		const DiscreteLocation& loc = grid_it->first;
 
 		if (this->has_empty(loc)) {
-			result.insert(make_pair(loc,DenotableSetType(_grid.find(loc)->second)));
+			result.insert(make_pair(loc,DenotableSetType(grid_it->second)));
 		} else {
 			if (!this->has_discretised(loc))
 				_insert_domain_discretisation(loc);
 
-			DenotableSetType definitely_covered = definitely_covered_subset(_set[loc],cons_it->second);
-			DenotableSetType possibly_infeasible = _set[loc];
-			possibly_infeasible.remove(definitely_covered);
-
-			result.insert(make_pair(loc,possibly_infeasible));
+			DenotableSetType local_result = _set[loc];
+			HybridConstraintSet::const_iterator cons_it = constraint_set.find(loc);
+		    if (cons_it != constraint_set.end()) {
+		    	DenotableSetType inner_intersection = Ariadne::inner_intersection(_set[loc],cons_it->second);
+		    	local_result.remove(inner_intersection);
+		    }
+			result.insert(make_pair(loc,local_result));
 		}
 	}
 
@@ -457,25 +461,28 @@ possibly_infeasible_projection(const HybridConstraintSet& constraint_set) const
 
 HybridDenotableSet
 ReachabilityRestriction::
-definitely_infeasible_projection(const HybridConstraintSet& constraint_set) const
+inner_difference_from(const HybridConstraintSet& constraint_set) const
 {
 	HybridDenotableSet result;
 
-	for (HybridConstraintSet::const_iterator cons_it = constraint_set.begin(); cons_it != constraint_set.end(); ++cons_it) {
-		const DiscreteLocation& loc = cons_it->first;
-		ARIADNE_ASSERT_MSG(this->has_location(loc), "The constraint has location " << loc.name() << ", but the restriction does not.");
+	HybridSpace space = _grid.state_space();
+
+	for (HybridGrid::const_iterator grid_it = _grid.begin(); grid_it != _grid.end(); ++grid_it) {
+		const DiscreteLocation& loc = grid_it->first;
 
 		if (this->has_empty(loc)) {
-			result.insert(make_pair(loc,DenotableSetType(_grid.find(loc)->second)));
+			result.insert(make_pair(loc,DenotableSetType(grid_it->second)));
 		} else {
 			if (!this->has_discretised(loc))
 				_insert_domain_discretisation(loc);
 
-			DenotableSetType possibly_overlapping = possibly_overlapping_subset(_set[loc],cons_it->second);
-			DenotableSetType definitely_infeasible = _set[loc];
-			definitely_infeasible.remove(possibly_overlapping);
-
-			result.insert(make_pair(loc,definitely_infeasible));
+			DenotableSetType local_result = _set[loc];
+			HybridConstraintSet::const_iterator cons_it = constraint_set.find(loc);
+		    if (cons_it != constraint_set.end()) {
+		    	DenotableSetType outer_intersection = Ariadne::outer_intersection(_set[loc],cons_it->second);
+		    	local_result.remove(outer_intersection);
+		    }
+			result.insert(make_pair(loc,local_result));
 		}
 	}
 
@@ -485,12 +492,12 @@ definitely_infeasible_projection(const HybridConstraintSet& constraint_set) cons
 
 HybridDenotableSet
 ReachabilityRestriction::
-possibly_feasible_projection(const HybridBoundedConstraintSet& constraint_set) const
+outer_intersection_with(const HybridBoundedConstraintSet& constraint_set) const
 {
     ReachabilityRestriction domain_restriction(constraint_set.domain(),_grid,_accuracy);
 
     HybridConstraintSet unbounded_constraint_set(constraint_set.functions(),constraint_set.codomain());
-    HybridDenotableSet result = domain_restriction.possibly_feasible_projection(unbounded_constraint_set);
+    HybridDenotableSet result = domain_restriction.outer_intersection_with(unbounded_constraint_set);
 
     this->apply_to(result);
 
@@ -500,12 +507,12 @@ possibly_feasible_projection(const HybridBoundedConstraintSet& constraint_set) c
 
 HybridDenotableSet
 ReachabilityRestriction::
-definitely_feasible_projection(const HybridBoundedConstraintSet& constraint_set) const
+inner_intersection_with(const HybridBoundedConstraintSet& constraint_set) const
 {
     ReachabilityRestriction domain_restriction(constraint_set.domain(),_grid,_accuracy);
 
     HybridConstraintSet unbounded_constraint_set(constraint_set.functions(),constraint_set.codomain());
-    HybridDenotableSet result = domain_restriction.definitely_feasible_projection(unbounded_constraint_set);
+    HybridDenotableSet result = domain_restriction.inner_intersection_with(unbounded_constraint_set);
     this->apply_to(result);
 
 	return result;
@@ -514,12 +521,12 @@ definitely_feasible_projection(const HybridBoundedConstraintSet& constraint_set)
 
 HybridDenotableSet
 ReachabilityRestriction::
-possibly_infeasible_projection(const HybridBoundedConstraintSet& constraint_set) const
+outer_difference_from(const HybridBoundedConstraintSet& constraint_set) const
 {
     ReachabilityRestriction domain_restriction(constraint_set.domain(),_grid,_accuracy);
 
     HybridConstraintSet unbounded_constraint_set(constraint_set.functions(),constraint_set.codomain());
-    HybridDenotableSet result = domain_restriction.possibly_infeasible_projection(unbounded_constraint_set);
+    HybridDenotableSet result = domain_restriction.outer_difference_from(unbounded_constraint_set);
     this->apply_to(result);
 
 	return result;
@@ -528,12 +535,12 @@ possibly_infeasible_projection(const HybridBoundedConstraintSet& constraint_set)
 
 HybridDenotableSet
 ReachabilityRestriction::
-definitely_infeasible_projection(const HybridBoundedConstraintSet& constraint_set) const
+inner_difference_from(const HybridBoundedConstraintSet& constraint_set) const
 {
     ReachabilityRestriction domain_restriction(constraint_set.domain(),_grid,_accuracy);
 
     HybridConstraintSet unbounded_constraint_set(constraint_set.functions(),constraint_set.codomain());
-    HybridDenotableSet result = domain_restriction.definitely_infeasible_projection(unbounded_constraint_set);
+    HybridDenotableSet result = domain_restriction.inner_difference_from(unbounded_constraint_set);
     this->apply_to(result);
 
 	return result;

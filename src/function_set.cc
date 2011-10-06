@@ -208,6 +208,11 @@ ConstraintSet::empty() const
 	return this->_codomain.empty();
 }
 
+bool
+ConstraintSet::unconstrained() const
+{
+	return this->_codomain.size() == 0;
+}
 
 tribool
 ConstraintSet::disjoint(const Box& bx) const
@@ -280,6 +285,12 @@ BoundedConstraintSet::empty() const
 		return true;
 
 	return indeterminate;
+}
+
+bool
+BoundedConstraintSet::unconstrained() const
+{
+	return this->_codomain.size() == 0;
 }
 
 

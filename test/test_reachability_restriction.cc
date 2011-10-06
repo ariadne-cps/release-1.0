@@ -497,106 +497,121 @@ TestReachabilityRestriction::test_projection() {
 
 	RealVariable x("x");
 	RealVariable y("y");
-	List<RealVariable> varlist;
-	varlist.append(x);
-	varlist.append(y);
+	RealVariable z("z");
+	List<RealVariable> varlist_q1, varlist_q2;
+	varlist_q1.append(x);
+	varlist_q1.append(y);
+	varlist_q2.append(x);
+	varlist_q2.append(y);
+	varlist_q2.append(z);
 
 	HybridSpace space;
 	space[q1] = 2;
 
-	ARIADNE_PRINT_TEST_CASE_TITLE("The set has no possibly feasible projection.");
+	ARIADNE_PRINT_TEST_CASE_TITLE("The set has no outer intersection with the constraint set.");
 
 	RealExpression expr1 = x;
 	List<RealExpression> consexpr1;
 	consexpr1.append(expr1);
-	VectorFunction cons_f1(consexpr1,varlist);
+	VectorFunction cons_f1(consexpr1,varlist_q1);
 	Box codomain1(1,2.5,4.0);
 	HybridConstraintSet constraint1(space,ConstraintSet(cons_f1,codomain1));
 
-	HybridDenotableSet possibly_feasible1 = rr1.possibly_feasible_projection(constraint1);
-	HybridDenotableSet definitely_feasible1 = rr1.definitely_feasible_projection(constraint1);
-	HybridDenotableSet possibly_infeasible1 = rr1.possibly_infeasible_projection(constraint1);
-	HybridDenotableSet definitely_infeasible1 = rr1.definitely_infeasible_projection(constraint1);
+	HybridDenotableSet outer_intersection1 = rr1.outer_intersection_with(constraint1);
+	HybridDenotableSet inner_intersection1 = rr1.inner_intersection_with(constraint1);
+	HybridDenotableSet outer_difference1 = rr1.outer_difference_from(constraint1);
+	HybridDenotableSet inner_difference1 = rr1.inner_difference_from(constraint1);
 
-	ARIADNE_TEST_ASSERT(possibly_feasible1.empty());
-	ARIADNE_TEST_ASSERT(definitely_feasible1.empty());
-	ARIADNE_TEST_ASSERT(!possibly_infeasible1.empty());
-	ARIADNE_TEST_ASSERT(!definitely_infeasible1.empty());
+	ARIADNE_TEST_ASSERT(outer_intersection1.empty());
+	ARIADNE_TEST_ASSERT(inner_intersection1.empty());
+	ARIADNE_TEST_ASSERT(!outer_difference1.empty());
+	ARIADNE_TEST_ASSERT(!inner_difference1.empty());
 
-    ARIADNE_PRINT_TEST_CASE_TITLE("The set has only a possibly feasible projection.");
+    ARIADNE_PRINT_TEST_CASE_TITLE("The denotable set has only an outer intersection with the constraint set.");
 
 	RealExpression expr2 = x;
 	List<RealExpression> consexpr2;
 	consexpr2.append(expr2);
-	VectorFunction cons_f2(consexpr2,varlist);
+	VectorFunction cons_f2(consexpr2,varlist_q1);
 	Box codomain2(1,0.5,1.0);
 
 	HybridConstraintSet constraint2(space,ConstraintSet(cons_f2,codomain2));
 
-	HybridDenotableSet possibly_feasible2 = rr1.possibly_feasible_projection(constraint2);
-	HybridDenotableSet definitely_feasible2 = rr1.definitely_feasible_projection(constraint2);
-	HybridDenotableSet possibly_infeasible2 = rr1.possibly_infeasible_projection(constraint2);
-	HybridDenotableSet definitely_infeasible2 = rr1.definitely_infeasible_projection(constraint2);
+	HybridDenotableSet outer_intersection2 = rr1.outer_intersection_with(constraint2);
+	HybridDenotableSet inner_intersection2 = rr1.inner_intersection_with(constraint2);
+	HybridDenotableSet outer_difference2 = rr1.outer_difference_from(constraint2);
+	HybridDenotableSet inner_difference2 = rr1.inner_difference_from(constraint2);
 
-	ARIADNE_TEST_ASSERT(!possibly_feasible2.empty());
-	ARIADNE_TEST_ASSERT(definitely_feasible2.empty());
-	ARIADNE_TEST_ASSERT(!possibly_infeasible2.empty());
-	ARIADNE_TEST_ASSERT(!definitely_infeasible2.empty());
+	ARIADNE_TEST_ASSERT(!outer_intersection2.empty());
+	ARIADNE_TEST_ASSERT(inner_intersection2.empty());
+	ARIADNE_TEST_ASSERT(!outer_difference2.empty());
+	ARIADNE_TEST_ASSERT(!inner_difference2.empty());
 
-    ARIADNE_PRINT_TEST_CASE_TITLE("The set has a definitely feasible projection.");
+    ARIADNE_PRINT_TEST_CASE_TITLE("The denotable set has inner intersection with the constraint set.");
 
 	ReachabilityRestriction rr3 = _get_reference_restriction();
     rr3.refine_at(4);
 
-	HybridDenotableSet possibly_feasible3 = rr3.possibly_feasible_projection(constraint2);
-	HybridDenotableSet definitely_feasible3 = rr3.definitely_feasible_projection(constraint2);
-	HybridDenotableSet possibly_infeasible3 = rr3.possibly_infeasible_projection(constraint2);
-	HybridDenotableSet definitely_infeasible3 = rr3.definitely_infeasible_projection(constraint2);
+	HybridDenotableSet outer_intersection3 = rr3.outer_intersection_with(constraint2);
+	HybridDenotableSet inner_intersection3 = rr3.inner_intersection_with(constraint2);
+	HybridDenotableSet outer_difference3 = rr3.outer_difference_from(constraint2);
+	HybridDenotableSet inner_difference3 = rr3.inner_difference_from(constraint2);
 
-	ARIADNE_TEST_ASSERT(!possibly_feasible3.empty());
-	ARIADNE_TEST_ASSERT(!definitely_feasible3.empty());
-	ARIADNE_TEST_ASSERT(!possibly_infeasible3.empty());
-	ARIADNE_TEST_ASSERT(!possibly_infeasible3.empty());
+	ARIADNE_TEST_ASSERT(!outer_intersection3.empty());
+	ARIADNE_TEST_ASSERT(!inner_intersection3.empty());
+	ARIADNE_TEST_ASSERT(!outer_difference3.empty());
+	ARIADNE_TEST_ASSERT(!outer_difference3.empty());
 
-    ARIADNE_TEST_ASSERT(!superset(definitely_feasible3.bounding_box(),possibly_feasible3.bounding_box()));
+    ARIADNE_TEST_ASSERT(!superset(inner_intersection3.bounding_box(),outer_intersection3.bounding_box()));
 
-    ARIADNE_PRINT_TEST_CASE_TITLE("The set has no definitely infeasible projection, but a possibly infeasible one.");
+    ARIADNE_PRINT_TEST_CASE_TITLE("The denotable set has no inner difference from the constraint set.");
 
-	RealExpression expr4 = x;
-	List<RealExpression> consexpr4;
-	consexpr4.append(expr4);
-	VectorFunction cons_f4(consexpr4,varlist);
-	Box codomain4(1,-1.0,1.0);
-	HybridConstraintSet constraint4(space,ConstraintSet(cons_f4,codomain4));
+	ReachabilityRestriction rr4 = _get_reference_restriction();
+    rr4.refine_at(4);
 
-	HybridDenotableSet possibly_feasible4 = rr3.possibly_feasible_projection(constraint4);
-	HybridDenotableSet definitely_feasible4 = rr3.definitely_feasible_projection(constraint4);
-	HybridDenotableSet possibly_infeasible4 = rr3.possibly_infeasible_projection(constraint4);
-	HybridDenotableSet definitely_infeasible4 = rr3.definitely_infeasible_projection(constraint4);
+    HybridSpace space4 = rr4.space();
 
-	ARIADNE_TEST_ASSERT(!possibly_feasible4.empty());
-	ARIADNE_TEST_ASSERT(!definitely_feasible4.empty());
-	ARIADNE_TEST_ASSERT(!possibly_infeasible4.empty());
-	ARIADNE_TEST_ASSERT(definitely_infeasible4.empty());
+	RealExpression expr4_x = x;
+	RealExpression expr4_y = y;
+	RealExpression expr4_z = z;
+	List<RealExpression> consexpr_q1_4, consexpr_q2_4;
+	consexpr_q1_4.append(expr4_x);
+	consexpr_q1_4.append(expr4_y);
+	consexpr_q2_4.append(expr4_x);
+	consexpr_q2_4.append(expr4_y);
+	consexpr_q2_4.append(expr4_z);
+	VectorFunction cons_q1_f4(consexpr_q1_4,varlist_q1);
+	VectorFunction cons_q2_f4(consexpr_q2_4,varlist_q2);
+	Box codomain_q1_4(2,-1.1,1.1,-2.1,3.1);
+	Box codomain_q2_4(3,0.4,2.1,-1.1,0.1,0.9,1.6);
+	HybridConstraintSet constraint4;
+	constraint4[q1] = ConstraintSet(cons_q1_f4,codomain_q1_4);
+	constraint4[q2] = ConstraintSet(cons_q2_f4,codomain_q2_4);
 
-    ARIADNE_PRINT_TEST_CASE_TITLE("The set has definitely no infeasible projection.");
+	HybridDenotableSet outer_intersection4 = rr4.outer_intersection_with(constraint4);
+	HybridDenotableSet inner_intersection4 = rr4.inner_intersection_with(constraint4);
+	HybridDenotableSet outer_difference4 = rr4.outer_difference_from(constraint4);
+	HybridDenotableSet inner_difference4 = rr4.inner_difference_from(constraint4);
 
-	RealExpression expr5 = x;
-	List<RealExpression> consexpr5;
-	consexpr5.append(expr5);
-	VectorFunction cons_f5(consexpr5,varlist);
-	Box codomain5(1,-1.5,1.5);
-	HybridConstraintSet constraint5(space,ConstraintSet(cons_f5,codomain5));
+	ARIADNE_TEST_ASSERT(!outer_intersection4.empty());
+	ARIADNE_TEST_ASSERT(!inner_intersection4.empty());
+	ARIADNE_TEST_ASSERT(!outer_difference4.empty());
+	ARIADNE_TEST_ASSERT(inner_difference4.empty());
 
-	HybridDenotableSet possibly_feasible5 = rr3.possibly_feasible_projection(constraint5);
-	HybridDenotableSet definitely_feasible5 = rr3.definitely_feasible_projection(constraint5);
-	HybridDenotableSet possibly_infeasible5 = rr3.possibly_infeasible_projection(constraint5);
-	HybridDenotableSet definitely_infeasible5 = rr3.definitely_infeasible_projection(constraint5);
+    ARIADNE_PRINT_TEST_CASE_TITLE("The denotable set has no outer difference from the constraint set.");
 
-	ARIADNE_TEST_ASSERT(!possibly_feasible5.empty());
-	ARIADNE_TEST_ASSERT(!definitely_feasible5.empty());
-	ARIADNE_TEST_ASSERT(possibly_infeasible5.empty());
-	ARIADNE_TEST_ASSERT(definitely_infeasible5.empty());
+	ReachabilityRestriction rr5 = _get_reference_restriction();
+    rr5.refine_at(5);
+
+	HybridDenotableSet outer_intersection5 = rr5.outer_intersection_with(constraint4);
+	HybridDenotableSet inner_intersection5 = rr5.inner_intersection_with(constraint4);
+	HybridDenotableSet outer_difference5 = rr5.outer_difference_from(constraint4);
+	HybridDenotableSet inner_difference5 = rr5.inner_difference_from(constraint4);
+
+	ARIADNE_TEST_ASSERT(!outer_intersection5.empty());
+	ARIADNE_TEST_ASSERT(!inner_intersection5.empty());
+	ARIADNE_TEST_ASSERT(outer_difference5.empty());
+	ARIADNE_TEST_ASSERT(inner_difference5.empty());
 }
 
 int main() {

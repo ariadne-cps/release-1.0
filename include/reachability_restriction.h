@@ -135,43 +135,35 @@ class ReachabilityRestriction
 
     //@{
 
-	//! \name Feasibility projection for bounded constraint sets.
+	//! \name Set intersection and difference for constraint sets.
 
-	//! \brief Computes the subset that is possibly feasible in respect to \a constraint_set.
-	//! \details The result is given as the projection on the \a constraint_set subspace.
-	HybridDenotableSet possibly_feasible_projection(const HybridConstraintSet& constraint_set) const;
+	//! \brief An outer approximation of the intersection with \a constraint_set.
+	HybridDenotableSet outer_intersection_with(const HybridConstraintSet& constraint_set) const;
 
-	//! \brief Computes the subset that is definitely feasible in respect to \a constraint_set.
-	//! \details The result is given as the projection on the \a constraint_set subspace.
-	HybridDenotableSet definitely_feasible_projection(const HybridConstraintSet& constraint_set) const;
+	//! \brief An inner approximation of the intersection with \a constraint_set.
+	HybridDenotableSet inner_intersection_with(const HybridConstraintSet& constraint_set) const;
 
-	//! \brief Computes the subset that is possibly infeasible in respect to \a constraint_set.
-	//! \details The result is given as the projection on the \a constraint_set subspace.
-	HybridDenotableSet possibly_infeasible_projection(const HybridConstraintSet& constraint_set) const;
+	//! \brief An outer approximation of the difference from \a constraint_set.
+	HybridDenotableSet outer_difference_from(const HybridConstraintSet& constraint_set) const;
 
-	//! \brief Computes the subset that is definitely infeasible in respect to \a constraint_set.
-	//! \details The result is given as the projection on the \a constraint_set subspace.
-	HybridDenotableSet definitely_infeasible_projection(const HybridConstraintSet& constraint_set) const;
+	//! \brief An inner approximation of the difference from \a constraint_set.
+	HybridDenotableSet inner_difference_from(const HybridConstraintSet& constraint_set) const;
 
 	//@{
 
 	//! \name Feasibility projection for bounded constraint sets.
 
-	//! \brief Computes the subset that is possibly feasible in respect to \a constraint_set.
-	//! \details The result is given as the projection on the \a constraint_set subspace.
-	HybridDenotableSet possibly_feasible_projection(const HybridBoundedConstraintSet& constraint_set) const;
+	//! \brief An outer approximation of the intersection with \a constraint_set.
+	HybridDenotableSet outer_intersection_with(const HybridBoundedConstraintSet& constraint_set) const;
 
-	//! \brief Computes the subset that is definitely feasible in respect to \a constraint_set.
-	//! \details The result is given as the projection on the \a constraint_set subspace.
-	HybridDenotableSet definitely_feasible_projection(const HybridBoundedConstraintSet& constraint_set) const;
+	//! \brief An inner approximation of the intersection with \a constraint_set.
+	HybridDenotableSet inner_intersection_with(const HybridBoundedConstraintSet& constraint_set) const;
 
-	//! \brief Computes the subset that is possibly infeasible in respect to \a constraint_set.
-	//! \details The result is given as the projection on the \a constraint_set subspace.
-	HybridDenotableSet possibly_infeasible_projection(const HybridBoundedConstraintSet& constraint_set) const;
+	//! \brief An outer approximation of the difference from \a constraint_set.
+	HybridDenotableSet outer_difference_from(const HybridBoundedConstraintSet& constraint_set) const;
 
-	//! \brief Computes the subset that is definitely infeasible in respect to \a constraint_set.
-	//! \details The result is given as the projection on the \a constraint_set subspace.
-	HybridDenotableSet definitely_infeasible_projection(const HybridBoundedConstraintSet& constraint_set) const;
+	//! \brief An inner approximation of the difference from \a constraint_set.
+	HybridDenotableSet inner_difference_from(const HybridBoundedConstraintSet& constraint_set) const;
 
 	//@}
 

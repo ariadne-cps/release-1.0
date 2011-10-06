@@ -125,8 +125,10 @@ class ConstraintSet
     bool operator==(const ConstraintSet& cons_set) const {
         return this->_codomain==cons_set._codomain && this->_function.pointer()==cons_set._function.pointer(); }
 
-    //! \brief Checks emptiness of the set, possibly iff the codomain is empty.
+    //! \brief Check emptiness of the set.
     bool empty() const;
+    //! \brief Check if the constraint set is not constrained, i.e. represents the full argument space.
+    bool unconstrained() const;
 
     ConstraintSet* clone() const;
     uint dimension() const;
@@ -174,8 +176,10 @@ class BoundedConstraintSet
 	uint dimension() const;
     Box bounding_box() const;
 
-    //! \brief Checks emptiness of the set.
+    //! \brief Check emptiness of the set.
     tribool empty() const;
+    //! \brief Check whether no actual constraint is present and the set is represented by the domain only.
+    bool unconstrained() const;
 
 	tribool disjoint(const Box&) const;
 	tribool overlaps(const Box&) const;

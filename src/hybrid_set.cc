@@ -315,36 +315,80 @@ tribool covers(const HybridConstraintSet& cons_set, const HybridDenotableSet& gr
 }
 
 
-HybridDenotableSet possibly_overlapping_subset(const HybridDenotableSet& hds_set, const HybridConstraintSet& cons_set)
+HybridDenotableSet outer_intersection(const HybridDenotableSet& hds_set, const HybridConstraintSet& cons_set)
 {
-	ARIADNE_ASSERT_MSG(cons_set.space() == hds_set.space(), "The denotable set and constraint set have mismatched spaces.");
+	HybridDenotableSet result;
 
-	HybridDenotableSet result(hds_set.grid());
-
-    for (HybridDenotableSet::locations_const_iterator gts_it = hds_set.locations_begin(); gts_it != hds_set.locations_end(); ++gts_it) {
-    	HybridConstraintSet::locations_const_iterator cs_it = cons_set.find(gts_it->first);
-
-    	result[gts_it->first] = possibly_overlapping_subset(gts_it->second,cs_it->second);
+    for (HybridDenotableSet::locations_const_iterator hds_it = hds_set.locations_begin(); hds_it != hds_set.locations_end(); ++hds_it) {
+    	HybridConstraintSet::locations_const_iterator cs_it = cons_set.find(hds_it->first);
+    	if (cs_it != cons_set.locations_end())
+    		result.insert(make_pair(hds_it->first,outer_intersection(hds_it->second,cs_it->second)));
     }
 
 	return result;
 }
 
 
-HybridDenotableSet definitely_covered_subset(const HybridDenotableSet& hds_set, const HybridConstraintSet& cons_set)
+HybridDenotableSet inner_intersection(const HybridDenotableSet& hds_set, const HybridConstraintSet& cons_set)
 {
-	ARIADNE_ASSERT_MSG(cons_set.space() == hds_set.space(), "The denotable set and constraint set have mismatched spaces.");
+	HybridDenotableSet result;
 
-	HybridDenotableSet result(hds_set.grid());
-
-    for (HybridDenotableSet::locations_const_iterator gts_it = hds_set.locations_begin(); gts_it != hds_set.locations_end(); ++gts_it) {
-    	HybridConstraintSet::locations_const_iterator cs_it = cons_set.find(gts_it->first);
+    for (HybridDenotableSet::locations_const_iterator hds_it = hds_set.locations_begin(); hds_it != hds_set.locations_end(); ++hds_it) {
+    	HybridConstraintSet::locations_const_iterator cs_it = cons_set.find(hds_it->first);
     	if (cs_it != cons_set.locations_end())
-    		result[gts_it->first] = definitely_covered_subset(gts_it->second,cs_it->second);
-    	else
-    		result[gts_it->first] = gts_it->second;
+    		result.insert(make_pair(hds_it->first,inner_intersection(hds_it->second,cs_it->second)));
     }
 
+	return result;
+}
+
+
+HybridDenotableSet outer_difference(const HybridDenotableSet& hd_set, const HybridConstraintSet& cons_set)
+{
+	HybridDenotableSet result;
+
+	for (HybridDenotableSet::locations_const_iterator hds_it = hd_set.locations_begin();
+			hds_it != hd_set.locations_end(); ++hds_it) {
+		const DiscreteLocation& loc = hds_it->first;
+		const DenotableSetType& ds = hds_it->second;
+
+		if (ds.empty()) {
+			result.insert(*hds_it);
+		} else {
+			DenotableSetType local_result = ds;
+			HybridConstraintSet::const_iterator cons_it = cons_set.find(loc);
+		    if (cons_it != cons_set.end()) {
+		    	DenotableSetType inner_intersection = Ariadne::inner_intersection(ds,cons_it->second);
+		    	local_result.remove(inner_intersection);
+		    }
+			result.insert(make_pair(loc,local_result));
+		}
+	}
+	return result;
+}
+
+
+HybridDenotableSet inner_difference(const HybridDenotableSet& hd_set, const HybridConstraintSet& cons_set)
+{
+	HybridDenotableSet result;
+
+	for (HybridDenotableSet::locations_const_iterator hds_it = hd_set.locations_begin();
+			hds_it != hd_set.locations_end(); ++hds_it) {
+		const DiscreteLocation& loc = hds_it->first;
+		const DenotableSetType& ds = hds_it->second;
+
+		if (ds.empty()) {
+			result.insert(*hds_it);
+		} else {
+			DenotableSetType local_result = ds;
+			HybridConstraintSet::const_iterator cons_it = cons_set.find(loc);
+		    if (cons_it != cons_set.end()) {
+		    	DenotableSetType outer_intersection = Ariadne::outer_intersection(ds,cons_it->second);
+		    	local_result.remove(outer_intersection);
+		    }
+			result.insert(make_pair(loc,local_result));
+		}
+	}
 	return result;
 }
 

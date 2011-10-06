@@ -337,7 +337,7 @@ upper_reach_evolve(
     ARIADNE_LOG(3,"time_steps="<<time_steps<<"  lock_to_grid_time="<<lock_to_grid_time);
 
     ARIADNE_LOG(3,"Computing initial evolution...");
-    HDS initial = _restriction->possibly_feasible_projection(initial_set);
+    HDS initial = _restriction->outer_intersection_with(initial_set);
     ARIADNE_LOG(4,"initial.size()="<<initial.size());
 
     const EvolverPtrType& evolver = _get_tuned_evolver(*_system,EVOLVER_TAB_OFFSET,UPPER_SEMANTICS);
@@ -380,7 +380,7 @@ outer_chain_reach(
 		const HybridBoundedConstraintSet& initial_set,
 		ContinuousEvolutionDirection direction) const
 {
-	SetApproximationType initial = _restriction->possibly_feasible_projection(initial_set);
+	SetApproximationType initial = _restriction->outer_intersection_with(initial_set);
 
 	return outer_chain_reach(initial,direction);
 }
@@ -571,9 +571,7 @@ _lower_chain_reach_and_epsilon_constraint_check(
 {
 	ARIADNE_LOG(3,"Checking constraint satisfaction...");
 
-	HDS definitely_infeasible_reach = reach;
-	HDS possibly_feasible_reach = possibly_overlapping_subset(reach,_settings->constraint_set);
-	definitely_infeasible_reach.remove(possibly_feasible_reach);
+	HDS definitely_infeasible_reach = inner_difference(reach,_settings->constraint_set);
 
 	// It is not necessary to check for eps-infeasible cells if no definitely infeasible cells are present
 	if (!definitely_infeasible_reach.empty()) {
@@ -586,7 +584,7 @@ _lower_chain_reach_and_epsilon_constraint_check(
 				proj_space[loc_it->first] = loc_it->second.dimension();
 		}
 
-		if (_has_definitely_infeasible_subset(reach,epsilon,proj_space)) {
+		if (_has_eps_definitely_infeasible_subset(reach,epsilon,proj_space)) {
 			throw ReachUnsatisfiesConstraintException("The lower reached region partially does not satisfy the constraint.");
 		} else {
 			ARIADNE_LOG(3,"The reached set satisfies the constraint when epsilon is considered.");
@@ -600,7 +598,7 @@ _lower_chain_reach_and_epsilon_constraint_check(
 
 bool
 HybridReachabilityAnalyser::
-_has_definitely_infeasible_subset(
+_has_eps_definitely_infeasible_subset(
 		const HybridDenotableSet& reach,
 		const HybridFloatVector& eps,
 		const HybridSpace& space) const
@@ -625,15 +623,15 @@ _has_definitely_infeasible_subset(
 
 	// On the projection, get the eps-enlarged constraint: this is given by the eps-enlarged codomain corresponding
 	// to the image of the eps-enlarged possibly feasible set
-	HybridDenotableSet proj_possibly_feasible = _restriction->possibly_feasible_projection(proj_constraint_set);
+
+	HybridDenotableSet proj_possibly_feasible = _restriction->outer_intersection_with(proj_constraint_set);
+
 	HybridVectorFunction proj_constraint_functions = proj_constraint_set.functions();
 	HybridBoxes proj_eps_constraint_codomain = eps_codomain(proj_possibly_feasible, proj_eps, proj_constraint_functions);
 	HybridConstraintSet proj_eps_constraint(proj_constraint_functions,proj_eps_constraint_codomain);
+	HybridDenotableSet eps_definitely_infeasible_proj_reach = inner_difference(proj_reach,proj_eps_constraint);
 
-	HybridDenotableSet proj_eps_possibly_feasible_reach = possibly_overlapping_subset(proj_reach,proj_eps_constraint);
-	proj_reach.remove(proj_eps_possibly_feasible_reach);
-
-	return !proj_reach.empty();
+	return !eps_definitely_infeasible_proj_reach.empty();
 }
 
 
@@ -1243,7 +1241,7 @@ _enclosures_from_discretised_initial_set_midpoints(const HybridBoundedConstraint
 {
 	list<EnclosureType> result;
 
-	HybridDenotableSet discretised_initial_set = _restriction->possibly_feasible_projection(initial_set);
+	HybridDenotableSet discretised_initial_set = _restriction->outer_intersection_with(initial_set);
 
 	for(HybridDenotableSet::const_iterator cell_it=discretised_initial_set.begin();
 		 cell_it!=discretised_initial_set.end(); ++cell_it) {
@@ -1255,12 +1253,8 @@ _enclosures_from_discretised_initial_set_midpoints(const HybridBoundedConstraint
 		Box cell_domain_intersection = intersection(cell_bx,loc_initial_set.domain());
 		Box midpoint_box(cell_domain_intersection.centre());
 
-		tribool disjoint = loc_initial_set.disjoint(midpoint_box);
-
-		if ((loc_initial_set.codomain().empty() && possibly(!disjoint)) ||
-			(!loc_initial_set.codomain().empty() && definitely(!disjoint))) {
+		if (loc_initial_set.unconstrained() || definitely(loc_initial_set.covers(midpoint_box)))
 			result.push_back(EnclosureType(loc,ContinuousEnclosureType(midpoint_box)));
-		}
 	}
 
 	return result;

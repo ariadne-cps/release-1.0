@@ -2387,10 +2387,10 @@ tribool overlaps(const ConstraintSet& cons_set, const GridTreeSet& grid_set);
 //! \brief Whether \a cons_set covers \a grid_set.
 tribool covers(const ConstraintSet& cons_set, const GridTreeSet& grid_set);
 
-//! \brief Evaluates \a grid_set on \a cons_set in order to obtain (a superset of) the overlapping subset.
-GridTreeSet possibly_overlapping_subset(const GridTreeSet& grid_set, const ConstraintSet& cons_set);
-//! \brief Applies \a cons_set to \a grid_set in order to obtain the definitely covered subset.
-GridTreeSet definitely_covered_subset(const GridTreeSet& grid_set, const ConstraintSet& cons_set);
+//! \brief Get an outer approximation of the intersection of \a grid_set with \a cons_set.
+GridTreeSet outer_intersection(const GridTreeSet& grid_set, const ConstraintSet& cons_set);
+//! \brief Get an inner approximation of the intersection of \a grid_set with \a cons_set.
+GridTreeSet inner_intersection(const GridTreeSet& grid_set, const ConstraintSet& cons_set);
 
 //! \brief Projects \a cell using the given \a indices and with the \a projected_grid.
 //! \details No check is performed as to the consistency of the arguments.
