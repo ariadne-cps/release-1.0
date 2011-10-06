@@ -830,44 +830,10 @@ Box _unchecked_project_down(const Box& original_box, const Vector<uint>& indices
 }
 
 
-// Function that computes the new height and root cell coordinates after projecting down
-// WARNING: the procedure does not check if the set of indices is consistent.
-void _project_height_and_coordinates(const Box& old_root_cell, const Vector<uint>& indices, 
-                                const Grid& new_grid, uint& new_height, array<int>& new_coordinates) 
-{
-    // std::cout << "_project_height_and_coordinates(" << old_root_cell << ", " 
-    //           << indices << ", " << new_grid << ", " << new_height << ", " 
-    //           << new_coordinates << ")" << std::endl;
-    // project down the root_cell
-    Box new_root_cell = _unchecked_project_down(old_root_cell, indices);
-    // std::cout << "new_root_cell = " << new_root_cell << std::endl;
-    // get the widths of the root_cell
-    Vector<Float> new_lengths = new_root_cell.widths();
-    // std::cout << "new_lengths = " << new_lengths << std::endl;    
-    // start from height zero, and increase it until the grid cell covers new_lengths 
-    uint dim = new_grid.dimension();
-    Grid root_grid = new_grid;
-    for(new_height = 0; root_grid.lengths() != new_lengths; ++new_height) {
-        // determine which dimension to merge 
-        uint i = _merging_coordinate(new_height, dim);
-        // if the occurrence of the merge is even, shift the origin
-        if((new_height / dim) % 2 == 1) {
-            root_grid.set_origin_coordinate(i, root_grid.origin()[i]-root_grid.lengths()[i]);
-        }
-        root_grid.set_length(i, 2.0*root_grid.lengths()[i]);        
-        // std::cout << "height = " << new_height << ", grid = " << root_grid << std::endl;
-    }
-    // compute the new root cell coordinates
-    new_coordinates = array<int>(dim);
-    for(uint i=0; i < dim; ++i) {
-        new_coordinates[i] = root_grid.subdivision_lower_index(i, new_root_cell[i].midpoint());
-    }        
-    // std::cout << "new_coordinates = " << new_coordinates << std::endl;
-}
-
 // Function that returns the new mince_depth after projecting down to indices
 // WARNING: the procedure does not check if the set of indices is consistent.
 int _project_mince_depth(const int old_mince_depth, uint old_dim, const Vector<uint>& indices) {
+    // std::cout << "_project_mince_depth(" << old_mince_depth << ", " << old_dim << ", " << indices << ")" << std::endl;
     // the original set was not minced
     if(old_mince_depth == -1) return -1;
     // if the original set was minced, compute the new mince_depth
@@ -945,7 +911,7 @@ bdd _project_down_variables(const bdd& old_bdd, uint old_dim,
             keep[indices[i]] = true;
             // add the correct pairs for the renaming
             int l = 0;
-            for(int k = 0; indices[i] + k <= lastvar ; k += old_dim, l += new_dim) {
+            for(int k = 0; (int)indices[i] + k <= lastvar ; k += old_dim, l += new_dim) {
                 // std::cout << "adding the pair (" << indices[i] + k 
                 //           << ", " << i + l << ")" << std::endl;
                 ARIADNE_ASSERT_MSG(bdd_setpair(renPairs, indices[i] + k, i + l) == 0,
@@ -956,7 +922,7 @@ bdd _project_down_variables(const bdd& old_bdd, uint old_dim,
             // the variable indices[i] is duplicated in indices
             // add the pairs for the renaming and duplicate the var in the bdd
             uint l = 0;
-            for(int k = 0; indices[i] + k <= lastvar ; k += old_dim, l += new_dim) {
+            for(int k = 0; (int)indices[i] + k <= lastvar ; k += old_dim, l += new_dim) {
                 // duplicate variable x = indices[i] + k with variable y = freevar
                 // this is done by adding the following term to the BDD:
                 // (FORALL (x..x_max).old_bdd) OR (x <=> y)
@@ -976,7 +942,7 @@ bdd _project_down_variables(const bdd& old_bdd, uint old_dim,
     }   // for(uint i = 0; i != indices.size(), ++i)  
     // std::cout << "duplicate = " << duplicate << std::endl;
     // scan keep to obtain which variable must be deleted
-    for(uint i = 0; i != keep.size(); ++i) {
+    for(int i = 0; i < keep.size(); ++i) {
         // if the dimension i must be removed, add all corresponding variables to remove
         if(!keep[i]) {
             for(int k = 0; i + k <= lastvar ; k += old_dim) {
@@ -1856,8 +1822,10 @@ BDDTreeSet inner_intersection(const BDDTreeSet& bdd_set, const ConstraintSet& co
 // }
 
 BDDTreeSet project_down(const BDDTreeSet& bdd_set, const Vector<uint>& indices) {
+    // std::cout << "project_down(" << bdd_set << ", " << indices << ")" << std::endl;
     // project down the grid
     Grid new_grid = project_down(bdd_set.grid(), indices);
+    // std::cout << "new_grid = " << new_grid << std::endl;
     // To simplify the procedure, increase the height of the bdd_set so that the first splitting coordinate is 0
     BDDTreeSet set = bdd_set;
     uint height = set.root_cell_height();
@@ -1866,11 +1834,15 @@ BDDTreeSet project_down(const BDDTreeSet& bdd_set, const Vector<uint>& indices) 
     if(split > 0) {
         set.increase_height(height + split);
     }
+    // std::cout << "height = " << set.root_cell_height() << std::endl;
     ARIADNE_ASSERT(_splitting_coordinate(set.root_cell_height(), set.dimension()) == 0);
     // compute the new height and root cell coordinates
-    uint new_height = 0;
+    uint new_height = (set.root_cell_height() / old_dim) * indices.size();
     array<int> new_coordinates(new_grid.dimension(), 0);
-    _project_height_and_coordinates(set.root_cell(), indices, new_grid, new_height, new_coordinates);
+    array<int> old_coordinates = bdd_set.root_cell_coordinates();
+    for(uint i = 0; i != indices.size(); ++i) {
+        new_coordinates[i] = old_coordinates[indices[i]];
+    }
     // compute the new mince depth
     uint new_mince_depth = _project_mince_depth(set.mince_depth(), old_dim, indices);
     // remove, duplicate and rename variables

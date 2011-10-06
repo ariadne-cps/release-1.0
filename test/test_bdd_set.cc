@@ -839,7 +839,7 @@ void test_projection() {
     ARIADNE_TEST_FAIL(set2 = project_down(set1, indices));
     // test projection of a real set.
     bdd enabled_cells = bdd_nithvar(0) & (bdd_ithvar(2) | bdd_ithvar(5));
-    set1 = BDDTreeSet(Grid(3), 3, array<int>(3, 1,0,1), enabled_cells);
+    set1 = BDDTreeSet(Grid(3), 3, array<int>(3, 1,0,-1), enabled_cells);
     std::cout << "Set1 = ";
     for(BDDTreeSet::const_iterator it = set1.begin(); it != set1.end(); it++) {
         std::cout << *it << ", ";
@@ -946,6 +946,42 @@ void test_projection() {
 
     ARIADNE_TEST_EQUAL(set2, set3);
     
+    // Test Luca's bug
+    indices = Vector<uint>(1);
+    indices[0] = 0;
+    Grid grid(2);
+    grid.set_length(0, 0.624);
+    grid.set_length(1, 1.2);
+    array<int> coordinates(2, 1,0);
+    enabled_cells = bdd_nithvar(1) & ( (bdd_biimp(bdd_nithvar(0), bdd_ithvar(2)) & bdd_biimp(bdd_nithvar(3), bdd_ithvar(5)))
+                        | (bdd_ithvar(0) & bdd_ithvar(2) & bdd_nithvar(3) & bdd_nithvar(4) & bdd_ithvar(5)) );
+    set1 = BDDTreeSet(grid, 6, coordinates, enabled_cells);
+    std::cout << "Set1 = " << set1 << std::endl;
+    std::cout << "Set1 = ";
+    for(BDDTreeSet::const_iterator it = set1.begin(); it != set1.end(); it++) {
+        std::cout << *it << ", ";
+    }
+    
+    set2 = project_down(set1, indices);
+    std::cout << "Set2 = ";
+    for(BDDTreeSet::const_iterator it = set2.begin(); it != set2.end(); it++) {
+        std::cout << *it << ", ";
+    }
+    std::cout << std::endl;
+    
+    set3 = BDDTreeSet(Grid(1, 0.624), false);
+    for(BDDTreeSet::const_iterator it = set1.begin(); it != set1.end(); it++) {
+        Box bx = it->project(indices);
+        set3.adjoin_lower_approximation(bx, 2);
+    }
+    std::cout << "Set3 = ";
+    for(BDDTreeSet::const_iterator it = set3.begin(); it != set3.end(); it++) {
+        std::cout << *it << ", ";
+    }
+    std::cout << std::endl;
+
+    ARIADNE_TEST_EQUAL(set2, set3);
+
 }
 
 void test_restriction() {
