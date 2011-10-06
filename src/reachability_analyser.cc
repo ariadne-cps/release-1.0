@@ -485,6 +485,57 @@ _outer_chain_reach_splitted(
 
 std::pair<HybridDenotableSet,HybridFloatVector>
 HybridReachabilityAnalyser::
+lower_chain_reach_and_epsilon(const HybridBoundedConstraintSet& initial_set) const
+{
+	HybridGrid grid = _grid();
+	SetApproximationType reach(grid);
+	HybridSpace state_space = _system->state_space();
+
+    ARIADNE_LOG(1,"Performing lower chain reach with epsilon...");
+
+	HybridFloatVector epsilon;
+	for (HybridSpace::const_iterator hs_it = state_space.begin(); hs_it != state_space.end(); ++hs_it)
+		epsilon.insert(std::pair<DiscreteLocation,Vector<Float> >(hs_it->first,Vector<Float>(hs_it->second)));
+
+	RealParameterSet original_parameters = _system->nonsingleton_parameters();
+
+	ARIADNE_LOG(2,"Splitting the nonsingleton nonlocked parameter set...");
+
+	std::list<RealParameterSet> split_parameter_set_list = _getSplitParameterSetList();
+	std::list<RealParameterSet> split_midpoint_set_list = getMidpointsSet(split_parameter_set_list);
+
+	try {
+
+		uint i = 0;
+		for (std::list<RealParameterSet>::const_iterator set_it = split_midpoint_set_list.begin();
+														set_it != split_midpoint_set_list.end();
+														++set_it) {
+			ARIADNE_LOG(1,"Split parameters set #" << ++i << "/" << split_midpoint_set_list.size() << " : " << *set_it);
+
+			_system->substitute_all(*set_it);
+
+			SetApproximationType local_reach(grid);
+			HybridFloatVector local_epsilon;
+			make_lpair<SetApproximationType,HybridFloatVector>(local_reach,local_epsilon) =
+					_lower_chain_reach_and_epsilon(*_system,initial_set);
+
+			reach.adjoin(local_reach);
+			epsilon = max_elementwise(epsilon,local_epsilon);
+		}
+
+	} catch (ReachUnsatisfiesConstraintException& ex) {
+		_system->substitute_all(original_parameters);
+		throw ex;
+	}
+
+    _system->substitute_all(original_parameters);
+
+	return std::pair<SetApproximationType,HybridFloatVector>(reach,epsilon);
+}
+
+
+std::pair<HybridDenotableSet,HybridFloatVector>
+HybridReachabilityAnalyser::
 _lower_chain_reach_and_epsilon(
 		const SystemType& system,
 		const HybridBoundedConstraintSet& initial_set) const
@@ -630,7 +681,7 @@ _has_eps_definitely_infeasible_subset(
 	HybridBoxes proj_eps_constraint_codomain = eps_codomain(proj_possibly_feasible, proj_eps, proj_constraint_functions);
 	HybridConstraintSet proj_eps_constraint(proj_constraint_functions,proj_eps_constraint_codomain);
 	HybridDenotableSet eps_definitely_infeasible_proj_reach = inner_difference(proj_reach,proj_eps_constraint);
-
+	
 	return !eps_definitely_infeasible_proj_reach.empty();
 }
 
@@ -662,56 +713,6 @@ _filter_enclosures(
 	}
 }
 
-
-std::pair<HybridDenotableSet,HybridFloatVector>
-HybridReachabilityAnalyser::
-lower_chain_reach_and_epsilon(const HybridBoundedConstraintSet& initial_set) const
-{
-	HybridGrid grid = _grid();
-	SetApproximationType reach(grid);
-	HybridSpace state_space = _system->state_space();
-
-    ARIADNE_LOG(1,"Performing lower chain reach with epsilon...");
-
-	HybridFloatVector epsilon;
-	for (HybridSpace::const_iterator hs_it = state_space.begin(); hs_it != state_space.end(); ++hs_it)
-		epsilon.insert(std::pair<DiscreteLocation,Vector<Float> >(hs_it->first,Vector<Float>(hs_it->second)));
-
-	RealParameterSet original_parameters = _system->nonsingleton_parameters();
-
-	ARIADNE_LOG(2,"Splitting the nonsingleton nonlocked parameter set...");
-
-	std::list<RealParameterSet> split_parameter_set_list = _getSplitParameterSetList();
-	std::list<RealParameterSet> split_midpoint_set_list = getMidpointsSet(split_parameter_set_list);
-
-	try {
-
-		uint i = 0;
-		for (std::list<RealParameterSet>::const_iterator set_it = split_midpoint_set_list.begin();
-														set_it != split_midpoint_set_list.end();
-														++set_it) {
-			ARIADNE_LOG(1,"Split parameters set #" << ++i << "/" << split_midpoint_set_list.size() << " : " << *set_it);
-
-			_system->substitute_all(*set_it);
-
-			SetApproximationType local_reach(grid);
-			HybridFloatVector local_epsilon;
-			make_lpair<SetApproximationType,HybridFloatVector>(local_reach,local_epsilon) =
-					_lower_chain_reach_and_epsilon(*_system,initial_set);
-
-			reach.adjoin(local_reach);
-			epsilon = max_elementwise(epsilon,local_epsilon);
-		}
-
-	} catch (ReachUnsatisfiesConstraintException& ex) {
-		_system->substitute_all(original_parameters);
-		throw ex;
-	}
-
-    _system->substitute_all(original_parameters);
-
-	return std::pair<SetApproximationType,HybridFloatVector>(reach,epsilon);
-}
 
 
 std::list<RealParameterSet>

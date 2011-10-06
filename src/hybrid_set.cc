@@ -428,9 +428,8 @@ DenotableSetType flatten_and_project_down(const HybridDenotableSet& grid_set, co
 	DenotableSetType result(projected_grid);
 
 	for (HybridDenotableSet::locations_const_iterator gts_it = grid_set.locations_begin();
-			gts_it != grid_set.locations_end(); ++gts_it) {
+			gts_it != grid_set.locations_end(); ++gts_it)
 		result.adjoin(project_down(gts_it->second,indices));
-	}
 
 	return result;
 }

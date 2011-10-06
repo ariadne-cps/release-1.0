@@ -394,7 +394,6 @@ outer_intersection_with(const HybridConstraintSet& constraint_set) const
 			} else {
 				if (!this->has_discretised(loc))
 					_insert_domain_discretisation(loc);
-
 				result.insert(make_pair(loc,Ariadne::outer_intersection(_set[loc],cons_it->second)));
 			}
 		}

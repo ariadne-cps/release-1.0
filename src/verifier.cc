@@ -541,7 +541,7 @@ _dominance_flattened_lower_reach_and_epsilon(
 	ReachabilityRestrictionPtr& restriction = (dominanceSystem == DOMINATING_SYSTEM ?
 			_dominating_restriction : _dominated_restriction);
 	Set<Identifier> locked_params_ids = (dominanceSystem == DOMINATING_SYSTEM ? parameters_identifiers(params) : Set<Identifier>());
-	HybridConstraintSet dominance_constraint; // No constraint is enforceable
+	HybridConstraintSet dominance_constraint(restriction->space()); // No constraint is enforceable
 
 	ARIADNE_LOG(4,"Creating the analyser for the " << descriptor << " system...");
 
@@ -558,6 +558,8 @@ _dominance_flattened_lower_reach_and_epsilon(
 
     if (_settings->plot_results)
         _plot_dominance(reach,dominanceSystem,restriction->accuracy(),LOWER_SEMANTICS);
+
+    ARIADNE_LOG(4,"Flattening the reached region to non-hybrid and projecting to the common variables space...");
 
 	DenotableSetType flattened_reach = flatten_and_project_down(reach,projection);
 
@@ -588,7 +590,7 @@ _dominance_flattened_outer_reach(
 	ReachabilityRestrictionPtr& restriction = (dominanceSystem == DOMINATING_SYSTEM ?
 			_dominating_restriction : _dominated_restriction);
 	Set<Identifier> locked_params_ids = (dominanceSystem == DOMINATING_SYSTEM ? parameters_identifiers(params) : Set<Identifier>());
-	HybridConstraintSet dominance_constraint; // No constraint is enforceable
+	HybridConstraintSet dominance_constraint(restriction->space()); // No constraint is enforceable
 
     ARIADNE_LOG(4,"Creating the analyser for the " << descriptor << " system...");
 
@@ -604,7 +606,11 @@ _dominance_flattened_outer_reach(
 	if (_settings->plot_results)
 		_plot_dominance(reach,dominanceSystem,restriction->accuracy(),UPPER_SEMANTICS);
 
-	return flatten_and_project_down(reach,verInput.getProjection());
+	ARIADNE_LOG(4,"Flattening the reached region to non-hybrid and projecting to the common variables space...");
+
+	DenotableSetType flattened_reach = flatten_and_project_down(reach,verInput.getProjection());
+
+	return flattened_reach;
 }
 
 Verifier::AnalyserPtrType
