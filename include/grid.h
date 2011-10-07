@@ -29,14 +29,10 @@
 #ifndef ARIADNE_GRID_H
 #define ARIADNE_GRID_H
 
-#include "array.h"
-#include "numeric.h"
-#include "vector.h"
-
 namespace Ariadne {
 
-class Grid;
-class GridCell;
+template<class T> class Vector;
+class Box;
 
 /*! \brief An infinite, uniform grid of rectangles in Euclidean space.
  *  
@@ -123,7 +119,6 @@ class Grid {
     Vector<Float> point(const array<int>& a) const;
     Vector<Float> point(const array<double>& a) const;
     Vector<Interval> box(const array<double>& l, const array<double>& u) const;
-    Vector<Interval> box(const GridCell& cell) const;
     Vector<Interval> cell(const array<int>& a) const;
     Box primary_cell() const;
   private:

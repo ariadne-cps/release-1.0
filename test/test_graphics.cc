@@ -32,7 +32,7 @@
 #include "curve.h"
 #include "taylor_set.h"
 #include "function_set.h"
-#include "grid_set.h"
+#include "denotable_set.h"
 
 #include "user_function.h"
 
@@ -139,23 +139,23 @@ int main(int argc, char **argv)
     g.write("test_graphics-cv");
     g.clear();
 
-    GridTreeSet gts(2);
-    gts.adjoin_outer_approximation(ImageSet(bx1), 6);
-    gts.adjoin_outer_approximation(ImageSet(bx2), 7);
-    gts.adjoin_outer_approximation(ImageSet(bx3), 8);
-    gts.adjoin_outer_approximation(ImageSet(bx4), 9);
-    gts.adjoin_outer_approximation(ImageSet(bx5),10);
-    gts.recombine();
+    DenotableSetType ds(2);
+    ds.adjoin_outer_approximation(ImageSet(bx1), 6);
+    ds.adjoin_outer_approximation(ImageSet(bx2), 7);
+    ds.adjoin_outer_approximation(ImageSet(bx3), 8);
+    ds.adjoin_outer_approximation(ImageSet(bx4), 9);
+    ds.adjoin_outer_approximation(ImageSet(bx5),10);
+    ds.recombine();
 
     Box bbox(2); bbox[0]=Interval(-2,2); bbox[1]=Interval(-2,2);
     g.set_bounding_box(bbox);
-    g << gts;
-    g.write("test_graphics-gts1");
+    g << ds;
+    g.write("test_graphics-ds1");
     g.clear();
 
     g.set_bounding_box(Box());
-    g << gts;
-    g.write("test_graphics-gts2");
+    g << ds;
+    g.write("test_graphics-ds2");
     g.clear();
 
 

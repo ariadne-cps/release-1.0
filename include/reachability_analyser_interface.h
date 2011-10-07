@@ -36,6 +36,8 @@
 
 namespace Ariadne {
 
+typedef String Identifier;
+
 /*! \brief Interface for computing reachable sets of a dynamic system.
  */
 template<class SYS> class ReachabilityAnalyserInterface

@@ -29,7 +29,6 @@
 #include "hybrid_time.h"
 #include "hybrid_set.h"
 #include "hybrid_automaton.h"
-#include "grid_set.h"
 #include "discrete_event.h"
 #include "space.h"
 

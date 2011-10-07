@@ -67,9 +67,6 @@ template<class ES> class Orbit;
 template<class BS> class ListSet;
 class Point;
 class InterpolatedCurve;
-class GridCell;
-class GridTreeSet;
-class HybridGridCell;
 class HybridDenotableSet;
 class HybridTime;
 

@@ -34,7 +34,6 @@
 #include "curve.h"
 #include "polytope.h"
 #include "textplot.h"
-#include "grid_set.h"
 #include "bdd_set.h"
 #include "list_set.h"
 
@@ -125,16 +124,6 @@ void TextPlot::draw(const InterpolatedCurve& c) {
         this->draw(iter->second);
     }
     this->_fstream << std::endl;
-}
-
-void TextPlot::draw(const GridCell& cell) {
-    this->draw(cell.box());
-}
-
-void TextPlot::draw(const GridTreeSubset& gts) {
-    for(GridTreeSubset::const_iterator iter=gts.begin(); iter!=gts.end(); ++iter) {
-        this->draw(iter->box());
-    }
 }
 
 void TextPlot::draw(const BDDTreeSet& bddts) {

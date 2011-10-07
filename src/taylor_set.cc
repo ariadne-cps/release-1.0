@@ -38,7 +38,6 @@
 #include "taylor_set.h"
 
 #include "list_set.h"
-#include "grid_set.h"
 #include "function_set.h"
 
 #include "zonotope.h"
@@ -323,21 +322,6 @@ TaylorSet::discretise(const Float& eps) const
     return result;
 }
 
-GridTreeSet
-TaylorSet::discretise(const Grid& g, uint d) const
-{
-    GridTreeSet gts(g);
-    return this->discretise(gts,d);
-}
-
-GridTreeSet&
-TaylorSet::discretise(GridTreeSet& gts, uint d) const
-{
-    adjoin_outer_approximation(gts,*this,d);
-    gts.recombine();
-    return gts;
-}
-
 
 TaylorModel apply(const ScalarFunction& f, const TaylorSet& ts)
 {
@@ -457,211 +441,6 @@ TaylorSet::split() const
 }
 
 
-
-void
-_adjoin_outer_approximation1(GridTreeSet& grid_set,
-                             const Vector<TaylorModel>& models, const Vector<Interval>& errors,
-                             const Box& domain, Float eps, uint depth)
-{
-    uint d=models.size();
-
-    Box range=evaluate(models,domain);
-    //std::cerr<<"range="<<range<<"\n";
-    if(range.radius()<eps) {
-        grid_set.adjoin_over_approximation(range+errors,depth);
-    } else {
-        Box domain1(d),domain2(d);
-        make_lpair(domain1,domain2)=split(domain);
-        _adjoin_outer_approximation1(grid_set,models,errors,domain1,eps,depth);
-        _adjoin_outer_approximation1(grid_set,models,errors,domain2,eps,depth);
-    }
-}
-
-
-void
-adjoin_outer_approximation1(GridTreeSet& grid_set, const TaylorSet& set, uint depth)
-{
-    Box domain(set.generators_size(),Interval(-1,+1));
-    Float eps=1.0/(1<<(depth/set.dimension()));
-    Vector<TaylorModel> models=set.models();
-    Vector<Interval> errors(models.size());
-    for(uint i=0; i!=models.size(); ++i) {
-        errors[i]=models[i].error()*Interval(-1,+1);
-        models[i].set_error(0.0);
-    }
-    _adjoin_outer_approximation1(grid_set,models,errors,domain,eps,depth);
-    grid_set.recombine();
-}
-
-void
-_adjoin_outer_approximation2(GridTreeSet& grid_set,
-                             const TaylorSet& set, const Vector<Interval>& errors,
-                             Float eps, uint depth)
-{
-    Box range=set.range();
-    //std::cerr<<"range="<<range<<"\n";
-    if(range.radius()<eps) {
-        grid_set.adjoin_over_approximation(range+errors,depth);
-    } else {
-        std::pair<TaylorSet,TaylorSet> subsets=set.split();
-        _adjoin_outer_approximation2(grid_set,subsets.first,errors,eps,depth);
-        _adjoin_outer_approximation2(grid_set,subsets.second,errors,eps,depth);
-    }
-}
-
-
-void
-adjoin_outer_approximation2(GridTreeSet& grid_set, const TaylorSet& set, uint depth)
-{
-    Box domain(set.generators_size(),Interval(-1,+1));
-    Float eps=1.0/(1<<(depth/set.dimension()));
-    TaylorSet error_free_set(set);
-    Vector<Interval> errors(set.dimension());
-    for(uint i=0; i!=set.dimension(); ++i) {
-        errors[i]=set.models()[i].error()*Interval(-1,+1);
-        const_cast<TaylorModel&>(error_free_set.models()[i]).set_error(0.0);
-    }
-    _adjoin_outer_approximation2(grid_set,error_free_set,errors,eps,depth);
-    grid_set.recombine();
-}
-
-void
-_adjoin_outer_approximation3(GridTreeSet& grid_set, const TaylorSet& set, Box& domain,
-			     GridOpenCell cell, uint depth)
-{
-    // Compute an over-approximation to the set
-    Box range=evaluate(set.models(),domain);
-
-    // Find an open cell which is a good over-approximation to the range
-    while(true) {
-        GridOpenCell subcell = cell.split(false);
-        if(!subset(range,subcell.box())) {
-            subcell=cell.split(true);
-            if(!subset(range,subcell.box())) {
-                subcell=cell.split(indeterminate);
-                if(!subset(range,subcell.box())) {
-                    break;
-                }
-            }
-        }
-        cell=subcell;
-    }
-
-    if(cell.depth()>=int(depth)) {
-        grid_set.adjoin(cell.closure());
-        return;
-    }
-
-    std::pair<Box,Box> subdomains=split(domain);
-    _adjoin_outer_approximation3(grid_set,set,subdomains.first,cell,depth);
-    _adjoin_outer_approximation3(grid_set,set,subdomains.second,cell,depth);
-    //Box subdomain1=split(domain,left);
-    //Box subdomain2=split(domain,right);
-    //_adjoin_outer_approximation3(grid_set,set,subdomain1,cell,depth);
-    //_adjoin_outer_approximation3(grid_set,set,subdomain2,cell,depth);
-}
-
-void
-adjoin_outer_approximation3(GridTreeSet& grid_set, const TaylorSet& set, uint depth)
-{
-    TaylorSet error_free_set=set.subsume();
-    Box domain=error_free_set.domain();
-    GridOpenCell cell=GridOpenCell::outer_approximation(error_free_set.bounding_box(),grid_set.grid());
-    _adjoin_outer_approximation3(grid_set,error_free_set,domain,cell,depth);
-    grid_set.recombine();
-}
-
-
-void
-_adjoin_outer_approximation4(GridTreeSet& grid_set, const TaylorSet& set,
-                             GridOpenCell cell, uint depth)
-{
-    // Compute an over-approximation to the set
-    Box range=set.range();
-
-    // Find an open cell which is a good over-approximation to the range
-    while(true) {
-        GridOpenCell subcell = cell.split(false);
-        if(!subset(range,subcell.box())) {
-            subcell=cell.split(true);
-            if(!subset(range,subcell.box())) {
-                subcell=cell.split(indeterminate);
-                if(!subset(range,subcell.box())) {
-                    break;
-                }
-            }
-        }
-        cell=subcell;
-    }
-
-    // If the cell is sufficiently small, adjoin it to the grid set
-    if(cell.depth()>=int(depth)) {
-        grid_set.adjoin(cell.closure());
-        return;
-    }
-
-    // Subdivide the TaylorSet and try again
-    std::pair<TaylorSet,TaylorSet> subsets=set.split();
-    _adjoin_outer_approximation4(grid_set,subsets.first,cell,depth);
-    _adjoin_outer_approximation4(grid_set,subsets.second,cell,depth);
-}
-
-void
-adjoin_outer_approximation4(GridTreeSet& grid_set, const TaylorSet& set, uint depth)
-{
-    GridOpenCell cell=GridOpenCell::outer_approximation(set.bounding_box(),grid_set.grid());
-    TaylorSet error_free_set=set.subsume();
-    _adjoin_outer_approximation4(grid_set,error_free_set,cell,depth);
-    grid_set.recombine();
-}
-
-// Profiling suggests that adjoin_outer_approximation1 is most efficient.
-// adjoin_outer_approximation3 (using subdivision of the set) is better than
-// adjoin_outer_approximation2 (using subdivision of the domain).
-void
-adjoin_outer_approximation(GridTreeSet& grid_set, const TaylorSet& set, uint depth)
-{
-    adjoin_outer_approximation1(grid_set,set,depth);
-}
-
-
-GridTreeSet
-discretise1(const TaylorSet& ts, const Grid& g, uint d)
-{
-    GridTreeSet gts(g);
-    adjoin_outer_approximation1(gts,ts,d);
-    gts.recombine();
-    return gts;
-}
-
-GridTreeSet
-discretise2(const TaylorSet& ts, const Grid& g, uint d)
-{
-    GridTreeSet gts(g);
-    adjoin_outer_approximation2(gts,ts,d);
-    gts.recombine();
-    return gts;
-}
-
-GridTreeSet
-discretise3(const TaylorSet& ts, const Grid& g, uint d)
-{
-    GridTreeSet gts(g);
-    adjoin_outer_approximation3(gts,ts,d);
-    gts.recombine();
-    return gts;
-}
-
-GridTreeSet
-discretise4(const TaylorSet& ts, const Grid& g, uint d)
-{
-    GridTreeSet gts(g);
-    adjoin_outer_approximation4(gts,ts,d);
-    gts.recombine();
-    return gts;
-}
-
-
 Matrix<Float>
 TaylorSet::jacobian() const
 {
@@ -705,17 +484,6 @@ TaylorSet::subsume(double eps) const
     }
     return result;
 }
-
-
-GridTreeSet
-outer_approximation(const TaylorSet& set, const Grid& grid, uint depth)
-{
-    ARIADNE_ASSERT(set.dimension()==grid.dimension());
-    GridTreeSet grid_set(grid);
-    adjoin_outer_approximation(grid_set,set,depth);
-    return grid_set;
-}
-
 
 
 TaylorSet
@@ -841,21 +609,6 @@ void curve_draw(CanvasInterface& fig, const TaylorSet& ts) {
     }
 }
 
-
-void grid_draw(CanvasInterface& fig, const TaylorSet& ts)
-{
-    uint depth=12;
-    Float rad=1./8;
-    GridTreeSet gts(Grid(2));
-    for(Float i=-1; i!=+1; i+=rad) {
-        for(Float j=-1; j!=+1; j+=rad) {
-            Vector<Interval> pt(2); pt[0]=Interval(i,i+rad); pt[1]=Interval(j,j+rad);
-            gts.adjoin_outer_approximation(Box(evaluate(ts.models(),pt)),depth);
-        }
-    }
-    gts.recombine();
-    gts.draw(fig);
-}
 
 void standard_draw(CanvasInterface& fig, const TaylorSet& ts) {
     affine_draw(fig,ts);
@@ -1060,60 +813,6 @@ TaylorConstrainedFlowSet apply_flow(const VectorTaylorFunction& phi, const Taylo
     result._domain=join(result._domain,phi.domain()[n]);
     result._models=compose(phi.models(),phi.domain(),combine(result._models,TaylorModel::variable(1,0)));
     return result;
-}
-
-
-GridTreeSet TaylorConstrainedFlowSet::outer_approximation(const Grid& grid, uint depth) const
-{
-    GridTreeSet gts(grid);
-    this->_adjoin_outer_approximation_to(gts,Vector<Interval>(this->_domain.size(),Interval(-1,+1)),depth);
-    return gts;
-}
-
-void TaylorConstrainedFlowSet::_adjoin_outer_approximation_to(GridTreeSet& gts, const Vector<Interval>& subdomain, uint depth) const
-{
-    typedef std::map<DiscreteEvent,TaylorModel>::const_iterator iterator;
-    double max_error=1.0/(1<<depth);
-    const uint ds=this->_domain.size();
-    for(iterator iter=this->_activations.begin(); iter!=this->_activations.end(); ++iter) {
-        Interval constraint_range=iter->second.evaluate(subdomain);
-        if(constraint_range.upper() < 0.0) { 
-            return;
-        }
-    }
-    for(iterator iter=this->_guards.begin(); iter!=this->_guards.end(); ++iter) {
-        const TaylorModel& constraint=iter->second;
-        Interval constraint_range=constraint.evaluate(subdomain);
-        if(constraint_range.lower() > 0.0 or constraint_range.upper()<0.0) {
-            return;
-        }
-        Vector<Interval> lowdomain=subdomain;
-        while(lowdomain[ds-1].lower() >= this->_domain[ds-1].lower()) {
-            if(constraint.evaluate(lowdomain).lower() > 0.0) {
-                return;
-            }
-            lowdomain[ds-1]=lowdomain[ds-1]-lowdomain[ds-1].width();
-        }
-    }
-    for(iterator iter=this->_invariants.begin(); iter!=this->_invariants.end(); ++iter) {
-        const TaylorModel& constraint=iter->second;
-        Vector<Interval> lowdomain=subdomain;
-        while(lowdomain[ds-1].lower()>this->_domain[ds-1].lower()) {
-            if(constraint.evaluate(lowdomain).lower() > 0.0) {
-                return;
-            }
-            lowdomain[ds-1]=lowdomain[ds-1]-lowdomain[ds-1].width();
-        }
-    }
-    Box range=evaluate(_models,subdomain);
-    if(range.radius()<max_error) {
-        gts.adjoin_outer_approximation(range,depth+2);
-    } else {
-        Vector<Interval> subdomain1,subdomain2;
-        make_lpair(subdomain1,subdomain2)=split(subdomain);
-        this->_adjoin_outer_approximation_to(gts,subdomain1,depth);
-        this->_adjoin_outer_approximation_to(gts,subdomain2,depth);
-    }
 }
 
 

@@ -142,10 +142,6 @@ class RegularSetInterface
     friend tribool disjoint(const LocatedSetInterface& ls, const RegularSetInterface& rs, const Float& eps);
 };
 
-
-class GridTreeSet;
-
-
 //! \brief Interface for located (overt and compact) sets. 
 class LocatedSetInterface 
     : public virtual OvertSetInterface,
@@ -193,8 +189,6 @@ class EuclideanSpace
     typedef RegularSetInterface RegularSetInterfaceType;
     //! \brief The interface satisified by located sets in the space.
     typedef LocatedSetInterface LocatedSetInterfaceType;
-    //! \brief The type of approximations to sets in the space.
-    typedef GridTreeSet SetApproximationType;
   public:
     EuclideanSpace(const size_t& d) : _dimension(d) { }
     const size_t& dimension() const { return this->_dimension; }

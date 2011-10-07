@@ -36,6 +36,8 @@ using namespace Ariadne;
 
 namespace Ariadne {
 
+class HybridAutomatonInterface;
+
 typedef TaylorSet EnclosureType;
 typedef HybridBasicSet<EnclosureType> LocalisedEnclosureType;
 

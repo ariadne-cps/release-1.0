@@ -55,7 +55,6 @@ template<class BS> class ListSet;
 
 class Zonotope;
 class Grid;
-class GridTreeSet;
 
 /*! \brief Sets expressed as the image of a box under a polynomial with error bounds.
  *
@@ -146,9 +145,6 @@ class TaylorSet
     //! \brief An over-approximation in the form of a list of boxes.
     ListSet<Box> discretise(const Float& eps) const;
     //! \brief An outer-approximation on a grid.
-    GridTreeSet discretise(const Grid& grid, uint depth) const;
-    //! \brief Adjoin an outer-approximation on a grid to an existing set.
-    GridTreeSet& discretise(GridTreeSet& grid_set, uint depth) const;
     //! \brief An over-approximation with better numerical conditioning;
     //! currently implemented as the orthogonal part of a QR factorisation.
     TaylorSet recondition() const;
@@ -179,8 +175,6 @@ TaylorSet apply(const VectorFunction& f, const TaylorSet& s);
 TaylorModel unchecked_apply(const ScalarTaylorFunction& f, const TaylorSet& s);
 TaylorSet unchecked_apply(const VectorTaylorFunction& f, const TaylorSet& s);
 
-GridTreeSet outer_approximation(const TaylorSet& set, const Grid& grid, uint depth);
-void adjoin_outer_approximation(GridTreeSet& grid_set, const TaylorSet& set, uint depth);
 Zonotope zonotope(const TaylorSet& ts);
 
 void standard_draw(CanvasInterface& g, const TaylorSet& ts);
@@ -243,14 +237,12 @@ class TaylorConstrainedFlowSet
     tribool overlaps(const Box&) const;
     tribool inside(const Box&) const;
     Box bounding_box() const;
-    GridTreeSet outer_approximation(const Grid& grid, uint depth) const;
     std::ostream& write(std::ostream&) const;
   private:
     friend TaylorConstrainedFlowSet apply(const VectorFunction& f, const TaylorConstrainedFlowSet& s);
     friend TaylorConstrainedFlowSet apply(const VectorTaylorFunction& f, const TaylorConstrainedFlowSet& s);
     friend TaylorConstrainedFlowSet apply_flow(const VectorTaylorFunction& f, const TaylorConstrainedFlowSet& s);
   private:
-    void _adjoin_outer_approximation_to(GridTreeSet& gts, const Vector<Interval>& subdomain, uint depth) const;
     tribool _empty(const Vector<Interval>& subdomain, uint depth) const;
 };
 

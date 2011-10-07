@@ -17,7 +17,6 @@ LDADD = ../src/libariadne.la $(LIBS)
 bin_PROGRAMS = \
 	profile_arithmetic \
 	profile_taylor_model \
-	profile_taylor_set \
 	profile_taylor_calculus
 
 check_PROGRAMS = \
@@ -34,7 +33,6 @@ check_PROGRAMS = \
 	test_taylor_set \
 	test_function \
 	test_function_set \
-	test_grid_set \
 	test_bdd_set \
 	test_hybrid_set \
 	test_hybrid_io_automaton \
@@ -92,5 +90,5 @@ EXTRA_DIST =
 SUBDIRS =
 
 TESTS = $(check_PROGRAMS)
-XFAIL_TESTS = test_taylor_set test_hybrid_system test_hybrid_evolution test_function
+XFAIL_TESTS = test_hybrid_system test_hybrid_evolution test_function
 testsubdir = ./

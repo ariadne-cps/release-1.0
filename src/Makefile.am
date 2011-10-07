@@ -37,10 +37,9 @@ SRC = \
 	curve.cc \
 	function_set.cc \
 	taylor_set.cc \
-	grid_set.cc \
+	grid.cc \
 	bdd_set.cc \
 	denotable_set.cc \
-	approximate_set.cc \
 	hybrid_set.cc \
 	geometry.cc \
 	hybrid_automaton.cc \

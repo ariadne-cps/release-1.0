@@ -37,7 +37,6 @@
 #include "reachability_analyser_interface.h"
 
 #include "orbit.h"
-#include "grid_set.h"
 #include "hybrid_set.h"
 #include "graphics.h"
 
@@ -64,7 +63,6 @@ typedef HybridEvolver::ContinuousEnclosureType EnclosureType;
 typedef boost::shared_ptr<HybridDenotableSet> HybridDenotableSetPtr;
 
 class HybridGrid;
-class HybridGridCell;
 class HybridDenotableSet;
 class ReachabilityRestriction;
 
@@ -183,7 +181,6 @@ class HybridReachabilityAnalyser
     typedef HybridTime T;
     typedef HybridListSet<Box> BxLS;
     typedef HybridGrid Gr;
-    typedef HybridGridCell GC;
     typedef SetApproximationType GCLS;
     typedef SetApproximationType HDS;
     typedef HybridOpenSetInterface OpSI;

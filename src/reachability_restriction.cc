@@ -22,6 +22,7 @@
  */
  
 #include "reachability_restriction.h"
+#include "hybrid_automaton_interface.h"
 #include "set_checker.h"
 #include "denotable_set.h"
 

@@ -942,7 +942,7 @@ bdd _project_down_variables(const bdd& old_bdd, uint old_dim,
     }   // for(uint i = 0; i != indices.size(), ++i)  
     // std::cout << "duplicate = " << duplicate << std::endl;
     // scan keep to obtain which variable must be deleted
-    for(int i = 0; i < keep.size(); ++i) {
+    for(int i = 0; i < (int)keep.size(); ++i) {
         // if the dimension i must be removed, add all corresponding variables to remove
         if(!keep[i]) {
             for(int k = 0; (int)i + k <= lastvar ; k += old_dim) {

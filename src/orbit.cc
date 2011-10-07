@@ -68,7 +68,7 @@ void
 Orbit<LocalisedPoint>::insert(HybridTime ht, LocalisedPoint& hpt)
 {
     ARIADNE_ASSERT((uint)ht.discrete_time()<=this->size());
-    if(this->size()==ht.discrete_time()) {
+    if(ht.discrete_time()==(int)this->size()) {
         this->_curves->push_back(make_pair(hpt.location(),InterpolatedCurve(hpt.continuous_state_set())));
     } else {
         (*this->_curves)[ht.discrete_time()].second.insert(ht.continuous_time(),hpt.continuous_state_set());

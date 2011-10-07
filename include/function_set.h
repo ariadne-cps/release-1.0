@@ -142,6 +142,7 @@ class ConstraintSet
 //! \brief A set defined as the preimage of a box (the \em codomain) under a continuous function, bounded inside a \em domain. The set is described as \f$S=f^{-1}(B) = \{ x \mid f(x)\in B\}\f$ where \f$B\f$ is the codomain and \f$f\f$ the function.
 class BoundedConstraintSet
 	: public LocatedSetInterface
+	, public DrawableInterface
 {
 	Vector<Interval> _domain;
 	VectorFunction _function;

@@ -30,9 +30,9 @@
 #include "taylor_set.h"
 #include "zonotope.h"
 #include "list_set.h"
-#include "grid_set.h"
 #include "hybrid_time.h"
 #include "hybrid_set.h"
+#include "denotable_set.h"
 #include "hybrid_automaton.h"
 #include "hybrid_evolver.h"
 #include "orbit.h"
@@ -108,12 +108,7 @@ void TestDiscretisedEvolution::test_hybrid_time() const
 
     // Define the initial cell
     Box box=make_box("[1.0001,1.0002]x[0.5001,0.5002]");
-    cout << "box=" << box << endl;
-    GridTreeSet approx_tree_set=outer_approximation(box,grid,depth);
-    GridCell initial_cell=*approx_tree_set.begin();
-    HybridGridCell hybrid_initial_cell(location,initial_cell);
-    cout << "hybrid_initial_cell=" << hybrid_initial_cell << endl << endl;
-    LocalisedBox hybrid_initial_set=hybrid_initial_cell.box();
+    LocalisedBox hybrid_initial_set(location,box);
     cout << "hybrid_initial_set=" << hybrid_initial_set << endl << endl;
     //[1.00098:1.00122],
     HybridTime htime(time,steps);
@@ -122,8 +117,8 @@ void TestDiscretisedEvolution::test_hybrid_time() const
     // Compute the reachable sets
     cout << "Computing evolution... " << flush;
     // evolver.verbosity=1;
-    LocalisedEnclosureType hybrid_initial_enclosure(hybrid_initial_cell.first,EnclosureType(hybrid_initial_cell.second.box()));
-    Orbit<LocalisedEnclosureType> evolve_orbit = evolver.orbit(hybrid_initial_enclosure,htime,UPPER_SEMANTICS);
+    LocalisedEnclosureType localised_initial_enclosure(location,EnclosureType(box));
+    Orbit<LocalisedEnclosureType> evolve_orbit = evolver.orbit(localised_initial_enclosure,htime,UPPER_SEMANTICS);
     cout << "done." << endl;
 
     cout << "enclosure_orbit="<<evolve_orbit<<endl;
@@ -152,7 +147,7 @@ void TestDiscretisedEvolution::test_hybrid_time() const
     cout << "final_set=" << final_set << endl << endl;
     cout << "final_cells=" << final_cells << endl << endl;
 
-    // Print the intial, evolve and reach sets
+    // Print the initial, evolve and reach sets
     {
         Figure fig;
         fig.set_bounding_box(Box(2,Interval(-3,3)));
@@ -163,7 +158,7 @@ void TestDiscretisedEvolution::test_hybrid_time() const
         fig.write("test_discrete_evolver-hybrid-cells");
     }
 
-    // Print the intial, evolve and reach sets
+    // Print the initial, evolve and reach sets
     {
         Figure fig;
         fig.set_bounding_box(Box(2,Interval(-3,3)));

@@ -58,7 +58,6 @@ using std::ofstream; using std::ifstream;
 
 #include "function_set.h"
 #include "taylor_set.h"
-#include "grid_set.h"
 #include "hybrid_set.h"
 
 #include "point.h"

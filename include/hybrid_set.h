@@ -632,23 +632,7 @@ class HybridGrid
 };
 
 
-class HybridGridCell
-    : public std::pair<DiscreteLocation,GridCell>
-{
-  public:
-    HybridGridCell()
-        : std::pair<DiscreteLocation,GridCell>() { }
-    HybridGridCell(DiscreteLocation q,const GridCell& gc)
-        : std::pair<DiscreteLocation,GridCell>(q,gc) { }
-    HybridGridCell(const std::pair<DiscreteLocation,GridCell>& hgc)
-        : std::pair<DiscreteLocation,GridCell>(hgc) { }
-    HybridGridCell(const std::pair<const DiscreteLocation,GridCell>& hgc)
-        : std::pair<DiscreteLocation,GridCell>(hgc.first,hgc.second) { }
-    LocalisedBox box() const { return LocalisedBox(this->first,this->second.box()); }
-};
-
 class HybridDenotableSet;
-
 
 
 template<class HDS1, class HDS2>
@@ -705,8 +689,6 @@ class HybridDenotableSet
         for(HybridGrid::locations_const_iterator loc_iter = hgrid.
                 locations_begin(); loc_iter!=hgrid.locations_end(); ++loc_iter) {
             this->insert(make_pair(loc_iter->first,Grid(loc_iter->second))); } }
-    HybridDenotableSet(const HybridGridCell& hgc) {
-        this->adjoin(hgc); }
 
     void adjoin(const HybridDenotableSet& hgts) {
         for(HybridDenotableSet::locations_const_iterator loc_iter=hgts.locations_begin(); loc_iter!=hgts.locations_end(); ++loc_iter) {
