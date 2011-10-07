@@ -77,6 +77,11 @@ class ReachOutOfDomainException : public ReachOutOfRegionException {
 	ReachOutOfDomainException(const std::string& str) : ReachOutOfRegionException(str) { }
 };
 
+class ReachEmptySizeException : public std::runtime_error {
+  public:
+	ReachEmptySizeException(const std::string& str) : std::runtime_error(str) { }
+};
+
 class ReachUnsatisfiesConstraintException : public std::runtime_error {
   public:
 	ReachUnsatisfiesConstraintException(const std::string& str) : std::runtime_error(str) { }

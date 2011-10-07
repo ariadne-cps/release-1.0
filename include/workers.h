@@ -172,7 +172,7 @@ public:
     	for (HybridSpace::const_iterator hs_it = state_space.begin(); hs_it != state_space.end(); ++hs_it)
     		_epsilon.insert(std::pair<DiscreteLocation,Vector<Float> >(hs_it->first,Vector<Float>(hs_it->second)));
     }
- 
+
     ~LowerReachEpsilonWorker()
     {
     }
@@ -186,6 +186,13 @@ public:
 		// Calculate the adjoined evolve sizes
 		for (HDS::locations_const_iterator evolve_global_it = _evolve_global.locations_begin(); evolve_global_it != _evolve_global.locations_end(); evolve_global_it++)
 			_adjoined_evolve_sizes[evolve_global_it->first] = evolve_global_it->second.size();
+
+		// Add to epsilon the minimum grid cell lengths
+		Float accuracy_divider = (1 << _accuracy);
+		HybridFloatVector grid_lengths = _grid.lengths();
+		HybridSpace state_space = _grid.state_space();
+    	for (HybridSpace::const_iterator hs_it = state_space.begin(); hs_it != state_space.end(); ++hs_it)
+    		_epsilon[hs_it->first] += grid_lengths[hs_it->first]/accuracy_divider;
 
 		return make_tuple<std::pair<HUM,HUM>,EL,HDS,HybridFloatVector>(make_pair<HUM,HUM>(_adjoined_evolve_sizes,_superposed_evolve_sizes),_final_enclosures,_reach,_epsilon);
     }
@@ -217,8 +224,6 @@ private:
 
     void _compute() 
     {
-        const Float accuracy_divider = 1 << _accuracy;
-
         while (true) {
 			_inp_mutex.lock();
 
@@ -226,7 +231,7 @@ private:
 				_inp_mutex.unlock();					
 				break;
 			} else {
-				HybridBasicSet<CE> current_initial_enclosure = _initial_enclosures.front();
+				EnclosureType current_initial_enclosure = _initial_enclosures.front();
 				_initial_enclosures.pop_front();
 				_inp_mutex.unlock();
 
@@ -247,8 +252,7 @@ private:
 			    // Update the epsilon
 				for (ELS::const_iterator encl_it = current_reach_enclosures.begin(); encl_it != current_reach_enclosures.end(); ++encl_it) {
 					Vector<Float> encl_widths = encl_it->second.bounding_box().widths();
-					Vector<Float> minimum_cell_lengths = _grid[encl_it->first].lengths()/accuracy_divider;
-					_epsilon[encl_it->first] = max_elementwise(_epsilon[encl_it->first],minimum_cell_lengths);
+					_epsilon[encl_it->first] = max_elementwise(_epsilon[encl_it->first],encl_widths);
 				}
 
 				// Add the number of cells of the current evolve to the superposed total at the end of the step, for each location

@@ -150,6 +150,7 @@ hull(const HybridBoxes& box1, const HybridBoxes& box2)
 bool
 superset(const HybridBoxes& box1, const HybridBoxes& box2)
 {
+	ARIADNE_ASSERT_MSG(box1.size() == box2.size(), "The boxes must have the same space.");
 	for (HybridBoxes::const_iterator box1_it = box1.begin(); box1_it != box1.end(); ++box1_it) {
 		HybridBoxes::const_iterator box2_it = box2.find(box1_it->first);
 		ARIADNE_ASSERT_MSG(box2_it != box2.end(),"The location " << box1_it->first.name() << " is not present in both hybrid boxes.");
@@ -196,6 +197,23 @@ shrink_out(const HybridBoxes& box, const HybridFloatVector& epsilon)
 		HybridFloatVector::const_iterator epsilon_it = epsilon.find(loc_it->first);
 		ARIADNE_ASSERT_MSG(epsilon_it != epsilon.end(),"The location " << loc_it->first.name() << " is not present in the epsilon map.");
 		result.insert(std::pair<DiscreteLocation,Box>(loc_it->first,loc_it->second.shrink_out(epsilon_it->second)));
+	}
+
+	return result;
+}
+
+
+HybridBoxes
+widen(const HybridBoxes& box, const HybridFloatVector& epsilon)
+{
+	HybridBoxes result;
+
+	for (HybridBoxes::const_iterator loc_it = box.begin(); loc_it != box.end(); ++loc_it) {
+		HybridFloatVector::const_iterator epsilon_it = epsilon.find(loc_it->first);
+		ARIADNE_ASSERT_MSG(epsilon_it != epsilon.end(),"The location " << loc_it->first.name() << " is not present in the epsilon map.");
+		Box widened_box = loc_it->second;
+		widened_box.widen(epsilon_it->second);
+		result.insert(std::pair<DiscreteLocation,Box>(loc_it->first,widened_box));
 	}
 
 	return result;

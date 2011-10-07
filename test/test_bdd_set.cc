@@ -46,17 +46,17 @@ using namespace std;
 
 void test_constructors() {
     ARIADNE_PRINT_TEST_COMMENT("Testing constructors.");
-    BDDTreeSet set1;
+    DenotableSetType set1;
     ARIADNE_TEST_EQUAL(set1.dimension(),0);
 
-    BDDTreeSet set2(3);
+    DenotableSetType set2(3);
     ARIADNE_TEST_EQUAL(set2.grid(),Grid(3));
     ARIADNE_TEST_EQUAL(set2.root_cell_height(),0);
     ARIADNE_TEST_EQUAL(set2.root_cell_coordinates(),array<int>(3, 0,0,0));
     ARIADNE_TEST_EQUAL(set2.enabled_cells(),bddfalse);
 
     Grid grid(4, 1.25);
-    BDDTreeSet set3(grid, true);
+    DenotableSetType set3(grid, true);
     ARIADNE_TEST_EQUAL(set3.grid(),grid);
     ARIADNE_TEST_EQUAL(set3.root_cell_height(),0);
     ARIADNE_TEST_EQUAL(set3.root_cell_coordinates(),array<int>(4, 0,0,0,0));
@@ -67,31 +67,31 @@ void test_constructors() {
     ARIADNE_TEST_EQUAL(set2,set3);
 
     // Test cloning operator
-    BDDTreeSet* pset = set2.clone();
+    DenotableSetType* pset = set2.clone();
     ARIADNE_TEST_EQUAL(set2, *pset);
 
     // Test construction from a bdd
     bdd enabled_cells = bdd_ithvar(2);
-    BDDTreeSet set4(grid, 1, array<int>(4, 1,0,0,0), enabled_cells);
+    DenotableSetType set4(grid, 1, array<int>(4, 1,0,0,0), enabled_cells);
     ARIADNE_TEST_EQUAL(set4.grid(),grid);
     ARIADNE_TEST_EQUAL(set4.root_cell_height(),1);
     ARIADNE_TEST_EQUAL(set4.root_cell_coordinates(),array<int>(4, 1,0,0,0));
     ARIADNE_TEST_EQUAL(set4.enabled_cells(),enabled_cells);
     
     // If the dimension of root_cell_coordinates and grid differs an exception must be thrown.
-    ARIADNE_TEST_FAIL(set4 = BDDTreeSet(grid, 1, array<int>(3, 0,0,0), enabled_cells));
+    ARIADNE_TEST_FAIL(set4 = DenotableSetType(grid, 1, array<int>(3, 0,0,0), enabled_cells));
 }
 
 void test_properties_subdivisions() {
     ARIADNE_PRINT_TEST_COMMENT("Testing properties.");
     // Test empty
-    BDDTreeSet set0;
+    DenotableSetType set0;
     // The zero-dimensional set is always empty
     ARIADNE_TEST_ASSERT(set0.empty());
-    BDDTreeSet set1(2, false);
+    DenotableSetType set1(2, false);
     ARIADNE_TEST_ASSERT(set1.empty());
     bdd enabled_cells = bdd_nithvar(0) & (bdd_ithvar(2) | bdd_ithvar(3));
-    BDDTreeSet set2(Grid(3), 4, array<int>(3, 1,0,0), enabled_cells);
+    DenotableSetType set2(Grid(3), 4, array<int>(3, 1,0,0), enabled_cells);
     ARIADNE_TEST_ASSERT(!set2.empty());
     
     // Test size
@@ -103,7 +103,7 @@ void test_properties_subdivisions() {
     ARIADNE_TEST_EQUAL(set1.size(), 0);
     set1.recombine();
     ARIADNE_TEST_EQUAL(set1.size(), 0);    
-    BDDTreeSet set3(Grid(3), 0, array<int>(3, 1,0,0), enabled_cells);
+    DenotableSetType set3(Grid(3), 0, array<int>(3, 1,0,0), enabled_cells);
     set3.mince(1);
     ARIADNE_TEST_EQUAL(set3.size(), 4);
     set3.mince(2);
@@ -121,7 +121,7 @@ void test_properties_subdivisions() {
     ARIADNE_TEST_FAIL(set0.root_cell());
     ARIADNE_TEST_EQUAL(set1.root_cell(), Box(2, 0.0,1.0, 0.0,1.0));
     enabled_cells = bdd_nithvar(0) & bdd_ithvar(1) & bdd_nithvar(2) & bdd_ithvar(3);    
-    set0 = BDDTreeSet(Grid(2), 3, array<int>(2, 0,0), enabled_cells);
+    set0 = DenotableSetType(Grid(2), 3, array<int>(2, 0,0), enabled_cells);
     ARIADNE_TEST_EQUAL(set0.root_cell(), Box(2, 0.0,2.0, -2.0,2.0));
     ARIADNE_TEST_EQUAL(set2.root_cell(), Box(3, 2.0,4.0, 0.0,2.0, -2.0,2.0));   
     
@@ -134,29 +134,29 @@ void test_properties_subdivisions() {
 void test_predicates() {
     ARIADNE_PRINT_TEST_COMMENT("Testing predicates.");
     // Test subset and superset
-    BDDTreeSet set0;
-    BDDTreeSet set1(Grid(2), false);
+    DenotableSetType set0;
+    DenotableSetType set1(Grid(2), false);
     // testing w.r.t. a zero-dimensional set should raise an error
     ARIADNE_TEST_FAIL(subset(set0, set1));
     ARIADNE_TEST_FAIL(superset(set0, set1));
     // testing sets with different grids should raise an error
-    BDDTreeSet set2(Grid(2, 1.25), true);
+    DenotableSetType set2(Grid(2, 1.25), true);
     ARIADNE_TEST_FAIL(subset(set1, set2));
     ARIADNE_TEST_FAIL(superset(set1, set2));
     
     // check test with an empty set
     bdd enabled_cells = bdd_ithvar(0) & bdd_nithvar(1) & (bdd_ithvar(3) | bdd_ithvar(4));    
-    set2 = BDDTreeSet(Grid(2), 3, array<int>(2, 1,1), enabled_cells);
+    set2 = DenotableSetType(Grid(2), 3, array<int>(2, 1,1), enabled_cells);
     ARIADNE_TEST_ASSERT(subset(set1,set2));
     ARIADNE_TEST_ASSERT(!superset(set1,set2));
     
     // Sets with different root cell coordinates are disjoint
-    set1 = BDDTreeSet(Grid(2), true);
+    set1 = DenotableSetType(Grid(2), true);
     ARIADNE_TEST_ASSERT(!subset(set1,set2));
     ARIADNE_TEST_ASSERT(!superset(set1,set2));
     
     // Sets with the same root coordinates
-    set1 = BDDTreeSet(Grid(2), 3, array<int>(2, 1,1), bdd_ithvar(0));
+    set1 = DenotableSetType(Grid(2), 3, array<int>(2, 1,1), bdd_ithvar(0));
     ARIADNE_TEST_ASSERT(subset(set2,set1));
     ARIADNE_TEST_ASSERT(!superset(set2,set1));
     
@@ -169,28 +169,28 @@ void test_predicates() {
     ARIADNE_TEST_FAIL(disjoint(set0, set1));
     ARIADNE_TEST_FAIL(overlap(set0, set1));
      // testing sets with different grids should raise an error
-    set2 = BDDTreeSet(Grid(2, 1.25), true);
+    set2 = DenotableSetType(Grid(2, 1.25), true);
     ARIADNE_TEST_FAIL(subset(set1, set2));
     ARIADNE_TEST_FAIL(superset(set1, set2));
     // check test with an empty set
-    set1 = BDDTreeSet(Grid(2), false);
+    set1 = DenotableSetType(Grid(2), false);
     enabled_cells = bdd_ithvar(0) & bdd_nithvar(1) & (bdd_ithvar(3) | bdd_ithvar(4));    
-    set2 = BDDTreeSet(Grid(2), 3, array<int>(2, 1,1), enabled_cells);
+    set2 = DenotableSetType(Grid(2), 3, array<int>(2, 1,1), enabled_cells);
     ARIADNE_TEST_ASSERT(disjoint(set1,set2));
     ARIADNE_TEST_ASSERT(!overlap(set1,set2));
     ARIADNE_TEST_ASSERT(!disjoint(set1,set1));
     ARIADNE_TEST_ASSERT(overlap(set1,set1));
     
     // Sets with different root cell coordinates are disjoint
-    set1 = BDDTreeSet(Grid(2), true);
+    set1 = DenotableSetType(Grid(2), true);
     ARIADNE_TEST_ASSERT(!subset(set1,set2));
     ARIADNE_TEST_ASSERT(!superset(set1,set2));
 
     // Sets with the same root coordinates
-    set1 = BDDTreeSet(Grid(2), 3, array<int>(2, 1,1), bdd_ithvar(0));
+    set1 = DenotableSetType(Grid(2), 3, array<int>(2, 1,1), bdd_ithvar(0));
     ARIADNE_TEST_ASSERT(!disjoint(set1,set2));
     ARIADNE_TEST_ASSERT(overlap(set1,set2));
-    set1 = BDDTreeSet(Grid(2), 3, array<int>(2, 1,1), bdd_ithvar(0) & bdd_ithvar(1));
+    set1 = DenotableSetType(Grid(2), 3, array<int>(2, 1,1), bdd_ithvar(0) & bdd_ithvar(1));
     ARIADNE_TEST_ASSERT(disjoint(set1,set2));
     ARIADNE_TEST_ASSERT(!overlap(set1,set2));
     
@@ -228,7 +228,7 @@ void test_predicates() {
     ARIADNE_TEST_FAIL(set1.subset(Box(3)));
     ARIADNE_TEST_FAIL(covers(cs2, set1));
     // check test with an empty set or empty box
-    set1 = BDDTreeSet(Grid(2), false);
+    set1 = DenotableSetType(Grid(2), false);
     ARIADNE_TEST_ASSERT(definitely(set1.subset(Box(2, 0.0,1.0, 0.0,1.0))));
     Box ebx = Box::empty_box(2);
     ARIADNE_TEST_ASSERT(!possibly(set2.subset(ebx)));
@@ -237,18 +237,18 @@ void test_predicates() {
     ARIADNE_TEST_ASSERT(definitely(covers(cs3, set2)));
     // test with a general set
     enabled_cells = bdd_ithvar(0) & bdd_nithvar(1) & (bdd_ithvar(3) & bdd_ithvar(4));    
-    set2 = BDDTreeSet(Grid(2), 3, array<int>(2, 1,1), enabled_cells);
+    set2 = DenotableSetType(Grid(2), 3, array<int>(2, 1,1), enabled_cells);
     Box bx1(2, 2.25,5.0, 4.25,6.5);
     Box bx2(2, 2.25,5.0, 4.75,6.5);
     ARIADNE_TEST_ASSERT(definitely(set2.subset(bx1)));
     ARIADNE_TEST_ASSERT(!possibly(set2.subset(bx2)));
     enabled_cells = bdd_nithvar(0) & bdd_nithvar(1);;
-    set1 = BDDTreeSet(Grid(2), 2, array<int>(2, 0,0), enabled_cells);    
+    set1 = DenotableSetType(Grid(2), 2, array<int>(2, 0,0), enabled_cells);    
     enabled_cells = enabled_cells & bdd_nithvar(2) & bdd_nithvar(3);
-    set2 = BDDTreeSet(Grid(2), 2, array<int>(2, 0,0), enabled_cells);  
+    set2 = DenotableSetType(Grid(2), 2, array<int>(2, 0,0), enabled_cells);  
     // plot("test_bdd_set_set1",PlanarProjectionMap(2,0,1),set1.bounding_box(),Colour(1,0,1),set1);
     enabled_cells = enabled_cells & bdd_nithvar(4);
-    BDDTreeSet set3(Grid(2), 2, array<int>(2, 0,0), enabled_cells);    
+    DenotableSetType set3(Grid(2), 2, array<int>(2, 0,0), enabled_cells);    
     ARIADNE_TEST_ASSERT(!possibly(covers(cs1, set1)));
     ARIADNE_TEST_ASSERT(possibly(covers(cs1, set2)));
     ARIADNE_TEST_ASSERT(!definitely(covers(cs1, set2)));
@@ -260,12 +260,12 @@ void test_predicates() {
      // testing w.rt. to a box with different dimension should raise an error
     ARIADNE_TEST_FAIL(set1.superset(Box(3)));
     // check test with an empty set or empty box
-    set1 = BDDTreeSet(Grid(2), false);
+    set1 = DenotableSetType(Grid(2), false);
     ARIADNE_TEST_ASSERT(!possibly(set1.superset(Box(2, 0.0,1.0, 0.0,1.0))));
     ARIADNE_TEST_ASSERT(definitely(set2.superset(ebx)));
     // test with a general set
     enabled_cells = bdd_ithvar(0) & bdd_nithvar(1) & (bdd_ithvar(3) | bdd_ithvar(4));    
-    set2 = BDDTreeSet(Grid(2), 3, array<int>(2, 1,1), enabled_cells);
+    set2 = DenotableSetType(Grid(2), 3, array<int>(2, 1,1), enabled_cells);
     bx1 = Box(2, 2.25,5.0, 4.25,6.5);
     bx2 = Box(2, 2.6,2.9, 4.1,5.9);
     ARIADNE_TEST_ASSERT(!possibly(set2.superset(bx1)));
@@ -287,7 +287,7 @@ void test_predicates() {
     ARIADNE_TEST_FAIL(disjoint(cs2, set1));
     ARIADNE_TEST_FAIL(overlaps(cs2, set1));
     // check test with an empty set or empty box
-    set1 = BDDTreeSet(Grid(2), false);
+    set1 = DenotableSetType(Grid(2), false);
     ARIADNE_TEST_ASSERT(definitely(set1.disjoint(Box(2, 0.0,1.0, 0.0,1.0))));
     ARIADNE_TEST_ASSERT(!possibly(set1.overlaps(Box(2, 0.0,1.0, 0.0,1.0))));
     ARIADNE_TEST_ASSERT(definitely(disjoint(cs1, set1)));
@@ -300,7 +300,7 @@ void test_predicates() {
     ARIADNE_TEST_ASSERT(!possibly(disjoint(cs3, set2)));
     // test with a general set
     enabled_cells = bdd_ithvar(0) & bdd_nithvar(1) & (bdd_ithvar(3) | bdd_ithvar(4));    
-    set2 = BDDTreeSet(Grid(2), 3, array<int>(2, 1,1), enabled_cells);
+    set2 = DenotableSetType(Grid(2), 3, array<int>(2, 1,1), enabled_cells);
     bx1 = Box(2, 2.25,5.0, 4.25,6.5);
     bx2 = Box(2, 1.25,2.25, 1.75,4.25);
     ARIADNE_TEST_ASSERT(!possibly(set2.disjoint(bx1)));
@@ -308,11 +308,11 @@ void test_predicates() {
     ARIADNE_TEST_ASSERT(definitely(set2.overlaps(bx1)));
     ARIADNE_TEST_ASSERT(!possibly(set2.overlaps(bx2)));
     enabled_cells = bdd_ithvar(1) & bdd_nithvar(2) & bdd_nithvar(3);
-    set1 = BDDTreeSet(Grid(2), 4, array<int>(2, 0,0), enabled_cells);    
+    set1 = DenotableSetType(Grid(2), 4, array<int>(2, 0,0), enabled_cells);    
     enabled_cells = enabled_cells & bdd_ithvar(4) & bdd_nithvar(5) & bdd_ithvar(6);
-    set2 = BDDTreeSet(Grid(2), 4, array<int>(2, 0,0), enabled_cells);    
+    set2 = DenotableSetType(Grid(2), 4, array<int>(2, 0,0), enabled_cells);    
     enabled_cells = enabled_cells & bdd_nithvar(7);
-    set3 = BDDTreeSet(Grid(2), 4, array<int>(2, 0,0), enabled_cells);    
+    set3 = DenotableSetType(Grid(2), 4, array<int>(2, 0,0), enabled_cells);    
     ARIADNE_TEST_ASSERT(definitely(overlaps(cs1, set1)));     
     ARIADNE_TEST_ASSERT(!possibly(disjoint(cs1, set1)));     
     ARIADNE_TEST_ASSERT(possibly(overlaps(cs1, set2)));     
@@ -326,12 +326,12 @@ void test_operations() {
     ARIADNE_PRINT_TEST_COMMENT("Testing operations.");
     
     // Test clear
-    BDDTreeSet set0;
+    DenotableSetType set0;
     // test clearing of a zero-dimensional set
     set0.clear();
     ARIADNE_TEST_ASSERT(set0.empty());
     // test clearing of a non-empty set
-    BDDTreeSet set1(Grid(3, 1.25), 2, array<int>(3, 1,1,1), bdd_ithvar(1));
+    DenotableSetType set1(Grid(3, 1.25), 2, array<int>(3, 1,1,1), bdd_ithvar(1));
     ARIADNE_TEST_ASSERT(!set1.empty());
     set1.clear();
     ARIADNE_TEST_ASSERT(set1.empty());
@@ -343,14 +343,14 @@ void test_operations() {
     // Test minimize_height
     // raise an error if the set is zero dimensional
     ARIADNE_TEST_FAIL(set0.minimize_height());
-    set1 = BDDTreeSet(Grid(3), true);
-    BDDTreeSet set2 = set1;
+    set1 = DenotableSetType(Grid(3), true);
+    DenotableSetType set2 = set1;
     // No changes if the height is zero.
     ARIADNE_TEST_CHECK(set1.minimize_height(), 0);
     ARIADNE_TEST_EQUAL(set1, set2);
 
     bdd enabled_cells = bdd_ithvar(0) & bdd_nithvar(1) & (bdd_ithvar(3) | bdd_ithvar(4));    
-    set1 = BDDTreeSet(Grid(3), 4, array<int>(3, 1,1,1), enabled_cells);
+    set1 = DenotableSetType(Grid(3), 4, array<int>(3, 1,1,1), enabled_cells);
     set2 = set1;
     ARIADNE_TEST_CHECK(set1.minimize_height(), 2);
     ARIADNE_TEST_ASSERT(set1 != set2);
@@ -370,7 +370,7 @@ void test_operations() {
     ARIADNE_TEST_EQUAL(set1.increase_height(1), 4);
     ARIADNE_TEST_EQUAL(set1, set2);
     // test with arbitrary sets    
-    BDDTreeSet set3 = BDDTreeSet(2, true);
+    DenotableSetType set3 = DenotableSetType(2, true);
     ARIADNE_TEST_CHECK(set3.increase_height(5), 5);
     ARIADNE_TEST_EQUAL(set3.grid(),Grid(2));
     ARIADNE_TEST_EQUAL(set3.root_cell_height(), 5);
@@ -378,7 +378,7 @@ void test_operations() {
     ARIADNE_TEST_EQUAL(set3.root_cell(), Box(2, -2.0,2.0, -2.0,6.0));
     enabled_cells = bdd_nithvar(0) & bdd_ithvar(1) & bdd_ithvar(2) & bdd_nithvar(3) & bdd_nithvar(4);
     ARIADNE_TEST_EQUAL(set3.enabled_cells(), enabled_cells);
-    set3 = BDDTreeSet(Grid(2), 0, array<int>(2, -1,-1), bddtrue);
+    set3 = DenotableSetType(Grid(2), 0, array<int>(2, -1,-1), bddtrue);
     ARIADNE_TEST_CHECK(set3.increase_height(6), 6);
     ARIADNE_TEST_EQUAL(set3.grid(),Grid(2));
     ARIADNE_TEST_EQUAL(set3.root_cell_height(), 6);
@@ -393,14 +393,14 @@ void test_operations() {
     ARIADNE_TEST_FAIL(set0.adjoin(set1));
     ARIADNE_TEST_FAIL(join(set1, set0));
     // raise an error if the two sets have different dimension
-    set2 = BDDTreeSet(Grid(2));
+    set2 = DenotableSetType(Grid(2));
     ARIADNE_TEST_FAIL(set1.adjoin(set2));
     ARIADNE_TEST_FAIL(join(set1, set2));
     
     // joining an empty set do not change the set, except for minimization
     enabled_cells = bdd_ithvar(0) & bdd_nithvar(1) & (bdd_ithvar(3) | bdd_ithvar(4));    
-    set1 = BDDTreeSet(Grid(3), 4, array<int>(3, 1,1,1), enabled_cells);
-    set2 = BDDTreeSet(Grid(3), false);
+    set1 = DenotableSetType(Grid(3), 4, array<int>(3, 1,1,1), enabled_cells);
+    set2 = DenotableSetType(Grid(3), false);
     set3 = join(set1, set2);
     ARIADNE_TEST_ASSERT(set1 != set3);
     set1.minimize_height();
@@ -409,9 +409,9 @@ void test_operations() {
     ARIADNE_TEST_EQUAL(set1, set2);
     
     // test join of nonempty sets with the same root cell
-    set1 = BDDTreeSet(Grid(3), 2, array<int>(3, 1,1,1), enabled_cells);
+    set1 = DenotableSetType(Grid(3), 2, array<int>(3, 1,1,1), enabled_cells);
     bdd enabled_cells2 = bdd_nithvar(0) | (bdd_nithvar(1) & bdd_nithvar(3));
-    set2 = BDDTreeSet(Grid(3), 2, array<int>(3, 1,1,1), enabled_cells2);
+    set2 = DenotableSetType(Grid(3), 2, array<int>(3, 1,1,1), enabled_cells2);
     set3 = join(set1, set2);
     ARIADNE_TEST_EQUAL(set3.grid(), set1.grid());
     ARIADNE_TEST_EQUAL(set3.root_cell_height(), set1.root_cell_height());
@@ -420,8 +420,8 @@ void test_operations() {
     
     // test join of nonempty sets with different root cell
     enabled_cells = bdd_nithvar(0) | (bdd_nithvar(1) & bdd_nithvar(3));
-    set1 = BDDTreeSet(Grid(2), 3, array<int>(2, 1,1), enabled_cells);
-    set2 = BDDTreeSet(Grid(2), 0, array<int>(2, -1,-1), bddtrue);
+    set1 = DenotableSetType(Grid(2), 3, array<int>(2, 1,1), enabled_cells);
+    set2 = DenotableSetType(Grid(2), 0, array<int>(2, -1,-1), bddtrue);
     set3 = join(set1, set2);
     ARIADNE_TEST_EQUAL(set3.grid(), set1.grid());
     ARIADNE_TEST_EQUAL(set3.root_cell_height(), 6);
@@ -438,19 +438,19 @@ void test_operations() {
     ARIADNE_TEST_FAIL(set0.restrict(set1));
     ARIADNE_TEST_FAIL(intersection(set1, set0));
     // raise an error if the two sets have different dimension
-    set2 = BDDTreeSet(Grid(4));
+    set2 = DenotableSetType(Grid(4));
     ARIADNE_TEST_FAIL(set1.restrict(set2));
     ARIADNE_TEST_FAIL(intersection(set1, set2));
     
     // Intersection with an empty set make the set empty
     enabled_cells = bdd_ithvar(0) & bdd_nithvar(1) & (bdd_ithvar(3) | bdd_ithvar(4));    
-    set1 = BDDTreeSet(Grid(3), 4, array<int>(3, 1,1,1), enabled_cells);
-    set2 = BDDTreeSet(Grid(3), false);
+    set1 = DenotableSetType(Grid(3), 4, array<int>(3, 1,1,1), enabled_cells);
+    set2 = DenotableSetType(Grid(3), false);
     set3 = intersection(set1, set2);
     ARIADNE_TEST_ASSERT(set3.empty());
 
     // intersection with a superset set do not change the set, except for minimization
-    set2 = BDDTreeSet(Grid(3), 4, array<int>(3, 1,1,1), bddtrue);
+    set2 = DenotableSetType(Grid(3), 4, array<int>(3, 1,1,1), bddtrue);
     set3 = intersection(set1, set2);
     ARIADNE_TEST_ASSERT(set1 != set3);
     set1.minimize_height();
@@ -460,9 +460,9 @@ void test_operations() {
     
     // test intersection of nonempty sets with the same root cell
     enabled_cells = bdd_ithvar(1) | (bdd_nithvar(1) & bdd_nithvar(3));
-    set1 = BDDTreeSet(Grid(3), 2, array<int>(3, 1,1,1), enabled_cells);
+    set1 = DenotableSetType(Grid(3), 2, array<int>(3, 1,1,1), enabled_cells);
     enabled_cells2 = bdd_nithvar(0) | (bdd_nithvar(1) & bdd_nithvar(3));
-    set2 = BDDTreeSet(Grid(3), 2, array<int>(3, 1,1,1), enabled_cells2);
+    set2 = DenotableSetType(Grid(3), 2, array<int>(3, 1,1,1), enabled_cells2);
     set3 = intersection(set1, set2);
     ARIADNE_TEST_EQUAL(set3.grid(), set1.grid());
     ARIADNE_TEST_EQUAL(set3.root_cell_height(), set1.root_cell_height());
@@ -471,13 +471,13 @@ void test_operations() {
     
     // intersection of nonempty sets with disjoint root cells must be empty
     enabled_cells = bdd_nithvar(0) | (bdd_nithvar(1) & bdd_nithvar(3));
-    set1 = BDDTreeSet(Grid(2), 3, array<int>(2, 1,1), enabled_cells);
-    set2 = BDDTreeSet(Grid(2), 0, array<int>(2, -1,-1), bddtrue);
+    set1 = DenotableSetType(Grid(2), 3, array<int>(2, 1,1), enabled_cells);
+    set2 = DenotableSetType(Grid(2), 0, array<int>(2, -1,-1), bddtrue);
     set3 = intersection(set1, set2);
     ARIADNE_TEST_ASSERT(set3.empty());
     
     // test intersection of partially overlapping sets
-    set2 = BDDTreeSet(Grid(2), 1, array<int>(2, 2,2), bddtrue);
+    set2 = DenotableSetType(Grid(2), 1, array<int>(2, 2,2), bddtrue);
     set3 = intersection(set1, set2);
     ARIADNE_TEST_EQUAL(set3.grid(), set1.grid());
     ARIADNE_TEST_EQUAL(set3.root_cell_height(), 1);
@@ -489,14 +489,14 @@ void test_operations() {
     ARIADNE_TEST_FAIL(set0.remove(set1));
     ARIADNE_TEST_FAIL(difference(set1, set0));
     // raise an error if the two sets have different dimension
-    set2 = BDDTreeSet(Grid(4));
+    set2 = DenotableSetType(Grid(4));
     ARIADNE_TEST_FAIL(set1.remove(set2));
     ARIADNE_TEST_FAIL(difference(set1, set2));
 
     // difference with an empty set do not change the set, except for minimization    
     enabled_cells = bdd_ithvar(0) & bdd_nithvar(1) & (bdd_ithvar(3) | bdd_ithvar(4));    
-    set1 = BDDTreeSet(Grid(3), 4, array<int>(3, 1,1,1), enabled_cells);
-    set2 = BDDTreeSet(Grid(3), false);
+    set1 = DenotableSetType(Grid(3), 4, array<int>(3, 1,1,1), enabled_cells);
+    set2 = DenotableSetType(Grid(3), false);
     set3 = difference(set1, set2);
     ARIADNE_TEST_ASSERT(set1 != set3);
     set1.minimize_height();
@@ -506,9 +506,9 @@ void test_operations() {
     
     // test difference of nonempty sets with the same root cell
     enabled_cells = bdd_ithvar(0) | (bdd_nithvar(0) & bdd_nithvar(3));
-    set1 = BDDTreeSet(Grid(3), 2, array<int>(3, 1,1,1), enabled_cells);
+    set1 = DenotableSetType(Grid(3), 2, array<int>(3, 1,1,1), enabled_cells);
     enabled_cells2 = (bdd_nithvar(1) & bdd_nithvar(3));
-    set2 = BDDTreeSet(Grid(3), 2, array<int>(3, 1,1,1), enabled_cells2);
+    set2 = DenotableSetType(Grid(3), 2, array<int>(3, 1,1,1), enabled_cells2);
     set3 = difference(set1, set2);
     ARIADNE_TEST_EQUAL(set3.grid(), set1.grid());
     ARIADNE_TEST_EQUAL(set3.root_cell_height(), set1.root_cell_height());
@@ -517,13 +517,13 @@ void test_operations() {
     
     // difference with a nonempty sets with disjoint root cell do no change the set
     enabled_cells = bdd_nithvar(0) | (bdd_nithvar(1) & bdd_nithvar(3));
-    set1 = BDDTreeSet(Grid(2), 3, array<int>(2, 1,1), enabled_cells);
-    set2 = BDDTreeSet(Grid(2), 0, array<int>(2, -1,-1), bddtrue);
+    set1 = DenotableSetType(Grid(2), 3, array<int>(2, 1,1), enabled_cells);
+    set2 = DenotableSetType(Grid(2), 0, array<int>(2, -1,-1), bddtrue);
     set3 = difference(set1, set2);
     ARIADNE_TEST_EQUAL(set3, set1);
     
     // test difference of partially overlapping sets
-    set2 = BDDTreeSet(Grid(2), 1, array<int>(2, 2,2), bddtrue);
+    set2 = DenotableSetType(Grid(2), 1, array<int>(2, 2,2), bddtrue);
     set3 = difference(set1, set2);
     ARIADNE_TEST_EQUAL(set3.grid(), set1.grid());
     ARIADNE_TEST_EQUAL(set3.root_cell_height(), 2);
@@ -538,16 +538,16 @@ void test_box_approximations() {
     // Test adjoin over approximation of a box
 
     // raise an error if the set is zero-dimensional
-    BDDTreeSet set0;
+    DenotableSetType set0;
     ARIADNE_TEST_FAIL(set0.adjoin_over_approximation(Box(2, 1.0), 2));
     // raise an error if the dimensions are different
-    BDDTreeSet set1(Grid(2), true);
+    DenotableSetType set1(Grid(2), true);
     ARIADNE_TEST_FAIL(set1.adjoin_over_approximation(Box(3, 1.0), 2));
     // raise an error if the box is unbounded
     ARIADNE_TEST_FAIL(set1.adjoin_over_approximation(unbounded_box(2), 2));
     
     // adjoining an empty box do not change the set
-    BDDTreeSet set2 = set1;
+    DenotableSetType set2 = set1;
     set2.adjoin_over_approximation(Box::empty_box(2), 2);
     ARIADNE_TEST_EQUAL(set1, set2);
     
@@ -557,7 +557,7 @@ void test_box_approximations() {
         
     // test adjoin with a general set
     bdd enabled_cells = bdd_nithvar(0) | (bdd_nithvar(1) & bdd_ithvar(3));
-    set1 = BDDTreeSet(Grid(2, 2.0), 1, array<int>(2, 1,1), enabled_cells);
+    set1 = DenotableSetType(Grid(2, 2.0), 1, array<int>(2, 1,1), enabled_cells);
     set2 = set1;
     Box bx1 = Box(2, -1.9,2.9, 5.9,6.1);
     set2.adjoin_over_approximation(bx1, 1);
@@ -585,7 +585,7 @@ void test_box_approximations() {
     ARIADNE_TEST_EQUAL(set2.enabled_cells(), enabled_cells);                          
    
     // adjoining with a greater depth gives a better result
-    BDDTreeSet set3 = set1;
+    DenotableSetType set3 = set1;
     set3.adjoin_over_approximation(bx1, 2);
     ARIADNE_TEST_ASSERT(subset(set1, set3));
     ARIADNE_TEST_ASSERT(subset(set3, set2));
@@ -598,7 +598,7 @@ void test_box_approximations() {
 
     // Test adjoin with a set of zero measure
     bx1 = Box(2, 0.1,0.9, 1.0,1.0);
-    set1 = BDDTreeSet(Grid(2));
+    set1 = DenotableSetType(Grid(2));
     set2 = set1;
     set2.adjoin_over_approximation(bx1, 1);
     ARIADNE_TEST_ASSERT(set1 != set2);
@@ -607,7 +607,7 @@ void test_box_approximations() {
     ARIADNE_TEST_EQUAL(set2.root_cell_coordinates(), array<int>(2, 0,0));
     ARIADNE_TEST_EQUAL(set2.enabled_cells(), (bdd_ithvar(0) & bdd_nithvar(2)) | (bdd_nithvar(0) & bdd_ithvar(2)));                          
 
-    set1 = BDDTreeSet(Grid(2, 2.0));
+    set1 = DenotableSetType(Grid(2, 2.0));
     set2 = set1;
     set2.adjoin_over_approximation(bx1, 1);
     ARIADNE_TEST_ASSERT(set1 != set2);
@@ -676,31 +676,31 @@ void test_set_approximations() {
     ConstraintSet cs3(zerof, Box(0));
     
     // raise an error if the set is zero-dimensional
-    BDDTreeSet set0;
+    DenotableSetType set0;
     ARIADNE_TEST_FAIL(set0.adjoin_outer_approximation(is1, 1));
     ARIADNE_TEST_FAIL(set0.adjoin_lower_approximation(is1, 0, 1));
     ARIADNE_TEST_FAIL(set0.adjoin_inner_approximation(cs1, 0, 1));
     // raise an error if the dimensions are different
-    BDDTreeSet set1o(Grid(4), true);
+    DenotableSetType set1o(Grid(4), true);
     ARIADNE_TEST_FAIL(set1o.adjoin_outer_approximation(is1, 1));
     ARIADNE_TEST_FAIL(set1o.adjoin_lower_approximation(is1, 1));
     ARIADNE_TEST_FAIL(set1o.adjoin_inner_approximation(cs1, Box(2, -1.0,1.0, -1.0,1.0), 1));
 
     // adjoin to an empty BDDTreeSet
-    set1o = BDDTreeSet(Grid(2), false);
+    set1o = DenotableSetType(Grid(2), false);
     set1o.increase_height(is1.bounding_box());
     ARIADNE_TEST_ASSERT(definitely(subset(is1.bounding_box(), set1o.root_cell())));
     Box dbox = set1o.root_cell();
     set1o.adjoin_outer_approximation(is1, 3);
     ARIADNE_TEST_ASSERT(!set1o.empty());
     plot("test_bdd_set_is1_outer",PlanarProjectionMap(2,0,1),dbox,Colour(1,0,1),set1o);
-    BDDTreeSet set1l(Grid(2), false);
+    DenotableSetType set1l(Grid(2), false);
     set1l.adjoin_lower_approximation(is1, set1o.root_cell_height()/2 + 1, 3);
     ARIADNE_TEST_ASSERT(!set1l.empty());
     plot("test_bdd_set_is1_lower",PlanarProjectionMap(2,0,1),dbox,Colour(1,0,1),set1l);
     ARIADNE_TEST_ASSERT(definitely(subset(set1l, set1o)));
     ARIADNE_TEST_ASSERT(!possibly(superset(set1l, set1o)));
-    BDDTreeSet set1i(Grid(2), false);
+    DenotableSetType set1i(Grid(2), false);
     set1i.adjoin_inner_approximation(cs1, set1o.root_cell_height()/2 + 1, 3);
     ARIADNE_TEST_ASSERT(!set1i.empty());
     plot("test_bdd_set_is1_inner",PlanarProjectionMap(2,0,1),dbox,Colour(1,0,1),set1i);
@@ -709,13 +709,13 @@ void test_set_approximations() {
     
     // adjoining an empty set do not change the set
     Box ebx = Box::empty_box(2);
-    BDDTreeSet set2o = set1o;
+    DenotableSetType set2o = set1o;
     set2o.adjoin_outer_approximation(ebx, 5);
     ARIADNE_TEST_EQUAL(set1o, set2o);
-    BDDTreeSet set2l = set1l;
+    DenotableSetType set2l = set1l;
     set2l.adjoin_lower_approximation(ebx, 5);
     ARIADNE_TEST_EQUAL(set1l, set2l);
-    BDDTreeSet set2i = set1i;
+    DenotableSetType set2i = set1i;
     set2i.adjoin_inner_approximation(ebx, 0, 5);
     ARIADNE_TEST_EQUAL(set1i, set2i);
 
@@ -756,9 +756,9 @@ void test_set_approximations() {
     
     // Test adjoin with a point on a corner of the grid
     Box bx(2, 2.0,2.0, 0.0,0.0);
-    set1o = BDDTreeSet(2);
-    set1l = BDDTreeSet(2);
-    set1i = BDDTreeSet(2);
+    set1o = DenotableSetType(2);
+    set1l = DenotableSetType(2);
+    set1i = DenotableSetType(2);
     set1o.adjoin_outer_approximation(ImageSet(bx), 2);
     ARIADNE_TEST_EQUAL(set1o.size(), 4);
     set1l.adjoin_lower_approximation(bx, bx, 2);
@@ -772,19 +772,19 @@ void test_iterators_conversions_drawing() {
     ARIADNE_PRINT_TEST_COMMENT("Testing iterators.");
     
     // If the set is zero-dimensional an exception must be thrown 
-    BDDTreeSet set0(0);
-    BDDTreeSet::const_iterator it;
+    DenotableSetType set0(0);
+    DenotableSetType::const_iterator it;
     ARIADNE_TEST_FAIL(it = set0.begin());
 
     // Test empty set iterator
-    BDDTreeSet set1(2, false);
+    DenotableSetType set1(2, false);
     for(it = set1.begin(); it != set1.end(); it++) {
         // the set is empty, never enter here
         ARIADNE_TEST_ASSERT(false);
     }
 
     // Test simple one-cell set
-    set1 = BDDTreeSet(2, true);
+    set1 = DenotableSetType(2, true);
     uint count = 0;
     for(it = set1.begin(); it != set1.end(); it++, count++) {
         // The set contains only one cell
@@ -794,7 +794,7 @@ void test_iterators_conversions_drawing() {
 
     // Test complex set
     bdd enabled_cells = bdd_nithvar(0) & (bdd_ithvar(2) | bdd_ithvar(3));
-    BDDTreeSet set2(Grid(2), 2, array<int>(2, 1,1), enabled_cells);
+    DenotableSetType set2(Grid(2), 2, array<int>(2, 1,1), enabled_cells);
     array<Box> results(4);
     results[0] = Box(2, 2.0,2.5, 2.5,3.0);
     results[1] = Box(2, 2.5,3.0, 2.0,3.0);
@@ -825,23 +825,23 @@ void test_iterators_conversions_drawing() {
 void test_projection() {
     ARIADNE_PRINT_TEST_COMMENT("Testing projections.");
     // Project down a zero-dimensional set should raise an error
-    BDDTreeSet set1(0);
-    BDDTreeSet set2;
+    DenotableSetType set1(0);
+    DenotableSetType set2;
     Vector<uint> indices(3);
     indices[0] = 1;
     indices[1] = 2;
     indices[2] = 4;
     ARIADNE_TEST_FAIL(set2 = project_down(set1, indices));
     // project with incorrect indices should raise an error
-    set1 = BDDTreeSet(2);
+    set1 = DenotableSetType(2);
     ARIADNE_TEST_FAIL(set2 = project_down(set1, indices));
-    set1 = BDDTreeSet(4);
+    set1 = DenotableSetType(4);
     ARIADNE_TEST_FAIL(set2 = project_down(set1, indices));
     // test projection of a real set.
     bdd enabled_cells = bdd_nithvar(0) & (bdd_ithvar(2) | bdd_ithvar(5));
-    set1 = BDDTreeSet(Grid(3), 3, array<int>(3, 1,0,-1), enabled_cells);
+    set1 = DenotableSetType(Grid(3), 3, array<int>(3, 1,0,-1), enabled_cells);
     std::cout << "Set1 = ";
-    for(BDDTreeSet::const_iterator it = set1.begin(); it != set1.end(); it++) {
+    for(DenotableSetType::const_iterator it = set1.begin(); it != set1.end(); it++) {
         std::cout << *it << ", ";
     }
     std::cout << std::endl;
@@ -851,18 +851,18 @@ void test_projection() {
     indices[1] = 2;
     set2 = project_down(set1, indices);
     std::cout << "Set2 = ";
-    for(BDDTreeSet::const_iterator it = set2.begin(); it != set2.end(); it++) {
+    for(DenotableSetType::const_iterator it = set2.begin(); it != set2.end(); it++) {
         std::cout << *it << ", ";
     }
     std::cout << std::endl;
     
-    BDDTreeSet set3(Grid(2), false);
-    for(BDDTreeSet::const_iterator it = set1.begin(); it != set1.end(); it++) {
+    DenotableSetType set3(Grid(2), false);
+    for(DenotableSetType::const_iterator it = set1.begin(); it != set1.end(); it++) {
         Box bx = it->project(indices);
         set3.adjoin_lower_approximation(bx, 2);
     }
     std::cout << "Set3 = ";
-    for(BDDTreeSet::const_iterator it = set3.begin(); it != set3.end(); it++) {
+    for(DenotableSetType::const_iterator it = set3.begin(); it != set3.end(); it++) {
         std::cout << *it << ", ";
     }
     std::cout << std::endl;
@@ -876,18 +876,18 @@ void test_projection() {
     indices[2] = 0;
     set2 = project_down(set1, indices);
     std::cout << "Set2 = ";
-    for(BDDTreeSet::const_iterator it = set2.begin(); it != set2.end(); it++) {
+    for(DenotableSetType::const_iterator it = set2.begin(); it != set2.end(); it++) {
         std::cout << *it << ", ";
     }
     std::cout << std::endl;
     
-    set3 = BDDTreeSet(Grid(3), false);
-    for(BDDTreeSet::const_iterator it = set1.begin(); it != set1.end(); it++) {
+    set3 = DenotableSetType(Grid(3), false);
+    for(DenotableSetType::const_iterator it = set1.begin(); it != set1.end(); it++) {
         Box bx = it->project(indices);
         set3.adjoin_lower_approximation(bx, 2);
     }
     std::cout << "Set3 = ";
-    for(BDDTreeSet::const_iterator it = set3.begin(); it != set3.end(); it++) {
+    for(DenotableSetType::const_iterator it = set3.begin(); it != set3.end(); it++) {
         std::cout << *it << ", ";
     }
     std::cout << std::endl;
@@ -901,18 +901,18 @@ void test_projection() {
     indices[2] = 1;
     set2 = project_down(set1, indices);
     std::cout << "Set2 = ";
-    for(BDDTreeSet::const_iterator it = set2.begin(); it != set2.end(); it++) {
+    for(DenotableSetType::const_iterator it = set2.begin(); it != set2.end(); it++) {
         std::cout << *it << ", ";
     }
     std::cout << std::endl;
     
-    set3 = BDDTreeSet(Grid(3), false);
-    for(BDDTreeSet::const_iterator it = set1.begin(); it != set1.end(); it++) {
+    set3 = DenotableSetType(Grid(3), false);
+    for(DenotableSetType::const_iterator it = set1.begin(); it != set1.end(); it++) {
         Box bx = it->project(indices);
         set3.adjoin_lower_approximation(bx, 2);
     }
     std::cout << "Set3 = ";
-    for(BDDTreeSet::const_iterator it = set3.begin(); it != set3.end(); it++) {
+    for(DenotableSetType::const_iterator it = set3.begin(); it != set3.end(); it++) {
         std::cout << *it << ", ";
     }
     std::cout << std::endl;
@@ -927,19 +927,19 @@ void test_projection() {
     set1.mince(1);
     set2 = project_down(set1, indices);
     std::cout << "Set2 = ";
-    for(BDDTreeSet::const_iterator it = set2.begin(); it != set2.end(); it++) {
+    for(DenotableSetType::const_iterator it = set2.begin(); it != set2.end(); it++) {
         std::cout << *it << ", ";
     }
     std::cout << std::endl;
     
-    set3 = BDDTreeSet(Grid(3), false);
-    for(BDDTreeSet::const_iterator it = set1.begin(); it != set1.end(); it++) {
+    set3 = DenotableSetType(Grid(3), false);
+    for(DenotableSetType::const_iterator it = set1.begin(); it != set1.end(); it++) {
         Box bx = it->project(indices);
         set3.adjoin_lower_approximation(bx, 2);
     }
     set3.mince(1);
     std::cout << "Set3 = ";
-    for(BDDTreeSet::const_iterator it = set3.begin(); it != set3.end(); it++) {
+    for(DenotableSetType::const_iterator it = set3.begin(); it != set3.end(); it++) {
         std::cout << *it << ", ";
     }
     std::cout << std::endl;
@@ -955,27 +955,27 @@ void test_projection() {
     array<int> coordinates(2, 1,0);
     enabled_cells = bdd_nithvar(1) & ( (bdd_biimp(bdd_nithvar(0), bdd_ithvar(2)) & bdd_biimp(bdd_nithvar(3), bdd_ithvar(5)))
                         | (bdd_ithvar(0) & bdd_ithvar(2) & bdd_nithvar(3) & bdd_nithvar(4) & bdd_ithvar(5)) );
-    set1 = BDDTreeSet(grid, 6, coordinates, enabled_cells);
+    set1 = DenotableSetType(grid, 6, coordinates, enabled_cells);
     std::cout << "Set1 = " << set1 << std::endl;
     std::cout << "Set1 = ";
-    for(BDDTreeSet::const_iterator it = set1.begin(); it != set1.end(); it++) {
+    for(DenotableSetType::const_iterator it = set1.begin(); it != set1.end(); it++) {
         std::cout << *it << ", ";
     }
     
     set2 = project_down(set1, indices);
     std::cout << "Set2 = ";
-    for(BDDTreeSet::const_iterator it = set2.begin(); it != set2.end(); it++) {
+    for(DenotableSetType::const_iterator it = set2.begin(); it != set2.end(); it++) {
         std::cout << *it << ", ";
     }
     std::cout << std::endl;
     
-    set3 = BDDTreeSet(Grid(1, 0.624), false);
-    for(BDDTreeSet::const_iterator it = set1.begin(); it != set1.end(); it++) {
+    set3 = DenotableSetType(Grid(1, 0.624), false);
+    for(DenotableSetType::const_iterator it = set1.begin(); it != set1.end(); it++) {
         Box bx = it->project(indices);
         set3.adjoin_lower_approximation(bx, 2);
     }
     std::cout << "Set3 = ";
-    for(BDDTreeSet::const_iterator it = set3.begin(); it != set3.end(); it++) {
+    for(DenotableSetType::const_iterator it = set3.begin(); it != set3.end(); it++) {
         std::cout << *it << ", ";
     }
     std::cout << std::endl;
@@ -1000,7 +1000,7 @@ void test_restriction() {
 	VectorFunction f(expr,varlist);
 	Box dom(2, -1.0,1.0, -1.0,1.0);
 	ImageSet is1(dom, f);
-    BDDTreeSet set1(2);
+    DenotableSetType set1(2);
     set1.adjoin_outer_approximation(is1, 2);
     plot("test_bdd_set_restriction_is1",PlanarProjectionMap(2,0,1),set1.bounding_box(),Colour(1,0,1),set1);
     
@@ -1015,13 +1015,13 @@ void test_restriction() {
 	ConstraintSetChecker checker1(cs1);
 
     // Testing outer restriction
-    BDDTreeSet set0(0);
+    DenotableSetType set0(0);
     ARIADNE_TEST_FAIL(set0.outer_restrict(cs1));
     ARIADNE_TEST_FAIL(set0.outer_restrict(checker1, 2));
-    BDDTreeSet set3(3, true);
+    DenotableSetType set3(3, true);
     ARIADNE_TEST_FAIL(set3.outer_restrict(cs1));    
     ARIADNE_TEST_FAIL(set0.outer_restrict(checker1, 2));
-    BDDTreeSet set2(2, false); 
+    DenotableSetType set2(2, false); 
     set2.outer_restrict(cs1);
     ARIADNE_TEST_ASSERT(set2.empty());
     set2.outer_restrict(checker1, 2);
@@ -1040,7 +1040,7 @@ void test_restriction() {
     // Testing inner restriction
     ARIADNE_TEST_FAIL(set0.inner_restrict(cs1));
     ARIADNE_TEST_FAIL(set0.inner_restrict(checker1, 2));
-    set3 = BDDTreeSet(3, true);
+    set3 = DenotableSetType(3, true);
     ARIADNE_TEST_FAIL(set3.inner_restrict(cs1));    
     ARIADNE_TEST_FAIL(set3.inner_restrict(checker1, 2));    
     set2.clear(); 

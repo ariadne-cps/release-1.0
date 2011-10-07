@@ -72,6 +72,20 @@ bounding_box() const
 }
 
 
+HybridBoxes
+ReachabilityRestriction::
+outer_domain_box() const
+{
+	HybridBoxes result;
+
+	for (HybridBoxes::const_iterator domain_it = _domain.begin(); domain_it != _domain.end(); ++domain_it) {
+		const DiscreteLocation& loc = domain_it->first;
+		result.insert(make_pair(loc,this->_outer_domain_box(loc)));
+	}
+	return result;
+}
+
+
 bool
 ReachabilityRestriction::
 has_location(DiscreteLocation q) const
@@ -572,20 +586,24 @@ _bounding_box(DiscreteLocation q) const
 {
     ARIADNE_ASSERT_MSG(this->has_location(q), "The location " << q << " was not found in the HybridRestrictionSet.");
 
+    return (this->has_discretised(q) ? _set[q].bounding_box() : _outer_domain_box(q));
+}
+
+Box
+ReachabilityRestriction::
+_outer_domain_box(DiscreteLocation q) const
+{
     const Float accuracy_divider = (1<<_accuracy);
 
-    if (this->has_discretised(q)) {
-    	return _set[q].bounding_box();
-    } else {
-    	const Vector<Float>& grid_lengths = _grid.find(q)->second.lengths();
-    	Box result = _domain.find(q)->second;
-    	// Add the minimum cell size on each extreme of the domain box
-    	for (uint i=0; i<result.size();++i) {
-    		Float inaccuracy = grid_lengths[i]/accuracy_divider;
-    		result[i] = Interval(result[i].lower()-inaccuracy,result[i].upper()+inaccuracy);
-    	}
-    	return result;
-    }
+	Box result = _domain.find(q)->second;
+
+	const Vector<Float>& grid_lengths = _grid.find(q)->second.lengths();
+	// Add the minimum cell size on each extreme of the domain box
+	for (uint i=0; i<result.size();++i) {
+		Float inaccuracy = grid_lengths[i]/accuracy_divider;
+		result[i] = Interval(result[i].lower()-inaccuracy,result[i].upper()+inaccuracy);
+	}
+	return result;
 }
 
 

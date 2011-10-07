@@ -173,7 +173,6 @@ class HybridReachabilityAnalyser
             const Set<Identifier>& locked_params_ids,
             const HybridConstraintSet& constraint_set,
             unsigned free_cores,
-            bool enable_lower_reach_restriction_check,
             Semantics semantics);
 
   public:
@@ -331,10 +330,6 @@ class HybridReachabilityAnalyserSettings {
     //! \brief The target ratio of derivatives width to obtain when splitting parameters (must be > 0).
     RealType splitting_parameters_target_ratio;
 
-    //! \brief Checks whether the restriction would affect the lower reach and issues an error if it does.
-    //! \details Useful to validate the restriction used.
-    bool enable_lower_reach_restriction_check;
-
     //! \brief Enable the pruning of the trajectories in lower semantics when too many.
     //! \details The pruning is done probabilistically.
     bool enable_lower_pruning;
@@ -415,6 +410,13 @@ getHybridMaximumAbsoluteDerivatives(
 
 //! \brief Copies the \a reach set into enclosures.
 std::list<LocalisedEnclosureType> to_enclosures(const HybridDenotableSet& reach);
+
+//! \brief Get the value of epsilon from the \a enclosures widths and adding the error given by the
+//! discretisation to a \a grid at \a accuracy.
+HybridFloatVector get_epsilon(
+		const ListSet<LocalisedEnclosureType>& enclosures,
+		const HybridGrid& grid,
+		int accuracy);
 
 } // namespace Ariadne
 

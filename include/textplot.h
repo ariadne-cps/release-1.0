@@ -50,7 +50,7 @@ class Polytope;
 class InterpolatedCurve;
 class Zonotope;
 class TaylorSet;
-class BDDTreeSet;
+class DenotableSetType;
 template<class BS> class ListSet;
 template<class BS> class HybridBasicSet;
 class DiscreteLocation;
@@ -71,7 +71,7 @@ class TextPlot
     void draw(const Box&);
     void draw(const Polytope&);
     void draw(const InterpolatedCurve&);
-    void draw(const BDDTreeSet&);
+    void draw(const DenotableSetType&);
     template<class BS> void draw(const ListSet<BS>&);    
     template<class BS> void draw(const HybridBasicSet<BS>&);
     template<class BS> void draw(const std::map< DiscreteLocation,BS >&);    

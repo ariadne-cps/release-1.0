@@ -34,7 +34,7 @@
 #include "curve.h"
 #include "polytope.h"
 #include "textplot.h"
-#include "bdd_set.h"
+#include "denotable_set.h"
 #include "list_set.h"
 
 namespace Ariadne {
@@ -126,8 +126,8 @@ void TextPlot::draw(const InterpolatedCurve& c) {
     this->_fstream << std::endl;
 }
 
-void TextPlot::draw(const BDDTreeSet& bddts) {
-    for(BDDTreeSet::const_iterator iter=bddts.begin(); iter!=bddts.end(); ++iter) {
+void TextPlot::draw(const DenotableSetType& ds) {
+    for(DenotableSetType::const_iterator iter=ds.begin(); iter!=ds.end(); ++iter) {
         this->draw(iter->box());
     }
 }

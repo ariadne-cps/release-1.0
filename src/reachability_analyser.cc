@@ -151,7 +151,6 @@ tune_settings(
         const Set<Identifier>& locked_params_ids,
         const HybridConstraintSet& constraint_set,
         unsigned free_cores,
-        bool enable_lower_reach_restriction_check,
         Semantics semantics)
 {
     ARIADNE_LOG(1, "Tuning settings for analysis...");
@@ -160,7 +159,6 @@ tune_settings(
 
     _settings->locked_parameters_ids = locked_params_ids;
     _settings->constraint_set = constraint_set;
-    _settings->enable_lower_reach_restriction_check = enable_lower_reach_restriction_check;
 }
 
 
@@ -258,9 +256,10 @@ lower_reach_evolve(
         HDS local_reach = outer_approximation(orbit.reach(),grid,_accuracy());
         HDS local_evolve = outer_approximation(orbit.final(),grid,_accuracy());
 
-        if (_settings->enable_lower_reach_restriction_check) {
-        	ARIADNE_ASSERT_MSG(!_restriction->restricts(local_reach), "The lower reach is not inside the reachability restriction. Check the bounding domain used.");
-        }
+        HybridFloatVector local_epsilon = get_epsilon(orbit.reach(),grid,_accuracy());
+
+        if (!superset(widen(_restriction->outer_domain_box(),local_epsilon),local_reach.bounding_box()))
+			throw DomainException("The lower reach is not inside the over-approximated domain. Check the domain used for variables.");
 
         _restriction->apply_to(local_reach);
 
@@ -415,7 +414,8 @@ outer_chain_reach(
 
 	_system->substitute_all(original_parameters);
 
-	ARIADNE_ASSERT_MSG(!reach.empty(),"The outer chain reachability of " << _system->name() << " is empty: check the initial set.");
+	if (reach.empty())
+		throw ReachEmptySizeException("The outer chain reachability is empty: check the initial set.");
 
 	return reach;
 }
@@ -584,10 +584,9 @@ _lower_chain_reach_and_epsilon(
 
 		epsilon = max_elementwise(epsilon,local_epsilon);
 
-	    if (_settings->enable_lower_reach_restriction_check) {
-	    	ARIADNE_ASSERT_MSG(!_restriction->restricts(local_reach),
-	    			"The lower reach is not inside the reachability restriction. Check the bounding domain used.");
-	    }
+		if (!superset(widen(_restriction->outer_domain_box(),epsilon),local_reach.bounding_box())) {
+			throw DomainException("The lower reach is not inside the over-approximated domain. Check the domain used for variables.");
+		}
 		_restriction->apply_to(local_reach);
 
 		_lower_chain_reach_and_epsilon_constraint_check(system,local_reach,local_epsilon);
@@ -883,7 +882,6 @@ HybridReachabilityAnalyserSettings::HybridReachabilityAnalyserSettings(
       lock_to_grid_steps(1),
       constraint_set(sys.state_space()),
       splitting_parameters_target_ratio(0.05),
-      enable_lower_reach_restriction_check(false),
       enable_lower_pruning(true)
 {
 	HybridSpace sys_space = sys.state_space();
@@ -1268,6 +1266,28 @@ to_enclosures(const HybridDenotableSet& reach)
 
 	for (HybridDenotableSet::const_iterator cell_it = reach.begin(); cell_it != reach.end(); ++cell_it)
 		result.push_back(LocalisedEnclosureType(cell_it->first,cell_it->second));
+
+	return result;
+}
+
+HybridFloatVector
+get_epsilon(
+		const ListSet<LocalisedEnclosureType>& enclosures,
+		const HybridGrid& grid,
+		int accuracy) {
+
+	HybridFloatVector result;
+	HybridSpace state_space = grid.state_space();
+	HybridFloatVector grid_lengths = grid.lengths();
+	Float accuracy_divider = (1 << accuracy);
+	for (HybridSpace::const_iterator hs_it = state_space.begin(); hs_it != state_space.end(); ++hs_it)
+		result.insert(std::pair<DiscreteLocation,Vector<Float> >(hs_it->first,Vector<Float>(hs_it->second)));
+
+	for (ListSet<LocalisedEnclosureType>::const_iterator encl_it = enclosures.begin(); encl_it != enclosures.end(); ++encl_it) {
+		result[encl_it->first] = max_elementwise(result[encl_it->first],encl_it->second.bounding_box().widths());
+	}
+	for (HybridSpace::const_iterator hs_it = state_space.begin(); hs_it != state_space.end(); ++hs_it)
+		result[hs_it->first] += grid_lengths[hs_it->first]/accuracy_divider;
 
 	return result;
 }

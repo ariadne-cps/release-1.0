@@ -200,12 +200,11 @@ _safety_proving_once_backward_refinement(
         const RealParameterSet& params) const
 {
     const unsigned ANALYSER_TAB_OFFSET = 5;
-    const bool ENABLE_LOWER_REACH_RESTRICTION_CHECK = false;
 
     ARIADNE_LOG(5,"Creating the analyser for backward reachability...");
 
     AnalyserPtrType analyser = _get_tuned_analyser(sys,parameters_identifiers(params),_safety_restriction,
-    		safety_constraint,ANALYSER_TAB_OFFSET,ENABLE_LOWER_REACH_RESTRICTION_CHECK,UPPER_SEMANTICS);
+    		safety_constraint,ANALYSER_TAB_OFFSET,UPPER_SEMANTICS);
 
     ARIADNE_LOG(5,"Computing the initial set...");
 
@@ -247,12 +246,11 @@ _safety_proving_once_forward_analysis(
         const RealParameterSet& params) const
 {
     const unsigned ANALYSER_TAB_OFFSET = 5;
-    const bool ENABLE_LOWER_REACH_RESTRICTION_CHECK = !_settings->enable_backward_refinement_for_safety_proving;
 
     ARIADNE_LOG(5,"Creating the analyser for forward reachability...");
 
     AnalyserPtrType analyser = _get_tuned_analyser(sys,parameters_identifiers(params),_safety_restriction,
-    		safety_constraint,ANALYSER_TAB_OFFSET,ENABLE_LOWER_REACH_RESTRICTION_CHECK,UPPER_SEMANTICS);
+    		safety_constraint,ANALYSER_TAB_OFFSET,UPPER_SEMANTICS);
 
     ARIADNE_LOG(5,"Retrieving forward reachability...");
 
@@ -276,7 +274,6 @@ _safety_disproving_once(
 		const RealParameterSet& params) const
 {
     const unsigned ANALYSER_TAB_OFFSET = 5;
-    const bool ENABLE_LOWER_REACH_RESTRICTION_CHECK = !_settings->enable_backward_refinement_for_safety_proving;
 
     SystemType& sys = verInput.getSystem();
     const HybridBoundedConstraintSet& initial_set = verInput.getInitialSet();
@@ -291,7 +288,7 @@ _safety_disproving_once(
     ARIADNE_LOG(5,"Creating the analyser for forward reachability...");
 
     AnalyserPtrType analyser = _get_tuned_analyser(verInput.getSystem(),parameters_identifiers(params),_safety_restriction,
-            safety_constraint,ANALYSER_TAB_OFFSET,ENABLE_LOWER_REACH_RESTRICTION_CHECK,LOWER_SEMANTICS);
+            safety_constraint,ANALYSER_TAB_OFFSET,LOWER_SEMANTICS);
 
 	bool result = false;
 	try {
@@ -400,7 +397,7 @@ parametric_dominance(
 	std::list<RealParameterSet> splittings = maximally_split_parameters(dominating_params,_settings->maximum_parameter_depth);
 	uint i=0;
 	for (std::list<RealParameterSet>::const_iterator splitting_it = splittings.begin(); splitting_it != splittings.end(); ++splitting_it) {
-	    RealParameterSet current_params = *splitting_it;
+		RealParameterSet current_params = *splitting_it;
 	    ARIADNE_LOG(1,"Split parameters set #" << ++i << "/" << splittings.size() << ": values " << current_params);
 		tribool outcome = _dominance(dominating,dominated,current_params);
 		ARIADNE_LOG(1,"Outcome: " << tribool_pretty_print(outcome));
@@ -535,7 +532,6 @@ _dominance_flattened_lower_reach_and_epsilon(
 		DominanceSystem dominanceSystem) const
 {
     const unsigned ANALYSER_TAB_OFFSET = 4;
-    const bool ENABLE_LOWER_REACH_RESTRICTION_CHECK = true;
 
 	string descriptor = (dominanceSystem == DOMINATING_SYSTEM ? "dominating" : "dominated");
 	ReachabilityRestrictionPtr& restriction = (dominanceSystem == DOMINATING_SYSTEM ?
@@ -546,7 +542,7 @@ _dominance_flattened_lower_reach_and_epsilon(
 	ARIADNE_LOG(4,"Creating the analyser for the " << descriptor << " system...");
 
     AnalyserPtrType analyser = _get_tuned_analyser(verInput.getSystem(),locked_params_ids,restriction,
-    		dominance_constraint,ANALYSER_TAB_OFFSET,ENABLE_LOWER_REACH_RESTRICTION_CHECK,LOWER_SEMANTICS);
+    		dominance_constraint,ANALYSER_TAB_OFFSET,LOWER_SEMANTICS);
 
 	ARIADNE_LOG(4,"Getting its lower reached region...");
 
@@ -584,7 +580,6 @@ _dominance_flattened_outer_reach(
 		DominanceSystem dominanceSystem) const
 {
     const unsigned ANALYSER_TAB_OFFSET = 4;
-    const bool ENABLE_LOWER_REACH_RESTRICTION_CHECK = true;
 
 	string descriptor = (dominanceSystem == DOMINATING_SYSTEM ? "dominating" : "dominated");
 	ReachabilityRestrictionPtr& restriction = (dominanceSystem == DOMINATING_SYSTEM ?
@@ -595,7 +590,7 @@ _dominance_flattened_outer_reach(
     ARIADNE_LOG(4,"Creating the analyser for the " << descriptor << " system...");
 
     AnalyserPtrType analyser = _get_tuned_analyser(verInput.getSystem(),locked_params_ids,restriction,
-    		dominance_constraint,ANALYSER_TAB_OFFSET,ENABLE_LOWER_REACH_RESTRICTION_CHECK,UPPER_SEMANTICS);
+    		dominance_constraint,ANALYSER_TAB_OFFSET,UPPER_SEMANTICS);
 
 	ARIADNE_LOG(4,"Getting its outer reached region...");
 
@@ -621,7 +616,6 @@ _get_tuned_analyser(
         const ReachabilityRestrictionPtr& restriction,
         const HybridConstraintSet& constraint_set,
         unsigned ADD_TAB_OFFSET,
-        bool enable_lower_reach_restriction_check,
         Semantics semantics) const
 {
     AnalyserPtrType analyser(new HybridReachabilityAnalyser(sys,*restriction));
@@ -629,7 +623,7 @@ _get_tuned_analyser(
     analyser->verbosity = this->verbosity - ADD_TAB_OFFSET;
     analyser->tab_offset = this->tab_offset + ADD_TAB_OFFSET;
 
-    analyser->tune_settings(locked_params_ids,constraint_set,this->free_cores,enable_lower_reach_restriction_check,semantics);
+    analyser->tune_settings(locked_params_ids,constraint_set,this->free_cores,semantics);
 
     return analyser;
 }
@@ -727,7 +721,9 @@ _plot_dominance(
 	sprintf(mgd_char,"%i",accuracy);
 	string filename = system_descr + "-" + verification_descr + "-";
 	filename.append(mgd_char);
+
 	plot(_plot_dirpath,filename,reach);
+
 }
 
 

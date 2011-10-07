@@ -202,75 +202,73 @@ template<class SET>
 void plot(const string& foldername, const string& filename, const SET& set)
 {
 	// If a set exists
-	if (set.size()>0)
-	{
+	if (set.size()>0) {
 		// Gets the bounds of the set
 		std::map<DiscreteLocation,Box> set_bounds = set.bounding_box();
 
 		// Gets the number of variables (NOTE: assumed equal for each mode)
-		uint numvar = set_bounds.begin()->second.dimension();	
+		uint numvar = set_bounds.begin()->second.dimension();
 
 		// For each variable (last excluded)
-		for (uint x=0;x<numvar-1;x++)
-		{
+		for (uint x=0;x<numvar-1;x++) {
 			// For each following variable
-			for (uint y=x+1;y<numvar;y++)
-			{
-				// Initializes the iterator
+			for (uint y=x+1;y<numvar;y++) {
+				// Initializes the iterator to the first non-empty box
 				std::map<DiscreteLocation,Box>::const_iterator it = set_bounds.begin();
+				while (it->second.empty())
+					++it;
 
-				// Sets the initial value for the graphics box	
+				// Sets the initial value for the graphics box
 				Box graphics_box(2);
 				graphics_box[0] = it->second[x];
 				graphics_box[1] = it->second[y];
 
-				// For each other location			
-				while (++it != set_bounds.end())
-				{
-					// Gets the bounding box for the location
-					Box evaluation_box(2);
-					evaluation_box[0] = it->second[x]; 
-					evaluation_box[1] = it->second[y];
-			
-					// Enlarges the graphics box
+				// For each other location
+				while (++it != set_bounds.end()) {
+					if (!it->second.empty()) {
+						// Gets the bounding box for the location
+						Box evaluation_box(2);
+						evaluation_box[0] = it->second[x];
+						evaluation_box[1] = it->second[y];
 
-					// For each axis
-					for (uint u=0;u<2;u++)
-					{
-						// If the evaluated box has higher upper bound, extends the graphics box
-						if (evaluation_box[u].upper() > graphics_box[u].upper())
-							graphics_box[u].set_upper(evaluation_box[u].upper());
-						// If the evaluated box has lower lower bound, extends the graphics box
-						if (evaluation_box[u].lower() < graphics_box[u].lower())
-							graphics_box[u].set_lower(evaluation_box[u].lower());
+						// Enlarges the graphics box
+
+						// For each axis
+						for (uint u=0;u<2;u++) {
+							// If the evaluated box has higher upper bound, extends the graphics box
+							if (evaluation_box[u].upper() > graphics_box[u].upper())
+								graphics_box[u].set_upper(evaluation_box[u].upper());
+							// If the evaluated box has lower lower bound, extends the graphics box
+							if (evaluation_box[u].lower() < graphics_box[u].lower())
+								graphics_box[u].set_lower(evaluation_box[u].lower());
+						}
 					}
 				}
-	
+
 				// Plots the global result
 
 				// Assigns local variables
-				Figure fig; 
+				Figure fig;
 				array<uint> xy(2,x,y);
 
-				fig.set_projection_map(ProjectionFunction(xy,numvar)); 
-				fig.set_bounding_box(graphics_box); 
+				fig.set_projection_map(ProjectionFunction(xy,numvar));
+				fig.set_bounding_box(graphics_box);
 
 				// Appends the set, with the desired fill color
-				fig.set_fill_colour(Colour(1.0,0.75,0.0)); 
-				draw(fig,set); 
+				fig.set_fill_colour(Colour(1.0,0.75,0.0));
+				draw(fig,set);
 
-				// If there are more than two variables, prints the variable numbers				
+				// If there are more than two variables, prints the variable numbers
 				char num_char[7] = "";
 				if (numvar>2)
 					sprintf(num_char,"[%u,%u]",x,y);
 				// Writes the figure file
-				fig.write((foldername+"/"+filename+num_char).c_str()); 
+				fig.write((foldername+"/"+filename+num_char).c_str());
 
 				// Plot the result for each location, using the global bounds
 				for (std::map<DiscreteLocation,Box>::const_iterator loc_it = set_bounds.begin(); loc_it != set_bounds.end(); loc_it++) {
 					// If the set is non-empty
-					if (set[loc_it->first].size() > 0)
-					{
+					if (set[loc_it->first].size() > 0) {
 						// Assigns local variables
 						Figure fig;
 						array<uint> xy(2,x,y);
@@ -290,8 +288,6 @@ void plot(const string& foldername, const string& filename, const SET& set)
 						fig.write((foldername+"/"+filename+"-"+loc_it->first.name()+num_char).c_str());
 					}
 				}
-
-
 			}
 		} 
 	}

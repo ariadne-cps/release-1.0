@@ -79,8 +79,11 @@ class ReachabilityRestriction
 	//! for adopting the %HybridRestrictionSet as the accuracy reference.
 	int accuracy() const { return _accuracy; }
 
-	//! \brief Return an overapproximation of the bounding box of the restriction.
+	//! \brief Return an over-approximation of the bounding box of the restriction.
 	HybridBoxes bounding_box() const;
+
+	//! \brief Return an outer approximation of the domain box of the restriction.
+	HybridBoxes outer_domain_box() const;
 
 	//@}
 
@@ -188,7 +191,7 @@ class ReachabilityRestriction
 
   private:
 
-    //! \brief Insert the discretisation at location q.
+    //! \brief Insert the discretisation at \a q.
     //! \details It is assumed, not checked, that in location q no discretisation has already been performed.
     //! This operation will overwrite the existing content, in that case. It is const for compatibility with
     //! the operator[] const method, and it const-casts this to work the problem around.
@@ -198,6 +201,10 @@ class ReachabilityRestriction
 	//! \details Does not discretise if not necessary: hence the result for non-discretised locations
 	//! is a reasonable overapproximation.
 	Box _bounding_box(DiscreteLocation q) const;
+
+	//! \brief Get an outer approximation of the domain box at \a q.
+	//! \details This is a rough over-approximation based on the grid lengths.
+	Box _outer_domain_box(DiscreteLocation q) const;
 
   private:
 

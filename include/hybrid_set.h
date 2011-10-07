@@ -126,6 +126,9 @@ HybridBoxes
 shrink_out(const HybridBoxes& box, const HybridFloatVector& epsilon);
 
 HybridBoxes
+widen(const HybridBoxes& box, const HybridFloatVector& epsilon);
+
+HybridBoxes
 widen(const HybridBoxes& box);
 
 HybridBoxes
@@ -843,9 +846,7 @@ class HybridDenotableSet
     HybridBoxes bounding_box() const {
         HybridBoxes result;
         for( locations_const_iterator loc_iter = this->locations_begin(); loc_iter != this->locations_end(); ++loc_iter ) {
-            if( !loc_iter->second.empty() ) {
-                result.insert( std::make_pair( loc_iter->first, loc_iter->second.bounding_box() ) );
-            }
+            result.insert( std::make_pair( loc_iter->first, loc_iter->second.bounding_box() ) );
         }
         return result;
     }
