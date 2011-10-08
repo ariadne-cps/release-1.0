@@ -35,7 +35,7 @@ using namespace Ariadne;
 
 namespace Ariadne {
 
-typedef DenotableSetType DenotableSetType;
+typedef BDDTreeSet DenotableSetType;
 
 //! \brief Evaluates the codomain of \a func applied on the cells of \a denotable_set, each widened by \a eps.
 Box eps_codomain(const DenotableSetType& denotable_set, const Vector<Float> eps, const VectorFunction& func);

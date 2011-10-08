@@ -37,6 +37,7 @@
 
 #include "graphics_interface.h"
 #include "list_set.h"
+#include "denotable_set.h"
 
 typedef unsigned int uint;
 
@@ -50,7 +51,6 @@ class Polytope;
 class InterpolatedCurve;
 class Zonotope;
 class TaylorSet;
-class DenotableSetType;
 template<class BS> class ListSet;
 template<class BS> class HybridBasicSet;
 class DiscreteLocation;

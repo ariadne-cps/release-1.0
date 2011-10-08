@@ -203,6 +203,7 @@ _upper_reach_evolve(
 	const EvolverPtrType& evolver = _get_tuned_evolver(sys,EVOLVER_TAB_OFFSET,UPPER_SEMANTICS);
 	UpperReachEvolveWorker worker(evolver,initial_enclosures,time,
 			_grid(),_accuracy(),enable_premature_termination_on_blocking_event,direction,concurrency);
+
 	result = worker.get_result();
 
     ARIADNE_LOG(4,"Reach size = " << reach.size());
@@ -449,8 +450,8 @@ _outer_chain_reach_splitted(
     	ARIADNE_LOG(2,"Iteration " << i++);
 
         static const bool ignore_activations = true;
-        make_lpair(new_reach,new_final) = _upper_reach_evolve(sys,current_initial,
-        		hybrid_lock_to_grid_time,ignore_activations,direction);
+		make_lpair(new_reach,new_final) = _upper_reach_evolve(sys,current_initial,
+				hybrid_lock_to_grid_time,ignore_activations,direction);
 
         ARIADNE_LOG(3,"Removing the previously reached and final sets...");
 

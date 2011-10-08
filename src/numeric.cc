@@ -22,6 +22,7 @@
  */
 
 #include <iostream>
+#include <sstream>
 #include <iomanip>
 #include <cassert>
 #include <limits>
@@ -245,7 +246,9 @@ double pow_rnd(double x, int n)
 double sqrt_rnd(double x)
 {
     // long int c[]={ 0, 6, -360, 15120, -604800, 23950080, -946218790, 37362124800 };
-    ARIADNE_ASSERT_MSG(x>=0, " x = "<<x<<"\n");
+    if (x<0) {
+    	throw SqrtNumericException("sqrt(x) < 0");
+    }
 
     if(x==0.0) { return 0.0; }
     int n; volatile double y,a,b;

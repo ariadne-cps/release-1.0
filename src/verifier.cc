@@ -90,7 +90,7 @@ _safety_nosplitting(
 		SafetyVerificationInput& verInput,
 		const RealParameterSet& params) const
 {
-	ARIADNE_LOG(2,"Iterative verification...");
+	ARIADNE_LOG(2,"Safety checking...");
 
 	SystemType& system = verInput.getSystem();
 
@@ -121,17 +121,22 @@ Verifier::
 _safety_once(SafetyVerificationInput& verInput,
 		const RealParameterSet& params) const
 {
-    ARIADNE_LOG(3, "Verification...");
-
-    if (_safety_proving_once(verInput,params)) {
-        ARIADNE_LOG(3, "Safe.");
-        return true;
-    }
-
-    if (_safety_disproving_once(verInput,params)) {
-        ARIADNE_LOG(3, "Unsafe.");
-        return false;
-    }
+	try {
+		if (_safety_proving_once(verInput,params)) {
+			ARIADNE_LOG(3, "Safe.");
+			return true;
+		}
+	} catch (SqrtNumericException& ex) {
+		ARIADNE_LOG(3, "WARNING: caught " << ex.what() << " exception, skipping.");
+	}
+	try {
+		if (_safety_disproving_once(verInput,params)) {
+			ARIADNE_LOG(3, "Unsafe.");
+			return false;
+		}
+	} catch (SqrtNumericException& ex) {
+		ARIADNE_LOG(3, "WARNING: caught " << ex.what() << " exception, skipping.");
+	}
 
     ARIADNE_LOG(3, "Indeterminate.");
     return indeterminate;
@@ -145,6 +150,8 @@ _safety_proving_once(
 		const RealParameterSet& params) const
 {
 	bool result;
+
+    ARIADNE_LOG(3, "Proving...");
 
 	SystemType& sys = verInput.getSystem();
 
@@ -274,6 +281,8 @@ _safety_disproving_once(
 		const RealParameterSet& params) const
 {
     const unsigned ANALYSER_TAB_OFFSET = 5;
+
+    ARIADNE_LOG(3, "Disproving...");
 
     SystemType& sys = verInput.getSystem();
     const HybridBoundedConstraintSet& initial_set = verInput.getInitialSet();
@@ -432,14 +441,22 @@ Verifier::_dominance(
 		_dominating_restriction->refine_at(accuracy);
 		_dominated_restriction->refine_at(accuracy);
 
-		if (_dominance_proving_once(dominating, dominated, params)) {
-			ARIADNE_LOG(2, "Dominates.");
-			return true;
+		try {
+			if (_dominance_proving_once(dominating, dominated, params)) {
+				ARIADNE_LOG(2, "Dominates.");
+				return true;
+			}
+		} catch (SqrtNumericException& ex) {
+			ARIADNE_LOG(3, "WARNING: caught " << ex.what() << ", skipping.");
 		}
 
-		if (_dominance_disproving_once(dominating, dominated, params)) {
-			ARIADNE_LOG(2, "Does not dominate.");
-			return false;
+		try {
+			if (_dominance_disproving_once(dominating, dominated, params)) {
+				ARIADNE_LOG(2, "Does not dominate.");
+				return false;
+			}
+		} catch (SqrtNumericException& ex) {
+			ARIADNE_LOG(3, "WARNING: caught " << ex.what() << ", skipping.");
 		}
     }
 

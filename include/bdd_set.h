@@ -66,7 +66,7 @@ typedef unsigned short dimension_type;
 /*Some pre-declarations*/
 class Grid;
 // class BDDCell;
-class DenotableSetType;
+class BDDTreeSet;
 class BDDTreeConstIterator;
 class SetCheckerInterface;
 struct PathElement;
@@ -76,19 +76,19 @@ template<class BS> class ListSet;
 
 // std::ostream& operator<<(std::ostream& os, const BDDCell& cell);
 // std::ostream& operator<<(std::ostream& os, const BDDTreeCursor& treecursor);
-std::ostream& operator<<(std::ostream& os, const DenotableSetType& set);
+std::ostream& operator<<(std::ostream& os, const BDDTreeSet& set);
 std::ostream& operator<<(std::ostream& os, const PathElement& pe);
 // 
 // // bool subset(const BDDCell& cell, const BDDTreeSet& set);
 // // bool overlap(const BDDCell& cell, const BDDTreeSet& set);
-bool subset(const DenotableSetType& set1, const DenotableSetType& set2);
-bool superset(const DenotableSetType& set1, const DenotableSetType& set2);
-bool disjoint(const DenotableSetType& set1, const DenotableSetType& set2);
-bool overlap(const DenotableSetType& set1, const DenotableSetType& set2);
+bool subset(const BDDTreeSet& set1, const BDDTreeSet& set2);
+bool superset(const BDDTreeSet& set1, const BDDTreeSet& set2);
+bool disjoint(const BDDTreeSet& set1, const BDDTreeSet& set2);
+bool overlap(const BDDTreeSet& set1, const BDDTreeSet& set2);
 // 
-DenotableSetType join(const DenotableSetType& set1, const DenotableSetType& set2);
-DenotableSetType intersection(const DenotableSetType& set1, const DenotableSetType& set2);
-DenotableSetType difference(const DenotableSetType& set1, const DenotableSetType& set2);
+BDDTreeSet join(const BDDTreeSet& set1, const BDDTreeSet& set2);
+BDDTreeSet intersection(const BDDTreeSet& set1, const BDDTreeSet& set2);
+BDDTreeSet difference(const BDDTreeSet& set1, const BDDTreeSet& set2);
 // 
 // BDDTreeSet outer_approximation(const Box& box, const Grid& grid, const uint subdiv);
 // BDDTreeSet outer_approximation(const CompactSetInterface& set, const Grid& grid, const uint subdiv);
@@ -112,7 +112,7 @@ DenotableSetType difference(const DenotableSetType& set1, const DenotableSetType
  * 
  * TO DO: improve description.
  */
-class DenotableSetType : public DrawableInterface {
+class BDDTreeSet : public DrawableInterface {
   protected:
     // The underlying grid on wicht the cells are built
     Grid _grid;
@@ -135,16 +135,16 @@ class DenotableSetType : public DrawableInterface {
     /*! \brief Create a %BDDTreeSet based on zero dimensions.
      *  This constructor is needed to use the Boost Serialization library.
      */
-    DenotableSetType( );
+    BDDTreeSet( );
 
     /*! \brief The copy constructor.
      */
-    DenotableSetType( const DenotableSetType & set );
+    BDDTreeSet( const BDDTreeSet & set );
 
     /*! Create a %BDDTreeSet based on \a grid with the given \a root_cell_height and 
      *  \a root_cell_coordinates. Activate the cells defined by \a enabled_cells, and set the \a mince_depth.
      */
-    DenotableSetType( const Grid& grid, const uint root_cell_height, 
+    BDDTreeSet( const Grid& grid, const uint root_cell_height,
                 const array<int>& root_cell_coordinates, const bdd& enabled_cells, 
                 const int mince_depth = -1 );
 
@@ -152,12 +152,12 @@ class DenotableSetType : public DrawableInterface {
      *  \a dimension - dimensional space, with root cell height = 0. 
      * If enable == true then the root cell is enabled.
      */
-    explicit DenotableSetType( const uint dimension, const bool enable = false );
+    explicit BDDTreeSet( const uint dimension, const bool enable = false );
 
     /*! \brief Construct a set with cells based on \a grid. 
      * If enable == true then the root cell is enabled.
      */
-    explicit DenotableSetType( const Grid& grid, const bool enable = false  );
+    explicit BDDTreeSet( const Grid& grid, const bool enable = false  );
 
     //@}
 
@@ -166,7 +166,7 @@ class DenotableSetType : public DrawableInterface {
 
     /*! \brief Return a copy of the %BDDTreeSet.
      */
-    DenotableSetType* clone() const;
+    BDDTreeSet* clone() const;
 
     //@}
 
@@ -218,9 +218,9 @@ class DenotableSetType : public DrawableInterface {
     /*! \brief Allows to test if two BDDTreeSet are equal. The method returns true if
      * the grids are equal, the root cells have the same coordinate and height, and the BBDs are equal.
      */
-    bool operator==(const DenotableSetType& anotherBDDTreeSet) const;
+    bool operator==(const BDDTreeSet& anotherBDDTreeSet) const;
 
-    bool operator!=(const DenotableSetType& anotherBDDTreeSet) const;
+    bool operator!=(const BDDTreeSet& anotherBDDTreeSet) const;
 
     //@}
 
@@ -228,30 +228,30 @@ class DenotableSetType : public DrawableInterface {
     //! \name Geometric Predicates
     
     /*! \brief Tests if a %BDDTreeSet \a set1 is a subset of \a set2. */
-    friend bool subset( const DenotableSetType& set1, const DenotableSetType& set2 );
+    friend bool subset( const BDDTreeSet& set1, const BDDTreeSet& set2 );
 
     /*! \brief Tests if a %BDDTreeSet \a set1 is a superset of \a set2. */
-    friend bool superset( const DenotableSetType& set1, const DenotableSetType& set2 );
+    friend bool superset( const BDDTreeSet& set1, const BDDTreeSet& set2 );
 
     /*! \brief Tests if two %BDDTreeSets are disjoint.
      */
-    friend bool disjoint( const DenotableSetType& set1, const DenotableSetType& set2 );
+    friend bool disjoint( const BDDTreeSet& set1, const BDDTreeSet& set2 );
 
     /*! \brief Tests if two %BDDTreeSets overlap.
      */
-    friend bool overlap( const DenotableSetType& set1, const DenotableSetType& set2 );
+    friend bool overlap( const BDDTreeSet& set1, const BDDTreeSet& set2 );
 
     /*! \brief Tests if a %BDDTreeSet is a subset of another %BDDTreeSet. */
-    tribool subset( const DenotableSetType& other ) const;
+    tribool subset( const BDDTreeSet& other ) const;
 
     /*! \brief Tests if a %BDDTreeSet is a superset of a box. */
-    tribool superset( const DenotableSetType& other ) const;
+    tribool superset( const BDDTreeSet& other ) const;
 
     /*! \brief Tests if (the closure of) a %BDDTreeSet is disjoint from another %BDDTreeSet. */
-    tribool disjoint( const DenotableSetType& other  ) const;
+    tribool disjoint( const BDDTreeSet& other  ) const;
 
     /*! \brief Tests if a %BDDTreeSet overlaps another %BDDTreeSet. */
-    tribool overlaps( const DenotableSetType& other ) const;
+    tribool overlaps( const BDDTreeSet& other ) const;
 
     /*! \brief Tests if a %BDDTreeSet is a subset of a box. */
     tribool subset( const Box& box ) const ;
@@ -303,23 +303,23 @@ class DenotableSetType : public DrawableInterface {
     int increase_height(const Box& box);
 
     /*! \brief Join (make union of) two %BDDTreeSet. */
-    friend DenotableSetType join( const DenotableSetType& set1, const DenotableSetType& set2 );
+    friend BDDTreeSet join( const BDDTreeSet& set1, const BDDTreeSet& set2 );
 
     /*! \brief The intersection of two %BDDTreeSet. 
      */
-    friend DenotableSetType intersection( const DenotableSetType& set1, const DenotableSetType& set2 );
+    friend BDDTreeSet intersection( const BDDTreeSet& set1, const BDDTreeSet& set2 );
 
     /*! \brief The difference of two %BDDTreeSet. (Results in set1 minus set2) */
-    friend DenotableSetType difference( const DenotableSetType& set1, const DenotableSetType& set2 );
+    friend BDDTreeSet difference( const BDDTreeSet& set1, const BDDTreeSet& set2 );
 
     /*! \brief Adjoin (make inplace union with) another %BDDTreeSet. */
-    void adjoin( const DenotableSetType& set );
+    void adjoin( const BDDTreeSet& set );
 
     /*! \brief Restrict to (make inplace intersection with) another %BDDTreeSet. */
-    void restrict( const DenotableSetType& set );
+    void restrict( const BDDTreeSet& set );
 
     /*! \brief Remove cells in another %BDDTreeSet. */
-    void remove( const DenotableSetType& set );
+    void remove( const BDDTreeSet& set );
 
     //@}
 
@@ -490,7 +490,7 @@ class BDDTreeConstIterator
 
     /*! \brief The constructor that accepts the %BDDTreeSet \a set to iterate on
      */
-    explicit BDDTreeConstIterator( const DenotableSetType& set );
+    explicit BDDTreeConstIterator( const BDDTreeSet& set );
 
     /*! \brief The copy constructor.
      */
@@ -500,28 +500,28 @@ class BDDTreeConstIterator
 };
 
 
-template<class A> void serialize(A& archive, Ariadne::DenotableSetType& set, const unsigned int version) {
+template<class A> void serialize(A& archive, Ariadne::BDDTreeSet& set, const unsigned int version) {
     ARIADNE_NOT_IMPLEMENTED;
 }
 
 
 //! \brief Whether \a cons_set is disjoint from \a bdd_set.
-tribool disjoint(const ConstraintSet& cons_set, const DenotableSetType& bdd_set);
+tribool disjoint(const ConstraintSet& cons_set, const BDDTreeSet& bdd_set);
 //! \brief Whether \a cons_set overlaps with \a bdd_set.
-tribool overlaps(const ConstraintSet& cons_set, const DenotableSetType& bdd_set);
+tribool overlaps(const ConstraintSet& cons_set, const BDDTreeSet& bdd_set);
 //! \brief Whether \a cons_set covers \a bdd_set.
-tribool covers(const ConstraintSet& cons_set, const DenotableSetType& bdd_set);
+tribool covers(const ConstraintSet& cons_set, const BDDTreeSet& bdd_set);
 
 //! \brief The outer approximation of the intersection between \a bdd_set and \a cons_set.
-DenotableSetType outer_intersection(const DenotableSetType& bdd_set, const ConstraintSet& cons_set);
+BDDTreeSet outer_intersection(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set);
 //! \brief The inner approximation of the intersection between \a bdd_set and \a cons_set.
-DenotableSetType inner_intersection(const DenotableSetType& bdd_set, const ConstraintSet& cons_set);
+BDDTreeSet inner_intersection(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set);
 
 //! \brief Evaluates the codomain of \a func applied on the cells of \a bdd_set, each widened by \a eps.
 //Box eps_codomain(const BDDTreeSet& bdd_set, const Vector<Float> eps, const VectorFunction& func);
 
 //! \brief Projects \a bdd_set using the given \a indices.
-DenotableSetType project_down(const DenotableSetType& bdd_set, const Vector<uint>& indices);
+BDDTreeSet project_down(const BDDTreeSet& bdd_set, const Vector<uint>& indices);
 
 //! \brief Check whether \a covering_set covers \a covered_set with a tolerance of \a eps.
 //! \details Since the cell boxes of \a covered_set, enlarged of \a eps, are checked against \a covering_set,

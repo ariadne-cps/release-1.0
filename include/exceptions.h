@@ -92,6 +92,11 @@ class ReachEnclosesTargetException : public std::runtime_error {
 	ReachEnclosesTargetException(const std::string& str) : std::runtime_error(str) { }
 };
 
+class SqrtNumericException : public std::runtime_error {
+  public:
+	SqrtNumericException(const std::string& str) : std::runtime_error(str) { }
+};
+
 class EmptyInitialCellSetException : public std::runtime_error {
   public:
     EmptyInitialCellSetException(const std::string& str) : std::runtime_error(str) { }

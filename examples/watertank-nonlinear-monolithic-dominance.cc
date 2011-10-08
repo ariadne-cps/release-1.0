@@ -46,8 +46,8 @@ int main(int argc,char *argv[])
 	initial_pr[DiscreteLocation(3)] = Box(2, 6.75,6.75, 0.0,1.0);
 
 	// The domains
-	HybridBoxes domain_hy = bounding_boxes(system_hy.state_space(),Box(2,1.0,10.0,-0.1,1.1));
-	HybridBoxes domain_pr = bounding_boxes(system_pr.state_space(),Box(2,1.0,10.0,-0.1,1.1));
+	HybridBoxes domain_hy = bounding_boxes(system_hy.state_space(),Box(2,4.5,9.0,0.0,1.0));
+	HybridBoxes domain_pr = bounding_boxes(system_pr.state_space(),Box(2,2.0,10.0,0.0,1.0));
 
 	// The projections
 	Vector<uint> projection_hy(1,0);
@@ -60,9 +60,10 @@ int main(int argc,char *argv[])
 	// Verification
 	Verifier verifier;
 	verifier.verbosity = verb;
-    verifier.settings().maximum_parameter_depth = 4;
+	verifier.free_cores = 7;
+    verifier.settings().maximum_parameter_depth = 5;
     verifier.settings().time_limit_for_outcome = 600;
-    verifier.settings().plot_results = true;
+    verifier.settings().plot_results = false;
 
 	// The parametric dominance parameters
 	RealParameterSet parameters;

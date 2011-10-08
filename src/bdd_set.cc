@@ -264,7 +264,7 @@ void _shift_variables(bdd& b, int n) {
 
 // Increase the height of the two sets until they have the same root cell,
 // that is, the same root_cell_height and the same root_cell_coordinates
-void _equalize_root_cell(DenotableSetType& set1, DenotableSetType& set2) {
+void _equalize_root_cell(BDDTreeSet& set1, BDDTreeSet& set2) {
     // std::cout << "_equalize_root_cell( ... )" << std::endl;
     // check whether they have the same grid
     ARIADNE_ASSERT_MSG(set1.grid() == set2.grid(),
@@ -966,7 +966,7 @@ bdd _project_down_variables(const bdd& old_bdd, uint old_dim,
 
 /************************************* BDDTreeSet **************************************/
 
-DenotableSetType::DenotableSetType( )
+BDDTreeSet::BDDTreeSet( )
     : _grid(0)
     , _root_cell_height(0)
     , _root_cell_coordinates()
@@ -977,7 +977,7 @@ DenotableSetType::DenotableSetType( )
 }
 
 
-DenotableSetType::DenotableSetType( const DenotableSetType & set )
+BDDTreeSet::BDDTreeSet( const BDDTreeSet & set )
     : _grid(set.grid())
     , _root_cell_height(set.root_cell_height())
     , _root_cell_coordinates(set.root_cell_coordinates())
@@ -986,7 +986,7 @@ DenotableSetType::DenotableSetType( const DenotableSetType & set )
 {
 }
 
-DenotableSetType::DenotableSetType( const Grid& grid, const uint root_cell_height, 
+BDDTreeSet::BDDTreeSet( const Grid& grid, const uint root_cell_height,
                         const array<int>& root_cell_coordinates, 
                         const bdd& enabled_cells, const int mince_depth)
     : _grid(grid)
@@ -1000,7 +1000,7 @@ DenotableSetType::DenotableSetType( const Grid& grid, const uint root_cell_heigh
 }
 
 
-DenotableSetType::DenotableSetType( const uint dimension, const bool enable )
+BDDTreeSet::BDDTreeSet( const uint dimension, const bool enable )
     : _grid(dimension)
     , _root_cell_height(0)
     , _root_cell_coordinates(dimension, 0)
@@ -1015,7 +1015,7 @@ DenotableSetType::DenotableSetType( const uint dimension, const bool enable )
     }
 }
 
-DenotableSetType::DenotableSetType( const Grid& grid, const bool enable )
+BDDTreeSet::BDDTreeSet( const Grid& grid, const bool enable )
     : _grid(grid)
     , _root_cell_height(0)
     , _root_cell_coordinates(grid.dimension(), 0)
@@ -1030,18 +1030,18 @@ DenotableSetType::DenotableSetType( const Grid& grid, const bool enable )
     }
 }
 
-DenotableSetType* DenotableSetType::clone() const {
-    return new DenotableSetType( *this );
+BDDTreeSet* BDDTreeSet::clone() const {
+    return new BDDTreeSet( *this );
 }
 
-bool DenotableSetType::empty() const {
+bool BDDTreeSet::empty() const {
     // A zero dimension set is always empty
     if(this->dimension() == 0) return true;
     // otherwise, the set is empty iff the BDD is the constant false
     return (this->_bdd == bddfalse);
 }
 
-size_t DenotableSetType::size() const {
+size_t BDDTreeSet::size() const {
     // compute mince depth
     int mince_depth = -1;
     if(this->mince_depth() >= 0) {
@@ -1050,19 +1050,19 @@ size_t DenotableSetType::size() const {
     return _enabled_cells_number(this->enabled_cells(), 0, mince_depth);
 }
 
-uint DenotableSetType::dimension() const {
+uint BDDTreeSet::dimension() const {
     return this->_grid.dimension();
 }
 
-const Grid& DenotableSetType::grid() const {
+const Grid& BDDTreeSet::grid() const {
     return this->_grid;
 }
 
-uint DenotableSetType::root_cell_height() const {
+uint BDDTreeSet::root_cell_height() const {
     return this->_root_cell_height;
 }
 
-uint DenotableSetType::depth() const {
+uint BDDTreeSet::depth() const {
     // get the index of the smallest var in the bdd
     int* vars;
     int varnum;
@@ -1083,28 +1083,28 @@ uint DenotableSetType::depth() const {
     return max(varnum, this->mince_depth());
 }
 
-array<int> DenotableSetType::root_cell_coordinates() const {
+array<int> BDDTreeSet::root_cell_coordinates() const {
     return this->_root_cell_coordinates;
 }
 
-int DenotableSetType::mince_depth() const {
+int BDDTreeSet::mince_depth() const {
     return this->_mince_depth;
 }
 
-const bdd& DenotableSetType::enabled_cells() const {
+const bdd& BDDTreeSet::enabled_cells() const {
     return this->_bdd;
 }
 
-double DenotableSetType::measure() const {
+double BDDTreeSet::measure() const {
     ARIADNE_NOT_IMPLEMENTED;    
 }
 
-Box DenotableSetType::root_cell() const {
+Box BDDTreeSet::root_cell() const {
     return _compute_root_cell(this->grid(), this->root_cell_height(), this->root_cell_coordinates());
 }
 
 
-Box DenotableSetType::bounding_box() const {
+Box BDDTreeSet::bounding_box() const {
     if(this->empty()) return Box::empty_box(this->dimension());
     uint dim = this->dimension();
     // get the first splitting coordinate
@@ -1113,7 +1113,7 @@ Box DenotableSetType::bounding_box() const {
 }
 
 
-bool DenotableSetType::operator==(const DenotableSetType& set) const {
+bool BDDTreeSet::operator==(const BDDTreeSet& set) const {
     if(this->grid() != set.grid())
         return false;
     if(this->root_cell_height() != set.root_cell_height())
@@ -1125,11 +1125,11 @@ bool DenotableSetType::operator==(const DenotableSetType& set) const {
     return (this->enabled_cells() == set.enabled_cells());                
 }
 
-bool DenotableSetType::operator!=(const DenotableSetType& set) const {
+bool BDDTreeSet::operator!=(const BDDTreeSet& set) const {
     return !(this->operator==(set));                
 }
 
-bool subset( const DenotableSetType& set1, const DenotableSetType& set2 ) {
+bool subset( const BDDTreeSet& set1, const BDDTreeSet& set2 ) {
     // raise an error if the current set is zero dimensional
     ARIADNE_ASSERT_MSG(set1.dimension() != 0, "Cannot test for subset of zero-dimensional sets.");
     
@@ -1140,8 +1140,8 @@ bool subset( const DenotableSetType& set1, const DenotableSetType& set2 ) {
     // If set1 is empty the test is true for every set2
     if(set1.empty()) return true;
     // Make copies of set1 and set2 that can be modified.
-    DenotableSetType set3 = set1;
-    DenotableSetType set4 = set2;
+    BDDTreeSet set3 = set1;
+    BDDTreeSet set4 = set2;
     // Equalize the height of the two sets.
     set3.increase_height(set4.root_cell_height());
     set4.increase_height(set3.root_cell_height());
@@ -1153,16 +1153,16 @@ bool subset( const DenotableSetType& set1, const DenotableSetType& set2 ) {
     return (bdd_imp(set3.enabled_cells(), set4.enabled_cells()) == bddtrue);
 }
 
-bool superset( const DenotableSetType& set1, const DenotableSetType& set2 ) {
+bool superset( const BDDTreeSet& set1, const BDDTreeSet& set2 ) {
     return subset(set2, set1);
 }
 
-bool disjoint( const DenotableSetType& set1, const DenotableSetType& set2 ) {
+bool disjoint( const BDDTreeSet& set1, const BDDTreeSet& set2 ) {
     // two sets are disjoint iff they do not overlap
     return !overlap(set1, set2);
 }
 
-bool overlap( const DenotableSetType& set1, const DenotableSetType& set2 ) {
+bool overlap( const BDDTreeSet& set1, const BDDTreeSet& set2 ) {
     // raise an error if the current set is zero dimensional
     ARIADNE_ASSERT_MSG(set1.dimension() != 0, "Cannot test for overlapping of zero-dimensional sets.");
     
@@ -1173,8 +1173,8 @@ bool overlap( const DenotableSetType& set1, const DenotableSetType& set2 ) {
     // If set1 is empty the test is true iff set2 is empty as well
     if(set1.empty()) return set2.empty();
     // Make copies of set1 and set2 that can be modified.
-    DenotableSetType set3 = set1;
-    DenotableSetType set4 = set2;
+    BDDTreeSet set3 = set1;
+    BDDTreeSet set4 = set2;
     // Equalize the height of the two sets.
     set3.increase_height(set4.root_cell_height());
     set4.increase_height(set3.root_cell_height());
@@ -1186,23 +1186,23 @@ bool overlap( const DenotableSetType& set1, const DenotableSetType& set2 ) {
     return (bdd_and(set3.enabled_cells(), set4.enabled_cells()) != bddfalse);    
 }
 
-tribool DenotableSetType::subset( const DenotableSetType& other ) const {
+tribool BDDTreeSet::subset( const BDDTreeSet& other ) const {
     return Ariadne::subset(*this, other);
 }
 
-tribool DenotableSetType::superset( const DenotableSetType& other ) const{
+tribool BDDTreeSet::superset( const BDDTreeSet& other ) const{
     return Ariadne::superset(*this, other);
 }
 
-tribool DenotableSetType::disjoint( const DenotableSetType& other  ) const{
+tribool BDDTreeSet::disjoint( const BDDTreeSet& other  ) const{
     return Ariadne::disjoint(*this, other);
 }
 
-tribool DenotableSetType::overlaps( const DenotableSetType& other ) const{
+tribool BDDTreeSet::overlaps( const BDDTreeSet& other ) const{
     return Ariadne::overlap(*this, other);
 }
 
-tribool DenotableSetType::subset( const Box& box ) const {
+tribool BDDTreeSet::subset( const Box& box ) const {
     // raise an error if the current set is zero dimensional
     ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot test for subset of a zero-dimensional set.");
     
@@ -1216,7 +1216,7 @@ tribool DenotableSetType::subset( const Box& box ) const {
     return _subset(this->root_cell(), this->enabled_cells(), 0, splitting_coordinate, box);        
 }
 
-tribool DenotableSetType::superset( const Box& box ) const {
+tribool BDDTreeSet::superset( const Box& box ) const {
     // raise an error if the current set is zero dimensional
     ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot test for superset of a zero-dimensional set.");
 
@@ -1237,7 +1237,7 @@ tribool DenotableSetType::superset( const Box& box ) const {
 }
 
 
-tribool DenotableSetType::disjoint( const Box& box  ) const {
+tribool BDDTreeSet::disjoint( const Box& box  ) const {
     // raise an error if the current set is zero dimensional
     ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot test for disjoint of a zero-dimensional set.");
 
@@ -1254,20 +1254,20 @@ tribool DenotableSetType::disjoint( const Box& box  ) const {
     return _disjoint(this->root_cell(), this->enabled_cells(), 0, splitting_coordinate, box);        
 }
 
-tribool DenotableSetType::overlaps( const Box& box ) const {
+tribool BDDTreeSet::overlaps( const Box& box ) const {
     return !this->disjoint(box);        
 }
 
-void DenotableSetType::mince( const uint subdiv ) {
+void BDDTreeSet::mince( const uint subdiv ) {
     this->_mince_depth = subdiv * this->dimension();
 };
 
-void DenotableSetType::recombine() {
+void BDDTreeSet::recombine() {
     this->_mince_depth = -1;
 };
 
 
-void DenotableSetType::clear( ) {
+void BDDTreeSet::clear( ) {
     this->_root_cell_height = 0;
     this->_root_cell_coordinates.fill(0);
     this->_bdd = bddfalse;
@@ -1275,7 +1275,7 @@ void DenotableSetType::clear( ) {
 }
 
 
-int DenotableSetType::minimize_height() {
+int BDDTreeSet::minimize_height() {
     // Raise an error if the set is zero-dimensional
     ARIADNE_ASSERT_MSG(this->grid().dimension() != 0, "Cannot minimize height of a zero-dimensional set.");
     
@@ -1288,7 +1288,7 @@ int DenotableSetType::minimize_height() {
     return this->root_cell_height();
 }
 
-int DenotableSetType::increase_height(uint new_height) {
+int BDDTreeSet::increase_height(uint new_height) {
     // std::cout << "increase_height(" <<  new_height << ")" << std::endl;
     // Raise an error if the set is zero-dimensional
     ARIADNE_ASSERT_MSG(this->grid().dimension() != 0, "Cannot increase height of a zero-dimensional set.");
@@ -1308,7 +1308,7 @@ int DenotableSetType::increase_height(uint new_height) {
     return this->root_cell_height();
 }
 
-int DenotableSetType::increase_height(const Box& box) {
+int BDDTreeSet::increase_height(const Box& box) {
     // std::cout << "increase_height(" <<  box << ")" << std::endl;
 
     // Raise an error if the set is zero-dimensional
@@ -1345,32 +1345,32 @@ int DenotableSetType::increase_height(const Box& box) {
 }
 
 
-DenotableSetType join( const DenotableSetType& set1, const DenotableSetType& set2 ) {
-    DenotableSetType res(set1);
+BDDTreeSet join( const BDDTreeSet& set1, const BDDTreeSet& set2 ) {
+    BDDTreeSet res(set1);
     res.adjoin(set2);
     return res;
 }
 
-DenotableSetType intersection( const DenotableSetType& set1, const DenotableSetType& set2 ) {
-    DenotableSetType res(set1);
+BDDTreeSet intersection( const BDDTreeSet& set1, const BDDTreeSet& set2 ) {
+    BDDTreeSet res(set1);
     res.restrict(set2);
     return res;
 }
 
-DenotableSetType difference( const DenotableSetType& set1, const DenotableSetType& set2 ) {
-    DenotableSetType res(set1);
+BDDTreeSet difference( const BDDTreeSet& set1, const BDDTreeSet& set2 ) {
+    BDDTreeSet res(set1);
     res.remove(set2);
     return res;
 }
 
-void DenotableSetType::adjoin( const DenotableSetType& set ) {
+void BDDTreeSet::adjoin( const BDDTreeSet& set ) {
     // raise an error if the current set is zero-dimensional
     ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot adjoin a BDDTreeSet to a zero-dimensional one.");
     // the two sets must have the same grid
     ARIADNE_ASSERT_MSG(this->grid() == set.grid(), "Cannot adjoin a BDDTreeSet with a different grid.");
     
     // Make a copy of set that can be modified
-    DenotableSetType set2 = set;
+    BDDTreeSet set2 = set;
     // Equalize the root cell of the two sets
     _equalize_root_cell(*this, set2);
     // Since the two sets have the same root cell, their union is the logical OR of the BDDs
@@ -1380,14 +1380,14 @@ void DenotableSetType::adjoin( const DenotableSetType& set ) {
 }
 
 
-void DenotableSetType::restrict( const DenotableSetType& set ) {
+void BDDTreeSet::restrict( const BDDTreeSet& set ) {
     // raise an error if the current set is zero-dimensional
     ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot restrict a zero-dimensional BDDTreeSet.");
     // the two sets must have the same grid
     ARIADNE_ASSERT_MSG(this->grid() == set.grid(), "Cannot intersect a BDDTreeSet with a different grid.");
     
     // Make a copy of set that can be modified
-    DenotableSetType set2 = set;
+    BDDTreeSet set2 = set;
     // Equalize the root cell of the two sets
     _equalize_root_cell(*this, set2);
     // Since the two sets have the same root cell, their intersection is the logical AND of the BDDs
@@ -1396,7 +1396,7 @@ void DenotableSetType::restrict( const DenotableSetType& set ) {
     this->minimize_height();
 }
 
-void DenotableSetType::remove( const DenotableSetType& set ) {
+void BDDTreeSet::remove( const BDDTreeSet& set ) {
     // std::cout << "BDDTreeSet::remove( ... )" << std::endl;
     // raise an error if the current set is zero-dimensional
     ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot remove from a zero-dimensional BDDTreeSet.");
@@ -1404,7 +1404,7 @@ void DenotableSetType::remove( const DenotableSetType& set ) {
     ARIADNE_ASSERT_MSG(this->grid() == set.grid(), "Cannot remove a BDDTreeSet with a different grid.");
     
     // Make a copy of set that can be modified
-    DenotableSetType set2 = set;
+    BDDTreeSet set2 = set;
     // Equalize the root cell of the two sets
     _equalize_root_cell(*this, set2);
     // Since the two sets have the same root cell, their difference is the logical "difference" of the BDDs
@@ -1413,7 +1413,7 @@ void DenotableSetType::remove( const DenotableSetType& set ) {
     this->minimize_height();
 }
 
-void DenotableSetType::adjoin_over_approximation( const Box& box, const uint subdiv ) {
+void BDDTreeSet::adjoin_over_approximation( const Box& box, const uint subdiv ) {
     // std::cout << "adjoin_over_approximation( " << box << ", " << subdiv << ")" << std::endl;
     // raise an error if the set is zero dimensional
     ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot adjoin a box to a zero-dimensional BDDTreeSet.");
@@ -1439,7 +1439,7 @@ void DenotableSetType::adjoin_over_approximation( const Box& box, const uint sub
     this->minimize_height();
 }   
 
-void DenotableSetType::adjoin_outer_approximation( const CompactSetInterface& set, const uint subdiv ) {
+void BDDTreeSet::adjoin_outer_approximation( const CompactSetInterface& set, const uint subdiv ) {
     // std::cout << "BDDTreeSet::adjoin_outer_approximation(" << set << ", " << subdiv << ")" << std::endl;
     ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot adjoin to a zero-dimensional bdd set.");
     // the set and the bdd set must have the same dimension
@@ -1467,7 +1467,7 @@ void DenotableSetType::adjoin_outer_approximation( const CompactSetInterface& se
     this->minimize_height();    
 }
 
-void DenotableSetType::adjoin_lower_approximation( const OvertSetInterface& set, const uint height, const uint subdiv ) {
+void BDDTreeSet::adjoin_lower_approximation( const OvertSetInterface& set, const uint height, const uint subdiv ) {
     // std::cout << "BDDTreeSet::adjoin_lower_approximation(" << set << ", " << height << ", " << subdiv << ")" << std::endl;
     ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot adjoin to a zero-dimensional bdd set.");
     // the set and the bdd set must have the same dimension
@@ -1488,7 +1488,7 @@ void DenotableSetType::adjoin_lower_approximation( const OvertSetInterface& set,
     this->minimize_height();            
 }
 
-void DenotableSetType::adjoin_lower_approximation( const OvertSetInterface& set, const Box& bounding_box, const uint subdiv ) {
+void BDDTreeSet::adjoin_lower_approximation( const OvertSetInterface& set, const Box& bounding_box, const uint subdiv ) {
     // std::cout << "BDDTreeSet::adjoin_lower_approximation(" << set << ", " << bounding_box << ", " << subdiv << ")" << std::endl;
     ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot adjoin to a zero-dimensional bdd set.");
     // the set and the bdd set must have the same dimension
@@ -1511,11 +1511,11 @@ void DenotableSetType::adjoin_lower_approximation( const OvertSetInterface& set,
     this->minimize_height();    
 }
 
-void DenotableSetType::adjoin_lower_approximation( const LocatedSetInterface& set, const uint subdiv ) {
+void BDDTreeSet::adjoin_lower_approximation( const LocatedSetInterface& set, const uint subdiv ) {
     this->adjoin_lower_approximation(set, set.bounding_box(), subdiv);
 }
 
-void DenotableSetType::adjoin_inner_approximation( const OpenSetInterface& set, const uint height, const uint subdiv ) {
+void BDDTreeSet::adjoin_inner_approximation( const OpenSetInterface& set, const uint height, const uint subdiv ) {
     // std::cout << "BDDTreeSet::adjoin_inner_approximation(" << set << ", " << height << ", " << subdiv << ")" << std::endl;
     ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot adjoin to a zero-dimensional bdd set.");
     // the set and the bdd set must have the same dimension
@@ -1538,7 +1538,7 @@ void DenotableSetType::adjoin_inner_approximation( const OpenSetInterface& set, 
     this->minimize_height();    
 }
 
-void DenotableSetType::adjoin_inner_approximation( const OpenSetInterface& set, const Box& bounding_box, const uint subdiv ) {
+void BDDTreeSet::adjoin_inner_approximation( const OpenSetInterface& set, const Box& bounding_box, const uint subdiv ) {
     // std::cout << "BDDTreeSet::adjoin_inner_approximation(" << set << ", " << bounding_box << ", " << subdiv << ")" << std::endl;
     ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot adjoin to a zero-dimensional bdd set.");
     // the set and the bdd set must have the same dimension
@@ -1561,7 +1561,7 @@ void DenotableSetType::adjoin_inner_approximation( const OpenSetInterface& set, 
     this->minimize_height();    
 }
 
-void DenotableSetType::outer_restrict(const OpenSetInterface& set) {
+void BDDTreeSet::outer_restrict(const OpenSetInterface& set) {
     ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot compare with a zero-dimensional BDDTreeSet.");
     ARIADNE_ASSERT_MSG(this->dimension() == set.dimension(), "Cannot compare sets with different dimensions.");
 
@@ -1579,7 +1579,7 @@ void DenotableSetType::outer_restrict(const OpenSetInterface& set) {
     this->minimize_height();    
 }
 
-void DenotableSetType::inner_restrict(const OpenSetInterface& set) {
+void BDDTreeSet::inner_restrict(const OpenSetInterface& set) {
     ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot compare with a zero-dimensional BDDTreeSet.");
     ARIADNE_ASSERT_MSG(this->dimension() == set.dimension(), "Cannot compare sets with different dimensions.");
 
@@ -1597,7 +1597,7 @@ void DenotableSetType::inner_restrict(const OpenSetInterface& set) {
     this->minimize_height();    
 }
 
-void DenotableSetType::outer_restrict(const SetCheckerInterface& checker, const uint accuracy) {
+void BDDTreeSet::outer_restrict(const SetCheckerInterface& checker, const uint accuracy) {
     ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot compare with a zero-dimensional BDDTreeSet.");
 
     // Do nothing if the bdd set is empty
@@ -1614,7 +1614,7 @@ void DenotableSetType::outer_restrict(const SetCheckerInterface& checker, const 
     this->minimize_height();    
 }
 
-void DenotableSetType::inner_restrict(const SetCheckerInterface& checker, const uint accuracy) {
+void BDDTreeSet::inner_restrict(const SetCheckerInterface& checker, const uint accuracy) {
     ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot compare with a zero-dimensional BDDTreeSet.");
 
     // Do nothing if the bdd set is empty
@@ -1631,35 +1631,35 @@ void DenotableSetType::inner_restrict(const SetCheckerInterface& checker, const 
     this->minimize_height();    
 }
 
-DenotableSetType::const_iterator DenotableSetType::begin() const {
-    return DenotableSetType::const_iterator(*this);
+BDDTreeSet::const_iterator BDDTreeSet::begin() const {
+    return BDDTreeSet::const_iterator(*this);
 }
 
-DenotableSetType::const_iterator DenotableSetType::end() const {
-    return DenotableSetType::const_iterator();
+BDDTreeSet::const_iterator BDDTreeSet::end() const {
+    return BDDTreeSet::const_iterator();
 }
 
-DenotableSetType::operator ListSet<Box>() const {
+BDDTreeSet::operator ListSet<Box>() const {
     ARIADNE_ASSERT_MSG(this->dimension() != 0,
         "Cannot convert a zero-dimensional BDDTreeSet to a list of boxes.");
         
     ListSet<Box> result(this->dimension());
 
-    for (DenotableSetType::const_iterator it = this->begin(), end = this->end(); it != end; it++ ) {
+    for (BDDTreeSet::const_iterator it = this->begin(), end = this->end(); it != end; it++ ) {
         result.push_back((*it));
     }
 
     return result;
 }
 
-void DenotableSetType::draw(CanvasInterface& canvas) const {
-    for(DenotableSetType::const_iterator iter=this->begin(); iter!=this->end(); ++iter) {
+void BDDTreeSet::draw(CanvasInterface& canvas) const {
+    for(BDDTreeSet::const_iterator iter=this->begin(); iter!=this->end(); ++iter) {
         iter->draw(canvas);
     }
 }
 
 
-std::ostream& DenotableSetType::write(std::ostream& os) const {
+std::ostream& BDDTreeSet::write(std::ostream& os) const {
     return os << (*this);
 }
 
@@ -1685,7 +1685,7 @@ BDDTreeConstIterator::BDDTreeConstIterator()
 {
 }
 
-BDDTreeConstIterator::BDDTreeConstIterator( const DenotableSetType& set ) 
+BDDTreeConstIterator::BDDTreeConstIterator( const BDDTreeSet& set )
 {
     ARIADNE_ASSERT_MSG(set.dimension() != 0, "Cannot create an iterator for a zero-dimensional BDDTreeSet.");
     PathElement root;
@@ -1739,7 +1739,7 @@ Box const& BDDTreeConstIterator::dereference() const {
 
 /********************************** Stream operators **********************************/
 
-std::ostream& operator<<(std::ostream& os, const DenotableSetType& set) {
+std::ostream& operator<<(std::ostream& os, const BDDTreeSet& set) {
     return os << "BDDTreeSet( Grid: " << set.grid() << 
                  ", root cell height: " << set.root_cell_height() << 
                  ", root cell coordinates: " << set.root_cell_coordinates() <<
@@ -1756,7 +1756,7 @@ std::ostream& operator<<(std::ostream& os, const PathElement& pe) {
 
 /********************************** Comparison and filtering operators **********************************/
 
-tribool disjoint(const ConstraintSet& cons_set, const DenotableSetType& bdd_set) {
+tribool disjoint(const ConstraintSet& cons_set, const BDDTreeSet& bdd_set) {
     ARIADNE_ASSERT_MSG(bdd_set.dimension() != 0, "Cannot compare with a zero-dimensional BDDTreeSet.");
     ARIADNE_ASSERT_MSG(bdd_set.dimension() == cons_set.dimension(), "Cannot compare sets with different dimensions.");
 
@@ -1776,11 +1776,11 @@ tribool disjoint(const ConstraintSet& cons_set, const DenotableSetType& bdd_set)
     return _disjoint(bdd_set.root_cell(), bdd_set.enabled_cells(), 0, splitting_coordinate, cons_set);            
 }
 
-tribool overlaps(const ConstraintSet& cons_set, const DenotableSetType& bdd_set) {
+tribool overlaps(const ConstraintSet& cons_set, const BDDTreeSet& bdd_set) {
     return !disjoint(cons_set, bdd_set);            
 }
 
-tribool covers(const ConstraintSet& cons_set, const DenotableSetType& bdd_set) {
+tribool covers(const ConstraintSet& cons_set, const BDDTreeSet& bdd_set) {
     // std::cout << "covers(" << cons_set << ", " << bdd_set << ")" << std::endl;
     ARIADNE_ASSERT_MSG(bdd_set.dimension() != 0, "Cannot compare with a zero-dimensional BDDTreeSet.");
     ARIADNE_ASSERT_MSG(bdd_set.dimension() == cons_set.dimension(), "Cannot compare sets with different dimensions.");
@@ -1801,17 +1801,17 @@ tribool covers(const ConstraintSet& cons_set, const DenotableSetType& bdd_set) {
     return _subset(bdd_set.root_cell(), bdd_set.enabled_cells(), 0, splitting_coordinate, cons_set);        
 }
 
-DenotableSetType outer_intersection(const DenotableSetType& bdd_set, const ConstraintSet& cons_set) {
+BDDTreeSet outer_intersection(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set) {
     // make a copy of bdd_set
-    DenotableSetType result = bdd_set;
+    BDDTreeSet result = bdd_set;
     if (!cons_set.unconstrained())
     	result.outer_restrict(cons_set);
     return result;
 }
 
-DenotableSetType inner_intersection(const DenotableSetType& bdd_set, const ConstraintSet& cons_set) {
+BDDTreeSet inner_intersection(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set) {
     // make a copy of bdd_set
-    DenotableSetType result = bdd_set;
+    BDDTreeSet result = bdd_set;
     if (!cons_set.unconstrained())
     	result.inner_restrict(cons_set);
     return result;
@@ -1821,13 +1821,13 @@ DenotableSetType inner_intersection(const DenotableSetType& bdd_set, const Const
 //     ARIADNE_NOT_IMPLEMENTED;    
 // }
 
-DenotableSetType project_down(const DenotableSetType& bdd_set, const Vector<uint>& indices) {
+BDDTreeSet project_down(const BDDTreeSet& bdd_set, const Vector<uint>& indices) {
     // std::cout << "project_down(" << bdd_set << ", " << indices << ")" << std::endl;
     // project down the grid
     Grid new_grid = project_down(bdd_set.grid(), indices);
     // std::cout << "new_grid = " << new_grid << std::endl;
     // To simplify the procedure, increase the height of the bdd_set so that the first splitting coordinate is 0
-    DenotableSetType set = bdd_set;
+    BDDTreeSet set = bdd_set;
     uint height = set.root_cell_height();
     uint old_dim = set.dimension();
     uint split = _splitting_coordinate(height, old_dim);
@@ -1848,7 +1848,7 @@ DenotableSetType project_down(const DenotableSetType& bdd_set, const Vector<uint
     // remove, duplicate and rename variables
     bdd new_bdd = _project_down_variables(set.enabled_cells(), old_dim, indices, set.root_cell_height() + set.mince_depth());
     // create the new BDDTreeSet
-    set = DenotableSetType(new_grid, new_height, new_coordinates, new_bdd, new_mince_depth);
+    set = BDDTreeSet(new_grid, new_height, new_coordinates, new_bdd, new_mince_depth);
     set.minimize_height();
     return set;
 }

@@ -87,6 +87,8 @@ private:
 	const ContinuousEvolutionDirection& _continuous_direction;
 	const uint& _concurrency;
 
+	string _exception;
+
 	HDS _reach, _evolve;
 
     std::list<boost::shared_ptr<boost::thread> > _m_threads;
@@ -112,10 +114,15 @@ private:
 				_initial_enclosures.pop_front();
 				_inp_mutex.unlock();		
 
-				// Get the enclosures from the initial enclosure, in a lock_time flight
 				ELS current_reach_enclosures, current_evolve_enclosures;
-				make_ltuple<ELS,ELS>(current_reach_enclosures,current_evolve_enclosures) =
-										_evolver->reach_evolve(enclosure,_time,_ignore_activations,_continuous_direction,UPPER_SEMANTICS);
+				try {
+					// Get the enclosures from the initial enclosure, in a lock_time flight
+					make_ltuple<ELS,ELS>(current_reach_enclosures,current_evolve_enclosures) =
+											_evolver->reach_evolve(enclosure,_time,_ignore_activations,_continuous_direction,UPPER_SEMANTICS);
+				} catch (SqrtNumericException& ex) {
+					_exception = ex.what();
+					break;
+				}
 
 				_out_mutex.lock();
 
@@ -134,6 +141,8 @@ private:
     void _wait_completion() {
 		for (std::list<boost::shared_ptr<boost::thread> >::iterator it = _m_threads.begin(); it != _m_threads.end(); it++)
 			(*it)->join();
+		if (!_exception.empty())
+			throw SqrtNumericException(_exception);
     }             
 };
 
@@ -207,6 +216,8 @@ private:
 	const int& _accuracy;
 	const uint& _concurrency;
 
+	string _exception;
+
 	HDS _evolve_global;
 	HUM _adjoined_evolve_sizes, _superposed_evolve_sizes;
 	EL _final_enclosures;
@@ -237,8 +248,13 @@ private:
 
 				// Get the enclosures from the initial enclosure, in a lock_time flight
 				ELS current_reach_enclosures, current_evolve_enclosures;
-				make_ltuple<ELS,ELS>(current_reach_enclosures,current_evolve_enclosures) =
-										_evolver->reach_evolve(current_initial_enclosure,_time,LOWER_SEMANTICS);
+				try {
+					make_ltuple<ELS,ELS>(current_reach_enclosures,current_evolve_enclosures) =
+							_evolver->reach_evolve(current_initial_enclosure,_time,LOWER_SEMANTICS);
+				} catch (SqrtNumericException& ex) {
+					_exception = ex.what();
+					break;
+				}
 
 				_out_mutex.lock();
 
@@ -272,6 +288,8 @@ private:
     {
 		for (std::list<boost::shared_ptr<boost::thread> >::iterator it = _m_threads.begin(); it != _m_threads.end(); it++)
 			(*it)->join();
+		if (!_exception.empty())
+			throw SqrtNumericException(_exception);
     }             
 };
 
