@@ -41,7 +41,7 @@ int main(int argc,char *argv[])
 	initial_set[DiscreteLocation("closed")] = Box(2, 6.0,7.5, 0.0,0.0);
 
 	// The domain
-	HybridBoxes domain = bounding_boxes(system.state_space(),Box(2,4.5,9.0,0.0,1.0));
+	HybridBoxes domain(system.state_space(),Box(2,4.5,9.0,0.0,1.0));
 
 	// The safety constraint
 	RealVariable x("x");

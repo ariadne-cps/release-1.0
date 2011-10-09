@@ -110,8 +110,8 @@ TestReachabilityRestriction::_get_reference_restriction()
 	DiscreteLocation q2(2);
 
 	HybridBoxes domain;
-	domain[q1] = Box(2,-1.0,1.0,-2.0,3.0);
-	domain[q2] = Box(3,0.5,2.0,-1.0,0.0,1.0,1.5);
+	domain.insert(make_pair(q1,Box(2,-1.0,1.0,-2.0,3.0)));
+	domain.insert(make_pair(q2,Box(3,0.5,2.0,-1.0,0.0,1.0,1.5)));
 
 	HybridGrid grid;
 	grid[q1] = Grid(Vector<Float>(2,2.0,3.0));
@@ -150,8 +150,8 @@ TestReachabilityRestriction::test_accessors() {
 	DiscreteLocation q3(3);
 
 	HybridBoxes domain;
-	domain[q1] = Box(2,-1.0,1.0,-2.0,3.0);
-	domain[q2] = Box(3,0.5,2.0,-1.0,0.0,1.0,1.5);
+	domain.insert(make_pair(q1,Box(2,-1.0,1.0,-2.0,3.0)));
+	domain.insert(make_pair(q2,Box(3,0.5,2.0,-1.0,0.0,1.0,1.5)));
 
 	ARIADNE_PRINT_TEST_CASE_TITLE("Location presence");
 
@@ -167,7 +167,7 @@ TestReachabilityRestriction::test_accessors() {
 
     ARIADNE_PRINT_TEST_CASE_TITLE("Bounding box call effect at startup");
 
-    ARIADNE_TEST_ASSERT(superset(rr1.bounding_box(),domain));
+    ARIADNE_TEST_ASSERT(rr1.bounding_box().superset(domain));
 	ARIADNE_TEST_ASSERT(!rr1.has_discretised(q1));
 	ARIADNE_TEST_ASSERT(!rr1.has_discretised(q2));
 }
@@ -196,7 +196,7 @@ TestReachabilityRestriction::test_refine() {
     ARIADNE_PRINT_TEST_CASE_TITLE("Bounding boxes change");
 
     ARIADNE_TEST_ASSERT(prerefine_boxes != rr1.bounding_box());
-    ARIADNE_TEST_ASSERT(superset(prerefine_boxes,rr1.bounding_box()));
+    ARIADNE_TEST_ASSERT(prerefine_boxes.superset(rr1.bounding_box()));
 }
 
 
@@ -215,8 +215,8 @@ TestReachabilityRestriction::test_apply_to() {
 
 	HybridDenotableSet set_to_restrict1(grid);
 	HybridBoxes set_to_restrict1_boxToAdjoin;
-	set_to_restrict1_boxToAdjoin[q1] = Box(2,-0.4,0.5,-1.0,0.0);
-	set_to_restrict1_boxToAdjoin[q2] = Box(3,0.9,1.0,-0.4,-0.2,1.2,1.3);
+	set_to_restrict1_boxToAdjoin.insert(make_pair(q1,Box(2,-0.4,0.5,-1.0,0.0)));
+	set_to_restrict1_boxToAdjoin.insert(make_pair(q2,Box(3,0.9,1.0,-0.4,-0.2,1.2,1.3)));
 	set_to_restrict1.adjoin_outer_approximation(set_to_restrict1_boxToAdjoin,accuracy);
 	HybridDenotableSet restricted_set1 = set_to_restrict1;
 	rr1.apply_to(restricted_set1);
@@ -230,8 +230,8 @@ TestReachabilityRestriction::test_apply_to() {
 
 	HybridDenotableSet set_to_restrict2(grid);
 	HybridBoxes set_to_restrict2_boxToAdjoin;
-	set_to_restrict2_boxToAdjoin[q1] = Box(2,-0.4,0.5,-1.0,4.0);
-	set_to_restrict2_boxToAdjoin[q2] = Box(3,0.9,1.0,-0.4,-0.2,1.2,1.3);
+	set_to_restrict2_boxToAdjoin.insert(make_pair(q1,Box(2,-0.4,0.5,-1.0,4.0)));
+	set_to_restrict2_boxToAdjoin.insert(make_pair(q2,Box(3,0.9,1.0,-0.4,-0.2,1.2,1.3)));
 	set_to_restrict2.adjoin_outer_approximation(set_to_restrict2_boxToAdjoin,accuracy);
 	HybridDenotableSet restricted_set2 = set_to_restrict2;
 	rr2.apply_to(restricted_set2);
@@ -291,8 +291,8 @@ TestReachabilityRestriction::test_restricts() {
 
 	HybridDenotableSet set_to_restrict1(grid);
 	HybridBoxes set_to_restrict1_boxToAdjoin;
-	set_to_restrict1_boxToAdjoin[q1] = Box(2,-0.4,0.5,-1.0,0.0);
-	set_to_restrict1_boxToAdjoin[q2] = Box(3,0.9,1.0,-0.4,-0.2,1.2,1.3);
+	set_to_restrict1_boxToAdjoin.insert(make_pair(q1,Box(2,-0.4,0.5,-1.0,0.0)));
+	set_to_restrict1_boxToAdjoin.insert(make_pair(q2,Box(3,0.9,1.0,-0.4,-0.2,1.2,1.3)));
 	set_to_restrict1.adjoin_outer_approximation(set_to_restrict1_boxToAdjoin,accuracy);
 	ARIADNE_TEST_ASSERT(!rr1.restricts(set_to_restrict1));
 	ARIADNE_TEST_ASSERT(!rr1.has_discretised(q1));
@@ -302,8 +302,8 @@ TestReachabilityRestriction::test_restricts() {
 
 	HybridDenotableSet set_to_restrict2(grid);
 	HybridBoxes set_to_restrict2_boxToAdjoin;
-	set_to_restrict2_boxToAdjoin[q1] = Box(2,-0.4,0.5,-1.0,0.0);
-	set_to_restrict2_boxToAdjoin[q2] = Box(3,0.9,1.0,-0.4,-0.2,1.2,3.3);
+	set_to_restrict2_boxToAdjoin.insert(make_pair(q1,Box(2,-0.4,0.5,-1.0,0.0)));
+	set_to_restrict2_boxToAdjoin.insert(make_pair(q2,Box(3,0.9,1.0,-0.4,-0.2,1.2,3.3)));
 	set_to_restrict2.adjoin_outer_approximation(set_to_restrict2_boxToAdjoin,accuracy);
 	ARIADNE_TEST_ASSERT(rr1.restricts(set_to_restrict2));
 	ARIADNE_TEST_ASSERT(!rr1.has_discretised(q1));
@@ -332,7 +332,7 @@ TestReachabilityRestriction::test_update() {
 	set1.adjoin_outer_approximation(full_boxes,accuracy);
 	HybridBoxes preupdate_bb = rr1.bounding_box();
 	rr1.update_with(set1);
-	ARIADNE_TEST_ASSERT(superset(preupdate_bb,rr1.bounding_box()));
+	ARIADNE_TEST_ASSERT(preupdate_bb.superset(rr1.bounding_box()));
 	ARIADNE_TEST_ASSERT(rr1.has_discretised(q1));
 	ARIADNE_TEST_ASSERT(rr1.has_discretised(q2));
 
@@ -386,10 +386,12 @@ TestReachabilityRestriction::test_copy() {
 void
 TestReachabilityRestriction::test_forward_jump_set() {
 
+	HybridAutomaton sys = _get_system();
+
 	DiscreteLocation q1(1);
 	DiscreteLocation q2(2);
 
-	HybridBoxes domain;
+	HybridBoxes domain(sys.state_space());
 	domain[q1] = Box(2,0.0,10.0,0.0,10.0);
 	domain[q2] = Box(2,0.0,10.0,0.0,10.0);
 
@@ -407,8 +409,6 @@ TestReachabilityRestriction::test_forward_jump_set() {
 	update_set[q1].adjoin_over_approximation(update_set_bx1,accuracy);
 	update_set[q2].adjoin_over_approximation(update_set_bx2,accuracy);
 	rr1.update_with(update_set);
-
-	HybridAutomaton sys = _get_system();
 
     ARIADNE_PRINT_TEST_CASE_TITLE("The set has no forward jump set due to no activations.");
 
@@ -443,10 +443,12 @@ TestReachabilityRestriction::test_forward_jump_set() {
 void
 TestReachabilityRestriction::test_backward_jump_set() {
 
+	HybridAutomaton sys = _get_system();
+
 	DiscreteLocation q1(1);
 	DiscreteLocation q2(2);
 
-	HybridBoxes domain;
+	HybridBoxes domain(sys.state_space());
 	domain[q1] = Box(2,0.0,10.0,0.0,10.0);
 	domain[q2] = Box(2,0.0,10.0,0.0,10.0);
 
@@ -464,8 +466,6 @@ TestReachabilityRestriction::test_backward_jump_set() {
 	update_set[q1].adjoin_over_approximation(update_set_bx1,accuracy);
 	update_set[q2].adjoin_over_approximation(update_set_bx2,accuracy);
 	rr1.update_with(update_set);
-
-	HybridAutomaton sys = _get_system();
 
     ARIADNE_PRINT_TEST_CASE_TITLE("The set has no backward jump set.");
 
@@ -562,7 +562,7 @@ TestReachabilityRestriction::test_projection() {
 	ARIADNE_TEST_ASSERT(!outer_difference3.empty());
 	ARIADNE_TEST_ASSERT(!outer_difference3.empty());
 
-    ARIADNE_TEST_ASSERT(!superset(inner_intersection3.bounding_box(),outer_intersection3.bounding_box()));
+    ARIADNE_TEST_ASSERT(!inner_intersection3.bounding_box().superset(outer_intersection3.bounding_box()));
 
     ARIADNE_PRINT_TEST_CASE_TITLE("The denotable set has no inner difference from the constraint set.");
 

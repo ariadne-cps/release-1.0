@@ -266,7 +266,7 @@ int main()
     std::cout << "done." << std::endl;
 */
     /// Create a ReachabilityAnalyser object
-    HybridBoxes domain;
+    HybridBoxes domain(rectifier.state_space());
     Box domain_box(3,0.0,1.0/dp[1],-dp[0],dp[0],2.0,dp[0]);
     domain[offoff] = domain_box;
     domain[offon] = domain_box;

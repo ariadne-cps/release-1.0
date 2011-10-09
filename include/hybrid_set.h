@@ -109,75 +109,65 @@ class HybridSpace
 };
 
 
+//! \brief A hybrid extension of a %Box.
+class HybridBoxes
+	: public std::map<DiscreteLocation,Box>
+{
+  public:
+
+	typedef std::map<DiscreteLocation,Box>::const_iterator locations_const_iterator;
+
+  public:
+
+	HybridBoxes() { }
+
+	HybridBoxes(const HybridSpace& space);
+
+	HybridBoxes(
+			const HybridSpace& space,
+			const Box& bbox);
+
+	virtual tribool overlaps(const LocalisedBox& hbx) const;
+	virtual tribool disjoint(const LocalisedBox& hbx) const;
+	virtual tribool covers(const LocalisedBox& hbx) const;
+    virtual tribool inside(const HybridBoxes& hbx) const;
+
+    tribool superset(const HybridBoxes& hbx) const;
+
+    //! \brief Project the \a dimensions into a Box.
+    //! \details The result has the size of \a dimensions and the hull of the boxes in \a dimensions.
+	Box project(const std::vector<uint>& dimensions) const;
+
+    bool has_location(DiscreteLocation q) const {
+        return this->find(q)!=this->std::map<DiscreteLocation,Box>::end(); }
+
+    Box& operator[](DiscreteLocation q) {
+        ARIADNE_ASSERT(this->has_location(q));
+        return this->find(q)->second;
+    }
+
+    const Box& operator[](DiscreteLocation q) const {
+        ARIADNE_ASSERT(this->has_location(q));
+        return this->find(q)->second;
+    }
+
+    virtual HybridBoxes* clone() const { return new HybridBoxes(*this); }
+    HybridSpace space() const { return HybridSpace(*this); }
+
+    locations_const_iterator locations_begin() const {
+        return this->std::map<DiscreteLocation,Box>::begin(); }
+    locations_const_iterator locations_end() const {
+        return this->std::map<DiscreteLocation,Box>::end(); }
+};
 
 HybridBoxes
 hull(const HybridBoxes& box1, const HybridBoxes& box2);
-
-bool
-superset(const HybridBoxes& box1, const HybridBoxes& box2);
-
-bool
-covers(const HybridBoxes& hboxes, const LocalisedBox& hbox);
-
-HybridBoxes
-shrink_in(const HybridBoxes& box, const HybridFloatVector& epsilon);
-
-HybridBoxes
-shrink_out(const HybridBoxes& box, const HybridFloatVector& epsilon);
 
 HybridBoxes
 widen(const HybridBoxes& box, const HybridFloatVector& epsilon);
 
 HybridBoxes
 widen(const HybridBoxes& box);
-
-HybridBoxes
-unbounded_hybrid_boxes(const HybridSpace& hspace);
-
-Box
-project(const HybridBoxes& box, const std::vector<uint>& dimensions);
-
-HybridBoxes
-project(const Box& box, const std::vector<uint>& dimensions, const HybridSpace& target_space);
-
-inline
-HybridBoxes
-bounding_boxes(const std::map<DiscreteLocation,uint> space, Interval bound)
-{
-    HybridBoxes result;
-    for(std::map<DiscreteLocation,uint>::const_iterator loc_iter=space.begin();
-        loc_iter!=space.end(); ++loc_iter)
-        {
-            result.insert(make_pair(loc_iter->first,Box(loc_iter->second, bound)));
-        }
-    return result;
-}
-
-inline
-HybridBoxes
-bounding_boxes(const std::map<DiscreteLocation,uint> space, const Box& bbox)
-{
-    HybridBoxes result;
-    for(std::map<DiscreteLocation,uint>::const_iterator loc_iter=space.begin();
-        loc_iter!=space.end(); ++loc_iter)
-        {
-            result.insert(make_pair(loc_iter->first,bbox));
-        }
-    return result;
-}
-
-inline
-HybridSpace
-state_space(const HybridBoxes& hboxes)
-{
-	HybridSpace result;
-
-	for (HybridBoxes::const_iterator hb_it = hboxes.begin(); hb_it != hboxes.end(); ++hb_it) {
-		result.insert(make_pair(hb_it->first,hb_it->second.dimension()));
-	}
-
-	return result;
-}
 
 
 template<class BS>

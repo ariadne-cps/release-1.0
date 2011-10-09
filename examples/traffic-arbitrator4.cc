@@ -190,7 +190,7 @@ int main(int argc,char *argv[])
     initial_set[cruiseStart] = Box(3, alpha_initial_l,alpha_initial_u, alpha_initial_l,alpha_initial_u, alpha_initial_l,alpha_initial_u);
 
     // The domain
-    HybridBoxes domain = bounding_boxes(system.state_space(),
+    HybridBoxes domain(system.state_space(),
             Box(3,0.0,1.1*alpha_max.value().upper(),0.0,1.1*alpha_max.value().upper(),0.0,1.1*alpha_max.value().upper()));
 
     // The safety constraint

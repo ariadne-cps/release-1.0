@@ -49,7 +49,7 @@ template<class BS> class HybridBasicSet;
 typedef HybridBasicSet<Point> LocalisedPoint;
 typedef HybridBasicSet<Box> LocalisedBox;
 
-typedef std::map<DiscreteLocation,Box> HybridBoxes;
+class HybridBoxes;
 
 //! \brief Base class for sets in a hybrid space.
 class HybridSetInterfaceBase 

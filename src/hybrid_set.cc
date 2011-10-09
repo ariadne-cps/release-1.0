@@ -25,6 +25,118 @@
 
 namespace Ariadne {
 
+
+/* HybridBox *************************************************************************************/
+
+
+HybridBoxes::
+HybridBoxes(
+		const HybridSpace& space,
+		const Box& bbox)
+{
+    for(HybridSpace::const_iterator loc_iter = space.begin(); loc_iter != space.end(); ++loc_iter) {
+    	ARIADNE_ASSERT_MSG(loc_iter->second == bbox.dimension(),
+    			"The provided box dimension is not the same as that of location " << loc_iter->first.name());
+        this->insert(make_pair(loc_iter->first,bbox));
+    }
+}
+
+HybridBoxes::
+HybridBoxes(const HybridSpace& space)
+{
+    for(HybridSpace::const_iterator loc_iter = space.begin(); loc_iter != space.end(); ++loc_iter)
+        this->insert(make_pair(loc_iter->first,Box::empty_box(loc_iter->second)));
+}
+
+
+tribool
+HybridBoxes::
+overlaps(const LocalisedBox& hbx) const
+{
+	locations_const_iterator loc_iter=this->find(hbx.first);
+	if (loc_iter!=this->locations_end()) return loc_iter->second.overlaps(hbx.second);
+	else return false;
+}
+
+
+tribool
+HybridBoxes::
+disjoint(const LocalisedBox& hbx) const
+{
+	locations_const_iterator loc_iter=this->find(hbx.first);
+	if (loc_iter!=this->locations_end()) return loc_iter->second.disjoint(hbx.second);
+	else return true;
+}
+
+
+tribool
+HybridBoxes::
+covers(const LocalisedBox& hbx) const
+{
+	locations_const_iterator loc_iter=this->find(hbx.first);
+	if (loc_iter!=this->locations_end()) return loc_iter->second.covers(hbx.second);
+	else return false;
+}
+
+
+tribool
+HybridBoxes::
+inside(const HybridBoxes& hbx) const
+{
+	ARIADNE_ASSERT_MSG(this->space() == hbx.space(), "The two HybridBox have different spaces.");
+
+	tribool result = true;
+    for(locations_const_iterator loc_iter=hbx.begin(); loc_iter!=hbx.end(); ++loc_iter) {
+    	locations_const_iterator this_iter = this->find(loc_iter->first);
+
+    	tribool local_result = this_iter->second.inside(loc_iter->second);
+    	if (!possibly(local_result))
+    		return false;
+    	else if (indeterminate(local_result))
+    		result = indeterminate;
+	}
+	return result;
+}
+
+
+tribool
+HybridBoxes::
+superset(const HybridBoxes& hbx) const
+{
+	tribool result = true;
+
+	ARIADNE_ASSERT_MSG(this->space() == hbx.space(), "The boxes must have the same space.");
+	for (locations_const_iterator loc_it = this->begin(); loc_it != this->end(); ++loc_it) {
+		tribool local_result = loc_it->second.superset(hbx.find(loc_it->first)->second);
+		if (definitely(!local_result))
+			return false;
+		else if (indeterminate(local_result))
+			result = indeterminate;
+	}
+	return result;
+}
+
+
+
+
+Box
+HybridBoxes::
+project(const std::vector<uint>& dimensions) const
+{
+	ARIADNE_ASSERT_MSG(dimensions.size()>0, "Provide at least one dimension to project to.");
+
+	Box result = Box::empty_box(dimensions.size());
+
+	for (locations_const_iterator loc_it = this->begin(); loc_it != this->end(); ++loc_it)
+		result = hull(result,loc_it->second.project(dimensions));
+
+	return result;
+}
+
+
+/* HybridGrid *********************************************************************************/
+
+
 std::map<DiscreteLocation,Vector<Float> >
 HybridGrid::
 lengths() const
@@ -36,6 +148,10 @@ lengths() const
 
 	return result;
 }
+
+
+/* HybridConstraintSet ************************************************************************/
+
 
 HybridConstraintSet::
 HybridConstraintSet(const HybridVectorFunction& func,const HybridBoxes& codomain)
@@ -68,6 +184,9 @@ HybridConstraintSet(const HybridSpace& hspace)
 		this->insert(make_pair(hs_it->first,ConstraintSet(hs_it->second)));
 	}
 }
+
+
+/* HybridBoundedConstraintSet **************************************************************************/
 
 
 HybridBoundedConstraintSet::
@@ -131,6 +250,9 @@ HybridBoundedConstraintSet(const HybridBoxes& domain_boxes)
 }
 
 
+/* Free functions ********************************************************************************/
+
+
 HybridBoxes
 hull(const HybridBoxes& box1, const HybridBoxes& box2)
 {
@@ -141,62 +263,6 @@ hull(const HybridBoxes& box1, const HybridBoxes& box2)
 		HybridBoxes::const_iterator box2_it = box2.find(box1_it->first);
 		ARIADNE_ASSERT_MSG(box2_it != box2.end(),"The location " << box1_it->first.name() << " is not present in both hybrid boxes.");
 		result.insert(std::pair<DiscreteLocation,Box>(box1_it->first,hull(box1_it->second,box2_it->second)));
-	}
-
-	return result;
-}
-
-
-bool
-superset(const HybridBoxes& box1, const HybridBoxes& box2)
-{
-	ARIADNE_ASSERT_MSG(box1.size() == box2.size(), "The boxes must have the same space.");
-	for (HybridBoxes::const_iterator box1_it = box1.begin(); box1_it != box1.end(); ++box1_it) {
-		HybridBoxes::const_iterator box2_it = box2.find(box1_it->first);
-		ARIADNE_ASSERT_MSG(box2_it != box2.end(),"The location " << box1_it->first.name() << " is not present in both hybrid boxes.");
-		if (!box1_it->second.superset(box2_it->second))
-			return false;
-	}
-
-	return true;
-}
-
-
-bool
-covers(const HybridBoxes& hboxes, const LocalisedBox& hbox)
-{
-	HybridBoxes::const_iterator hboxes_in_location = hboxes.find(hbox.first);
-	ARIADNE_ASSERT_MSG(hboxes_in_location != hboxes.end(),
-			"The location " << hbox.first << " is not present in the HybridBoxes.");
-
-	return hboxes_in_location->second.covers(hbox.second);
-}
-
-
-HybridBoxes
-shrink_in(const HybridBoxes& box, const HybridFloatVector& epsilon)
-{
-	HybridBoxes result;
-
-	for (HybridBoxes::const_iterator loc_it = box.begin(); loc_it != box.end(); ++loc_it) {
-		HybridFloatVector::const_iterator epsilon_it = epsilon.find(loc_it->first);
-		ARIADNE_ASSERT_MSG(epsilon_it != epsilon.end(),"The location " << loc_it->first.name() << " is not present in the epsilon map.");
-		result.insert(std::pair<DiscreteLocation,Box>(loc_it->first,loc_it->second.shrink_in(epsilon_it->second)));
-	}
-
-	return result;
-}
-
-
-HybridBoxes
-shrink_out(const HybridBoxes& box, const HybridFloatVector& epsilon)
-{
-	HybridBoxes result;
-
-	for (HybridBoxes::const_iterator loc_it = box.begin(); loc_it != box.end(); ++loc_it) {
-		HybridFloatVector::const_iterator epsilon_it = epsilon.find(loc_it->first);
-		ARIADNE_ASSERT_MSG(epsilon_it != epsilon.end(),"The location " << loc_it->first.name() << " is not present in the epsilon map.");
-		result.insert(std::pair<DiscreteLocation,Box>(loc_it->first,loc_it->second.shrink_out(epsilon_it->second)));
 	}
 
 	return result;
@@ -233,46 +299,6 @@ widen(const HybridBoxes& box)
 	return result;
 }
 
-
-HybridBoxes
-unbounded_hybrid_boxes(const HybridSpace& hspace)
-{
-	HybridBoxes result;
-
-	for (HybridSpace::const_iterator space_it = hspace.begin(); space_it != hspace.end(); ++space_it)
-		result.insert(std::pair<DiscreteLocation,Box>(space_it->first,unbounded_box(space_it->second)));
-
-	return result;
-}
-
-
-Box
-project(const HybridBoxes& box, const std::vector<uint>& dimensions)
-{
-	ARIADNE_ASSERT_MSG(dimensions.size()>0, "Provide at least one dimension to project to.");
-
-	Box result = Box::empty_box(dimensions.size());
-
-	for (HybridBoxes::const_iterator loc_it = box.begin(); loc_it != box.end(); ++loc_it)
-		result = hull(result,loc_it->second.project(dimensions));
-
-	return result;
-}
-
-
-HybridBoxes
-project(const Box& box, const std::vector<uint>& dimensions, const HybridSpace& target_space)
-{
-	ARIADNE_ASSERT_MSG(dimensions.size() == box.size(), "The original box and the projection sizes do not match.");
-
-	HybridBoxes result = unbounded_hybrid_boxes(target_space);
-
-	for (HybridBoxes::iterator loc_it = result.begin(); loc_it != result.end(); ++loc_it)
-		for (uint i=0; i<dimensions.size();i++)
-			loc_it->second[dimensions[i]] = box[i];
-
-	return result;
-}
 
 bool subset(const HybridDenotableSet& theSet1, const HybridDenotableSet& theSet2)
 {

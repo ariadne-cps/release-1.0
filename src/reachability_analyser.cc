@@ -259,7 +259,8 @@ lower_reach_evolve(
 
         HybridFloatVector local_epsilon = get_epsilon(orbit.reach(),grid,_accuracy());
 
-        if (!superset(widen(_restriction->outer_domain_box(),local_epsilon),local_reach.bounding_box()))
+        HybridBoxes widened_outer_domain = widen(_restriction->outer_domain_box(),local_epsilon);
+        if (!widened_outer_domain.superset(local_reach.bounding_box()))
 			throw DomainException("The lower reach is not inside the over-approximated domain. Check the domain used for variables.");
 
         _restriction->apply_to(local_reach);
@@ -585,9 +586,10 @@ _lower_chain_reach_and_epsilon(
 
 		epsilon = max_elementwise(epsilon,local_epsilon);
 
-		if (!superset(widen(_restriction->outer_domain_box(),epsilon),local_reach.bounding_box())) {
+        HybridBoxes widened_outer_domain = widen(_restriction->outer_domain_box(),local_epsilon);
+        if (!widened_outer_domain.superset(local_reach.bounding_box()))
 			throw DomainException("The lower reach is not inside the over-approximated domain. Check the domain used for variables.");
-		}
+
 		_restriction->apply_to(local_reach);
 
 		_lower_chain_reach_and_epsilon_constraint_check(system,local_reach,local_epsilon);

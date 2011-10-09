@@ -48,6 +48,7 @@ class TestReachabilityAnalysis
 {  
     HybridBoundedConstraintSet initial_set;
     HybridTime reach_time;
+    HybridAutomaton system;
  
     typedef TaylorSet EnclosureType;
     typedef HybridBasicSet<TaylorSet> LocalisedEnclosureType;
@@ -58,9 +59,10 @@ class TestReachabilityAnalysis
     {
     	HybridBoxes domain;
     	DiscreteLocation loc(1);
-    	domain[loc] = Box(2,-1.0,2.1,-0.5,1.1);
+    	domain.insert(make_pair(loc,Box(2,-1.0,2.1,-0.5,1.1)));
     	int accuracy = 6;
 
+    	cout << "Started building analyser\n";
         HybridReachabilityAnalyser analyser(build_system(),domain,accuracy);
         cout << "Done building analyser\n";
         return analyser;
@@ -68,7 +70,7 @@ class TestReachabilityAnalysis
 
     static HybridAutomaton build_system() {
 
-    	HybridAutomaton system;
+    	HybridAutomaton sys;
 
     	std::cout<<std::setprecision(20);
 		std::cerr<<std::setprecision(20);
@@ -78,12 +80,12 @@ class TestReachabilityAnalysis
 		Matrix<Float> A=Matrix<Float>("[-0.5,-1.0;1.0,-0.5]");
 		Vector<Float> b=Vector<Float>("[0.0,0.0]");
 		VectorAffineFunction aff(A,b);
-		system.new_mode(loc,aff);
+		sys.new_mode(loc,aff);
 		cout << "Done building system\n";
 
-		cout << "system=" << system << endl;
+		cout << "system=" << sys << endl;
 
-		return system;
+		return sys;
     }
 
     TestReachabilityAnalysis()
@@ -91,11 +93,11 @@ class TestReachabilityAnalysis
     {
         cout << "Done initialising variables\n";
 
-        DiscreteLocation location(1);
+        DiscreteLocation loc(1);
         HybridSpace hspace;
-        hspace.insert(make_pair(location,2));
+        hspace.insert(make_pair(loc,2));
         initial_set = HybridBoundedConstraintSet(hspace);
-        initial_set[location]=Box(2,2.0,2.0,0.0,0.0);
+        initial_set[loc]=Box(2,2.0,2.0,0.0,0.0);
         cout << "Done creating initial set\n" << endl;
 
         cout << "initial_set=" << initial_set << endl;
@@ -127,6 +129,8 @@ class TestReachabilityAnalysis
         DiscreteLocation loc(1);
         Box graphics_box(2,-1.0,2.1,-0.5,1.1);
         cout << "Computing timed evolve set" << endl;
+        cout << "System: " << build_system() << endl;
+        cout << "Initial set: " << initial_set << endl;
         HybridDenotableSet hybrid_lower_evolve=analyser.lower_evolve(initial_set,reach_time);
         cout << "Computing timed reachable set" << endl;
         HybridDenotableSet hybrid_lower_reach=analyser.lower_reach(initial_set,reach_time);

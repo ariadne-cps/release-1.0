@@ -135,7 +135,7 @@ int main()
 
     /// Create a ReachabilityAnalyser object
     int maximum_grid_depth=18;
-    HybridBoxes domain;
+    HybridBoxes domain(ecoli_system.state_space());
     domain[1] = bounding_box;
     HybridReachabilityAnalyser analyser(ecoli_system,domain,maximum_grid_depth);
     analyser.settings().lock_to_grid_time=lock_to_grid_time;

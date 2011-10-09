@@ -90,7 +90,7 @@ int main(int argc,char *argv[])
 	initial_set[DiscreteLocation("first")] = Box(2, -0.4,0.4, -0.4,0.4);
 
 	// The domain
-	HybridBoxes domain = bounding_boxes(system.state_space(),Box(2,-1.0,11.0,-1.0,11.0));
+	HybridBoxes domain(system.state_space(),Box(2,-1.0,11.0,-1.0,11.0));
 
 	// The safety constraint
 	RealExpression consexpr_x = x;

@@ -234,7 +234,7 @@ int main(int argc,char *argv[])
 	Box codomain(1,5.25,8.25);
 	HybridConstraintSet safety_constraint(system.state_space(),ConstraintSet(cons_f,codomain));
 
-	HybridBoxes domain = bounding_boxes(system.state_space(),Box(6, -0.1,25.1, -0.1,0.2, -0.1,1.1, -0.1,1.1, 4.0,10.0, -0.5,1.5));
+	HybridBoxes domain(system.state_space(),Box(6, -0.1,25.1, -0.1,0.2, -0.1,1.1, -0.1,1.1, 4.0,10.0, -0.5,1.5));
 
 	// The parameters
 	RealParameterSet parameters;

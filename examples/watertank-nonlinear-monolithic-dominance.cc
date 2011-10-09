@@ -46,8 +46,8 @@ int main(int argc,char *argv[])
 	initial_pr[DiscreteLocation(3)] = Box(2, 6.75,6.75, 0.0,1.0);
 
 	// The domains
-	HybridBoxes domain_hy = bounding_boxes(system_hy.state_space(),Box(2,4.5,9.0,0.0,1.0));
-	HybridBoxes domain_pr = bounding_boxes(system_pr.state_space(),Box(2,2.0,10.0,0.0,1.0));
+	HybridBoxes domain_hy(system_hy.state_space(),Box(2,4.5,9.0,0.0,1.0));
+	HybridBoxes domain_pr(system_pr.state_space(),Box(2,2.0,10.0,0.0,1.0));
 
 	// The projections
 	Vector<uint> projection_hy(1,0);
