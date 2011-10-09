@@ -84,6 +84,8 @@ class HybridReachabilityAnalyser
     boost::shared_ptr< SettingsType > _settings;
     boost::shared_ptr< ReachabilityRestriction > _restriction;
     mutable boost::shared_ptr< SystemType > _system;
+    // The time used as a start reference for checking timeout
+    mutable time_t _start_time;
   public:
 
     // The reduction in the number of logical cores used in multithreading (down from the maximum concurrency of the machine) (zero by default)
@@ -173,6 +175,7 @@ class HybridReachabilityAnalyser
             const Set<Identifier>& locked_params_ids,
             const HybridConstraintSet& constraint_set,
             unsigned free_cores,
+            uint time_limit_for_result,
             Semantics semantics);
 
   public:
@@ -282,6 +285,9 @@ class HybridReachabilityAnalyser
     //! \brief Creates enclosures from the midpoints of the discretisation of \a initial_set.
     list<EnclosureType>
     _enclosures_from_discretised_initial_set_midpoints(const HybridBoundedConstraintSet initial_set) const;
+
+	//! \brief Check whether the timeout has been reached.
+	void _check_timeout() const;
 };
 
 
@@ -302,6 +308,9 @@ class HybridReachabilityAnalyserSettings {
     		const HybridBoxes& domain);
 
   public:
+
+    //! \brief The maximum execution time allowed before possibly throwing a TimeoutException.
+    uint time_limit_for_result;
 
     //! \brief The time after which an upper evolution or reachability analysis routine
     //! may approximate computed sets on a grid, in order to use previously cached

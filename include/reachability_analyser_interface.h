@@ -120,6 +120,7 @@ template<class SYS> class ReachabilityAnalyserInterface
             const Set<Identifier>& locked_params_ids,
             const HybridConstraintSet& constraint_set,
             unsigned free_cores,
+            uint time_limit_for_result,
             Semantics semantics) = 0;
 
     //@}

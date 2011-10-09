@@ -57,7 +57,7 @@ class Verifier
   private:
     boost::shared_ptr<SettingsType> _settings;
     mutable std::string _plot_dirpath;
-    mutable time_t _latest_start_time;
+    mutable time_t _start_time;
 
 	/*! \brief "Stateless" fields for holding reachability restrictions between successive internal calls. */
 	mutable ReachabilityRestrictionPtr _safety_restriction;
@@ -279,9 +279,6 @@ class Verifier
 			DominanceSystem dominanceSystem,
 			int accuracy,
 			Semantics semantics) const;
-
-	//! \brief Check whether the timeout has been reached.
-	void _check_timeout() const;
 	//@}
 
 };

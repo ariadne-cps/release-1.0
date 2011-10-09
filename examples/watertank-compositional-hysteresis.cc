@@ -53,7 +53,7 @@ int main(int argc,char *argv[])
 	List<RealExpression> consexpr;
 	consexpr.append(expr);
 	VectorFunction cons_f(consexpr,varlist);
-	Box codomain(1,5.25,8.25);
+	Box codomain(1,5.52,8.25);
 	HybridConstraintSet safety_constraint(system.state_space(),ConstraintSet(cons_f,codomain));
 
 	/// Verification
@@ -61,6 +61,7 @@ int main(int argc,char *argv[])
 	Verifier verifier;
 	verifier.verbosity = verb;
 	verifier.settings().maximum_parameter_depth = 3;
+	verifier.settings().time_limit_for_outcome = 300;
 	verifier.settings().plot_results = true;
 
 	RealParameterSet parameters;

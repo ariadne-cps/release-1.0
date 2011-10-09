@@ -128,7 +128,7 @@ _domain() const
 HybridReachabilityAnalyser::EvolverPtrType
 HybridReachabilityAnalyser::
 _get_tuned_evolver(
-        const HybridAutomatonInterface& sys,
+        const SystemType& sys,
         unsigned ADD_TAB_OFFSET,
         Semantics semantics) const
 {
@@ -151,12 +151,14 @@ tune_settings(
         const Set<Identifier>& locked_params_ids,
         const HybridConstraintSet& constraint_set,
         unsigned free_cores,
+        uint time_limit_for_result,
         Semantics semantics)
 {
     ARIADNE_LOG(1, "Tuning settings for analysis...");
 
     this->free_cores = free_cores;
 
+    _settings->time_limit_for_result = time_limit_for_result;
     _settings->locked_parameters_ids = locked_params_ids;
     _settings->constraint_set = constraint_set;
 }
@@ -209,6 +211,8 @@ _upper_reach_evolve(
     ARIADNE_LOG(4,"Reach size = " << reach.size());
     ARIADNE_LOG(4,"Final size = " << evolve.size());
 
+    _check_timeout();
+
     return result;
 }
 
@@ -239,6 +243,8 @@ lower_reach_evolve(
         const HybridBoundedConstraintSet& initial_set,
         const TimeType& time) const
 {
+	_start_time = std::time(NULL);
+
     const unsigned EVOLVER_TAB_OFFSET = 3;
 
     ARIADNE_LOG(2,"HybridReachabilityAnalyser::lower_reach_evolve(...)");
@@ -267,6 +273,8 @@ lower_reach_evolve(
 
         reach.adjoin(local_reach);
         evolve.adjoin(local_evolve);
+
+        _check_timeout();
     }
 
     ARIADNE_LOG(3,"Reach size = " << reach.size());
@@ -313,6 +321,8 @@ upper_reach_evolve(
         const HybridBoundedConstraintSet& initial_set,
         const TimeType& time) const
 {
+	_start_time = std::time(NULL);
+
     const unsigned EVOLVER_TAB_OFFSET = 4;
 
     ARIADNE_LOG(2,"HybridReachabilityAnalyser::upper_reach_evolve(system,set,time)");
@@ -348,6 +358,7 @@ upper_reach_evolve(
         Orbit<EnclosureType> orbit = evolver->orbit(*encl_it,hybrid_lock_to_grid_time,UPPER_SEMANTICS);
         reach.adjoin(outer_approximation(orbit.reach(),grid,_accuracy()));
         evolve.adjoin(outer_approximation(orbit.final(),grid,_accuracy()));
+        _check_timeout();
     }
     ARIADNE_LOG(4,"Reach size ="<<reach.size());
     ARIADNE_LOG(4,"Final size ="<<evolve.size());
@@ -393,6 +404,8 @@ outer_chain_reach(
 		const SetApproximationType& initial,
 		ContinuousEvolutionDirection direction) const
 {
+	_start_time = time(NULL);
+
     ARIADNE_LOG(1,"Performing outer chain reachability...");
 
 	SetApproximationType reach;
@@ -454,6 +467,8 @@ _outer_chain_reach_splitted(
 		make_lpair(new_reach,new_final) = _upper_reach_evolve(sys,current_initial,
 				hybrid_lock_to_grid_time,ignore_activations,direction);
 
+	    _check_timeout();
+
         ARIADNE_LOG(3,"Removing the previously reached and final sets...");
 
         new_final.remove(final);
@@ -477,6 +492,8 @@ _outer_chain_reach_splitted(
        			_restriction->forward_jump_set(new_reach,sys) : _restriction->backward_jump_set(new_reach,sys));
 
         current_initial.adjoin(new_final);
+
+        _check_timeout();
     }
 
 	ARIADNE_LOG(2,"Found a total of " << reach.size() << " reached cells.");
@@ -489,6 +506,8 @@ std::pair<HybridDenotableSet,HybridFloatVector>
 HybridReachabilityAnalyser::
 lower_chain_reach_and_epsilon(const HybridBoundedConstraintSet& initial_set) const
 {
+	_start_time = time(NULL);
+
 	HybridGrid grid = _grid();
 	SetApproximationType reach(grid);
 	HybridSpace state_space = _system->state_space();
@@ -610,6 +629,8 @@ _lower_chain_reach_and_epsilon(
 		HUM& superposed_evolve_sizes = evolve_sizes.second;
 		_filter_enclosures(final_enclosures,initial_enclosures,
 				adjoined_evolve_sizes,superposed_evolve_sizes);
+
+	    _check_timeout();
 	}
 
 	return std::pair<HDS,HybridFloatVector>(reach,epsilon);
@@ -881,7 +902,8 @@ _updateSplitParameterSetLists(
 HybridReachabilityAnalyserSettings::HybridReachabilityAnalyserSettings(
 		const SystemType& sys,
 		const HybridBoxes& domain)
-    : lock_to_grid_time(getLockToGridTime(sys,domain)),
+    : time_limit_for_result(std::numeric_limits<uint>::infinity()),
+      lock_to_grid_time(getLockToGridTime(sys,domain)),
       lock_to_grid_steps(1),
       constraint_set(sys.state_space()),
       splitting_parameters_target_ratio(0.05),
@@ -905,6 +927,7 @@ std::ostream&
 operator<<(std::ostream& os, const HybridReachabilityAnalyserSettings& s)
 {
     os << "DiscreteEvolutionSettings"
+       << ",\n  time_limit_for_result=" << s.time_limit_for_result
        << ",\n  lock_to_grid_time=" << s.lock_to_grid_time
        << ",\n  lock_to_grid_steps=" << s.lock_to_grid_steps
        << ",\n  splitting_constants_target_ratio=" << s.splitting_parameters_target_ratio
@@ -1260,6 +1283,17 @@ _enclosures_from_discretised_initial_set_midpoints(const HybridBoundedConstraint
 	}
 
 	return result;
+}
+
+
+void
+HybridReachabilityAnalyser::
+_check_timeout() const
+{
+	time_t current_time = time(NULL);
+
+	if (current_time - _start_time > _settings->time_limit_for_result)
+		throw TimeoutException();
 }
 
 std::list<LocalisedEnclosureType>

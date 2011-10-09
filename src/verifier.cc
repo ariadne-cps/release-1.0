@@ -62,7 +62,7 @@ _safety_nosplitting(
 {
 	ARIADNE_LOG(2,"Safety checking...");
 
-	_latest_start_time = time(NULL);
+	_start_time = time(NULL);
 
 	SystemType& system = verInput.getSystem();
 
@@ -155,12 +155,8 @@ _safety_proving_once(
 
 		result = _safety_proving_once_forward_analysis(verInput.getSystem(),forward_initial,verInput.getSafetyConstraint(),params);
 
-		_check_timeout();
-
 		if (!indeterminate(result) && _settings->enable_backward_refinement_for_safety_proving)
 		    _safety_proving_once_backward_refinement(verInput.getSystem(),forward_initial,verInput.getSafetyConstraint(),params);
-
-		_check_timeout();
 
 	} catch (ReachOutOfDomainException& ex) {
 		ARIADNE_LOG(5, "The outer reached region is partially out of the domain (skipped).");
@@ -252,8 +248,6 @@ _safety_proving_once_backward_refinement(
     if (reached_initial.empty()) {
         throw EmptyInitialCellSetException("The initial set is now outside the reachability restriction (skipped).");
     }
-
-	_check_timeout();
 
     if (_settings->plot_results)
         _plot_reach(backward_reach,"backward",_safety_restriction->accuracy());
@@ -413,7 +407,7 @@ Verifier::_dominance(
 
 	ARIADNE_LOG(2, "Dominance checking...");
 
-	_latest_start_time = time(NULL);
+	_start_time = time(NULL);
 
 	if (_settings->plot_results)
 		_plot_dirpath_init(dominating.getSystem().name() + "&" + dominated.getSystem().name());
@@ -478,11 +472,7 @@ Verifier::_dominance_proving_once(
 		make_lpair<DenotableSetType,Vector<Float> >(flattened_dominated_lower_reach,flattened_epsilon) =
 				_dominance_flattened_lower_reach_and_epsilon(dominated,params,DOMINATED_SYSTEM);
 
-		_check_timeout();
-
 		DenotableSetType flattened_dominating_outer_reach = _dominance_flattened_outer_reach(dominating,params,DOMINATING_SYSTEM);
-
-		_check_timeout();
 
 		result = definitely(covers(flattened_dominated_lower_reach,flattened_dominating_outer_reach,flattened_epsilon));
 
@@ -521,11 +511,7 @@ Verifier::_dominance_disproving_once(
 		make_lpair<DenotableSetType,Vector<Float> >(flattened_dominating_lower_reach,flattened_epsilon) =
 				_dominance_flattened_lower_reach_and_epsilon(dominating,params,DOMINATING_SYSTEM);
 
-		_check_timeout();
-
 		DenotableSetType flattened_dominated_outer_reach = _dominance_flattened_outer_reach(dominated,params,DOMINATED_SYSTEM);
-
-		_check_timeout();
 
 		result = definitely(!inside(flattened_dominating_lower_reach,flattened_dominated_outer_reach,
 				flattened_epsilon,_dominated_restriction->accuracy()));
@@ -642,7 +628,9 @@ _get_tuned_analyser(
     analyser->verbosity = this->verbosity - ADD_TAB_OFFSET;
     analyser->tab_offset = this->tab_offset + ADD_TAB_OFFSET;
 
-    analyser->tune_settings(locked_params_ids,constraint_set,this->free_cores,semantics);
+    uint time_limit_for_result = _settings->time_limit_for_outcome - (time(NULL) - _start_time);
+
+    analyser->tune_settings(locked_params_ids,constraint_set,this->free_cores,time_limit_for_result,semantics);
 
     return analyser;
 }
@@ -713,17 +701,6 @@ _plot_dirpath_init(std::string basename) const
 
 void
 Verifier::
-_check_timeout() const
-{
-	time_t current_time = time(NULL);
-
-	if (current_time - _latest_start_time > _settings->time_limit_for_outcome)
-		throw TimeoutException();
-}
-
-
-void
-Verifier::
 _plot_reach(
 		const SetApproximationType& reach,
 		string base_filename,
@@ -759,7 +736,7 @@ _plot_dominance(
 
 VerifierSettings::VerifierSettings() :
         plot_results(false),
-        time_limit_for_outcome(10),
+        time_limit_for_outcome(std::numeric_limits<uint>::infinity()),
         maximum_parameter_depth(3),
         use_param_midpoints_for_proving(false),
         use_param_midpoints_for_disproving(true),
