@@ -56,41 +56,13 @@ safety(SafetyVerificationInput& verInput) const
 
 tribool
 Verifier::
-_safety(
-		SafetyVerificationInput& verInput,
-		const RealParameter& param) const
-{
-	SystemType& system = verInput.getSystem();
-
-	Real originalParameterValue = system.parameter_value(param.name());
-
-	system.substitute(param);
-	tribool result = safety(verInput);
-	system.substitute(RealParameter(param.name(),originalParameterValue));
-
-	return result;
-}
-
-tribool
-Verifier::
-_safety(
-		SafetyVerificationInput& verInput,
-		const RealParameter& param,
-		const Float& value) const
-{
-	const RealParameter modifiedParameter(param.name(),Interval(value));
-
-	return _safety(verInput, modifiedParameter);
-}
-
-
-tribool
-Verifier::
 _safety_nosplitting(
 		SafetyVerificationInput& verInput,
 		const RealParameterSet& params) const
 {
 	ARIADNE_LOG(2,"Safety checking...");
+
+	_latest_start_time = time(NULL);
 
 	SystemType& system = verInput.getSystem();
 
@@ -99,17 +71,23 @@ _safety_nosplitting(
 
 	_init_safety_restriction(verInput);
 
-	time_t initial_time = time(NULL);
-	for (int accuracy = 0; time(NULL) - initial_time < _settings->time_limit_for_outcome; ++accuracy) {
+	try {
+		int accuracy = 0;
+		while (true) {
 
-		ARIADNE_LOG(2, "Accuracy " << accuracy);
+			ARIADNE_LOG(2, "Accuracy " << accuracy);
 
-		_safety_restriction->refine_at(accuracy);
+			_safety_restriction->refine_at(accuracy);
 
-		tribool result = _safety_once(verInput,params);
+			tribool result = _safety_once(verInput,params);
 
-		if (!indeterminate(result))
-			return result;
+			if (!indeterminate(result))
+				return result;
+
+			++accuracy;
+		}
+	} catch (TimeoutException& ex) {
+		ARIADNE_LOG(2, "Time available for verification expired.");
     }
 
 	return indeterminate;
@@ -163,7 +141,7 @@ _safety_proving_once(
 
 	try {
 
-	    ARIADNE_LOG(5,"Computing the initial set...");
+	    ARIADNE_LOG(5,"Computing the initial set for forward reachability...");
 
 	    SetApproximationType forward_initial = _safety_restriction->outer_intersection_with(verInput.getInitialSet());
 
@@ -177,8 +155,12 @@ _safety_proving_once(
 
 		result = _safety_proving_once_forward_analysis(verInput.getSystem(),forward_initial,verInput.getSafetyConstraint(),params);
 
+		_check_timeout();
+
 		if (!indeterminate(result) && _settings->enable_backward_refinement_for_safety_proving)
 		    _safety_proving_once_backward_refinement(verInput.getSystem(),forward_initial,verInput.getSafetyConstraint(),params);
+
+		_check_timeout();
 
 	} catch (ReachOutOfDomainException& ex) {
 		ARIADNE_LOG(5, "The outer reached region is partially out of the domain (skipped).");
@@ -196,51 +178,6 @@ _safety_proving_once(
     ARIADNE_LOG(4, (result ? "Proved." : "Not proved.") );
 
 	return result;
-}
-
-void
-Verifier::
-_safety_proving_once_backward_refinement(
-		const SystemType& sys,
-		const SetApproximationType& initial_set,
-		const HybridConstraintSet& safety_constraint,
-        const RealParameterSet& params) const
-{
-    const unsigned ANALYSER_TAB_OFFSET = 5;
-
-    ARIADNE_LOG(5,"Creating the analyser for backward reachability...");
-
-    AnalyserPtrType analyser = _get_tuned_analyser(sys,parameters_identifiers(params),_safety_restriction,
-    		safety_constraint,ANALYSER_TAB_OFFSET,UPPER_SEMANTICS);
-
-    ARIADNE_LOG(5,"Computing the initial set...");
-
-    SetApproximationType backward_initial = _safety_restriction->outer_difference_from(safety_constraint);
-
-    if (backward_initial.empty()) {
-        throw EmptyInitialCellSetException("The initial cell set for backward reachability is empty (skipped).");
-    } else {
-        ARIADNE_LOG(6,"Backward initial set size: " << backward_initial.size());
-        if (_settings->plot_results)
-            _plot_reach(backward_initial,"final",_safety_restriction->accuracy());
-    }
-
-    ARIADNE_LOG(5,"Retrieving backward reachability...");
-
-    SetApproximationType backward_reach = analyser->outer_chain_reach(backward_initial,DIRECTION_BACKWARD);
-
-    _safety_restriction->update_with(backward_reach);
-
-    ARIADNE_LOG(6,"Reachability size: " << backward_reach.size());
-
-    SetApproximationType reached_initial = initial_set;
-    _safety_restriction->apply_to(reached_initial);
-    if (reached_initial.empty()) {
-        throw EmptyInitialCellSetException("The initial set is now outside the reachability restriction (skipped).");
-    }
-
-    if (_settings->plot_results)
-        _plot_reach(backward_reach,"backward",_safety_restriction->accuracy());
 }
 
 
@@ -271,6 +208,55 @@ _safety_proving_once_forward_analysis(
     _safety_restriction->update_with(forward_reach);
 
     return definitely(covers(safety_constraint,forward_reach));
+}
+
+
+
+void
+Verifier::
+_safety_proving_once_backward_refinement(
+		const SystemType& sys,
+		const SetApproximationType& initial_set,
+		const HybridConstraintSet& safety_constraint,
+        const RealParameterSet& params) const
+{
+    const unsigned ANALYSER_TAB_OFFSET = 5;
+
+    ARIADNE_LOG(5,"Computing the initial set for backward reachability...");
+
+    SetApproximationType backward_initial = _safety_restriction->outer_difference_from(safety_constraint);
+
+    if (backward_initial.empty()) {
+        throw EmptyInitialCellSetException("The initial cell set for backward reachability is empty (skipped).");
+    } else {
+        ARIADNE_LOG(6,"Backward initial set size: " << backward_initial.size());
+        if (_settings->plot_results)
+            _plot_reach(backward_initial,"final",_safety_restriction->accuracy());
+    }
+
+    ARIADNE_LOG(5,"Creating the analyser...");
+
+    AnalyserPtrType analyser = _get_tuned_analyser(sys,parameters_identifiers(params),_safety_restriction,
+    		safety_constraint,ANALYSER_TAB_OFFSET,UPPER_SEMANTICS);
+
+    ARIADNE_LOG(5,"Retrieving backward reachability...");
+
+    SetApproximationType backward_reach = analyser->outer_chain_reach(backward_initial,DIRECTION_BACKWARD);
+
+    _safety_restriction->update_with(backward_reach);
+
+    ARIADNE_LOG(6,"Reachability size: " << backward_reach.size());
+
+    SetApproximationType reached_initial = initial_set;
+    _safety_restriction->apply_to(reached_initial);
+    if (reached_initial.empty()) {
+        throw EmptyInitialCellSetException("The initial set is now outside the reachability restriction (skipped).");
+    }
+
+	_check_timeout();
+
+    if (_settings->plot_results)
+        _plot_reach(backward_reach,"backward",_safety_restriction->accuracy());
 }
 
 
@@ -427,37 +413,45 @@ Verifier::_dominance(
 
 	ARIADNE_LOG(2, "Dominance checking...");
 
+	_latest_start_time = time(NULL);
+
 	if (_settings->plot_results)
 		_plot_dirpath_init(dominating.getSystem().name() + "&" + dominated.getSystem().name());
 
 	_init_dominance_restriction(dominating,DOMINATING_SYSTEM);
 	_init_dominance_restriction(dominated,DOMINATED_SYSTEM);
 
-	time_t initial_time = time(NULL);
-    for (int accuracy = 0; time(NULL) - initial_time < _settings->time_limit_for_outcome; ++accuracy)
-	{
-		ARIADNE_LOG(2, "Accuracy " << accuracy);
+	try {
+		int accuracy = 0;
 
-		_dominating_restriction->refine_at(accuracy);
-		_dominated_restriction->refine_at(accuracy);
+		while (true) {
+			ARIADNE_LOG(2, "Accuracy " << accuracy);
 
-		try {
-			if (_dominance_proving_once(dominating, dominated, params)) {
-				ARIADNE_LOG(2, "Dominates.");
-				return true;
+			_dominating_restriction->refine_at(accuracy);
+			_dominated_restriction->refine_at(accuracy);
+
+			try {
+				if (_dominance_proving_once(dominating, dominated, params)) {
+					ARIADNE_LOG(2, "Dominates.");
+					return true;
+				}
+			} catch (SqrtNumericException& ex) {
+				ARIADNE_LOG(3, "WARNING: caught " << ex.what() << ", skipping.");
 			}
-		} catch (SqrtNumericException& ex) {
-			ARIADNE_LOG(3, "WARNING: caught " << ex.what() << ", skipping.");
-		}
 
-		try {
-			if (_dominance_disproving_once(dominating, dominated, params)) {
-				ARIADNE_LOG(2, "Does not dominate.");
-				return false;
+			try {
+				if (_dominance_disproving_once(dominating, dominated, params)) {
+					ARIADNE_LOG(2, "Does not dominate.");
+					return false;
+				}
+			} catch (SqrtNumericException& ex) {
+				ARIADNE_LOG(3, "WARNING: caught " << ex.what() << ", skipping.");
 			}
-		} catch (SqrtNumericException& ex) {
-			ARIADNE_LOG(3, "WARNING: caught " << ex.what() << ", skipping.");
+
+			++accuracy;
 		}
+    } catch (TimeoutException& ex) {
+		ARIADNE_LOG(2, "Time available for verification expired.");
     }
 
 	ARIADNE_LOG(2, "Indeterminate.");
@@ -484,7 +478,11 @@ Verifier::_dominance_proving_once(
 		make_lpair<DenotableSetType,Vector<Float> >(flattened_dominated_lower_reach,flattened_epsilon) =
 				_dominance_flattened_lower_reach_and_epsilon(dominated,params,DOMINATED_SYSTEM);
 
+		_check_timeout();
+
 		DenotableSetType flattened_dominating_outer_reach = _dominance_flattened_outer_reach(dominating,params,DOMINATING_SYSTEM);
+
+		_check_timeout();
 
 		result = definitely(covers(flattened_dominated_lower_reach,flattened_dominating_outer_reach,flattened_epsilon));
 
@@ -523,7 +521,11 @@ Verifier::_dominance_disproving_once(
 		make_lpair<DenotableSetType,Vector<Float> >(flattened_dominating_lower_reach,flattened_epsilon) =
 				_dominance_flattened_lower_reach_and_epsilon(dominating,params,DOMINATING_SYSTEM);
 
+		_check_timeout();
+
 		DenotableSetType flattened_dominated_outer_reach = _dominance_flattened_outer_reach(dominated,params,DOMINATED_SYSTEM);
+
+		_check_timeout();
 
 		result = definitely(!inside(flattened_dominating_lower_reach,flattened_dominated_outer_reach,
 				flattened_epsilon,_dominated_restriction->accuracy()));
@@ -706,6 +708,17 @@ _plot_dirpath_init(std::string basename) const
 	mkdir(foldername.c_str(),0777);
 
 	_plot_dirpath = foldername;
+}
+
+
+void
+Verifier::
+_check_timeout() const
+{
+	time_t current_time = time(NULL);
+
+	if (current_time - _latest_start_time > _settings->time_limit_for_outcome)
+		throw TimeoutException();
 }
 
 

@@ -57,6 +57,7 @@ class Verifier
   private:
     boost::shared_ptr<SettingsType> _settings;
     mutable std::string _plot_dirpath;
+    mutable time_t _latest_start_time;
 
 	/*! \brief "Stateless" fields for holding reachability restrictions between successive internal calls. */
 	mutable ReachabilityRestrictionPtr _safety_restriction;
@@ -161,20 +162,7 @@ class Verifier
      * \details The \a params are substituted into the system. */
     tribool _safety_once(
             SafetyVerificationInput& verInput,
-			const RealParameterSet& constants) const;
-
-	/*! \brief Performs iterative safety verification where \a parameter is substituted into the system.
-	 */
-	tribool _safety(
-			SafetyVerificationInput& verInput,
-			const RealParameter& parameter) const;
-
-	/*! \brief Performs iterative safety verification where the singleton \a value is substituted into the system for the given \a constant.
-	 */
-	tribool _safety(
-			SafetyVerificationInput& verInput,
-			const RealParameter& parameter,
-			const Float& value) const;
+			const RealParameterSet& params) const;
 
 	/*! \brief Performs iterative safety verification, with \a params_to_substitute substituted into the system.
 	 * \details The \a params are substituted in the system and are not allowed to be split */
@@ -292,6 +280,8 @@ class Verifier
 			int accuracy,
 			Semantics semantics) const;
 
+	//! \brief Check whether the timeout has been reached.
+	void _check_timeout() const;
 	//@}
 
 };

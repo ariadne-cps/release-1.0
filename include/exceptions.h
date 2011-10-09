@@ -102,5 +102,9 @@ class EmptyInitialCellSetException : public std::runtime_error {
     EmptyInitialCellSetException(const std::string& str) : std::runtime_error(str) { }
 };
 
+class TimeoutException : public std::runtime_error {
+  public:
+	TimeoutException() : std::runtime_error("maximum time has been hit.") { }
+};
 
 #endif
