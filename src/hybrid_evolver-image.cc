@@ -102,9 +102,12 @@ tune_settings(
 		const HybridFloatVector& hmad,
 		AccuracyType accuracy,
 		unsigned free_cores,
+		uint time_limit_for_result,
 		Semantics semantics)
 {
     this->free_cores = free_cores;
+
+    this->_settings->time_limit_for_result = time_limit_for_result;
 
     ARIADNE_LOG(1, "Tuning settings for evolution...");
 	this->_settings->minimum_discretised_enclosure_widths = getMinimumGridCellWidths(grid,accuracy);
@@ -125,6 +128,8 @@ _evolution(EnclosureListType& final_sets,
            ContinuousEvolutionDirection direction,
            Semantics semantics) const
 {
+	_start_time = std::time(NULL);
+
     ARIADNE_LOG(1,"Computing evolution up to "<<maximum_hybrid_time.continuous_time()<<" time units and "<<maximum_hybrid_time.discrete_time()<<" steps.");
 
     std::list< pair<uint,HybridTimedSetType> > working_sets;
@@ -172,6 +177,8 @@ _evolution(EnclosureListType& final_sets,
             this->_evolution_step(working_sets,reach_sets,intermediate_sets,current_set,maximum_hybrid_time,
             		ignore_activations,direction,semantics);
         }
+
+		_check_timeout();
     }
 }
 
@@ -1069,8 +1076,19 @@ _add_models_subdivisions_time(
 }
 
 
+void
+ImageSetHybridEvolver::
+_check_timeout() const
+{
+	time_t current_time = time(NULL);
+	if (current_time - _start_time > _settings->time_limit_for_result)
+		throw TimeoutException();
+}
+
+
 ImageSetHybridEvolverSettings::ImageSetHybridEvolverSettings(const SystemType& sys)
-    : minimum_discretised_enclosure_widths(getMinimumGridCellWidths(HybridGrid(sys.state_space()),0)),
+    : time_limit_for_result(std::numeric_limits<uint>::max()),
+      minimum_discretised_enclosure_widths(getMinimumGridCellWidths(HybridGrid(sys.state_space()),0)),
       maximum_enclosure_widths_ratio(2.0),
       enable_subdivisions(false),
       enable_premature_termination_on_enclosure_size(true)
@@ -1086,6 +1104,7 @@ std::ostream&
 operator<<(std::ostream& os, const ImageSetHybridEvolverSettings& s)
 {
     os << "ImageSetHybridEvolverSettings"
+       << ",\n  time_limit_for_result=" << s.time_limit_for_result
        << ",\n  hybrid_maximum_step_size=" << s.hybrid_maximum_step_size
        << ",\n  minimum_discretised_enclosure_widths=" << s.minimum_discretised_enclosure_widths
        << ",\n  maximum_enclosure_widths_ratio=" << s.maximum_enclosure_widths_ratio

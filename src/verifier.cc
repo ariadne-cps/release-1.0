@@ -736,7 +736,7 @@ _plot_dominance(
 
 VerifierSettings::VerifierSettings() :
         plot_results(false),
-        time_limit_for_outcome(std::numeric_limits<uint>::infinity()),
+        time_limit_for_outcome(std::numeric_limits<uint>::max()),
         maximum_parameter_depth(3),
         use_param_midpoints_for_proving(false),
         use_param_midpoints_for_disproving(true),

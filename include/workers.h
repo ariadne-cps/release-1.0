@@ -26,6 +26,10 @@
 
 #include "ariadne.h"
 
+namespace Ariadne {
+
+enum EvolutionExpectedException { EXCEPTION_NONE, EXCEPTION_SQRT, EXCEPTION_TIMEOUT };
+
 /* Provides multi-threaded workers for various functions */
 
 // Worker for the _upper_reach_evolve routine in reachability_analyser.cc
@@ -87,7 +91,8 @@ private:
 	const ContinuousEvolutionDirection& _continuous_direction;
 	const uint& _concurrency;
 
-	string _exception;
+	// Used to keep the latest runtime error
+	std::pair<EvolutionExpectedException,string> _latest_runtime_error;
 
 	HDS _reach, _evolve;
 
@@ -120,7 +125,10 @@ private:
 					make_ltuple<ELS,ELS>(current_reach_enclosures,current_evolve_enclosures) =
 											_evolver->reach_evolve(enclosure,_time,_ignore_activations,_continuous_direction,UPPER_SEMANTICS);
 				} catch (SqrtNumericException& ex) {
-					_exception = ex.what();
+					_latest_runtime_error = make_pair(EXCEPTION_SQRT,ex.what());
+					break;
+				} catch (TimeoutException& ex) {
+					_latest_runtime_error = make_pair(EXCEPTION_TIMEOUT,ex.what());
 					break;
 				}
 
@@ -141,8 +149,15 @@ private:
     void _wait_completion() {
 		for (std::list<boost::shared_ptr<boost::thread> >::iterator it = _m_threads.begin(); it != _m_threads.end(); it++)
 			(*it)->join();
-		if (!_exception.empty())
-			throw SqrtNumericException(_exception);
+
+		switch (_latest_runtime_error.first) {
+			case EXCEPTION_NONE:
+				break;
+			case EXCEPTION_SQRT:
+				throw SqrtNumericException(_latest_runtime_error.second);
+			case EXCEPTION_TIMEOUT:
+				throw TimeoutException();
+		}
     }             
 };
 
@@ -216,7 +231,8 @@ private:
 	const int& _accuracy;
 	const uint& _concurrency;
 
-	string _exception;
+	// Used to keep the latest runtime error
+	std::pair<EvolutionExpectedException,string> _latest_runtime_error;
 
 	HDS _evolve_global;
 	HUM _adjoined_evolve_sizes, _superposed_evolve_sizes;
@@ -252,7 +268,10 @@ private:
 					make_ltuple<ELS,ELS>(current_reach_enclosures,current_evolve_enclosures) =
 							_evolver->reach_evolve(current_initial_enclosure,_time,LOWER_SEMANTICS);
 				} catch (SqrtNumericException& ex) {
-					_exception = ex.what();
+					_latest_runtime_error = make_pair(EXCEPTION_SQRT,ex.what());
+					break;
+				} catch (TimeoutException& ex) {
+					_latest_runtime_error = make_pair(EXCEPTION_TIMEOUT,ex.what());
 					break;
 				}
 
@@ -288,9 +307,17 @@ private:
     {
 		for (std::list<boost::shared_ptr<boost::thread> >::iterator it = _m_threads.begin(); it != _m_threads.end(); it++)
 			(*it)->join();
-		if (!_exception.empty())
-			throw SqrtNumericException(_exception);
+
+		switch (_latest_runtime_error.first) {
+			case EXCEPTION_NONE:
+				break;
+			case EXCEPTION_SQRT:
+				throw SqrtNumericException(_latest_runtime_error.second);
+			case EXCEPTION_TIMEOUT:
+				throw TimeoutException();
+		}
     }             
 };
 
 
+}

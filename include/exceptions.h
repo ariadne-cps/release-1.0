@@ -104,7 +104,7 @@ class EmptyInitialCellSetException : public std::runtime_error {
 
 class TimeoutException : public std::runtime_error {
   public:
-	TimeoutException() : std::runtime_error("maximum time has been hit.") { }
+	TimeoutException() : std::runtime_error("Terminated due to timeout.") { }
 };
 
 #endif

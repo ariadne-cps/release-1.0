@@ -76,6 +76,7 @@ class EvolverInterface :
 			const HybridFloatVector& hmad,
 			AccuracyType accuracy,
 			unsigned free_cores,
+			uint time_limit_for_result,
 			Semantics semantics) = 0;
 
   public:

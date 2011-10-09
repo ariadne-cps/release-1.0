@@ -139,7 +139,9 @@ _get_tuned_evolver(
 
     HybridFloatVector hmad = getHybridMidpointAbsoluteDerivatives(sys,_domain());
 
-    evolver->tune_settings(_grid(),hmad,_accuracy(),this->free_cores,semantics);
+    uint time_limit_for_result = _settings->time_limit_for_result - (time(NULL) - _start_time);
+
+    evolver->tune_settings(_grid(),hmad,_accuracy(),this->free_cores,time_limit_for_result,semantics);
 
     return evolver;
 }
@@ -902,7 +904,7 @@ _updateSplitParameterSetLists(
 HybridReachabilityAnalyserSettings::HybridReachabilityAnalyserSettings(
 		const SystemType& sys,
 		const HybridBoxes& domain)
-    : time_limit_for_result(std::numeric_limits<uint>::infinity()),
+    : time_limit_for_result(std::numeric_limits<uint>::max()),
       lock_to_grid_time(getLockToGridTime(sys,domain)),
       lock_to_grid_steps(1),
       constraint_set(sys.state_space()),
@@ -1295,6 +1297,7 @@ _check_timeout() const
 	if (current_time - _start_time > _settings->time_limit_for_result)
 		throw TimeoutException();
 }
+
 
 std::list<LocalisedEnclosureType>
 to_enclosures(const HybridDenotableSet& reach)

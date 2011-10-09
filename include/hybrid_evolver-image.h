@@ -114,6 +114,7 @@ class ImageSetHybridEvolver
 			const HybridFloatVector& hmad,
 			AccuracyType accuracy,
 			unsigned free_cores,
+			uint time_limit_for_result,
 			Semantics semantics);
 
     //@}
@@ -276,7 +277,8 @@ class ImageSetHybridEvolver
     							  	   const std::map<DiscreteEvent,RealScalarFunction>& blocking_guards,
     							  	   const std::map<DiscreteEvent,RealScalarFunction>& permissive_guards) const;
 
-
+	//! \brief Check whether the timeout has been reached.
+    void _check_timeout() const;
 
   protected:
     // Special events
@@ -309,6 +311,9 @@ class ImageSetHybridEvolverSettings {
     ImageSetHybridEvolverSettings(const SystemType& sys);
 
   public:
+
+    //! \brief The maximum execution time allowed before possibly throwing a TimeoutException.
+    uint time_limit_for_result;
 
     //! \brief The maximum allowable step size for integration, different for each location.
     //! \details Decreasing the values increases the accuracy of the computation.
