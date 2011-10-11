@@ -67,8 +67,8 @@ int main(int argc,char *argv[])
 	/// Verification
     Verifier verifier;
     verifier.verbosity = verb;
+    verifier.ttl = 300;
     verifier.settings().maximum_parameter_depth = 4;
-    verifier.settings().time_limit_for_outcome = 300;
     verifier.settings().plot_results = false;
 
 	std::list<ParametricOutcome> results = verifier.parametric_safety(verInput, parameters);

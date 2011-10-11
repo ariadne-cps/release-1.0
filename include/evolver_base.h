@@ -79,7 +79,6 @@ template<class SYS, class ES> class EvolverBase
     virtual void _evolution(ESL& final, ESL& reachable, ESL& intermediate, const ES& initial, const T& time, bool ignore_activations, ContinuousEvolutionDirection direction, Semantics semantics) const = 0;
   protected:
     boost::shared_ptr<SYS> _sys;
-    mutable uint _start_time;
 };
 
 inline

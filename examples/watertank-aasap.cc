@@ -244,10 +244,9 @@ int main(int argc,char *argv[])
 
 	Verifier verifier;
 	verifier.verbosity = verb;
-	verifier.settings().time_limit_for_outcome = 1800;
+	verifier.ttl = 1800;
 
 	SafetyVerificationInput verInput(system, initial_set, domain, safety_constraint);
-    //verifier.safety(verInfo);
 	std::list<ParametricOutcome> results = verifier.parametric_safety(verInput, parameters);
 
 	cout << results << "\n";

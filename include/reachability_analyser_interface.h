@@ -42,6 +42,7 @@ typedef String Identifier;
  */
 template<class SYS> class ReachabilityAnalyserInterface
     : public Loggable
+    , public Interruptible
 {
   public:  
     //! \brief The type of the system.
@@ -118,8 +119,7 @@ template<class SYS> class ReachabilityAnalyserInterface
      */
     virtual void tune_settings(
             const Set<Identifier>& locked_params_ids,
-            const HybridConstraintSet& constraint_set,
-            uint time_limit_for_result) = 0;
+            const HybridConstraintSet& constraint_set) = 0;
 
     //@}
     

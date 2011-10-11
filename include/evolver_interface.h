@@ -29,6 +29,7 @@
 #define ARIADNE_EVOLVER_INTERFACE_H
 
 #include "logging.h"
+#include "interruptible.h"
 #include "hybrid_set.h"
 
 namespace Ariadne {
@@ -49,8 +50,9 @@ enum ContinuousEvolutionDirection { DIRECTION_FORWARD, DIRECTION_BACKWARD };
  *   , \link Ariadne::ReachabilityAnalyserInterface \c ReachabilityAnalyserInterface<SYS> \endlink
  */
 template<class SYS, class ES> 
-class EvolverInterface :
-    public Loggable
+class EvolverInterface
+	: public Loggable
+	, public Interruptible
 {
   public:
 	typedef uint AccuracyType;
@@ -75,8 +77,7 @@ class EvolverInterface :
     virtual void tune_settings(
     		const HybridBoxes& domain,
 			const HybridGrid& grid,
-			AccuracyType accuracy,
-			uint time_limit_for_result) = 0;
+			AccuracyType accuracy) = 0;
 
   public:
     //! \brief Compute an approximation to the evolved set under the given semantics. 

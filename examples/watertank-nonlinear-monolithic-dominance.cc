@@ -60,9 +60,8 @@ int main(int argc,char *argv[])
 	// Verification
 	Verifier verifier;
 	verifier.verbosity = verb;
-	verifier.free_cores = 7;
-    verifier.settings().maximum_parameter_depth = 5;
-    verifier.settings().time_limit_for_outcome = 600;
+	verifier.ttl = 600;
+	verifier.settings().maximum_parameter_depth = 5;
     verifier.settings().plot_results = false;
 
 	// The parametric dominance parameters

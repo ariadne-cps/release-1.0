@@ -23,7 +23,6 @@
 
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <time.h>
 #include <string>
 
 #include "verification_input.h"

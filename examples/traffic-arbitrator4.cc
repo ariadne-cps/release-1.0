@@ -203,7 +203,7 @@ int main(int argc,char *argv[])
     /// Verification
     Verifier verifier;
     verifier.verbosity = verb;
-	verifier.settings().time_limit_for_outcome = 60;
+	verifier.ttl = 60;
     verifier.settings().plot_results = true;
 
     SafetyVerificationInput verInfo(system, initial_set, domain, safety_constraint);

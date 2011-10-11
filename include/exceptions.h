@@ -31,6 +31,7 @@
 #include <exception>
 #include <stdexcept>
 
+namespace Ariadne {
 
 class NotImplemented : public std::logic_error {
   public:
@@ -102,9 +103,6 @@ class EmptyInitialCellSetException : public std::runtime_error {
     EmptyInitialCellSetException(const std::string& str) : std::runtime_error(str) { }
 };
 
-class TimeoutException : public std::runtime_error {
-  public:
-	TimeoutException() : std::runtime_error("Terminated due to timeout.") { }
-};
+}
 
 #endif

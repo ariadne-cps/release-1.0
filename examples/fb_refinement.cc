@@ -107,7 +107,7 @@ int main(int argc,char *argv[])
 
 	Verifier verifier;
 	verifier.verbosity = verifierVerbosity;
-	verifier.settings().time_limit_for_outcome = 60;
+	verifier.ttl = 60;
 	verifier.settings().plot_results = true;
 
 	SafetyVerificationInput verInput(system, initial_set, domain, safety_constraint);

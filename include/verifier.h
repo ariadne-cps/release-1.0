@@ -30,18 +30,20 @@
 
 #include "reachability_analyser.h"
 #include "reachability_restriction.h"
-#include "logging.h"
 #include "verification_input.h"
 
 namespace Ariadne {
 
 class VerifierSettings;
+class Loggable;
+class Interruptible;
 
 enum DominanceSystem { DOMINATING_SYSTEM, DOMINATED_SYSTEM };
 
 /** \brief Performs verification over reachable sets information. */
 class Verifier
     : public Loggable
+    , public Interruptible
 {
   public:
 
@@ -296,11 +298,6 @@ class VerifierSettings {
   public:
     /*! \brief Whether the analysis results must be plotted. */
     bool plot_results;
-
-    /*! \brief The time (in seconds) under which a verification outcome should be obtained.
-     * \details The verifier would stop iterative refinement (yielding indeterminate) as soon as
-     * it surpasses this value. */
-    uint time_limit_for_outcome;
 
     /*! \brief The maximum depth of parameter range splitting.
      * \details A value of zero means that the parameter space is not splitted at all. The total verification time

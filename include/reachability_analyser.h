@@ -169,8 +169,7 @@ class HybridReachabilityAnalyser
     /*! \brief Tune the settings. */
     virtual void tune_settings(
             const Set<Identifier>& locked_params_ids,
-            const HybridConstraintSet& constraint_set,
-            uint time_limit_for_result);
+            const HybridConstraintSet& constraint_set);
 
   public:
 
@@ -278,9 +277,6 @@ class HybridReachabilityAnalyser
     //! \brief Creates enclosures from the midpoints of the discretisation of \a initial_set.
     list<EnclosureType>
     _enclosures_from_discretised_initial_set_midpoints(const HybridBoundedConstraintSet initial_set) const;
-
-	//! \brief Check whether the timeout has been reached.
-	void _check_timeout() const;
 };
 
 
@@ -301,9 +297,6 @@ class HybridReachabilityAnalyserSettings {
     		const HybridBoxes& domain);
 
   public:
-
-    //! \brief The maximum execution time allowed before possibly throwing a TimeoutException.
-    uint time_limit_for_result;
 
     //! \brief The time after which an upper evolution or reachability analysis routine
     //! may approximate computed sets on a grid, in order to use previously cached

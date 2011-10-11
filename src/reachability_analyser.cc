@@ -24,7 +24,6 @@
 
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <time.h>
 #include <string>
 #include <sstream>
 #include <algorithm>
@@ -136,9 +135,8 @@ _get_tuned_evolver(
 
     HybridFloatVector hmad = getHybridMidpointAbsoluteDerivatives(sys,_domain());
 
-    uint time_limit_for_result = _settings->time_limit_for_result - (time(NULL) - _start_time);
-
-    evolver->tune_settings(_domain(),_grid(),_accuracy(),time_limit_for_result);
+    evolver->ttl = this->_remaining_time();
+    evolver->tune_settings(_domain(),_grid(),_accuracy());
 
     return evolver;
 }
@@ -148,14 +146,12 @@ void
 HybridReachabilityAnalyser::
 tune_settings(
         const Set<Identifier>& locked_params_ids,
-        const HybridConstraintSet& constraint_set,
-        uint time_limit_for_result)
+        const HybridConstraintSet& constraint_set)
 {
     ARIADNE_LOG(1, "Tuning settings for analysis...");
 
     _settings->locked_parameters_ids = locked_params_ids;
     _settings->constraint_set = constraint_set;
-    _settings->time_limit_for_result = time_limit_for_result;
 }
 
 
@@ -235,7 +231,7 @@ lower_reach_evolve(
         const HybridBoundedConstraintSet& initial_set,
         const TimeType& time) const
 {
-	_start_time = std::time(NULL);
+	_reset_start_time();
 
     const unsigned EVOLVER_TAB_OFFSET = 3;
 
@@ -313,7 +309,7 @@ upper_reach_evolve(
         const HybridBoundedConstraintSet& initial_set,
         const TimeType& time) const
 {
-	_start_time = std::time(NULL);
+	_reset_start_time();
 
     const unsigned EVOLVER_TAB_OFFSET = 4;
 
@@ -396,7 +392,7 @@ outer_chain_reach(
 		const SetApproximationType& initial,
 		ContinuousEvolutionDirection direction) const
 {
-	_start_time = time(NULL);
+	_reset_start_time();
 
     ARIADNE_LOG(1,"Performing outer chain reachability...");
 
@@ -498,7 +494,7 @@ std::pair<HybridDenotableSet,HybridFloatVector>
 HybridReachabilityAnalyser::
 lower_chain_reach_and_epsilon(const HybridBoundedConstraintSet& initial_set) const
 {
-	_start_time = time(NULL);
+	_reset_start_time();
 
 	HybridGrid grid = _grid();
 	SetApproximationType reach(grid);
@@ -891,8 +887,7 @@ _updateSplitParameterSetLists(
 HybridReachabilityAnalyserSettings::HybridReachabilityAnalyserSettings(
 		const SystemType& sys,
 		const HybridBoxes& domain)
-    : time_limit_for_result(std::numeric_limits<uint>::max()),
-      lock_to_grid_time(getLockToGridTime(sys,domain)),
+    : lock_to_grid_time(getLockToGridTime(sys,domain)),
       lock_to_grid_steps(1),
       constraint_set(sys.state_space()),
       splitting_parameters_target_ratio(0.05),
@@ -916,7 +911,6 @@ std::ostream&
 operator<<(std::ostream& os, const HybridReachabilityAnalyserSettings& s)
 {
     os << "DiscreteEvolutionSettings"
-       << ",\n  time_limit_for_result=" << s.time_limit_for_result
        << ",\n  lock_to_grid_time=" << s.lock_to_grid_time
        << ",\n  lock_to_grid_steps=" << s.lock_to_grid_steps
        << ",\n  splitting_constants_target_ratio=" << s.splitting_parameters_target_ratio
@@ -1239,17 +1233,6 @@ _enclosures_from_discretised_initial_set_midpoints(const HybridBoundedConstraint
 	}
 
 	return result;
-}
-
-
-void
-HybridReachabilityAnalyser::
-_check_timeout() const
-{
-	time_t current_time = time(NULL);
-
-	if (current_time - _start_time > _settings->time_limit_for_result)
-		throw TimeoutException();
 }
 
 

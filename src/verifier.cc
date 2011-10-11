@@ -23,12 +23,14 @@
 
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <time.h>
 #include <string>
 
 #include "verifier.h"
+#include "logging.h"
+#include "interruptible.h"
 
 namespace Ariadne {
+
 
 Verifier::Verifier()
     : _settings(new VerifierSettings())
@@ -37,10 +39,10 @@ Verifier::Verifier()
 }
 
 
-
 Verifier::~Verifier()
 {
 }
+
 
 tribool
 Verifier::
@@ -60,7 +62,7 @@ _safety_nosplitting(
 {
 	ARIADNE_LOG(2,"Safety checking...");
 
-	_start_time = time(NULL);
+	_reset_start_time();
 
 	SystemType& system = verInput.getSystem();
 
@@ -405,7 +407,7 @@ Verifier::_dominance(
 
 	ARIADNE_LOG(2, "Dominance checking...");
 
-	_start_time = time(NULL);
+	_reset_start_time();
 
 	if (_settings->plot_results)
 		_plot_dirpath_init(dominating.getSystem().name() + "&" + dominated.getSystem().name());
@@ -625,9 +627,9 @@ _get_tuned_analyser(
     analyser->verbosity = this->verbosity - ADD_TAB_OFFSET;
     analyser->tab_offset = this->tab_offset + ADD_TAB_OFFSET;
 
-    uint time_limit_for_result = _settings->time_limit_for_outcome - (time(NULL) - _start_time);
+    analyser->ttl = this->_remaining_time();
 
-    analyser->tune_settings(locked_params_ids,constraint_set,time_limit_for_result);
+    analyser->tune_settings(locked_params_ids,constraint_set);
 
     return analyser;
 }
@@ -733,7 +735,6 @@ _plot_dominance(
 
 VerifierSettings::VerifierSettings() :
         plot_results(false),
-        time_limit_for_outcome(std::numeric_limits<uint>::max()),
         maximum_parameter_depth(3),
         use_param_midpoints_for_proving(false),
         use_param_midpoints_for_disproving(true),
@@ -745,7 +746,6 @@ operator<<(std::ostream& os, const VerifierSettings& s)
 {
     os << "VerificationSettings"
        << "(\n  plot_results=" << s.plot_results
-       << ",\n  time_limit_for_outcome" << s.time_limit_for_outcome
        << ",\n  maximum_parameter_depth=" << s.maximum_parameter_depth
        << ",\n  use_param_midpoints_for_proving=" << s.use_param_midpoints_for_proving
        << ",\n  use_param_midpoints_for_disproving=" << s.use_param_midpoints_for_disproving

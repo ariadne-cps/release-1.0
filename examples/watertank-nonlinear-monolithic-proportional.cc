@@ -67,7 +67,7 @@ int main(int argc,char *argv[])
 
 	Verifier verifier;
 	verifier.verbosity = verb;
-	verifier.settings().time_limit_for_outcome = 60;
+	verifier.ttl = 60;
 	verifier.settings().maximum_parameter_depth = 5;
 	verifier.settings().plot_results = true;
 
