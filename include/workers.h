@@ -125,10 +125,14 @@ private:
 					make_ltuple<ELS,ELS>(current_reach_enclosures,current_evolve_enclosures) =
 											_evolver->reach_evolve(enclosure,_time,_ignore_activations,_continuous_direction,UPPER_SEMANTICS);
 				} catch (SqrtNumericException& ex) {
+					_out_mutex.lock();
 					_latest_runtime_error = make_pair(EXCEPTION_SQRT,ex.what());
+					_out_mutex.unlock();
 					break;
 				} catch (TimeoutException& ex) {
+					_out_mutex.lock();
 					_latest_runtime_error = make_pair(EXCEPTION_TIMEOUT,ex.what());
+					_out_mutex.unlock();
 					break;
 				}
 
@@ -268,10 +272,14 @@ private:
 					make_ltuple<ELS,ELS>(current_reach_enclosures,current_evolve_enclosures) =
 							_evolver->reach_evolve(current_initial_enclosure,_time,LOWER_SEMANTICS);
 				} catch (SqrtNumericException& ex) {
+					_out_mutex.lock();
 					_latest_runtime_error = make_pair(EXCEPTION_SQRT,ex.what());
+					_out_mutex.unlock();
 					break;
 				} catch (TimeoutException& ex) {
+					_out_mutex.lock();
 					_latest_runtime_error = make_pair(EXCEPTION_TIMEOUT,ex.what());
+					_out_mutex.unlock();
 					break;
 				}
 

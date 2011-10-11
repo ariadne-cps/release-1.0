@@ -42,7 +42,7 @@ int main(int argc,char *argv[])
 	initial_set[DiscreteLocation(3)] = Box(2, 6.75,6.75, 0.0,1.0);
 
 	// The domain
-	HybridBoxes domain(system.state_space(),Box(2,-0.1,10.0,-0.1,1.1));
+	HybridBoxes domain(system.state_space(),Box(2,0.0,10.0,0.0,1.0));
 
 	// The safety constraint
 	RealVariable x("x");
@@ -54,7 +54,7 @@ int main(int argc,char *argv[])
 	List<RealExpression> consexpr;
 	consexpr.append(expr);
 	VectorFunction cons_f(consexpr,varlist);
-	Box codomain(1,4.25,8.25);
+	Box codomain(1,5.25,8.25);
 	HybridConstraintSet safety_constraint(system.state_space(),ConstraintSet(cons_f,codomain));
 
 	SafetyVerificationInput verInfo(system, initial_set, domain, safety_constraint);
@@ -64,14 +64,13 @@ int main(int argc,char *argv[])
 	Verifier verifier;
 	verifier.verbosity = verb;
 	verifier.settings().time_limit_for_outcome = 60;
-	verifier.settings().plot_results = true;
+	verifier.settings().plot_results = false;
 
 	/// Analysis parameters
 	RealParameterSet parameters;
 	parameters.insert(RealParameter("ref",Interval(5.25,8.25)));
 	parameters.insert(RealParameter("Kp",Interval(0.2,0.8)));
 
-	cout << verifier.safety(verInfo);
-	//std::list<ParametricOutcome> results = verifier.parametric_safety(verInfo, parameters);
-	//draw(system.name(),results);
+	std::list<ParametricOutcome> results = verifier.parametric_safety(verInfo, parameters);
+	draw(system.name(),results);
 }

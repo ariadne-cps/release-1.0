@@ -75,7 +75,6 @@ int main(int argc,char *argv[])
 	parameters.insert(RealParameter("ref",Interval(5.25,8.25)));
 	parameters.insert(RealParameter("Kp",Interval(0.2,0.8)));
 
-	cout << verifier.safety(verInfo);
-	//std::list<ParametricOutcome> results = verifier.parametric_safety(verInfo, parameters);
-	//draw(system.name(),results);
+	std::list<ParametricOutcome> results = verifier.parametric_safety(verInfo, parameters);
+	draw(system.name(),results);
 }
