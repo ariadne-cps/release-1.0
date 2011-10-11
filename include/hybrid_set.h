@@ -58,6 +58,7 @@ class DiscreteLocation;
 class HybridDenotableSet;
 class HybridImageSet;
 class HybridConstraintSet;
+class HybridAutomatonInterface;
 
 typedef std::map<DiscreteLocation,Vector<Float> > HybridFloatVector;
 typedef std::map<DiscreteLocation,VectorFunction > HybridVectorFunction;
@@ -1039,6 +1040,12 @@ HybridBoxes eps_codomain(const HybridDenotableSet& grid_set, const HybridFloatVe
 //! \brief Projects \a grid_set using the given \a indices, also flattening the set in respect to the hybrid space.
 //! \details The \a grid_set must have the same grid for all locations.
 DenotableSetType flatten_and_project_down(const HybridDenotableSet& den_set, const Vector<uint>& indices);
+
+//! \brief Gets the midpoint of the absolute values of the derivatives of \a sys inside \a bounding_domain.
+HybridFloatVector
+getHybridMidpointAbsoluteDerivatives(
+		const HybridAutomatonInterface& sys,
+		const HybridBoxes& bounding_domain);
 
 } // namespace Ariadne
 

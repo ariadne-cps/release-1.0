@@ -28,6 +28,8 @@
 
 namespace Ariadne {
 
+static const uint FREE_CORES = 0;
+
 enum EvolutionExpectedException { EXCEPTION_NONE, EXCEPTION_SQRT, EXCEPTION_TIMEOUT };
 
 /* Provides multi-threaded workers for various functions */
@@ -52,16 +54,14 @@ public:
     		const HybridGrid& grid,
     		const int& accuracy,
     		bool ignore_activations,
-    		ContinuousEvolutionDirection continuous_direction,
-    		const uint& concurrency)
+    		ContinuousEvolutionDirection continuous_direction)
 	: _evolver(evolver),
 	  _initial_enclosures(initial_enclosures),
 	  _time(time),
 	  _grid(grid),
 	  _accuracy(accuracy),
 	  _ignore_activations(ignore_activations),
-	  _continuous_direction(continuous_direction),
-	  _concurrency(concurrency)
+	  _continuous_direction(continuous_direction)
     {
 		_reach = HDS(grid);
 		_evolve = HDS(grid);
@@ -89,7 +89,6 @@ private:
 	const int& _accuracy;
 	const bool& _ignore_activations;
 	const ContinuousEvolutionDirection& _continuous_direction;
-	const uint& _concurrency;
 
 	// Used to keep the latest runtime error
 	std::pair<EvolutionExpectedException,string> _latest_runtime_error;
@@ -101,7 +100,9 @@ private:
  
 	void _start()
 	{
-		for (uint i=0;i<_concurrency;i++)
+		static uint concurrency = boost::thread::hardware_concurrency() - FREE_CORES;
+
+		for (uint i=0;i<concurrency;i++)
 	        _m_threads.push_back(boost::shared_ptr<boost::thread>(new boost::thread(boost::bind(&UpperReachEvolveWorker::_compute, this))));
 	}
 
@@ -184,14 +185,12 @@ public:
 			EL& initial_enclosures,
 			const HybridTime& time,
 			const HybridGrid& grid,
-			const int& accuracy,
-			const uint& concurrency)
+			const int& accuracy)
 	: _evolver(evolver),
 	  _initial_enclosures(initial_enclosures),
 	  _time(time),
 	  _grid(grid),
-	  _accuracy(accuracy),
-	  _concurrency(concurrency)
+	  _accuracy(accuracy)
     {
     	_reach = HDS(grid);
 		_evolve_global = HDS(grid);
@@ -233,7 +232,6 @@ private:
 	const HybridTime& _time;
 	const HybridGrid& _grid;
 	const int& _accuracy;
-	const uint& _concurrency;
 
 	// Used to keep the latest runtime error
 	std::pair<EvolutionExpectedException,string> _latest_runtime_error;
@@ -249,7 +247,9 @@ private:
  
 	void _start()
 	{
-		for (uint i=0;i<_concurrency;i++)
+		static uint concurrency = boost::thread::hardware_concurrency() - FREE_CORES;
+
+		for (uint i=0;i<concurrency;i++)
 	        _m_threads.push_back(boost::shared_ptr<boost::thread>(new boost::thread(boost::bind(&LowerReachEpsilonWorker::_compute, this))));
 	}
 

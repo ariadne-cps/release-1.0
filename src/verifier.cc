@@ -32,8 +32,6 @@ namespace Ariadne {
 
 Verifier::Verifier()
     : _settings(new VerifierSettings())
-    , free_cores(0)
-
 {
     this->charcode = "v";
 }
@@ -190,7 +188,7 @@ _safety_proving_once_forward_analysis(
     ARIADNE_LOG(5,"Creating the analyser for forward reachability...");
 
     AnalyserPtrType analyser = _get_tuned_analyser(sys,parameters_identifiers(params),_safety_restriction,
-    		safety_constraint,ANALYSER_TAB_OFFSET,UPPER_SEMANTICS);
+    		safety_constraint,ANALYSER_TAB_OFFSET);
 
     ARIADNE_LOG(5,"Retrieving forward reachability...");
 
@@ -233,7 +231,7 @@ _safety_proving_once_backward_refinement(
     ARIADNE_LOG(5,"Creating the analyser...");
 
     AnalyserPtrType analyser = _get_tuned_analyser(sys,parameters_identifiers(params),_safety_restriction,
-    		safety_constraint,ANALYSER_TAB_OFFSET,UPPER_SEMANTICS);
+    		safety_constraint,ANALYSER_TAB_OFFSET);
 
     ARIADNE_LOG(5,"Retrieving backward reachability...");
 
@@ -277,7 +275,7 @@ _safety_disproving_once(
     ARIADNE_LOG(5,"Creating the analyser for forward reachability...");
 
     AnalyserPtrType analyser = _get_tuned_analyser(verInput.getSystem(),parameters_identifiers(params),_safety_restriction,
-            safety_constraint,ANALYSER_TAB_OFFSET,LOWER_SEMANTICS);
+            safety_constraint,ANALYSER_TAB_OFFSET);
 
 	bool result = false;
 	try {
@@ -547,7 +545,7 @@ _dominance_flattened_lower_reach_and_epsilon(
 	ARIADNE_LOG(4,"Creating the analyser for the " << descriptor << " system...");
 
     AnalyserPtrType analyser = _get_tuned_analyser(verInput.getSystem(),locked_params_ids,restriction,
-    		dominance_constraint,ANALYSER_TAB_OFFSET,LOWER_SEMANTICS);
+    		dominance_constraint,ANALYSER_TAB_OFFSET);
 
 	ARIADNE_LOG(4,"Getting its lower reached region...");
 
@@ -595,7 +593,7 @@ _dominance_flattened_outer_reach(
     ARIADNE_LOG(4,"Creating the analyser for the " << descriptor << " system...");
 
     AnalyserPtrType analyser = _get_tuned_analyser(verInput.getSystem(),locked_params_ids,restriction,
-    		dominance_constraint,ANALYSER_TAB_OFFSET,UPPER_SEMANTICS);
+    		dominance_constraint,ANALYSER_TAB_OFFSET);
 
 	ARIADNE_LOG(4,"Getting its outer reached region...");
 
@@ -620,8 +618,7 @@ _get_tuned_analyser(
         const Set<Identifier>& locked_params_ids,
         const ReachabilityRestrictionPtr& restriction,
         const HybridConstraintSet& constraint_set,
-        unsigned ADD_TAB_OFFSET,
-        Semantics semantics) const
+        unsigned ADD_TAB_OFFSET) const
 {
     AnalyserPtrType analyser(new HybridReachabilityAnalyser(sys,*restriction));
 
@@ -630,7 +627,7 @@ _get_tuned_analyser(
 
     uint time_limit_for_result = _settings->time_limit_for_outcome - (time(NULL) - _start_time);
 
-    analyser->tune_settings(locked_params_ids,constraint_set,this->free_cores,time_limit_for_result,semantics);
+    analyser->tune_settings(locked_params_ids,constraint_set,time_limit_for_result);
 
     return analyser;
 }

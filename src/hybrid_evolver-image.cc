@@ -89,7 +89,6 @@ ImageSetHybridEvolver::ImageSetHybridEvolver(const SystemType& system)
     : EvolverBase<SystemType,LocalisedTaylorSet>(system)
     , _settings(new SettingsType(system))
     , _toolbox(new TaylorCalculus())
-    , free_cores(0)
 {
     this->charcode = "e";
 }
@@ -98,21 +97,19 @@ ImageSetHybridEvolver::ImageSetHybridEvolver(const SystemType& system)
 void
 ImageSetHybridEvolver::
 tune_settings(
+		const HybridBoxes& domain,
 		const HybridGrid& grid,
-		const HybridFloatVector& hmad,
 		AccuracyType accuracy,
-		unsigned free_cores,
-		uint time_limit_for_result,
-		Semantics semantics)
+		uint time_limit_for_result)
 {
-    this->free_cores = free_cores;
-
     this->_settings->time_limit_for_result = time_limit_for_result;
+
+    HybridFloatVector hmad = getHybridMidpointAbsoluteDerivatives(*_sys,domain);
 
     ARIADNE_LOG(1, "Tuning settings for evolution...");
 	this->_settings->minimum_discretised_enclosure_widths = getMinimumGridCellWidths(grid,accuracy);
 	ARIADNE_LOG(2, "Maximum enclosure cell: " << this->_settings->minimum_discretised_enclosure_widths);
-	this->_settings->hybrid_maximum_step_size = getHybridMaximumStepSize(hmad,grid,accuracy,semantics);
+	this->_settings->hybrid_maximum_step_size = getHybridMaximumStepSize(hmad,grid,accuracy);
 	ARIADNE_LOG(2, "Maximum step size: " << this->_settings->hybrid_maximum_step_size);
 }
 
@@ -1135,14 +1132,13 @@ std::map<DiscreteLocation,Float>
 getHybridMaximumStepSize(
 		const HybridFloatVector& hmad,
 		const HybridGrid& hgrid,
-		int maximum_grid_depth,
-		Semantics semantics)
+		int maximum_grid_depth)
 {
     const Float divider = (1<<maximum_grid_depth);
 
-	// We choose a coefficient for upper semantics such that an enclosure at maximum size is able to cross
-	// urgent transitions in one step. For lower semantics we prefer to have a finer result.
-	Float coefficient = (semantics == UPPER_SEMANTICS ? 2.0 : 1.0);
+	// We choose a coefficient such that an enclosure at maximum size is able to cross
+	// urgent transitions in one step.
+	const Float coefficient = 2.0;
 
 	std::map<DiscreteLocation,Float> hmss;
 

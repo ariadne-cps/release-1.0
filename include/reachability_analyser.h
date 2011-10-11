@@ -87,10 +87,6 @@ class HybridReachabilityAnalyser
     // The time used as a start reference for checking timeout
     mutable time_t _start_time;
   public:
-
-    // The reduction in the number of logical cores used in multithreading (down from the maximum concurrency of the machine) (zero by default)
-    uint free_cores;
-  public:
     //@{
     //! \name Constructors and destructors
 
@@ -174,9 +170,7 @@ class HybridReachabilityAnalyser
     virtual void tune_settings(
             const Set<Identifier>& locked_params_ids,
             const HybridConstraintSet& constraint_set,
-            unsigned free_cores,
-            uint time_limit_for_result,
-            Semantics semantics);
+            uint time_limit_for_result);
 
   public:
 
@@ -205,8 +199,7 @@ class HybridReachabilityAnalyser
     /*! \brief Obtains an evolver from the system, already tuned in respect to accuracy and semantics */
     EvolverPtrType _get_tuned_evolver(
             const SystemType& sys,
-            unsigned ADD_TAB_OFFSET,
-            Semantics semantics) const;
+            uint ADD_TAB_OFFSET) const;
 
     std::pair<HDS,HDS> _upper_reach_evolve(
     		const SystemType& sys,

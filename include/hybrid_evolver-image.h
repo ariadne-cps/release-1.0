@@ -110,12 +110,10 @@ class ImageSetHybridEvolver
 
 	//! \brief Modifies the settings, given some metrics.
 	virtual void tune_settings(
+			const HybridBoxes& domain,
 			const HybridGrid& grid,
-			const HybridFloatVector& hmad,
 			AccuracyType accuracy,
-			unsigned free_cores,
-			uint time_limit_for_result,
-			Semantics semantics);
+			uint time_limit_for_result);
 
     //@}
 
@@ -289,11 +287,6 @@ class ImageSetHybridEvolver
   private:
     boost::shared_ptr< SettingsType > _settings;
     boost::shared_ptr< CalculusInterface<TaylorModel> > _toolbox;
-
-  public:
-
-    // The number of logical cores that should be free from computation.
-    unsigned free_cores;
 };
 
 
@@ -359,8 +352,7 @@ HybridFloatVector getMinimumGridCellWidths(
 std::map<DiscreteLocation,Float> getHybridMaximumStepSize(
 		const HybridFloatVector& hmad,
 		const HybridGrid& hgrid,
-		int maximum_grid_depth,
-		Semantics semantics);
+		int maximum_grid_depth);
 
 
 } // namespace Ariadne

@@ -76,7 +76,6 @@ HybridReachabilityAnalyser(
 	: _settings(new SettingsType(system,restriction.bounding_box()))
 	, _restriction(new ReachabilityRestriction(restriction))
 	, _system(system.clone())
-	, free_cores(0)
 {
     this->charcode = "a";
 }
@@ -88,7 +87,6 @@ HybridReachabilityAnalyser(
 		const HybridBoxes& domain,
 		int accuracy)
 	: _system(system.clone())
-	, free_cores(0)
 {
 	bool EQUAL_GRID_FOR_ALL_LOCATIONS = false;
 
@@ -129,8 +127,7 @@ HybridReachabilityAnalyser::EvolverPtrType
 HybridReachabilityAnalyser::
 _get_tuned_evolver(
         const SystemType& sys,
-        unsigned ADD_TAB_OFFSET,
-        Semantics semantics) const
+        uint ADD_TAB_OFFSET) const
 {
     EvolverPtrType evolver(new ImageSetHybridEvolver(sys));
 
@@ -141,7 +138,7 @@ _get_tuned_evolver(
 
     uint time_limit_for_result = _settings->time_limit_for_result - (time(NULL) - _start_time);
 
-    evolver->tune_settings(_grid(),hmad,_accuracy(),this->free_cores,time_limit_for_result,semantics);
+    evolver->tune_settings(_domain(),_grid(),_accuracy(),time_limit_for_result);
 
     return evolver;
 }
@@ -152,17 +149,13 @@ HybridReachabilityAnalyser::
 tune_settings(
         const Set<Identifier>& locked_params_ids,
         const HybridConstraintSet& constraint_set,
-        unsigned free_cores,
-        uint time_limit_for_result,
-        Semantics semantics)
+        uint time_limit_for_result)
 {
     ARIADNE_LOG(1, "Tuning settings for analysis...");
 
-    this->free_cores = free_cores;
-
-    _settings->time_limit_for_result = time_limit_for_result;
     _settings->locked_parameters_ids = locked_params_ids;
     _settings->constraint_set = constraint_set;
+    _settings->time_limit_for_result = time_limit_for_result;
 }
 
 
@@ -199,14 +192,11 @@ _upper_reach_evolve(
 
 	ARIADNE_LOG(4,"Initial size = " << initial_set.size());
 
-	const uint concurrency = boost::thread::hardware_concurrency() - free_cores;
-	ARIADNE_ASSERT_MSG(concurrency>0 && concurrency <= boost::thread::hardware_concurrency(),"Error: concurrency must be positive and less than the maximum allowed.");
-
 	list<EnclosureType> initial_enclosures = to_enclosures(initial_set);
 
-	const EvolverPtrType& evolver = _get_tuned_evolver(sys,EVOLVER_TAB_OFFSET,UPPER_SEMANTICS);
+	const EvolverPtrType& evolver = _get_tuned_evolver(sys,EVOLVER_TAB_OFFSET);
 	UpperReachEvolveWorker worker(evolver,initial_enclosures,time,
-			_grid(),_accuracy(),enable_premature_termination_on_blocking_event,direction,concurrency);
+			_grid(),_accuracy(),enable_premature_termination_on_blocking_event,direction);
 
 	result = worker.get_result();
 
@@ -257,7 +247,7 @@ lower_reach_evolve(
 
     list<EnclosureType> initial_enclosures = _enclosures_from_discretised_initial_set_midpoints(initial_set);
 
-    const EvolverPtrType& evolver = _get_tuned_evolver(*_system,EVOLVER_TAB_OFFSET,LOWER_SEMANTICS);
+    const EvolverPtrType& evolver = _get_tuned_evolver(*_system,EVOLVER_TAB_OFFSET);
 	ARIADNE_LOG(3,"Computing evolution...");
     for (list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); encl_it++) {
         Orbit<EnclosureType> orbit = evolver->orbit(*encl_it,time,LOWER_SEMANTICS);
@@ -353,7 +343,7 @@ upper_reach_evolve(
     HDS initial = _restriction->outer_intersection_with(initial_set);
     ARIADNE_LOG(4,"initial.size()="<<initial.size());
 
-    const EvolverPtrType& evolver = _get_tuned_evolver(*_system,EVOLVER_TAB_OFFSET,UPPER_SEMANTICS);
+    const EvolverPtrType& evolver = _get_tuned_evolver(*_system,EVOLVER_TAB_OFFSET);
     std::list<EnclosureType> initial_enclosures = to_enclosures(initial);
     ARIADNE_LOG(4,"Starting from " << initial_enclosures.size() << " enclosures.");
     for (std::list<EnclosureType>::const_iterator encl_it = initial_enclosures.begin(); encl_it != initial_enclosures.end(); ++encl_it) {
@@ -568,9 +558,6 @@ _lower_chain_reach_and_epsilon(
 	typedef std::list<EnclosureType> EL;
 	typedef std::map<DiscreteLocation,uint> HUM;
 
-	const uint concurrency = boost::thread::hardware_concurrency() - free_cores;
-	ARIADNE_ASSERT_MSG(concurrency>0 && concurrency <= boost::thread::hardware_concurrency(),"Error: concurrency must be positive and less than the maximum allowed.");
-
 	HybridGrid grid = _grid();
 	TimeType lock_time(_settings->lock_to_grid_time,_settings->lock_to_grid_steps);
 
@@ -587,14 +574,14 @@ _lower_chain_reach_and_epsilon(
 
     ARIADNE_LOG(2,"Computing recurrent evolution...");
 
-    const EvolverPtrType& evolver = _get_tuned_evolver(system,EVOLVER_TAB_OFFSET,LOWER_SEMANTICS);
+    const EvolverPtrType& evolver = _get_tuned_evolver(system,EVOLVER_TAB_OFFSET);
 
     uint i=0;
     while (!initial_enclosures.empty()) {
 		ARIADNE_LOG(2,"Iteration " << i++);
 		ARIADNE_LOG(3,"Initial enclosures size = " << initial_enclosures.size());
 
-		LowerReachEpsilonWorker worker(evolver,initial_enclosures,lock_time,grid,_accuracy(),concurrency);
+		LowerReachEpsilonWorker worker(evolver,initial_enclosures,lock_time,grid,_accuracy());
 
 		ARIADNE_LOG(3,"Evolving and discretising...");
 
@@ -1178,39 +1165,6 @@ getLockToGridTime(
 					result = max(result,loc_domain[i].width()/maxAbsDer);
 			}
 		}
-	}
-
-	return result;
-}
-
-HybridFloatVector
-getHybridMidpointAbsoluteDerivatives(
-		const HybridReachabilityAnalyser::SystemType& sys,
-		const HybridBoxes& bounding_domain)
-{
-	HybridFloatVector result;
-
-	const HybridSpace hspace = sys.state_space();
-	for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); hs_it++) {
-
-		const DiscreteLocation& loc = hs_it->first;
-		const uint dim = hs_it->second;
-		HybridBoxes::const_iterator domain_box_it = bounding_domain.find(loc);
-
-		ARIADNE_ASSERT_MSG(domain_box_it != bounding_domain.end(),
-				"The system state space and the domain space do not match.");
-
-		const Box& domain_box = domain_box_it->second;
-
-		Vector<Float> local_result(dim,0);
-
-		if (!domain_box.empty()) {
-			Vector<Interval> der_bbx = sys.dynamic_function(loc)(domain_box);
-			for (uint i=0;i<dim;i++)
-				local_result[i] = abs(der_bbx[i]).midpoint();
-		}
-
-		result.insert(make_pair(loc,local_result));
 	}
 
 	return result;

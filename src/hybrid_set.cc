@@ -22,6 +22,7 @@
  */
  
 #include "hybrid_set.h"
+#include "hybrid_automaton_interface.h"
 
 namespace Ariadne {
 
@@ -474,6 +475,40 @@ DenotableSetType flatten_and_project_down(const HybridDenotableSet& grid_set, co
 	for (HybridDenotableSet::locations_const_iterator gts_it = grid_set.locations_begin();
 			gts_it != grid_set.locations_end(); ++gts_it)
 		result.adjoin(project_down(gts_it->second,indices));
+
+	return result;
+}
+
+
+HybridFloatVector
+getHybridMidpointAbsoluteDerivatives(
+		const HybridAutomatonInterface& sys,
+		const HybridBoxes& bounding_domain)
+{
+	HybridFloatVector result;
+
+	const HybridSpace hspace = sys.state_space();
+	for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); hs_it++) {
+
+		const DiscreteLocation& loc = hs_it->first;
+		const uint dim = hs_it->second;
+		HybridBoxes::const_iterator domain_box_it = bounding_domain.find(loc);
+
+		ARIADNE_ASSERT_MSG(domain_box_it != bounding_domain.end(),
+				"The system state space and the domain space do not match.");
+
+		const Box& domain_box = domain_box_it->second;
+
+		Vector<Float> local_result(dim,0);
+
+		if (!domain_box.empty()) {
+			Vector<Interval> der_bbx = sys.dynamic_function(loc)(domain_box);
+			for (uint i=0;i<dim;i++)
+				local_result[i] = abs(der_bbx[i]).midpoint();
+		}
+
+		result.insert(make_pair(loc,local_result));
+	}
 
 	return result;
 }

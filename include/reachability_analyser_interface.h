@@ -119,9 +119,7 @@ template<class SYS> class ReachabilityAnalyserInterface
     virtual void tune_settings(
             const Set<Identifier>& locked_params_ids,
             const HybridConstraintSet& constraint_set,
-            unsigned free_cores,
-            uint time_limit_for_result,
-            Semantics semantics) = 0;
+            uint time_limit_for_result) = 0;
 
     //@}
     

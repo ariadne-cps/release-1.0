@@ -168,6 +168,7 @@ inline std::ostream& operator<<(std::ostream& os, const EventKind& evk) {
     } return os;
 }
 
+
 } //namespace Ariadne
 
 #endif // ARIADNE_HYBRID_AUTOMATON_INTERFACE_H

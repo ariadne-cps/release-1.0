@@ -66,11 +66,6 @@ class Verifier
 
   public:
 
-    // The number of logical cores that should be free from computation.
-    unsigned free_cores;
-
-  public:
-
     //@{
     //! \name Constructors and destructors
 
@@ -251,8 +246,7 @@ class Verifier
             const Set<Identifier>& locked_params_ids,
             const ReachabilityRestrictionPtr& restriction,
             const HybridConstraintSet& constraint_set,
-            unsigned ADD_TAB_OFFSET,
-            Semantics semantics) const;
+            unsigned ADD_TAB_OFFSET) const;
 
 	/*! \brief Initialises the safety restriction. */
 	void _init_safety_restriction(const SafetyVerificationInput& verInput) const;

@@ -38,6 +38,7 @@ using std::pair;
 
 template<class ES> class ListSet;
 template<class ES> class Orbit;
+class HybridBoxes;
 
 enum Semantics { LOWER_SEMANTICS, UPPER_SEMANTICS }; 
 enum ContinuousEvolutionDirection { DIRECTION_FORWARD, DIRECTION_BACKWARD };
@@ -72,12 +73,10 @@ class EvolverInterface :
 
     //! \brief Tunes the settings of the evolution.
     virtual void tune_settings(
+    		const HybridBoxes& domain,
 			const HybridGrid& grid,
-			const HybridFloatVector& hmad,
 			AccuracyType accuracy,
-			unsigned free_cores,
-			uint time_limit_for_result,
-			Semantics semantics) = 0;
+			uint time_limit_for_result) = 0;
 
   public:
     //! \brief Compute an approximation to the evolved set under the given semantics. 
