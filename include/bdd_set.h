@@ -385,6 +385,16 @@ class BDDTreeSet : public DrawableInterface {
      */
     void inner_restrict( const OpenSetInterface& set );
 
+    /*! \brief Remove the cells that possibly overlap with \a set.
+     *  The result is the intersection with an outer approximation of \a set.
+     */
+    void outer_remove( const OpenSetInterface& set );
+
+    /*! \brief Remove the cells that are definitely inside \a set.
+     *  The result is the intersection with an inner approximation of \a set.
+     */
+    void inner_remove( const OpenSetInterface& set );
+
     /*! \brief Restrict to the cells that possibly respect the property \a checker, with a given \a accuracy. 
      *  The result is an outer approximation of the intersection with the set of points respecting the property.
      */
@@ -395,6 +405,15 @@ class BDDTreeSet : public DrawableInterface {
      */
     void inner_restrict( const SetCheckerInterface& checker, const uint accuracy );
 
+    /*! \brief Remove the cells that possibly respect the property \a checker, with a given \a accuracy. 
+     *  The result is the difference with an outer approximation of the set of points respecting the property.
+     */
+    void outer_remove( const SetCheckerInterface& checker, const uint accuracy );
+
+    /*! \brief Remove the cells that definitely respect the property \a checker, with a given \a accuracy.
+     *  The result is the difference with an inner approximation of the set of points respecting the property.
+     */
+    void inner_remove( const SetCheckerInterface& checker, const uint accuracy );
 
     //@}
 
@@ -516,22 +535,13 @@ tribool covers(const ConstraintSet& cons_set, const BDDTreeSet& bdd_set);
 BDDTreeSet outer_intersection(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set);
 //! \brief The inner approximation of the intersection between \a bdd_set and \a cons_set.
 BDDTreeSet inner_intersection(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set);
-
-//! \brief Evaluates the codomain of \a func applied on the cells of \a bdd_set, each widened by \a eps.
-//Box eps_codomain(const BDDTreeSet& bdd_set, const Vector<Float> eps, const VectorFunction& func);
+//! \brief The outer approximation of the difference between \a bdd_set and \a cons_set.
+BDDTreeSet outer_difference(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set);
+//! \brief The inner approximation of the difference between \a bdd_set and \a cons_set.
+BDDTreeSet inner_difference(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set);
 
 //! \brief Projects \a bdd_set using the given \a indices.
 BDDTreeSet project_down(const BDDTreeSet& bdd_set, const Vector<uint>& indices);
-
-//! \brief Check whether \a covering_set covers \a covered_set with a tolerance of \a eps.
-//! \details Since the cell boxes of \a covered_set, enlarged of \a eps, are checked against \a covering_set,
-//! the two sets can feature different grids.
-// tribool covers(const BDDTreeSet& covering_set, const BDDTreeSet& covered_set, const Vector<Float>& eps);
-
-//! \brief Check whether \a covering_set covers \a covered_set with a tolerance of \a eps.
-//! \details Since the cell boxes of \a covered_set are checked against an overapproximation (using \a accuracy) of the
-//! epsilon-enlargement of \a covering_set, the two sets can feature different grids.
-// tribool inside(const BDDTreeSet& covered_set, const BDDTreeSet& covering_set, const Vector<Float>& eps, int accuracy);
 
 } // namespace Ariadne
 

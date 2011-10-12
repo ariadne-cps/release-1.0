@@ -689,6 +689,112 @@ bdd _approximate_restrict(const SetCheckerInterface& checker, const bdd& enabled
     return (bdd_nithvar(root_var) & left_branch) | (bdd_ithvar(root_var) & right_branch);
 }
 
+// recursive function that removes from the bdd the cells that possibly overlaps with a set, for AS_OUTER semantics,
+// or the cells that are definitely inside the set, for AS_INNER semantics
+bdd _approximate_remove(const OpenSetInterface& set, const bdd& enabled_cells, const Box& root_cell,
+                       const uint depth, const uint splitting_coordinate, const int root_var, const ApprSemantics semantics)
+{
+    // std::cout << "_approximate_remove(" << set << ", " << enabled_cells << ", "
+    //           << root_cell << ", " << depth << ", " << splitting_coordinate << ", " << root_var << ", "
+    //           << (semantics == AS_INNER ? "AS_INNER" : "AS_OUTER") << ")" << std::endl;
+    // if the bdd is the constant false, do nothing
+    if(enabled_cells == bddfalse) return enabled_cells;
+    // if the set definitely not overlap the root cell, return the current bdd
+    if(!possibly(set.overlaps(root_cell))) {
+        // std::cout << "set definitely not overlap the current cell, return the current bdd." << std::endl;
+        return enabled_cells;
+    }
+    // if set covers the current cell, return the false bdd
+    if(definitely(set.covers(root_cell))) {
+        // std::cout << "the set covers the current cell, return false." << std::endl;
+        return bddfalse;
+    }    
+    // if the depth is zero, return the empty bdd for outer semantics, and the current bdd for inner semantics
+    if(depth == 0) {
+        if(semantics == AS_OUTER) {
+            // std::cout << "depth is 0 and the set possibly overlaps the current cell, skip it." << std::endl;
+            return bddfalse;
+        } else {
+            // std::cout << "depth is 0 and the set possibly not overlaps the current cell, return the current bdd." << std::endl;
+            return enabled_cells;        
+        }
+    }
+    // std::cout << "set possibly overlaps the current cell, but possibly not cover it, go on." << std::endl;
+    // split the root cell and the bdd, and continue recursively
+    std::pair <Box, Box> split_cells = root_cell.split(splitting_coordinate);
+    bdd right_branch, left_branch;
+    // if the variable labelling the root of the bdd is not root_var, do not split the bdd
+    if(enabled_cells == bddtrue || bdd_var(enabled_cells) != root_var) {
+        // std::cout << "bdd_var is different from root_var, do no split the bdd." << std::endl;
+        left_branch = enabled_cells;
+        right_branch = enabled_cells;
+    } else {
+        // std::cout << "bdd_var is equal to root_var, split the bdd." << std::endl;
+        left_branch = bdd_low(enabled_cells);
+        right_branch = bdd_high(enabled_cells);
+    }
+    left_branch = _approximate_remove(set, left_branch, split_cells.first, depth - 1,
+                                    (splitting_coordinate + 1) % set.dimension(), root_var + 1, semantics);
+    right_branch = _approximate_remove(set, right_branch, split_cells.second, depth - 1,
+                                    (splitting_coordinate + 1) % set.dimension(), root_var + 1, semantics);
+    return (bdd_nithvar(root_var) & left_branch) | (bdd_ithvar(root_var) & right_branch);
+}
+
+
+// recursive function that removes from the bdd the cells that possibly respect a property, for AS_OUTER semantics,
+// or the cells that definitely respect it, for AS_INNER semantics
+bdd _approximate_remove(const SetCheckerInterface& checker, const bdd& enabled_cells, const Box& root_cell,
+                       const uint depth, const uint splitting_coordinate, const int root_var, const ApprSemantics semantics)
+{
+    // std::cout << "_approximate_remove(checker, " << enabled_cells << ", "
+    //           << root_cell << ", " << depth << ", " << splitting_coordinate << ", " << root_var << ", "
+    //           << (semantics == AS_INNER ? "AS_INNER" : "AS_OUTER") << ")" << std::endl;
+    // if the bdd is the constant false, do nothing
+    if(enabled_cells == bddfalse) return enabled_cells;
+    // get the value of the property for the root cell
+    tribool prop = checker.check(root_cell);
+    // if the current cell definitely respects the property, return the empty bdd
+    if(definitely(prop)) {
+        // std::cout << "the current cell respects the property, return false." << std::endl;
+        return bddfalse;
+    }
+    // if the current cell definitely do not respect the property, return the current bdd
+    if(!possibly(prop)) {
+        // std::cout << "the current cell definitely do not respect the property, return the current bdd." << std::endl;
+        return enabled_cells;
+    }    
+    // if the depth is zero, return the empty bdd for outer semantics, and the current bdd for inner semantics
+    if(depth == 0) {
+        if(semantics == AS_OUTER) {
+            // std::cout << "depth is 0 and the current cell possibly respect the property, skip it." << std::endl;
+            return bddfalse;
+        } else {
+            // std::cout << "depth is 0 and the current cell possibly do not respect the property, return the current bdd." << std::endl;
+            return enabled_cells;        
+        }
+    }
+    // std::cout << "the current cell possibly respects the property, go on." << std::endl;
+    // split the root cell and the bdd, and continue recursively
+    std::pair <Box, Box> split_cells = root_cell.split(splitting_coordinate);
+    bdd right_branch, left_branch;
+    // if the variable labelling the root of the bdd is not root_var, do not split the bdd
+    if(enabled_cells == bddtrue || bdd_var(enabled_cells) != root_var) {
+        // std::cout << "bdd_var is different from root_var, do no split the bdd." << std::endl;
+        left_branch = enabled_cells;
+        right_branch = enabled_cells;
+    } else {
+        // std::cout << "bdd_var is equal to root_var, split the bdd." << std::endl;
+        left_branch = bdd_low(enabled_cells);
+        right_branch = bdd_high(enabled_cells);
+    }
+    uint dim = root_cell.dimension();
+    left_branch = _approximate_remove(checker, left_branch, split_cells.first, depth - 1,
+                                    (splitting_coordinate + 1) % dim, root_var + 1, semantics);
+    right_branch = _approximate_remove(checker, right_branch, split_cells.second, depth - 1,
+                                    (splitting_coordinate + 1) % dim, root_var + 1, semantics);
+    return (bdd_nithvar(root_var) & left_branch) | (bdd_ithvar(root_var) & right_branch);
+}
+
 
 // Function that increments a BDDTreeSet iterator
 void _compute_next_cell(std::vector< PathElement >& path, int mince_depth) {
@@ -1631,6 +1737,76 @@ void BDDTreeSet::inner_restrict(const SetCheckerInterface& checker, const uint a
     this->minimize_height();    
 }
 
+void BDDTreeSet::outer_remove(const OpenSetInterface& set) {
+    ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot compare with a zero-dimensional BDDTreeSet.");
+    ARIADNE_ASSERT_MSG(this->dimension() == set.dimension(), "Cannot compare sets with different dimensions.");
+
+    // Do nothing if the bdd set is empty
+    if(this->empty()) return;
+
+    // determine which dimension to split first 
+    uint height = this->root_cell_height();
+    uint dim = this->dimension();
+    uint i = _splitting_coordinate(height, dim);
+    uint depth = this->depth();
+    // call to worker procedure that computes the new bdd
+    this->_bdd = _approximate_remove(set, this->enabled_cells(), this->root_cell(), height + depth, i, 0, AS_OUTER);
+    // minimize the result
+    this->minimize_height();    
+}
+
+void BDDTreeSet::inner_remove(const OpenSetInterface& set) {
+    ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot compare with a zero-dimensional BDDTreeSet.");
+    ARIADNE_ASSERT_MSG(this->dimension() == set.dimension(), "Cannot compare sets with different dimensions.");
+
+    // Do nothing if the bdd set is empty
+    if(this->empty()) return;
+
+    // determine which dimension to split first 
+    uint height = this->root_cell_height();
+    uint dim = this->dimension();
+    uint i = _splitting_coordinate(height, dim);
+    uint depth = this->depth();
+    // call to worker procedure that computes the new bdd
+    this->_bdd = _approximate_remove(set, this->enabled_cells(), this->root_cell(), height + depth, i, 0, AS_INNER);
+    // minimize the result
+    this->minimize_height();    
+}
+
+void BDDTreeSet::outer_remove(const SetCheckerInterface& checker, const uint accuracy) {
+    ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot compare with a zero-dimensional BDDTreeSet.");
+
+    // Do nothing if the bdd set is empty
+    if(this->empty()) return;
+
+    // determine which dimension to split first 
+    uint height = this->root_cell_height();
+    uint dim = this->dimension();
+    uint i = _splitting_coordinate(height, dim);
+    // call to worker procedure that computes the new bdd
+    this->_bdd = _approximate_remove(checker, this->enabled_cells(), this->root_cell(), 
+                                       height + dim*accuracy, i, 0, AS_OUTER);
+    // minimize the result
+    this->minimize_height();    
+}
+
+void BDDTreeSet::inner_remove(const SetCheckerInterface& checker, const uint accuracy) {
+    ARIADNE_ASSERT_MSG(this->dimension() != 0, "Cannot compare with a zero-dimensional BDDTreeSet.");
+
+    // Do nothing if the bdd set is empty
+    if(this->empty()) return;
+
+    // determine which dimension to split first 
+    uint height = this->root_cell_height();
+    uint dim = this->dimension();
+    uint i = _splitting_coordinate(height, dim);
+    // call to worker procedure that computes the new bdd
+    this->_bdd = _approximate_remove(checker, this->enabled_cells(), this->root_cell(), 
+                                       height + dim*accuracy, i, 0, AS_INNER);
+    // minimize the result
+    this->minimize_height();    
+}
+
 BDDTreeSet::const_iterator BDDTreeSet::begin() const {
     return BDDTreeSet::const_iterator(*this);
 }
@@ -1817,9 +1993,28 @@ BDDTreeSet inner_intersection(const BDDTreeSet& bdd_set, const ConstraintSet& co
     return result;
 }
 
-// Box eps_codomain(const BDDTreeSet& bdd_set, const Vector<Float> eps, const VectorFunction& func) {
-//     ARIADNE_NOT_IMPLEMENTED;    
-// }
+BDDTreeSet outer_difference(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set) {
+    // make a copy of bdd_set
+    BDDTreeSet result = bdd_set;
+    if (!cons_set.unconstrained()) {
+    	result.inner_remove(cons_set);
+    } else {
+        result.clear();
+    }	
+    return result;
+}
+
+BDDTreeSet inner_difference(const BDDTreeSet& bdd_set, const ConstraintSet& cons_set) {
+    // make a copy of bdd_set
+    BDDTreeSet result = bdd_set;
+    if (!cons_set.unconstrained()) {
+    	result.outer_remove(cons_set);
+    } else {
+        result.clear();
+    }	
+    return result;
+}
+
 
 BDDTreeSet project_down(const BDDTreeSet& bdd_set, const Vector<uint>& indices) {
     // std::cout << "project_down(" << bdd_set << ", " << indices << ")" << std::endl;
@@ -1853,13 +2048,6 @@ BDDTreeSet project_down(const BDDTreeSet& bdd_set, const Vector<uint>& indices) 
     return set;
 }
 
-// tribool covers(const BDDTreeSet& covering_set, const BDDTreeSet& covered_set, const Vector<Float>& eps) {
-//     ARIADNE_NOT_IMPLEMENTED;    
-// }
-// 
-// tribool inside(const BDDTreeSet& covered_set, const BDDTreeSet& covering_set, const Vector<Float>& eps, int accuracy) {
-//     ARIADNE_NOT_IMPLEMENTED;    
-// }
 
 } // namespace Ariadne
 

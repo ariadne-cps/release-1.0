@@ -38,7 +38,6 @@ SRC = \
 	function_set.cc \
 	taylor_set.cc \
 	grid.cc \
-	bdd_set.cc \
 	denotable_set.cc \
 	hybrid_set.cc \
 	geometry.cc \
@@ -56,6 +55,14 @@ SRC = \
 	verifier.cc \
 	verification_input.cc
 
+if USE_BUDDY
+## BuDDy library is present, use BDDTreeSet
+DENOTABLE_SRC = bdd_set.cc
+else
+## BuDDy library is not present (or disables), use GridTreeSet
+DENOTABLE_SRC = grid_set.cc
+endif
+
 CALCULUS_SRC = \
 	numeric.cc \
 	vector.cc \
@@ -69,7 +76,7 @@ CALCULUS_SRC = \
 	taylor_calculus.cc
 
 lib_LTLIBRARIES = libariadne.la libcalculus.la
-libariadne_la_SOURCES = $(SRC)
+libariadne_la_SOURCES = $(SRC) $(DENOTABLE_SRC)
 libcalculus_la_SOURCES = $(CALCULUS_SRC)
 nodist_EXTRA_libariadne_la_SOURCES = dummy.cc
 

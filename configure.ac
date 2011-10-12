@@ -121,12 +121,26 @@ AC_CHECK_LIB([$lib],[main],[ARIADNE_NONPKGCONFIG_LIBS="$ARIADNE_NONPKGCONFIG_LIB
 lib=boost_thread-mt
 AC_CHECK_LIB([$lib],[main],[ARIADNE_NONPKGCONFIG_LIBS="$ARIADNE_NONPKGCONFIG_LIBS -l$lib"],[AC_MSG_ERROR([Boost thread library is missing. You must install the Boost C++ libraries.])])
 
-# Check for Buddy BDD library header (required)
-AC_CHECK_HEADER([bdd.h],,[AC_MSG_ERROR([Buddy BDD library development files are missing. You must install them.])])
 
-# Check for Buddy BDD library (required)
-lib=bdd
-AC_CHECK_LIB([$lib],[main],[ARIADNE_NONPKGCONFIG_LIBS="$ARIADNE_NONPKGCONFIG_LIBS -l$lib"],[AC_MSG_ERROR([Buddy BDD library is missing. You must install it.])])
+AC_ARG_ENABLE([bdd-set],
+              [AC_HELP_STRING([--disable-bdd-set],
+                              [Disable support for BDDTreeSet as DenotableSetType, even if the BuDDy library is present.])],
+              [],
+              [bdd_set="yes"])
+      
+# Check for Buddy BDD library
+if test "x$bdd_set" = xyes ; then
+    AC_CHECK_HEADER([bdd.h],[AC_DEFINE([HAVE_BUDDY_H],[1],[Define to 1 if you have the <bdd.h> header file.])],
+                [bdd_set=no])
+    if test "x$bdd_set" = xno ; then
+        AC_MSG_WARN([Buddy BDD library development files are missing. You cannot use BDDTreeSet.])
+    else
+        AC_CHECK_LIB([bdd],[main],[ARIADNE_NONPKGCONFIG_LIBS="$ARIADNE_NONPKGCONFIG_LIBS -lbdd"],
+                     [AC_MSG_ERROR([Buddy BDD headers are present, but library files are missing. Please install them.])])
+    fi
+fi
+
+AM_CONDITIONAL(USE_BUDDY,test "x$bdd_set" = xyes)
 
 # Check for Doxygen (optional)
 AC_PATH_PROG(DOXYGEN, doxygen)

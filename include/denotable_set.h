@@ -28,14 +28,26 @@
 #ifndef DENOTABLE_SET_H
 #define DENOTABLE_SET_H
 
-#include "bdd_set.h"
+#include "config.h"
+
+#ifdef HAVE_BUDDY_H
+    #include "bdd_set.h"
+#else
+    #include "grid_set.h"
+#endif
 
 using namespace std;
 using namespace Ariadne;
 
 namespace Ariadne {
 
-typedef BDDTreeSet DenotableSetType;
+#ifdef HAVE_BUDDY_H
+    // If the BuDDy library is installed and enabled, use BDDTreeSet as default DenotableSetType
+    typedef BDDTreeSet DenotableSetType;
+#else
+    // otherwise, use GridTreeSet
+    typedef GridTreeSet DenotableSetType;
+#endif
 
 //! \brief Evaluates the codomain of \a func applied on the cells of \a denotable_set, each widened by \a eps.
 Box eps_codomain(const DenotableSetType& denotable_set, const Vector<Float> eps, const VectorFunction& func);

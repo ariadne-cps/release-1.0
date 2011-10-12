@@ -14,6 +14,14 @@ INCLUDES = -I$(top_srcdir)/include $(CAIRO_CFLAGS) $(GTK_CFLAGS)
 LIBS += $(CAIRO_LIBS) $(GTK_LIBS)
 LDADD = ../src/libariadne.la $(LIBS)
 
+if USE_BUDDY
+## BuDDy library is present, use BDDTreeSet
+TEST_DENOTABLE_SET_TYPE = test_bdd_set
+else
+## BuDDy library is not present (or disables), use GridTreeSet
+TEST_DENOTABLE_SET_TYPE = test_grid_set
+endif
+
 bin_PROGRAMS = \
 	profile_arithmetic \
 	profile_taylor_model \
@@ -33,7 +41,7 @@ check_PROGRAMS = \
 	test_taylor_set \
 	test_function \
 	test_function_set \
-	test_bdd_set \
+	$(TEST_DENOTABLE_SET_TYPE) \
 	test_hybrid_set \
 	test_hybrid_io_automaton \
 	test_hybrid_evolution \
@@ -57,7 +65,6 @@ profiles: $(bin_PROGRAMS)
 profile_arithmetic_SOURCES=profile_arithmetic.cc
 profile_taylor_model_SOURCES=profile_taylor_model.cc
 profile_taylor_calculus_SOURCES=profile_taylor_calculus.cc
-profile_taylor_set_SOURCES=	profile_taylor_set.cc
 
 # Explicitly list test sources
 test_float_SOURCES=test_float.cc
