@@ -1475,6 +1475,21 @@ tribool GridTreeSubset::overlaps( const BinaryTreeNode* pCurrentNode, const Grid
     return result;
 }
 
+tribool GridTreeSubset::subset( const GridTreeSubset& other ) const {
+    return Ariadne::subset(*this, other);
+}
+
+tribool GridTreeSubset::superset( const GridTreeSubset& other ) const{
+    return Ariadne::superset(*this, other);
+}
+
+tribool GridTreeSubset::disjoint( const GridTreeSubset& other  ) const{
+    return Ariadne::disjoint(*this, other);
+}
+
+tribool GridTreeSubset::overlaps( const GridTreeSubset& other ) const{
+    return Ariadne::overlap(*this, other);
+}
 
 void GridTreeSubset::draw(CanvasInterface& theGraphic) const {
     for(GridTreeSubset::const_iterator iter=this->begin(); iter!=this->end(); ++iter) {
@@ -3168,20 +3183,8 @@ bool subset( const GridTreeSubset& theSet1, const GridTreeSubset& theSet2 ) {
     return result;
 }
 
-tribool GridTreeSubset::subset( const GridTreeSubset& other ) const {
-    return Ariadne::subset(*this, other);
-}
-
-tribool GridTreeSubset::superset( const GridTreeSubset& other ) const{
-    return Ariadne::superset(*this, other);
-}
-
-tribool GridTreeSubset::disjoint( const GridTreeSubset& other  ) const{
-    return Ariadne::disjoint(*this, other);
-}
-
-tribool GridTreeSubset::overlaps( const GridTreeSubset& other ) const{
-    return Ariadne::overlap(*this, other);
+bool superset( const GridTreeSubset& theSet1, const GridTreeSubset& theSet2 ) {
+    return subset(theSet2, theSet1);
 }
 
     
@@ -3246,6 +3249,12 @@ bool overlap( const GridTreeSubset& theSet1, const GridTreeSubset& theSet2 ) {
         
     return result;
 }
+
+bool disjoint( const GridTreeSubset& theSet1, const GridTreeSubset& theSet2 ) {
+    return !overlap(theSet1, theSet2);
+}
+
+
 
 /*************************************FRIENDS OF GridTreeSet*****************************************/
 
