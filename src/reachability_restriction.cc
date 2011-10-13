@@ -204,9 +204,23 @@ filter(const std::list<LocalisedEnclosureType>& enclosures) const
 		} else {
 			if (!this->has_discretised(loc))
 				_insert_domain_discretisation(loc);
+/*
+			cout << "Set bb: " << _set[loc].bounding_box() << ", Encl bb: " << encl_bb;
 
-			if (possibly(_set[loc].overlaps(encl_bb)))
+			cout << "Set cells bbs: ";
+
+			for (DenotableSetType::const_iterator cell_it = _set[loc].begin(); cell_it != _set[loc].end(); ++cell_it) {
+				cout << cell_it->box() << " ";
+				if (possibly(!cell_it->box().disjoint(encl_bb)))
+					cout << "Not disjoint!";
+			}
+			cout << endl;
+*/
+			if (possibly(!_set[loc].disjoint(encl_bb))) {
+	//			cout << " ADDED\n";
 				result.push_back(LocalisedEnclosureType(loc,encl_it->second));
+			} /*else
+				cout << " DISCARDED\n";*/
 		}
 	}
 

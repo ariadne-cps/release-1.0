@@ -57,12 +57,12 @@ class Interruptible {
 	uint _remaining_time() const { return ttl - (time(NULL) - _start_time); }
 
 	//! \brief Check for a timeout.
-	void _check_timeout() const { if (time(NULL) - _start_time > ttl) throw TimeoutException(); }
+	void _check_timeout() const { if (_remaining_time() <= 0) throw TimeoutException(); }
 
   public:
 
-	//! \brief The Time-To-Live, i.e. the time (in seconds) that any instrumented method is expected to return within
-	//! without raising a %TimeoutException.
+	//! \brief The Time-To-Live, i.e. the time (in seconds) that any instrumented method is expected to return within,
+	//! or raise a %TimeoutException.
 	uint ttl;
 
   protected:

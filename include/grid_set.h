@@ -2201,7 +2201,7 @@ inline GridCell GridTreeSubset::cell() const {
 }
 
 inline Box GridTreeSubset::bounding_box() const {
-    if(this->empty()) return Box(this->dimension());
+    if(this->empty()) return Box::empty_box(this->dimension());
 
     GridTreeSet::const_iterator iter=this->begin();
     Box bbox = iter->box();
