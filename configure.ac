@@ -114,11 +114,11 @@ done
 AC_CHECK_HEADER([boost/version.hpp],,[AC_MSG_ERROR([Boost library development files are missing. You must install them.])])
 
 # Check for Boost Serialization library (required)
-lib=boost_serialization-mt
+lib=boost_serialization
 AC_CHECK_LIB([$lib],[main],[ARIADNE_NONPKGCONFIG_LIBS="$ARIADNE_NONPKGCONFIG_LIBS -l$lib"],[AC_MSG_ERROR([Boost serialization library is missing. You must install the Boost C++ libraries.])])
 
 # Check for Boost Thread library (required)
-lib=boost_thread-mt
+lib=boost_thread
 AC_CHECK_LIB([$lib],[main],[ARIADNE_NONPKGCONFIG_LIBS="$ARIADNE_NONPKGCONFIG_LIBS -l$lib"],[AC_MSG_ERROR([Boost thread library is missing. You must install the Boost C++ libraries.])])
 
 
