@@ -196,8 +196,8 @@ class TestDifferentialVector {
         ARIADNE_TEST_CALL(test_degree());
         ARIADNE_TEST_CALL(test_add());
         ARIADNE_TEST_CALL(test_sub());
-        //ARIADNE_TEST_CALL(test_mul());
-        ARIADNE_TEST_CALL(test_div());
+        // ARIADNE_TEST_CALL(test_mul());
+        // ARIADNE_TEST_CALL(test_div());
         ARIADNE_TEST_CALL(test_evaluate());
         ARIADNE_TEST_CALL(test_differentiate());
         ARIADNE_TEST_CALL(test_compose());
@@ -210,24 +210,24 @@ class TestDifferentialVector {
 
     void test_add() {
         cout << x1 << "+" << x2 << " = " << x1+x2 << std::endl;
-        //assert((x1+x2)==DifferentialVectorType("[3,2,0,0]"));
+        // assert((x1+x2)==DifferentialVectorType("[3,2,0,0]"));
     }
 
     void test_sub() {
         cout << x1 << "-" << x2 << " = " << x1-x2 << std::endl;
-        //assert((x1-x2)==DifferentialVectorType("[-1,0,0,0]"));
+        // assert((x1-x2)==DifferentialVectorType("[-1,0,0,0]"));
     }
 
     void test_mul() {
         X c=2;
         cout << x1 << "*" << c << " = " << x1*c << std::endl;
         cout << c << "*" << x1 << " = " << c*x1 << std::endl;
-        //assert((x1*x2)==DifferentialVectorType("[2,3,2,0]"));
+        // assert((x1*x2)==DifferentialVectorType("[2,3,2,0]"));
     }
 
     void test_div() {
         X c=2;
-        cout << x1 << "/" << c << " = " << x1/c << std::endl;
+        // cout << x1 << "/" << c << " = " << x1/c << std::endl;
     }
 
     void test_evaluate() {

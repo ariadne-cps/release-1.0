@@ -150,7 +150,7 @@ else
     BUILD_DOC=no;
     AC_MSG_WARN([Doxygen is not installed. You can not generate Ariadne's documentation.])
 fi
-
+AM_CONDITIONAL(HAVE_DOXYGEN,test "x$BUILD_DOC" = xyes)
 
 # Check whether to use multiple-precision floating-point (default no)
 AC_MSG_CHECKING(whether to use multiple-precision floating-point numbers)

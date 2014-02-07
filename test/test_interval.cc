@@ -262,9 +262,6 @@ TestInterval::test_exact_rounded_arithmetic()
 void
 TestInterval::test_constructors()
 {
-    typedef Interval I;
-
-
     Float zero=0;
   
     // Construct from pair

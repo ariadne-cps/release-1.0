@@ -397,7 +397,7 @@ ListSet< Zonotope >
 split(const Zonotope& z)
 {
     // FIXME: Not quite guarenteed to give an over-approximation
-    typedef Interval I;
+    // typedef Interval I;
   
   
     ListSet< Zonotope  > result;

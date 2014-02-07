@@ -279,13 +279,13 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
 
     // Extract information about the working set
     DiscreteLocation location(0);
-    IntegerType steps;
+    // IntegerType steps;
     EventListType events_history;
     SetModelType set_model;
     TimeModelType time_model;
     const uint& set_index = current_set.first;
     make_ltuple(location,events_history,set_model,time_model)=current_set.second;
-    steps=events_history.size();
+    //steps=events_history.size();
 
     // Extract information about the current location
     const RealVectorFunction dynamic=get_directed_dynamic(_sys->dynamic_function(location),direction);

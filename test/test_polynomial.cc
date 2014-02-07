@@ -133,9 +133,9 @@ void TestPolynomial::test_iterator_concept()
 
 void TestPolynomial::test_cleanup()
 {
-    typedef Expansion<Float>::value_type ValueType;
+/*    typedef Expansion<Float>::value_type ValueType;
     typedef Expansion<Float>::word_type WordType;
-/*
+
     {
         MultiIndex a(3);
         MultiIndex b(3); ++b;

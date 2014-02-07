@@ -26,8 +26,6 @@
 
 using namespace Ariadne;
 
-typedef ImageSetHybridEvolver::EnclosureListType EnclosureListType;
-
 int main(int argc,char *argv[]) 
 {
 	int verb = 1;

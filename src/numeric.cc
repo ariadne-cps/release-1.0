@@ -1160,7 +1160,8 @@ Real::Real(const Rational& q)
 
 Real::Real(const std::string& str)
 {
-    ARIADNE_THROW(std::runtime_error,"Need GMP library to convert string literal to Real.");
+    ARIADNE_THROW(std::runtime_error,"Real(string)",
+                  "Need GMP library to convert string literal to Real.");
 }
 
 #endif // HAVE_RATIONAL

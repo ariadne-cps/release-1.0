@@ -1175,6 +1175,7 @@ Affine<X> affine(const Expression<Real>& e, const Space<Real>& s) {
         default:
             ARIADNE_FAIL_MSG("Cannot convert expression "<<e<<" to affine form.");
     }
+    ARIADNE_FAIL_MSG("Cannot convert expression "<<e<<" to affine form.");
 }
 
 template Affine<Interval> affine(const Expression<Real>&, const Space<Real>&);

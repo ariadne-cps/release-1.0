@@ -32,6 +32,7 @@ shiny: maintainer-clean
 	-rm -f */Makefile
 	-rm -f Makefile
 
+if HAVE_DOXYGEN
 doc: docs docs/refman.pdf docs/html
 
 docs: 
@@ -42,6 +43,11 @@ docs/html: docs
 docs/refman.pdf: docs
 	(cd docs/latex; make)
 	cp docs/latex/refman.pdf docs/refman.pdf 
+else
+doc:
+	
+endif
+
 lib:
 	(cd src; make lib)
 

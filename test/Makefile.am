@@ -1,16 +1,16 @@
 all: tests profiles
 
 profile-lib: $(bin_PROGRAMS)
-	for file in $(bin_PROGRAMS); do ./run_profile.sh $$file; done
+	for file in $(bin_PROGRAMS); do $(top_srcdir)/test/run_profile.sh $$file; done
 
 #TESTS_ENVIRONMENT = (function run_tst { $1 > $1.log; }; run_tst )
-TESTS_ENVIRONMENT = ./run_test.sh
-PROFILES_ENVIRONMENT = ./run_profile.sh
+#TESTS_ENVIRONMENT = $(top_srcdir)/test/run_test.sh
+#PROFILES_ENVIRONMENT = $(top_srcdir)/test/run_profile.sh
 
 AM_CXXFLAGS = -Wall
 AM_LDFLAGS = $(EXEC_LDFLAGS)
 
-INCLUDES = -I$(top_srcdir)/include $(CAIRO_CFLAGS) $(GTK_CFLAGS)
+AM_CPPFLAGS = -I$(top_srcdir)/include $(CAIRO_CFLAGS) $(GTK_CFLAGS)
 LIBS += $(CAIRO_LIBS) $(GTK_LIBS)
 LDADD = ../src/libariadne.la $(LIBS)
 

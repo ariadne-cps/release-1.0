@@ -102,7 +102,7 @@ void
 TestVector::test_misc()
 {
    
-    int n=3;
+    uint n=3;
     Float vptr[3]={-4.0,3.0,1.0};
     Float x=1.5;
     

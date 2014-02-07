@@ -271,7 +271,6 @@ InterpolatedCurve
 apply(const ProjectionFunction& map, const InterpolatedCurve& curve) 
 {
     InterpolatedCurve::const_iterator iter=curve.begin();
-    InterpolatedCurve::const_iterator end=curve.end();
     InterpolatedCurve result(apply(map,iter->second));
     while(iter!=curve.end()) {
         ++iter;

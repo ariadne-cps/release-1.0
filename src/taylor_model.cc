@@ -1872,7 +1872,7 @@ TaylorModel sqrt(const TaylorModel& x) {
     //std::cerr<<"te="<<trunc_err<<" te*[-1,+1]="<<trunc_err*Interval(-1,1)<<std::endl;
     z.error()+=trunc_err;
     //std::cerr<<"z="<<z<<std::endl;
-    Interval sqrta=sqrt(Interval(a));
+    //Interval sqrta=sqrt(Interval(a));
     //std::cerr<<"sqrt(a)="<<sqrta<<std::endl;
     z*=sqrt(Interval(a));
     //std::cerr<<"z="<<z<<std::endl;

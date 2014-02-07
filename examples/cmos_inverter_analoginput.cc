@@ -349,7 +349,6 @@ int main()
     // Declare the type to be used for the system evolution
     typedef HybridEvolver::EnclosureType HybridEnclosureType;
     typedef HybridEvolver::OrbitType OrbitType;
-    typedef HybridEvolver::EnclosureListType EnclosureListType;
 
     Box initial_box(3, 0.0,0.0, 0.0,0.0, 0.0,0.0);
     HybridEnclosureType initial_enclosure(nt_ps,initial_box);

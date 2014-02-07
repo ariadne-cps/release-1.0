@@ -546,7 +546,7 @@ scaled_touching_time_interval(const BaseModelType& guard_flow_set_model) const
 
     Vector<Interval> space_domain(guard_flow_set_model.argument_size()-1,Interval(-1,+1));
     Interval initial_guard_range=evaluate(guard_flow_set_model,join(space_domain,Interval(minimum_time)));
-    Interval final_guard_range=evaluate(guard_flow_set_model,join(space_domain,Interval(maximum_time)));
+    //Interval final_guard_range=evaluate(guard_flow_set_model,join(space_domain,Interval(maximum_time)));
 
     Float lower_time=minimum_time;
     Float upper_time=maximum_time;

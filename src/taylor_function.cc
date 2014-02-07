@@ -497,7 +497,7 @@ ScalarTaylorFunction
 crossing_time(const ScalarFunction& g, const VectorTaylorFunction& phi)
 {
     Vector<Interval> d=project(phi.domain(),range(0,phi.result_size()));
-    Interval h=phi.domain()[phi.result_size()];
+    //Interval h=phi.domain()[phi.result_size()];
 
     ScalarTaylorFunction gphi(phi.domain(),g.evaluate(phi.models()));
 

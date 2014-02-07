@@ -230,8 +230,7 @@ int main()
 
     // Declare the type to be used for the system evolution
     typedef HybridEvolver::EnclosureType HybridEnclosureType;
-    typedef HybridEvolver::OrbitType OrbitType;
-    typedef HybridEvolver::EnclosureListType EnclosureListType;
+    // typedef HybridEvolver::OrbitType OrbitType;
 
     std::cout << "Computing evolution..." << std::endl;
 
