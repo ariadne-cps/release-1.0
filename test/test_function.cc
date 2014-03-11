@@ -140,6 +140,7 @@ void TestFunction::test_vector_function()
 
 void TestFunction::test_cosine_function()
 {
+/*
 	RealVariable x("x");
 	List<RealVariable> varlist;
 	varlist.append(x);
@@ -153,6 +154,7 @@ void TestFunction::test_cosine_function()
 	Interval fc=img_f.evaluate(pt);
 
 	ARIADNE_TEST_ASSERT(fc.lower() >= -0.9244 && fc.upper() <= -0.9243);
+*/
 }
 
 

@@ -75,10 +75,10 @@ class TestMultiIndex
         MultiIndex i1(3,a1);
         MultiIndex i2(3,a2);
         MultiIndex i3(3,a3);
-        ARIADNE_TEST_ASSERT(a2<a1);
-        ARIADNE_TEST_ASSERT(a3<a1);
-        ARIADNE_TEST_ASSERT(a3<a2);
-        ARIADNE_TEST_ASSERT(!(a1<a2));
+        ARIADNE_TEST_ASSERT(i1<i2);
+        ARIADNE_TEST_ASSERT(i3<i1);
+        ARIADNE_TEST_ASSERT(i3<i2);
+        ARIADNE_TEST_ASSERT(!(i2<i1));
     }
 
     void test_addition() {

@@ -218,6 +218,13 @@ inline Float pow_approx(Float x, int n) {
     rounding_mode_t rounding_mode=get_rounding_mode(); set_rounding_mode(to_nearest);
     volatile Float r=pow_rnd(x,n); set_rounding_mode(rounding_mode); return r; }
 
+Float sqrt_approx(Float x);
+Float exp_approx(Float x);
+Float log_approx(Float x);
+Float sin_approx(Float x);
+Float cos_approx(Float x);
+Float tan_approx(Float x);
+
 inline Float add_up(Float x, Float y) {
     rounding_mode_t rounding_mode=get_rounding_mode(); set_rounding_mode(upward);
     volatile Float r=add_rnd(x,y); set_rounding_mode(rounding_mode); return r; }
@@ -233,6 +240,12 @@ inline Float div_up(Float x, Float y) {
 inline Float pow_up(Float x, int n) {
     rounding_mode_t rounding_mode=get_rounding_mode(); set_rounding_mode(upward);
     volatile Float r=pow_rnd(x,n); set_rounding_mode(rounding_mode); return r; }
+Float sqrt_up(Float x);
+Float exp_up(Float x);
+Float log_up(Float x);
+Float sin_up(Float x);
+Float cos_up(Float x);
+Float tan_up(Float x);
 
 inline Float add_down(Float x, Float y) {
     rounding_mode_t rounding_mode=get_rounding_mode(); set_rounding_mode(downward);
@@ -249,6 +262,13 @@ inline Float div_down(Float x, Float y) {
 inline Float pow_down(Float x, int n) {
     rounding_mode_t rounding_mode=get_rounding_mode(); set_rounding_mode(downward);
     volatile Float r=pow_rnd(x,n); set_rounding_mode(rounding_mode); return r; }
+Float sqrt_down(Float x);
+Float exp_down(Float x);
+Float log_down(Float x);
+Float sin_down(Float x);
+Float cos_down(Float x);
+Float tan_down(Float x);
+
 
 inline Float med_approx(Float x, Float y) {
     rounding_mode_t rounding_mode=get_rounding_mode(); set_rounding_mode(to_nearest);
@@ -290,8 +310,8 @@ class Interval {
 
     Interval(Float lower, Float upper) : l(lower), u(upper) { ARIADNE_ASSERT_MSG(lower<=upper, "lower = "<<lower<<", upper ="<<upper); }
 #ifdef HAVE_RATIONAL
-    Interval(Rational q);
-    Interval(Rational lower, Rational upper);
+    Interval(const Rational& q);
+    Interval(const Rational& lower, const Rational& upper);
 #endif // HAVE_RATIONAL
 
     const Float& lower() const { return l; }
@@ -448,100 +468,50 @@ inline Interval neg(Interval i)
 
 inline Interval add(Interval i1, Interval i2)
 {
-    rounding_mode_t rnd=get_rounding_mode();
-    volatile double& i1l=const_cast<volatile double&>(i1.lower());
-    volatile double& i1u=const_cast<volatile double&>(i1.upper());
-    volatile double& i2l=const_cast<volatile double&>(i2.lower());
-    volatile double& i2u=const_cast<volatile double&>(i2.upper());
-    set_rounding_mode(downward);
-    volatile double rl=i1l+i2l;
-    set_rounding_mode(upward);
-    volatile double ru=i1u+i2u;
-    set_rounding_mode(rnd);
+    double rl = add_down(i1.lower(),i2.lower());
+    double ru = add_up(i1.upper(),i2.upper());
     return Interval(rl,ru);
 }
 
 inline Interval add(Interval i1, Float x2)
 {
-    rounding_mode_t rnd=get_rounding_mode();
-    volatile double& i1l=const_cast<volatile double&>(i1.lower());
-    volatile double& i1u=const_cast<volatile double&>(i1.upper());
-    volatile double& x2v=x2;
-    set_rounding_mode(downward);
-    volatile double rl=i1l+x2v;
-    set_rounding_mode(upward);
-    volatile double ru=i1u+x2v;
-    set_rounding_mode(rnd);
+    double rl = add_down(i1.lower(),x2);
+    double ru = add_up(i1.upper(),x2);
     return Interval(rl,ru);
 }
 
 inline Interval add_ivl(Float x1, Float x2)
 {
-    rounding_mode_t rnd=get_rounding_mode();
-    volatile double& x1v=x1;
-    volatile double& x2v=x2;
-    set_rounding_mode(downward);
-    volatile double rl=x1v+x2v;
-    set_rounding_mode(upward);
-    volatile double ru=x1v+x2v;
-    set_rounding_mode(rnd);
+    double rl = add_down(x1,x2);
+    double ru = add_up(x1,x2);
     return Interval(rl,ru);
 }
 
 inline Interval sub(Interval i1, Interval i2)
 {
-    rounding_mode_t rnd=get_rounding_mode();
-    volatile double& i1l=const_cast<volatile double&>(i1.lower());
-    volatile double& i1u=const_cast<volatile double&>(i1.upper());
-    volatile double& i2l=const_cast<volatile double&>(i2.lower());
-    volatile double& i2u=const_cast<volatile double&>(i2.upper());
-    set_rounding_mode(downward);
-    volatile double rl=i1l-i2u;
-    set_rounding_mode(upward);
-    volatile double ru=i1u-i2l;
-    set_rounding_mode(rnd);
+    double rl = sub_down(i1.lower(),i2.upper());
+    double ru = sub_up(i1.upper(),i2.lower());
     return Interval(rl,ru);
 }
 
 inline Interval sub(Interval i1, Float x2)
 {
-    rounding_mode_t rnd=get_rounding_mode();
-    volatile double& i1l=const_cast<volatile double&>(i1.lower());
-    volatile double& i1u=const_cast<volatile double&>(i1.upper());
-    volatile double& x2v=x2;
-    set_rounding_mode(downward);
-    volatile double rl=i1l-x2v;
-    set_rounding_mode(upward);
-    volatile double ru=i1u-x2v;
-    set_rounding_mode(rnd);
+    double rl = sub_down(i1.lower(),x2);
+    double ru = sub_up(i1.upper(),x2);
     return Interval(rl,ru);
 }
 
 inline Interval sub(Float x1, Interval i2)
 {
-    rounding_mode_t rnd=get_rounding_mode();
-    volatile double& x1v=x1;
-    volatile double& i2l=const_cast<volatile double&>(i2.lower());
-    volatile double& i2u=const_cast<volatile double&>(i2.upper());
-    set_rounding_mode(downward);
-    volatile double rl=x1v-i2u;
-    set_rounding_mode(upward);
-    volatile double ru=x1v-i2l;
-    set_rounding_mode(rnd);
+    double rl = sub_down(x1,i2.upper());
+    double ru = sub_up(x1,i2.lower());
     return Interval(rl,ru);
 }
 
 inline Interval shrink_in(Interval i1, Float x2)
 {
-    rounding_mode_t rnd=get_rounding_mode();
-    volatile double& i1l=const_cast<volatile double&>(i1.lower());
-    volatile double& i1u=const_cast<volatile double&>(i1.upper());
-    volatile double& x2v=x2;
-    set_rounding_mode(upward);
-    volatile double rl=i1l+x2v;
-    set_rounding_mode(downward);
-    volatile double ru=i1u-x2v;
-    set_rounding_mode(rnd);
+    double rl=add_up(i1.lower(),x2);
+    double ru=sub_down(i1.upper(),x2);
     if (rl > ru) {
     	Interval result;
     	result.make_empty();
@@ -553,15 +523,8 @@ inline Interval shrink_in(Interval i1, Float x2)
 
 inline Interval shrink_out(Interval i1, Float x2)
 {
-    rounding_mode_t rnd=get_rounding_mode();
-    volatile double& i1l=const_cast<volatile double&>(i1.lower());
-    volatile double& i1u=const_cast<volatile double&>(i1.upper());
-    volatile double& x2v=x2;
-    set_rounding_mode(downward);
-    volatile double rl=i1l+x2v;
-    set_rounding_mode(upward);
-    volatile double ru=i1u-x2v;
-    set_rounding_mode(rnd);
+    double rl=add_down(i1.lower(),x2);
+    double ru=sub_up(i1.upper(),x2);
     if (rl > ru) {
     	Interval result;
     	result.make_empty();
@@ -573,40 +536,22 @@ inline Interval shrink_out(Interval i1, Float x2)
 
 inline Interval sub_ivl(Float x1, Float x2)
 {
-    rounding_mode_t rnd=get_rounding_mode();
-    volatile double& x1v=x1;
-    volatile double& x2v=x2;
-    set_rounding_mode(downward);
-    volatile double rl=x1v-x2v;
-    set_rounding_mode(upward);
-    volatile double ru=x1v-x2v;
-    set_rounding_mode(rnd);
+    double rl = sub_down(x1,x2);
+    double ru = sub_up(x1,x2);
     return Interval(rl,ru);
 }
 
 inline Interval mul_ivl(Float x1, Float x2)
 {
-    rounding_mode_t rnd=get_rounding_mode();
-    volatile double& x1v=x1;
-    volatile double& x2v=x2;
-    set_rounding_mode(downward);
-    volatile double rl=x1v*x2v;
-    set_rounding_mode(upward);
-    volatile double ru=x1v*x2v;
-    set_rounding_mode(rnd);
+    double rl=mul_down(x1,x2);
+    double ru=mul_up(x1,x2);
     return Interval(rl,ru);
 }
 
 inline Interval div_ivl(Float x1, Float x2)
 {
-    rounding_mode_t rnd=get_rounding_mode();
-    volatile double& x1v=x1;
-    volatile double& x2v=x2;
-    set_rounding_mode(downward);
-    volatile double rl=x1v/x2v;
-    set_rounding_mode(upward);
-    volatile double ru=x1v/x2v;
-    set_rounding_mode(rnd);
+    double rl=div_down(x1,x2);
+    double ru=div_up(x1,x2);
     return Interval(rl,ru);
 }
 
