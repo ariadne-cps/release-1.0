@@ -42,6 +42,7 @@ using std::cin; using std::cout; using std::cerr; using std::clog;
 using std::endl; using std::flush;
 using std::ofstream; using std::ifstream;
 
+#include "config.h"
 #include "numeric.h"
 #include "vector.h"
 #include "matrix.h"

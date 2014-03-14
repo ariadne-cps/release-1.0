@@ -6,7 +6,7 @@ AC_CONFIG_SRCDIR([src])
 AC_CONFIG_HEADER([config.h])
 
 # Save the user-given value of CXXFLAGS for later use
-CXXFLAGS_EARLY=${CXXFLAGS}
+#CXXFLAGS_EARLY=${CXXFLAGS}
 
 # Checks for programs.
 AC_PROG_CXX
@@ -19,13 +19,11 @@ AC_ARG_ENABLE(debug, [AS_HELP_STRING([--enable-debug=(yes/no)], [turn on debugg
               enable_debug=${enableval}, enable_debug="no")
 # If enable_debug is yes, then put the correct CXXFLAGS
 if test "x$enable_debug" = "xyes"; then
-    # If user provided a custom value for CXXFLAGS, do no change it
-    if test "x$CXXFLAGS_EARLY" = "x"; then
-        CXXFLAGS="-pg -g3 -O0"
-    fi
+    AC_SUBST([AM_CXXFLAGS], ["-pg -g3 -O0 -frounding-math -Wall -fno-strict-aliasing"])
     AC_MSG_RESULT(yes)
 else
     AC_MSG_RESULT(no)
+    AC_SUBST([AM_CXXFLAGS], ["-frounding-math -Wall -fno-strict-aliasing"])
 fi
 
 AC_CONFIG_MACRO_DIR([m4])
@@ -181,6 +179,7 @@ AC_MSG_NOTICE([LIBS=$LIBS])
 AC_MSG_NOTICE([GTK_LIBS=$GTK_LIBS])
 AC_MSG_NOTICE([CAIRO_LIBS=$CAIRO_LIBS])
 AC_MSG_NOTICE([EXEC_LDFLAGS=$EXEC_LDFLAGS])
+AC_MSG_NOTICE([AM_CXXFLAGS=$AM_CXXFLAGS])
 
 AC_SUBST(EXEC_LDFLAGS)
 

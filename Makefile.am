@@ -6,7 +6,7 @@ AM_CXXFLAGS = -Wall -fno-strict-aliasing
 
 ACLOCAL_AMFLAGS = -I m4
 
-DOCS_DESTDIR = $(DESTDIR)/usr/share/doc/libariadne-doc
+DOCS_DESTDIR = $(prefix)/share/doc/libariadne-doc
 EXAMPLES_DESTDIR = $(DOCS_DESTDIR)
 
 .PHONY: shiny doc all lib examples profiles check-lib 
@@ -43,9 +43,15 @@ docs/html: docs
 docs/refman.pdf: docs
 	(cd docs/latex; make)
 	cp docs/latex/refman.pdf docs/refman.pdf 
+
+install-doc: doc
+	install -d $(DOCS_DESTDIR)
+	-cp -rp docs/refman.pdf $(DOCS_DESTDIR)/ariadne-manual.pdf
+	-cp -rp docs/html $(DOCS_DESTDIR)
 else
 doc:
-	
+
+install-doc:	
 endif
 
 lib:
@@ -66,11 +72,6 @@ profile-lib: lib profiles
 install-lib: lib
 	(cd src; make install)
 
-install-doc: doc
-	install -d $(DOCS_DESTDIR)
-	-cp -rp docs/refman.pdf $(DOCS_DESTDIR)/ariadne-manual.pdf
-	-cp -rp docs/html $(DOCS_DESTDIR)
-
 install-examples: install-cxx-examples 
 
 install-cxx-examples:
@@ -82,4 +83,4 @@ install-cxx-examples:
 		examples/Makefile 
 	-mv examples/Makefile.orig examples/Makefile
 
-install-am: install-doc install-cxx-examples
+install-am: install-doc

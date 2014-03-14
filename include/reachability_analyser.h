@@ -30,8 +30,8 @@
 
 #include <boost/smart_ptr.hpp>
 #include <cstdarg>
-#include <config.h>
 
+#include "config.h"
 #include "hybrid_set_interface.h"
 #include "evolver_interface.h"
 #include "reachability_analyser_interface.h"

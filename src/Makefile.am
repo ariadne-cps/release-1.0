@@ -7,7 +7,7 @@ lib: libariadne.la libcalculus.la
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = ariadne.pc
 
-AM_CXXFLAGS = -Wall -fno-strict-aliasing
+#AM_CXXFLAGS = -Wall -fno-strict-aliasing
 
 AM_CPPFLAGS = -I$(top_srcdir)/include $(CAIRO_CFLAGS) $(GTK_CFLAGS)
 LIBS +=  $(CAIRO_LIBS) $(GTK_LIBS)

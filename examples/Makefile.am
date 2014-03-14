@@ -1,4 +1,4 @@
-AM_CXXFLAGS = -Wall
+#AM_CXXFLAGS = -Wall
 
 AM_CPPFLAGS = -I$(top_srcdir)/include
 LIBS +=  $(BOOST_LIBS) $(CAIRO_LIBS) $(GTK_LIBS)

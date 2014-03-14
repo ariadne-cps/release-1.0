@@ -1,4 +1,4 @@
-bin_PROGRAMS= 	tutorial \
+noinst_PROGRAMS= 	tutorial \
 		watertank-monolithic-hysteresis \
         watertank-compositional-hysteresis \
 		watertank-monolithic-proportional \

@@ -7,7 +7,7 @@ profile-lib: $(bin_PROGRAMS)
 #TESTS_ENVIRONMENT = $(top_srcdir)/test/run_test.sh
 #PROFILES_ENVIRONMENT = $(top_srcdir)/test/run_profile.sh
 
-AM_CXXFLAGS = -Wall
+#AM_CXXFLAGS = -Wall
 AM_LDFLAGS = $(EXEC_LDFLAGS)
 
 AM_CPPFLAGS = -I$(top_srcdir)/include $(CAIRO_CFLAGS) $(GTK_CFLAGS)
@@ -22,7 +22,7 @@ else
 TEST_DENOTABLE_SET_TYPE = test_grid_set
 endif
 
-bin_PROGRAMS = \
+noinst_PROGRAMS = \
 	profile_arithmetic \
 	profile_taylor_model \
 	profile_taylor_calculus
