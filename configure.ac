@@ -185,6 +185,7 @@ AC_SUBST(EXEC_LDFLAGS)
 
 # Declare which Makefiles need to be built
 AC_CONFIG_FILES([Makefile include/Makefile src/Makefile test/Makefile examples/Makefile src/ariadne.pc])
+AM_COND_IF([HAVE_DOXYGEN], [AC_CONFIG_FILES([Doxyfile DoxyfileRelatedPagesOnly])])
 
 # Output results of autoconf tests
 AC_OUTPUT

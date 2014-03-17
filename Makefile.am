@@ -36,7 +36,7 @@ if HAVE_DOXYGEN
 doc: docs docs/refman.pdf docs/html
 
 docs: 
-	doxygen
+	doxygen 
 
 docs/html: docs
 
