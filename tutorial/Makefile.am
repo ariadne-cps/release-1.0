@@ -5,12 +5,12 @@ LDADD = ../src/libariadne.la $(LIBS)
 
 tutorial: $(bin_PROGRAMS)
 
-bin_PROGRAMS=  monolithic-linear-nonurgent-parametric \
-        	monolithic-nonlinear-nonurgent-parametric \
-		compositional-linear-nonurgent-parametric
+bin_PROGRAMS=  monolithic-linear-unforced \
+        	monolithic-nonlinear-unforced \
+		compositional-linear-unforced
 		
-monolithic_linear_nonurgent_parametric_SOURCES= monolithic-linear-nonurgent-parametric.cc
-monolithic_nonlinear_nonurgent_parametric_SOURCES= monolithic-nonlinear-nonurgent-parametric.cc
-compositional_linear_nonurgent_parametric_SOURCES= compositional-linear-nonurgent-parametric.cc
+monolithic_linear_unforced_SOURCES= monolithic-linear-unforced.cc
+monolithic_nonlinear_unforced_SOURCES= monolithic-nonlinear-unforced.cc
+compositional_linear_unforced_SOURCES= compositional-linear-unforced.cc
 
 

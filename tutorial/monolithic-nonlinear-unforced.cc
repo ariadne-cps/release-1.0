@@ -1,7 +1,7 @@
 /***************************************************************************
- *            watertank-monolithic-hysteresis.cc
+ *            monolithic-nonlinear-unforced.cc
  *
- *  Copyright  2010  Luca Geretti
+ *  Copyright  2014  Luca Geretti
  *
  ****************************************************************************/
 
@@ -22,54 +22,23 @@
  */
 
 #include "ariadne.h"
-#include "automata.h"
+#include "analysis.h"
+#include "monolithic-nonlinear-unforced.h"
 
 using namespace Ariadne;
 
 int main(int argc,char *argv[])
 {
-	int verb = 1;
-	if (argc > 1)
-		verb = atoi(argv[1]);
+	int verbosity = 1;
+    bool plot_results = false;
 
 	// The system
-	HybridAutomaton system = Ariadne::getWatertankMonolithicHysteresis();
+	HybridAutomaton system = Ariadne::getSystem();
 
 	// The initial values
 	HybridBoundedConstraintSet initial_set(system.state_space());
 	initial_set[DiscreteLocation("opened")] = Box(2, 6.0,7.5, 1.0,1.0);
 	initial_set[DiscreteLocation("closed")] = Box(2, 6.0,7.5, 0.0,0.0);
 
-	// The domain
-	HybridBoxes domain(system.state_space(),Box(2,4.5,9.0,0.0,1.0));
-
-	// The safety constraint
-	RealVariable x("x");
-	RealVariable y("y");
-	List<RealVariable> varlist;
-	varlist.append(x);
-	varlist.append(y);
-	RealExpression expr = x;
-	List<RealExpression> consexpr;
-	consexpr.append(expr);
-	VectorFunction cons_f(consexpr,varlist);
-	Box codomain(1,5.52,8.25);
-	HybridConstraintSet safety_constraint(system.state_space(),ConstraintSet(cons_f,codomain));
-
-	// The parameters
-	RealParameterSet parameters;
-	parameters.insert(RealParameter("hmin",Interval(5.0,6.0)));
-	parameters.insert(RealParameter("hmax",Interval(7.5,8.5)));
-
-	/// Verification
-
-	Verifier verifier;
-	verifier.verbosity = verb;
-	verifier.ttl = 5;
-	verifier.settings().plot_results = false;
-
-	SafetyVerificationInput verInput(system, initial_set, domain, safety_constraint);
-
-	std::list<ParametricOutcome> results = verifier.parametric_safety(verInput, parameters);
-	draw(system.name(),results);
+    analyse(system,initial_set,verbosity,plot_results);
 }

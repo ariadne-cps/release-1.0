@@ -1,7 +1,7 @@
 /***************************************************************************
- *            watertank-nonlinear-monolithic-hysteresis.h
+ *            monolithic-linear-unforced.h
  *
- *  Copyright  2011  Luca Geretti
+ *  Copyright  2014  Luca Geretti
  *
  ****************************************************************************/
 
@@ -21,38 +21,37 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef WATERTANK_NONLINEAR_MONOLITHIC_HYSTERESIS_H_
-#define WATERTANK_NONLINEAR_MONOLITHIC_HYSTERESIS_H_
+#ifndef MONOLITHIC_LINEAR_UNFORCED_H_
+#define MONOLITHIC_LINEAR_UNFORCED_H_
 
 #include "ariadne.h"
 
 namespace Ariadne {
 
-HybridAutomaton getWatertankNonlinearMonolithicHysteresis()
+HybridAutomaton getSystem()
 {
-    /// Create a HybridAutomaton object
-    HybridAutomaton system("watertank-nl-mono-hy");
+	HybridAutomaton system("monolithic-linear-unforced");
 
     /// Set the system parameters
-    RealParameter a("a",0.065);
-    RealParameter b("b",Interval(0.3,0.32863));
-    RealParameter T("T",4.0);
-    RealParameter hmin("hmin",5.75);
-    RealParameter hmax("hmax",7.75);
-    RealParameter Delta("Delta",0.1);
+	RealParameter a("a",0.02);
+	RealParameter b("b",Interval(0.3,0.32863));
+	RealParameter T("T",4.0);
+	RealParameter hmin("hmin",5.75);
+	RealParameter hmax("hmax",7.75);
+	RealParameter Delta("Delta",0.1);
 
     /// Create four discrete states
     DiscreteLocation opened("opened");
     DiscreteLocation closed("closed");
     DiscreteLocation opening("opening");
     DiscreteLocation closing("closing");
-  
+
     /// Create the discrete events
     DiscreteEvent b_opening("b_opening");
     DiscreteEvent e_opening("e_opening");
     DiscreteEvent b_closing("b_closing");
     DiscreteEvent e_closing("e_closing");
-    
+
     // System variables
     RealVariable x("x");    // water level
     RealVariable y("y");    // valve aperture
@@ -61,15 +60,15 @@ HybridAutomaton getWatertankNonlinearMonolithicHysteresis()
     varlist.append(y);
 
     // Water level dynamics
-    RealExpression x_opening_closing = -a*sqrt(x) + b*y;
-    RealExpression x_opened = -a*sqrt(x) + b;
-    RealExpression x_closed = -a*sqrt(x);
-    
+    RealExpression x_opening_closing = -a*x + b*y;
+    RealExpression x_opened = -a*x + b;
+    RealExpression x_closed = -a*x;
+
     // Valve Aperture dynamics
     RealExpression y_opening = 1.0/T;
     RealExpression y_closing = -1.0/T;
     RealExpression y_opened_closed = 0.0;
-    
+
     // Dynamics at the different modes
     List<RealExpression> exprlist;
     exprlist.append(x_opened);
@@ -81,8 +80,8 @@ HybridAutomaton getWatertankNonlinearMonolithicHysteresis()
     exprlist[1] = y_opening;
     VectorFunction dyn_opening(exprlist, varlist);
     exprlist[1] = y_closing;
-    VectorFunction dyn_closing(exprlist, varlist);    
-      
+    VectorFunction dyn_closing(exprlist, varlist);
+
     // Reset functions
     RealExpression idx = x;
     RealExpression zero = 0.0;
@@ -106,13 +105,13 @@ HybridAutomaton getWatertankNonlinearMonolithicHysteresis()
 
     // Create the invariants.
     // Invariants are true when f(x) = Ax + b < 0
-    // forced transitions do not need an explicit invariant, 
+    // forced transitions do not need an explicit invariant,
     // we need only the invariants for location open and closed
     RealExpression x_leq_max = x - hmax - Delta;    // x <= hmax + Delta
     ScalarFunction inv_opened(x_leq_max, varlist);
     RealExpression x_geq_min = -x + hmin - Delta;   // x >= hmin - Delta
     ScalarFunction inv_closed(x_geq_min, varlist);
-  
+
     /// Build the automaton
     system.new_mode(opened,dyn_opened);
     system.new_mode(closing,dyn_closing);
@@ -127,9 +126,10 @@ HybridAutomaton getWatertankNonlinearMonolithicHysteresis()
     system.new_unforced_transition(b_opening,closed,opening,reset_y_zero,guard_b_opening);
     system.new_forced_transition(e_opening,opening,opened,reset_y_one,guard_e_opening);
 
-    return system;
+	return system;
 }
+
 
 }
 
-#endif /* WATERTANK_NONLINEAR_MONOLITHIC_HYSTERESIS_H_ */
+#endif /* MONOLITHIC_LINEAR_UNFORCED_H_ */

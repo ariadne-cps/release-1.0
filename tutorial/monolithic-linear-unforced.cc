@@ -1,7 +1,7 @@
 /***************************************************************************
- *            automata.h
+ *            monolithic-linear-unforced.cc
  *
- *  Copyright  2011  Luca Geretti
+ *  Copyright  2014  Luca Geretti
  *
  ****************************************************************************/
 
@@ -21,14 +21,24 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef AUTOMATA_H_
-#define AUTOMATA_H_
-
-#include <cstdarg>
 #include "ariadne.h"
+#include "analysis.h"
+#include "monolithic-linear-unforced.h"
 
-#include "monolithic-nonlinear-nonurgent-parametric.h"
-#include "monolithic-linear-nonurgent-parametric.h"
-#include "compositional-linear-nonurgent-parametric.h"
+using namespace Ariadne;
 
-#endif /* AUTOMATA_H_ */
+int main(int argc,char *argv[])
+{
+	int verbosity = 1;
+    bool plot_results = false;
+
+	// The system
+	HybridAutomaton system = Ariadne::getSystem();
+
+	// The initial values
+	HybridBoundedConstraintSet initial_set(system.state_space());
+	initial_set[DiscreteLocation("opened")] = Box(2, 6.0,7.5, 1.0,1.0);
+	initial_set[DiscreteLocation("closed")] = Box(2, 6.0,7.5, 0.0,0.0);
+
+    analyse(system,initial_set,verbosity,plot_results);
+}

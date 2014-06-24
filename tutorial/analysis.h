@@ -1,7 +1,7 @@
 /***************************************************************************
- *            watertank-nonlinear-monolithic-hysteresis.cc
+ *            analysis.h
  *
- *  Copyright  2011  Luca Geretti
+ *  Copyright  2014  Luca Geretti
  *
  ****************************************************************************/
 
@@ -22,24 +22,14 @@
  */
 
 #include "ariadne.h"
-#include "automata.h"
+
+#ifndef ANALYSIS_H_
+#define ANALYSIS_H_
 
 using namespace Ariadne;
 
-int main(int argc,char *argv[])
+void analyse(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results)
 {
-	int verb = 1;
-	if (argc > 1)
-		verb = atoi(argv[1]);
-
-	// The system
-	HybridAutomaton system = getWatertankNonlinearMonolithicHysteresis();
-
-	// The initial values
-	HybridBoundedConstraintSet initial_set(system.state_space());
-	initial_set[DiscreteLocation("opened")] = Box(2, 6.0,7.5, 1.0,1.0);
-	initial_set[DiscreteLocation("closed")] = Box(2, 6.0,7.5, 0.0,0.0);
-
 	// The domain
 	HybridBoxes domain(system.state_space(),Box(2,4.5,9.0,0.0,1.0));
 
@@ -56,21 +46,22 @@ int main(int argc,char *argv[])
 	Box codomain(1,5.52,8.25);
 	HybridConstraintSet safety_constraint(system.state_space(),ConstraintSet(cons_f,codomain));
 
-	// System input
-	SafetyVerificationInput verInput(system, initial_set, domain, safety_constraint);
-
-    // The parameters
-    RealParameterSet parameters;
-    parameters.insert(RealParameter("hmin",Interval(5.25,6.25)));
-    parameters.insert(RealParameter("hmax",Interval(7.25,8.25)));
+	// The parameters
+	RealParameterSet parameters;
+	parameters.insert(RealParameter("hmin",Interval(5.0,6.0)));
+	parameters.insert(RealParameter("hmax",Interval(7.5,8.5)));
 
 	/// Verification
-    Verifier verifier;
-    verifier.verbosity = verb;
-    verifier.ttl = 300;
-    verifier.settings().maximum_parameter_depth = 4;
-    verifier.settings().plot_results = false;
+
+	Verifier verifier;
+	verifier.verbosity = verbosity;
+	verifier.ttl = 5;
+	verifier.settings().plot_results = plot_results;
+
+	SafetyVerificationInput verInput(system, initial_set, domain, safety_constraint);
 
 	std::list<ParametricOutcome> results = verifier.parametric_safety(verInput, parameters);
 	draw(system.name(),results);
 }
+
+#endif /* ANALYSIS_H_ */
