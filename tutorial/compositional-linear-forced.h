@@ -32,11 +32,9 @@ HybridIOAutomaton getSystem()
 {
     /// Set the system parameters
     RealParameter a("a",0.02);
-    RealParameter b("b",Interval(0.3,0.32863));
+    RealParameter b("b",0.31);
     RealParameter T("T",4.0);	
-    RealParameter hmin("hmin",5.75);
-    RealParameter hmax("hmax",7.75);
-    RealParameter delta("delta",0.1);
+    RealParameter h("h",6.75);
 
     // System variables
     RealVariable x("x");    // water level
@@ -134,23 +132,18 @@ HybridIOAutomaton getSystem()
     controller.new_mode(falling);
 
     // Transitions
-    // when the water is greater than hmax, send a close command
-    RealExpression x_geq_hmax = x - hmax + delta;
-    controller.new_unforced_transition(e_close, rising, falling, x_geq_hmax);
-    // Add the invariant x < hmax + delta to rising
-    RealExpression x_leq_hmax = x - hmax - delta;
-    controller.new_invariant(rising, x_leq_hmax);
+    // when the water is greater than h, send a close command
+    RealExpression x_geq_h = x - h;
+    controller.new_forced_transition(e_close, rising, falling, x_geq_h);
 
-    // when the water is lower than hmin, send a open command
-    RealExpression x_leq_hmin = hmin + delta - x;
-    controller.new_unforced_transition(e_open, falling, rising, x_leq_hmin);
-    // Add the invariant x > hmin - delta to falling
-    RealExpression x_geq_hmin = hmin - delta - x;
-    controller.new_invariant(falling, x_geq_hmin);
+
+    // when the water is lower than h, send a open command
+    RealExpression x_leq_h = h - x;
+    controller.new_forced_transition(e_open, falling, rising, x_leq_h);
 	
     // Compose the automata
     HybridIOAutomaton tank_valve = compose("tank,valve",tank,valve,flow,idle);
-    HybridIOAutomaton system = compose("compositional-linear-unforced",tank_valve,controller,DiscreteLocation("flow,idle"),rising);
+    HybridIOAutomaton system = compose("compositional-linear-forced",tank_valve,controller,DiscreteLocation("flow,idle"),rising);
 
     return system;
 }

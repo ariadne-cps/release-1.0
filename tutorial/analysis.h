@@ -28,12 +28,13 @@
 
 using namespace Ariadne;
 
-void analyse(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results)
-{
-	// The domain
-	HybridBoxes domain(system.state_space(),Box(2,4.5,9.0,0.0,1.0));
+HybridBoxes getDomain(HybridAutomatonInterface& system) {
 
-	// The safety constraint
+    return HybridBoxes(system.state_space(),Box(2,4.5,9.0,0.0,1.0));
+}
+
+HybridConstraintSet getSafetyConstraint(HybridAutomatonInterface& system) {
+
 	RealVariable x("x");
 	RealVariable y("y");
 	List<RealVariable> varlist;
@@ -44,7 +45,29 @@ void analyse(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initi
 	consexpr.append(expr);
 	VectorFunction cons_f(consexpr,varlist);
 	Box codomain(1,5.52,8.25);
-	HybridConstraintSet safety_constraint(system.state_space(),ConstraintSet(cons_f,codomain));
+
+    return HybridConstraintSet(system.state_space(),ConstraintSet(cons_f,codomain));
+}
+
+void analyse_forced(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results) {
+
+    HybridBoxes domain = getDomain(system);
+    HybridConstraintSet safety_constraint = getSafetyConstraint(system);
+
+    Verifier verifier;
+	verifier.verbosity = verbosity;
+	verifier.ttl = 5;
+	verifier.settings().plot_results = plot_results;
+
+	SafetyVerificationInput verInput(system, initial_set, domain, safety_constraint);
+
+	std::cout << "[v:1]  Outcome: " << verifier.safety(verInput) << std::endl;
+}
+
+void analyse_unforced(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results)
+{
+    HybridBoxes domain = getDomain(system);
+    HybridConstraintSet safety_constraint = getSafetyConstraint(system);
 
 	// The parameters
 	RealParameterSet parameters;
@@ -63,5 +86,7 @@ void analyse(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initi
 	std::list<ParametricOutcome> results = verifier.parametric_safety(verInput, parameters);
 	draw(system.name(),results);
 }
+
+
 
 #endif /* ANALYSIS_H_ */

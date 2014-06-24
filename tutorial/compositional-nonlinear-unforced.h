@@ -1,5 +1,5 @@
 /***************************************************************************
- *            compositional-linear-unforced.h
+ *            compositional-nonlinear-unforced.h
  *
  *  Copyright  2014  Luca Geretti
  *
@@ -21,8 +21,8 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef COMPOSITIONAL_LINEAR_UNFORCED_H_
-#define COMPOSITIONAL_LINEAR_UNFORCED_H_
+#ifndef COMPOSITIONAL_NONLINEAR_UNFORCED_H_
+#define COMPOSITIONAL_NONLINEAR_UNFORCED_H_
 
 #include "ariadne.h"
 
@@ -54,7 +54,7 @@ HybridIOAutomaton getSystem()
     tank.add_output_var(x);
 
     // Only one state with no transitions and no invariants
-    RealExpression dyn = - a * x + b * y;
+    RealExpression dyn = - a * sqrt(x) + b * y;
     tank.new_mode(flow);
     tank.set_dynamics(flow, x, dyn);
 
@@ -150,7 +150,7 @@ HybridIOAutomaton getSystem()
 	
     // Compose the automata
     HybridIOAutomaton tank_valve = compose("tank,valve",tank,valve,flow,idle);
-    HybridIOAutomaton system = compose("compositional-linear-unforced",tank_valve,controller,DiscreteLocation("flow,idle"),rising);
+    HybridIOAutomaton system = compose("compositional-nonlinear-unforced",tank_valve,controller,DiscreteLocation("flow,idle"),rising);
 
     return system;
 }
