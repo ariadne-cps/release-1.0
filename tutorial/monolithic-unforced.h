@@ -1,5 +1,5 @@
 /***************************************************************************
- *            monolithic-linear-unforced.h
+ *            monolithic-unforced.h
  *
  *  Copyright  2014  Luca Geretti
  *
@@ -21,8 +21,8 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef MONOLITHIC_LINEAR_UNFORCED_H_
-#define MONOLITHIC_LINEAR_UNFORCED_H_
+#ifndef MONOLITHIC_UNFORCED_H_
+#define MONOLITHIC_UNFORCED_H_
 
 #include "ariadne.h"
 
@@ -30,7 +30,7 @@ namespace Ariadne {
 
 HybridAutomaton getSystem()
 {
-	HybridAutomaton system("monolithic-linear-unforced");
+	HybridAutomaton system("monolithic-unforced");
 
     /// Set the system parameters
 	RealParameter a("a",0.02);
@@ -60,9 +60,9 @@ HybridAutomaton getSystem()
     varlist.append(y);
 
     // Water level dynamics
-    RealExpression x_opening_closing = -a*x + b*y;
-    RealExpression x_opened = -a*x + b;
-    RealExpression x_closed = -a*x;
+    RealExpression x_opening_closing = -a*sqrt(x) + b*y;
+    RealExpression x_opened = -a*sqrt(x) + b;
+    RealExpression x_closed = -a*sqrt(x);
 
     // Valve Aperture dynamics
     RealExpression y_opening = 1.0/T;
@@ -132,4 +132,4 @@ HybridAutomaton getSystem()
 
 }
 
-#endif /* MONOLITHIC_LINEAR_UNFORCED_H_ */
+#endif /* MONOLITHIC_UNFORCED_H_ */

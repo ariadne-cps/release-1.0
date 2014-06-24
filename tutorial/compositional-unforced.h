@@ -1,5 +1,5 @@
 /***************************************************************************
- *            compositional-nonlinear-unforced.h
+ *            compositional-unforced.h
  *
  *  Copyright  2014  Luca Geretti
  *
@@ -21,8 +21,8 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef COMPOSITIONAL_NONLINEAR_UNFORCED_H_
-#define COMPOSITIONAL_NONLINEAR_UNFORCED_H_
+#ifndef COMPOSITIONAL_UNFORCED_H_
+#define COMPOSITIONAL_UNFORCED_H_
 
 #include "ariadne.h"
 
@@ -150,7 +150,7 @@ HybridIOAutomaton getSystem()
 	
     // Compose the automata
     HybridIOAutomaton tank_valve = compose("tank,valve",tank,valve,flow,idle);
-    HybridIOAutomaton system = compose("compositional-nonlinear-unforced",tank_valve,controller,DiscreteLocation("flow,idle"),rising);
+    HybridIOAutomaton system = compose("compositional-unforced",tank_valve,controller,DiscreteLocation("flow,idle"),rising);
 
     return system;
 }
@@ -158,4 +158,4 @@ HybridIOAutomaton getSystem()
 
 }
 
-#endif /* COMPOSITIONAL_LINEAR_UNFORCED_H_ */
+#endif /* COMPOSITIONAL_UNFORCED_H_ */

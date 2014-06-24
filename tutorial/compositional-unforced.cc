@@ -1,5 +1,5 @@
 /***************************************************************************
- *            monolithic-nonlinear-unforced.cc
+ *            compositional-unforced.cc
  *
  *  Copyright  2014  Luca Geretti
  *
@@ -23,7 +23,7 @@
 
 #include "ariadne.h"
 #include "analysis.h"
-#include "monolithic-nonlinear-unforced.h"
+#include "compositional-unforced.h"
 
 using namespace Ariadne;
 
@@ -33,12 +33,12 @@ int main(int argc,char *argv[])
     bool plot_results = false;
 
 	// The system
-	HybridAutomaton system = Ariadne::getSystem();
+	HybridIOAutomaton system = Ariadne::getSystem();
 
 	// The initial values
 	HybridBoundedConstraintSet initial_set(system.state_space());
-	initial_set[DiscreteLocation("opened")] = Box(2, 6.0,7.5, 1.0,1.0);
-	initial_set[DiscreteLocation("closed")] = Box(2, 6.0,7.5, 0.0,0.0);
+	initial_set[DiscreteLocation("flow,idle,rising")] = Box(2, 6.0,7.5, 1.0,1.0);
+	initial_set[DiscreteLocation("flow,idle,falling")] = Box(2, 6.0,7.5, 0.0,0.0);
 
-    analyse(system,initial_set,verbosity,plot_results);
+    analyse_unforced(system,initial_set,verbosity,plot_results);
 }

@@ -1,5 +1,5 @@
 /***************************************************************************
- *            monolithic-linear-unforced.cc
+ *            monolithic-unforced.cc
  *
  *  Copyright  2014  Luca Geretti
  *
@@ -23,7 +23,7 @@
 
 #include "ariadne.h"
 #include "analysis.h"
-#include "monolithic-linear-unforced.h"
+#include "monolithic-unforced.h"
 
 using namespace Ariadne;
 
@@ -40,5 +40,5 @@ int main(int argc,char *argv[])
 	initial_set[DiscreteLocation("opened")] = Box(2, 6.0,7.5, 1.0,1.0);
 	initial_set[DiscreteLocation("closed")] = Box(2, 6.0,7.5, 0.0,0.0);
 
-    analyse(system,initial_set,verbosity,plot_results);
+    analyse_unforced(system,initial_set,verbosity,plot_results);
 }

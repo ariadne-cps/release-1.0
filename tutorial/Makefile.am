@@ -5,18 +5,13 @@ LDADD = ../src/libariadne.la $(LIBS)
 
 tutorial: $(bin_PROGRAMS)
 
-bin_PROGRAMS= monolithic-linear-forced \
-              monolithic-linear-unforced \
-              monolithic-nonlinear-unforced \
-              compositional-linear-forced \
-              compositional-linear-unforced \
-              compositional-nonlinear-unforced
+bin_PROGRAMS= monolithic-forced \
+              monolithic-unforced \
+              compositional-forced \
+              compositional-unforced
 		
-monolithic_linear_forced_SOURCES= monolithic-linear-forced.cc
-monolithic_linear_unforced_SOURCES= monolithic-linear-unforced.cc
-monolithic_nonlinear_unforced_SOURCES= monolithic-nonlinear-unforced.cc
-compositional_linear_forced_SOURCES= compositional-linear-forced.cc
-compositional_linear_unforced_SOURCES= compositional-linear-unforced.cc
-compositional_nonlinear_unforced_SOURCES= compositional-nonlinear-unforced.cc
-
+monolithic_forced_SOURCES= monolithic-forced.cc
+monolithic_unforced_SOURCES= monolithic-unforced.cc
+compositional_forced_SOURCES= compositional-forced.cc
+compositional_unforced_SOURCES= compositional-unforced.cc
 
