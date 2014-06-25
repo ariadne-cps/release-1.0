@@ -49,22 +49,7 @@ HybridConstraintSet getSafetyConstraint(HybridAutomatonInterface& system) {
     return HybridConstraintSet(system.state_space(),ConstraintSet(cons_f,codomain));
 }
 
-void analyse_forced(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results) {
-
-    HybridBoxes domain = getDomain(system);
-    HybridConstraintSet safety_constraint = getSafetyConstraint(system);
-
-    Verifier verifier;
-	verifier.verbosity = verbosity;
-	verifier.ttl = 5;
-	verifier.settings().plot_results = plot_results;
-
-	SafetyVerificationInput verInput(system, initial_set, domain, safety_constraint);
-
-	std::cout << "[v:1]  Outcome: " << verifier.safety(verInput) << std::endl;
-}
-
-void analyse_unforced(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results)
+void analyse(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results)
 {
     HybridBoxes domain = getDomain(system);
     HybridConstraintSet safety_constraint = getSafetyConstraint(system);
@@ -82,6 +67,8 @@ void analyse_unforced(HybridAutomatonInterface& system, HybridBoundedConstraintS
 	verifier.settings().plot_results = plot_results;
 
 	SafetyVerificationInput verInput(system, initial_set, domain, safety_constraint);
+
+	std::cout << "[v:1]  Outcome: " << verifier.safety(verInput) << std::endl;
 
 	std::list<ParametricOutcome> results = verifier.parametric_safety(verInput, parameters);
 	draw(system.name(),results);

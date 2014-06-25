@@ -40,5 +40,5 @@ int main(int argc,char *argv[])
 	initial_set[DiscreteLocation("flow,idle,rising")] = Box(2, 6.0,7.5, 1.0,1.0);
 	initial_set[DiscreteLocation("flow,idle,falling")] = Box(2, 6.0,7.5, 0.0,0.0);
 
-    analyse_unforced(system,initial_set,verbosity,plot_results);
+    analyse(system,initial_set,verbosity,plot_results);
 }

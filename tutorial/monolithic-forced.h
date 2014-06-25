@@ -39,7 +39,8 @@ HybridAutomaton getSystem()
 	RealParameter a("a",0.02);
 	RealParameter b("b",0.31);
 	RealParameter T("T",4.0);
-	RealParameter h("h",6.75);
+	RealParameter hmin("hmin",5.75);
+    RealParameter hmax("hmax",7.75);
 
     // Locations for discrete states
     DiscreteLocation opened("opened");
@@ -104,12 +105,12 @@ HybridAutomaton getSystem()
     VectorFunction reset_y_one(exprlist, varlist);
 
     // Guards (where f(x) >= 0 must hold for the guard to be true)
-    RealExpression x_leq_min = -x + h;  
-    ScalarFunction guard_b_opening(x_leq_min, varlist);
+    RealExpression x_leq_hmin = -x + hmin;  
+    ScalarFunction guard_b_opening(x_leq_hmin, varlist);
     RealExpression y_geq_one = y - 1.0;
     ScalarFunction guard_e_opening(y_geq_one, varlist);
-    RealExpression x_geq_max = x - h;
-    ScalarFunction guard_b_closing(x_geq_max, varlist);
+    RealExpression x_geq_hmax = x - hmax;
+    ScalarFunction guard_b_closing(x_geq_hmax, varlist);
     RealExpression y_leq_zero = -y;
     ScalarFunction guard_e_closing(y_leq_zero, varlist);
 

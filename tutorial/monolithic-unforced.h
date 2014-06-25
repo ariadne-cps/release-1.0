@@ -96,10 +96,10 @@ HybridAutomaton getSystem()
     /// Invariants
 
     // Expressions (where f(x) <= 0 must hold for the invariant to be true)
-    RealExpression x_leq_max = x - hmax - Delta;
-    ScalarFunction inv_opened(x_leq_max, varlist);
-    RealExpression x_geq_min = -x + hmin - Delta;
-    ScalarFunction inv_closed(x_geq_min, varlist);
+    RealExpression x_leq_hmax = x - hmax - Delta;
+    ScalarFunction inv_opened(x_leq_hmax, varlist);
+    RealExpression x_geq_hmin = -x + hmin - Delta;
+    ScalarFunction inv_closed(x_geq_hmin, varlist);
 
     // Registration of the invariants for each location
     system.new_invariant(opened,inv_opened);
@@ -118,12 +118,12 @@ HybridAutomaton getSystem()
     VectorFunction reset_y_one(exprlist, varlist);
 
     // Guards (where f(x) >= 0 must hold for the guard to be true)
-    RealExpression x_leq_min = -x + hmin + Delta;
-    ScalarFunction guard_b_opening(x_leq_min, varlist);
+    RealExpression x_leq_hmin = -x + hmin + Delta;
+    ScalarFunction guard_b_opening(x_leq_hmin, varlist);
     RealExpression y_geq_one = y - 1.0;
     ScalarFunction guard_e_opening(y_geq_one, varlist);
-    RealExpression x_geq_max = x - hmax + Delta;
-    ScalarFunction guard_b_closing(x_geq_max, varlist);
+    RealExpression x_geq_hmax = x - hmax + Delta;
+    ScalarFunction guard_b_closing(x_geq_hmax, varlist);
     RealExpression y_leq_zero = -y;
     ScalarFunction guard_e_closing(y_leq_zero, varlist);
 
