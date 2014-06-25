@@ -29,8 +29,8 @@ using namespace Ariadne;
 
 int main(int argc,char *argv[])
 {
-	int verbosity = 1;
-    bool plot_results = false;
+	int verbosity = 3;
+    bool plot_results = true;
 
 	// The system
 	HybridAutomaton system = Ariadne::getSystem();
