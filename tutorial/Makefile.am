@@ -7,11 +7,9 @@ tutorial: $(bin_PROGRAMS)
 
 bin_PROGRAMS= monolithic-forced \
               monolithic-unforced \
-              compositional-forced \
-              compositional-unforced
+              compositional
 		
 monolithic_forced_SOURCES= monolithic-forced.cc
 monolithic_unforced_SOURCES= monolithic-unforced.cc
-compositional_forced_SOURCES= compositional-forced.cc
-compositional_unforced_SOURCES= compositional-unforced.cc
+compositional_SOURCES= compositional.cc
 

@@ -30,44 +30,49 @@ namespace Ariadne {
 
 HybridAutomaton getSystem()
 {
+    /// Labeled variables
+
+    // Containing system
 	HybridAutomaton system("monolithic-forced");
 
-    /// Set the system parameters
+    // Parameters to be used in the system definition
 	RealParameter a("a",0.02);
 	RealParameter b("b",0.31);
 	RealParameter T("T",4.0);
 	RealParameter h("h",6.75);
 
-    /// Create four discrete states
+    // Locations for discrete states
     DiscreteLocation opened("opened");
     DiscreteLocation closed("closed");
     DiscreteLocation opening("opening");
     DiscreteLocation closing("closing");
 
-    /// Create the discrete events
+    // Events for transitions
     DiscreteEvent b_opening("b_opening");
     DiscreteEvent e_opening("e_opening");
     DiscreteEvent b_closing("b_closing");
     DiscreteEvent e_closing("e_closing");
 
-    // System variables
-    RealVariable x("x");    // water level
-    RealVariable y("y");    // valve aperture
-    List<RealVariable> varlist;
-    varlist.append(x);
-    varlist.append(y);
+    // State variables
+    RealVariable x("x");
+    RealVariable y("y");
 
-    // Water level dynamics
+    /// Dynamics
+
+    // Expressions for the dynamics for x, on every location
     RealExpression x_opening_closing = -a*sqrt(x) + b*y;
     RealExpression x_opened = -a*x + b;
     RealExpression x_closed = -a*x;
 
-    // Valve Aperture dynamics
+    // Expressions for the dynamics for y, on every location
     RealExpression y_opening = 1.0/T;
     RealExpression y_closing = -1.0/T;
     RealExpression y_opened_closed = 0.0;
 
-    // Dynamics at the different modes
+    // Association of the variables to each expression
+    List<RealVariable> varlist;
+    varlist.append(x);
+    varlist.append(y);
     List<RealExpression> exprlist;
     exprlist.append(x_opened);
     exprlist.append(y_opened_closed);
@@ -80,6 +85,14 @@ HybridAutomaton getSystem()
     exprlist[1] = y_closing;
     VectorFunction dyn_closing(exprlist, varlist);
 
+    // Registration of the dynamics for each location
+    system.new_mode(opened,dyn_opened);
+    system.new_mode(closing,dyn_closing);
+    system.new_mode(closed,dyn_closed);
+    system.new_mode(opening,dyn_opening);
+
+    /// Transitions
+
     // Reset functions
     RealExpression idx = x;
     RealExpression zero = 0.0;
@@ -90,23 +103,17 @@ HybridAutomaton getSystem()
     exprlist[1] = one;
     VectorFunction reset_y_one(exprlist, varlist);
 
-    // Create the guards.
-    // Guards are true when f(x) >= 0
-    RealExpression x_leq_min = -x + h;       // x <= h
+    // Guards (where f(x) >= 0 must hold for the guard to be true)
+    RealExpression x_leq_min = -x + h;  
     ScalarFunction guard_b_opening(x_leq_min, varlist);
-    RealExpression y_geq_one = y - 1.0;                 // y >= 1
+    RealExpression y_geq_one = y - 1.0;
     ScalarFunction guard_e_opening(y_geq_one, varlist);
-    RealExpression x_geq_max = x - h;        // x >= h
+    RealExpression x_geq_max = x - h;
     ScalarFunction guard_b_closing(x_geq_max, varlist);
-    RealExpression y_leq_zero = -y;                     // y <= 0
+    RealExpression y_leq_zero = -y;
     ScalarFunction guard_e_closing(y_leq_zero, varlist);
 
-    /// Build the automaton
-    system.new_mode(opened,dyn_opened);
-    system.new_mode(closing,dyn_closing);
-    system.new_mode(closed,dyn_closed);
-    system.new_mode(opening,dyn_opening);
-
+    // Registration of the transitions
     system.new_forced_transition(b_closing,opened,closing,reset_y_one,guard_b_closing);
     system.new_forced_transition(e_closing,closing,closed,reset_y_zero,guard_e_closing);
     system.new_forced_transition(b_opening,closed,opening,reset_y_zero,guard_b_opening);

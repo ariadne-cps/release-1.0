@@ -1,5 +1,5 @@
 /***************************************************************************
- *            compositional-unforced.h
+ *            compositional.h
  *
  *  Copyright  2014  Luca Geretti
  *
@@ -21,8 +21,8 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef COMPOSITIONAL_FORCED_H_
-#define COMPOSITIONAL_FORCED_H_
+#ifndef COMPOSITIONAL_H_
+#define COMPOSITIONAL_H_
 
 #include "ariadne.h"
 
@@ -30,69 +30,81 @@ namespace Ariadne {
 
 HybridIOAutomaton getSystem()
 {
-    /// Set the system parameters
-    RealParameter a("a",0.02);
-    RealParameter b("b",0.31);
-    RealParameter T("T",4.0);	
-    RealParameter h("h",6.75);
-
     // System variables
-    RealVariable x("x");    // water level
-    RealVariable y("y");    // valve aperture
+    RealVariable x("x");
+    RealVariable y("y");
 
-    // Create the tank automaton
+    /// Tank automaton
 
+    // Containing automaton
     HybridIOAutomaton tank("tank");
 
-	// States
+    // Parameters to be used in the automaton definition
+    RealParameter a("a",0.02);
+    RealParameter b("b",Interval(0.3,0.32863));
+
+    // Locations for discrete states
 	DiscreteLocation flow("flow");
 
-	// Add the input/output variables
+	// Registration of the input/output variables
     tank.add_input_var(y);
     tank.add_output_var(x);
 
-    // Only one state with no transitions and no invariants
-    RealExpression dyn = - a * sqrt(x) + b * y;
+    // Registration of the locations
     tank.new_mode(flow);
+
+	// Input/output variables
+    tank.add_input_var(y);
+    tank.add_output_var(x);
+
+    // Dynamics
+    RealExpression dyn = - a * sqrt(x) + b * y;
+
+    // Registration of the dynamics
     tank.set_dynamics(flow, x, dyn);
 
-    // Create the valve automaton
+    /// Valve automaton
 
+    // Containing automaton
     HybridIOAutomaton valve("valve");
 
-    // States
+    // Parameters to be used in the automaton definition
+    RealParameter T("T",4.0);
+
+    // Locations for discrete states
     DiscreteLocation idle("idle");
     DiscreteLocation opening("opening");
     DiscreteLocation closing("closing");
 
-    // The valve has one output var (the valve aperture)
+    // Registration of the input/output variables
     valve.add_output_var(y);
 
-    // Two input events (open and close) and one internal event
+    // Discrete events for transitions
     DiscreteEvent e_open("open");
-    valve.add_input_event(e_open);
     DiscreteEvent e_close("close");
-    valve.add_input_event(e_close);
     DiscreteEvent e_idle("idle");
+
+    // Registration of the input/internal events
+    valve.add_input_event(e_open);
+    valve.add_input_event(e_close);
     valve.add_internal_event(e_idle);
 
-    // Three states:
-    // Idle (valve either fully closed or fully opened)
+    // Dynamics
     RealExpression dynidle = 0.0;
-    valve.new_mode(idle);
-    valve.set_dynamics(idle, y, dynidle);
-    // Opening (valve is opening)
-    valve.new_mode(opening);
     RealExpression dynopening = 1.0/T;
-    valve.set_dynamics(opening, y, dynopening);
-    // Closing (valve is closing)
-    valve.new_mode(closing);
     RealExpression dynclosing = -1.0/T;
+
+    // Registration of the locations
+    valve.new_mode(idle);
+    valve.new_mode(opening);
+    valve.new_mode(closing);
+
+    // Registration of the dynamics for each location
+    valve.set_dynamics(idle, y, dynidle);
+    valve.set_dynamics(opening, y, dynopening);
     valve.set_dynamics(closing, y, dynclosing);
 
-    // Transitions
-
-    // the identity y' = y.
+    // Resets
     std::map< RealVariable, RealExpression> reset_y_identity;
     reset_y_identity[y] = y;
     std::map< RealVariable, RealExpression> reset_y_one;
@@ -100,50 +112,61 @@ HybridIOAutomaton getSystem()
     std::map< RealVariable, RealExpression> reset_y_zero;
     reset_y_zero[y] = 0.0;
 
-    // when open is received, go to opening
-    valve.new_unforced_transition(e_open, idle, opening, reset_y_identity);
-    // when closed is received, go to closing
-    valve.new_unforced_transition(e_close, idle, closing, reset_y_identity);
-    // when the valve is fully opened go from opening to idle
+    // Guards
     RealExpression y_geq_one = y - 1.0;
-    valve.new_forced_transition(e_idle, opening, idle, reset_y_identity, y_geq_one);
-    // when the valve is fully closed go from closing to idle
     RealExpression y_leq_zero = - y;
+
+    // Registration of the transitions
+    valve.new_unforced_transition(e_open, idle, opening, reset_y_identity);
+    valve.new_unforced_transition(e_close, idle, closing, reset_y_identity);
+    valve.new_forced_transition(e_idle, opening, idle, reset_y_identity, y_geq_one);
     valve.new_forced_transition(e_idle, closing, idle, reset_y_identity, y_leq_zero);
 
-    // Create the controller automaton
+    /// Controller automaton
 
+    // Containing automaton
     HybridIOAutomaton controller("controller");
 
-    // States
+    // Parameters to be used in the automaton definition
+    RealParameter hmin("hmin",5.75);
+    RealParameter hmax("hmax",7.75);
+    RealParameter delta("delta",0.1);
+
+    // Locations for discrete states
     DiscreteLocation rising("rising");
     DiscreteLocation falling("falling");
 
-    // The valve has one input var (the water level)
+    // Registration of the input/output variables
     controller.add_input_var(x);
+
     // Two output events (open and close)
     controller.add_output_event(e_open);
     controller.add_output_event(e_close);
 
-    // Two states:
-    // Rising (water level is increasing)
+    // Registration of the locations
     controller.new_mode(rising);
-    // Falling (water level is decreasing)
     controller.new_mode(falling);
 
+    // Invariants
+    RealExpression x_leq_hmax = x - hmax - delta;
+    RealExpression x_geq_hmin = hmin - delta - x;
+
+    // Registration of the invariants for each location
+    controller.new_invariant(rising, x_leq_hmax);
+    controller.new_invariant(falling, x_geq_hmin);
+
+    // Guards
+    RealExpression x_geq_hmax = x - hmax + delta;
+    RealExpression x_leq_hmin = hmin + delta - x;
+
     // Transitions
-    // when the water is greater than h, send a close command
-    RealExpression x_geq_h = x - h;
-    controller.new_forced_transition(e_close, rising, falling, x_geq_h);
-
-
-    // when the water is lower than h, send a open command
-    RealExpression x_leq_h = h - x;
-    controller.new_forced_transition(e_open, falling, rising, x_leq_h);
+    controller.new_unforced_transition(e_close, rising, falling, x_geq_hmax);
+    controller.new_unforced_transition(e_open, falling, rising, x_leq_hmin);
 	
-    // Compose the automata
+    /// Composition
+
     HybridIOAutomaton tank_valve = compose("tank,valve",tank,valve,flow,idle);
-    HybridIOAutomaton system = compose("compositional-forced",tank_valve,controller,DiscreteLocation("flow,idle"),rising);
+    HybridIOAutomaton system = compose("compositional",tank_valve,controller,DiscreteLocation("flow,idle"),rising);
 
     return system;
 }
@@ -151,4 +174,4 @@ HybridIOAutomaton getSystem()
 
 }
 
-#endif /* COMPOSITIONAL_FORCED_H_ */
+#endif /* COMPOSITIONAL_H_ */

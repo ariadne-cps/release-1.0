@@ -30,9 +30,12 @@ namespace Ariadne {
 
 HybridAutomaton getSystem()
 {
+    /// Labeled variables
+
+    // Containing system
 	HybridAutomaton system("monolithic-unforced");
 
-    /// Set the system parameters
+    // Parameters to be used in the system definition
 	RealParameter a("a",0.02);
 	RealParameter b("b",Interval(0.3,0.32863));
 	RealParameter T("T",4.0);
@@ -40,36 +43,38 @@ HybridAutomaton getSystem()
 	RealParameter hmax("hmax",7.75);
 	RealParameter Delta("Delta",0.1);
 
-    /// Create four discrete states
+    // Locations for discrete states
     DiscreteLocation opened("opened");
     DiscreteLocation closed("closed");
     DiscreteLocation opening("opening");
     DiscreteLocation closing("closing");
 
-    /// Create the discrete events
+    // Events for transitions
     DiscreteEvent b_opening("b_opening");
     DiscreteEvent e_opening("e_opening");
     DiscreteEvent b_closing("b_closing");
     DiscreteEvent e_closing("e_closing");
 
-    // System variables
-    RealVariable x("x");    // water level
-    RealVariable y("y");    // valve aperture
-    List<RealVariable> varlist;
-    varlist.append(x);
-    varlist.append(y);
+    // State variables
+    RealVariable x("x");
+    RealVariable y("y");
 
-    // Water level dynamics
+    /// Dynamics
+
+    // Expressions for the dynamics for x, on every location
     RealExpression x_opening_closing = -a*sqrt(x) + b*y;
     RealExpression x_opened = -a*sqrt(x) + b;
     RealExpression x_closed = -a*sqrt(x);
 
-    // Valve Aperture dynamics
+    // Expressions for the dynamics for y, on every location
     RealExpression y_opening = 1.0/T;
     RealExpression y_closing = -1.0/T;
     RealExpression y_opened_closed = 0.0;
 
-    // Dynamics at the different modes
+    // Association of the variables to each expression
+    List<RealVariable> varlist;
+    varlist.append(x);
+    varlist.append(y);
     List<RealExpression> exprlist;
     exprlist.append(x_opened);
     exprlist.append(y_opened_closed);
@@ -82,6 +87,26 @@ HybridAutomaton getSystem()
     exprlist[1] = y_closing;
     VectorFunction dyn_closing(exprlist, varlist);
 
+    // Registration of the dynamics for each location
+    system.new_mode(opened,dyn_opened);
+    system.new_mode(closing,dyn_closing);
+    system.new_mode(closed,dyn_closed);
+    system.new_mode(opening,dyn_opening);
+
+    /// Invariants
+
+    // Expressions (where f(x) <= 0 must hold for the invariant to be true)
+    RealExpression x_leq_max = x - hmax - Delta;
+    ScalarFunction inv_opened(x_leq_max, varlist);
+    RealExpression x_geq_min = -x + hmin - Delta;
+    ScalarFunction inv_closed(x_geq_min, varlist);
+
+    // Registration of the invariants for each location
+    system.new_invariant(opened,inv_opened);
+    system.new_invariant(closed,inv_closed);
+
+    /// Transitions
+
     // Reset functions
     RealExpression idx = x;
     RealExpression zero = 0.0;
@@ -92,35 +117,17 @@ HybridAutomaton getSystem()
     exprlist[1] = one;
     VectorFunction reset_y_one(exprlist, varlist);
 
-    // Create the guards.
-    // Guards are true when f(x) >= 0
-    RealExpression x_leq_min = -x + hmin + Delta;       // x <= hmin + Delta
+    // Guards (where f(x) >= 0 must hold for the guard to be true)
+    RealExpression x_leq_min = -x + hmin + Delta;
     ScalarFunction guard_b_opening(x_leq_min, varlist);
-    RealExpression y_geq_one = y - 1.0;                 // y >= 1
+    RealExpression y_geq_one = y - 1.0;
     ScalarFunction guard_e_opening(y_geq_one, varlist);
-    RealExpression x_geq_max = x - hmax + Delta;        // x >= hmax - Delta
+    RealExpression x_geq_max = x - hmax + Delta;
     ScalarFunction guard_b_closing(x_geq_max, varlist);
-    RealExpression y_leq_zero = -y;                     // y <= 0
+    RealExpression y_leq_zero = -y;
     ScalarFunction guard_e_closing(y_leq_zero, varlist);
 
-    // Create the invariants.
-    // Invariants are true when f(x) = Ax + b < 0
-    // forced transitions do not need an explicit invariant,
-    // we need only the invariants for location open and closed
-    RealExpression x_leq_max = x - hmax - Delta;    // x <= hmax + Delta
-    ScalarFunction inv_opened(x_leq_max, varlist);
-    RealExpression x_geq_min = -x + hmin - Delta;   // x >= hmin - Delta
-    ScalarFunction inv_closed(x_geq_min, varlist);
-
-    /// Build the automaton
-    system.new_mode(opened,dyn_opened);
-    system.new_mode(closing,dyn_closing);
-    system.new_mode(closed,dyn_closed);
-    system.new_mode(opening,dyn_opening);
-
-    system.new_invariant(opened,inv_opened);
-    system.new_invariant(closed,inv_closed);
-
+    // Registration of the transitions
     system.new_unforced_transition(b_closing,opened,closing,reset_y_one,guard_b_closing);
     system.new_forced_transition(e_closing,closing,closed,reset_y_zero,guard_e_closing);
     system.new_unforced_transition(b_opening,closed,opening,reset_y_zero,guard_b_opening);
