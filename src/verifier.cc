@@ -50,7 +50,11 @@ safety(SafetyVerificationInput& verInput) const
 {
 	RealParameterSet params;
 
-	return _safety_nosplitting(verInput,params);
+	tribool result = _safety_nosplitting(verInput,params);
+
+    ARIADNE_LOG(1,"Outcome: " << tribool_pretty_print(result));
+
+    return result;
 }
 
 
@@ -728,7 +732,7 @@ _plot_dominance(
 	string filename = system_descr + "-" + verification_descr + "-";
 	filename.append(mgd_char);
 
-	plot(_plot_dirpath,filename,reach);
+    plot(_plot_dirpath,filename,reach);
 
 }
 
