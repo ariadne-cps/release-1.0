@@ -31,7 +31,8 @@ using namespace std;
 
 // Forward declarations
 void finite_time_evolution(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results);
-void infinite_time_evolution(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results);
+void infinite_time_outer_evolution(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results);
+void infinite_time_lower_evolution(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results);
 void safety_verification(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results);
 void parametric_safety_verification(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results);
 HybridConstraintSet getSafetyConstraint(HybridAutomatonInterface& system);
@@ -39,14 +40,19 @@ HybridConstraintSet getSafetyConstraint(HybridAutomatonInterface& system);
 // The main method for the analysis of the system
 void analyse(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results)
 {
+    cout << "1/5: Finite time evolution... " << endl << flush;
     finite_time_evolution(system,initial_set,verbosity,plot_results);
-    infinite_time_evolution(system,initial_set,verbosity,plot_results);
+    cout << "2/5: Infinite time outer evolution... " << endl << flush; 
+    infinite_time_outer_evolution(system,initial_set,verbosity,plot_results);
+    cout << "3/5: Infinite time lower evolution... " << endl << flush; 
+    infinite_time_lower_evolution(system,initial_set,verbosity,plot_results);
+    cout << "4/5: Safety verification... " << endl << flush;
     safety_verification(system,initial_set,verbosity,plot_results);
+    cout << "5/5: Parametric safety verification... " << endl << flush;
     parametric_safety_verification(system,initial_set,verbosity,plot_results);
 }
 
 void finite_time_evolution(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results) {
-    cout << "A) Finite time evolution... " << endl << flush; 
 
     int accuracy = 5;
 
@@ -63,8 +69,7 @@ void finite_time_evolution(HybridAutomatonInterface& system, HybridBoundedConstr
        plot(".","upper",upper_reach);
 }
 
-void infinite_time_evolution(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results) {
-    cout << "B) Infinite time evolution... " << endl << flush; 
+void infinite_time_outer_evolution(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results) {
 
     int accuracy = 5;
 
@@ -79,8 +84,25 @@ void infinite_time_evolution(HybridAutomatonInterface& system, HybridBoundedCons
        plot(".","outer",outer_reach);
 }
 
+
+void infinite_time_lower_evolution(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results) {
+
+    int accuracy = 5;
+
+    HybridBoxes domain(system.state_space(),Box(2,4.5,9.0,0.0,1.0));
+
+    HybridReachabilityAnalyser analyser(system,domain,accuracy);
+    analyser.verbosity = verbosity;
+
+	HybridDenotableSet lower_reach;
+	HybridFloatVector epsilon;
+    make_lpair<HybridDenotableSet,HybridFloatVector>(lower_reach,epsilon) = analyser.lower_chain_reach_and_epsilon(initial_set);
+
+    if (plot_results)
+       plot(".","lower",lower_reach);
+}
+
 void safety_verification(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results) {
-    cout << "C) Safety verification... " << endl << flush;
 
     HybridBoxes domain(system.state_space(),Box(2,4.5,9.0,0.0,1.0));
     HybridConstraintSet safety_constraint = getSafetyConstraint(system);
@@ -96,7 +118,6 @@ void safety_verification(HybridAutomatonInterface& system, HybridBoundedConstrai
 }
 
 void parametric_safety_verification(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results) {
-    cout << "D) Parametric safety verification... " << endl << flush;
 
     HybridBoxes domain(system.state_space(),Box(2,4.5,9.0,0.0,1.0));
     HybridConstraintSet safety_constraint = getSafetyConstraint(system);
