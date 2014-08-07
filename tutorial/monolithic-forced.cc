@@ -29,7 +29,7 @@ using namespace Ariadne;
 
 int main(int argc,char *argv[])
 {
-	int verbosity = 1;
+	int verbosity = 2;
     bool plot_results = true;
 
 	// The system

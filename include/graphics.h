@@ -36,6 +36,7 @@
 
 #include "graphics_interface.h"
 #include "discrete_location.h"
+#include "parametric.h"
 #include "box.h"
 
 typedef unsigned int uint;
@@ -310,6 +311,13 @@ class SystemPlotter {
 	        sprintf(mgd_char,"%i",accuracy);
 	        base_filename.append(mgd_char);
 	        Ariadne::plot(_plot_dirpath,base_filename,set);
+        }
+        void plot(const std::list<ParametricOutcome>& outcomes, int accuracy) const {
+	        char mgd_char[10];
+	        sprintf(mgd_char,"%i",accuracy);
+            string base_filename = "parametric-";
+	        base_filename.append(mgd_char);
+            Ariadne::draw(_plot_dirpath+"/"+base_filename,outcomes);
         }
 };
 

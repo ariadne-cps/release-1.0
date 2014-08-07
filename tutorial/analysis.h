@@ -136,7 +136,7 @@ void parametric_safety_verification(HybridAutomatonInterface& system, HybridBoun
     // Initialization of the verifier
 	Verifier verifier;
 	verifier.verbosity = verbosity;
-	verifier.ttl = 50;
+	verifier.ttl = 60;
 	verifier.settings().plot_results = plot_results;
     verifier.settings().maximum_parameter_depth = 2;
 
@@ -144,8 +144,10 @@ void parametric_safety_verification(HybridAutomatonInterface& system, HybridBoun
 
 	list<ParametricOutcome> results = verifier.parametric_safety(verInput, parameters);
 
-	if (plot_results)
-        draw(system.name(),results);
+	if (plot_results) {
+        SystemPlotter plotter(system);
+        plotter.plot(results,verifier.settings().maximum_parameter_depth);
+    }
 }
 
 HybridConstraintSet getSafetyConstraint(HybridAutomatonInterface& system) {
