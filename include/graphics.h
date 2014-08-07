@@ -47,6 +47,7 @@ class Box;
 class Polytope;
 class InterpolatedCurve;
 class ProjectionFunction;
+class HybridAutomatonInterface;
 
 struct PlanarProjectionMap {
   public:
@@ -294,6 +295,23 @@ void plot(const string& foldername, const string& filename, const SET& set)
 	else
 		ARIADNE_WARN("Empty set, no plotting produced.");
 }
+
+class SystemPlotter {
+    public:
+        typedef HybridAutomatonInterface SystemType;
+    private:
+        string _plot_dirpath;
+        const SystemType& _sys;
+    public:
+        SystemPlotter(const SystemType& sys);
+        void reset();
+	    template <class SET> void plot_set(const SET& set, string base_filename, int accuracy) const {
+	        char mgd_char[10];
+	        sprintf(mgd_char,"%i",accuracy);
+	        base_filename.append(mgd_char);
+	        plot(_plot_dirpath,base_filename,set);
+        }
+};
 
 
 } // namespace Ariadne

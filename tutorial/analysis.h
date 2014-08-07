@@ -30,7 +30,7 @@ using namespace Ariadne;
 using namespace std;
 
 // Forward declarations
-void finite_time_evolution(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results);
+void finite_time_upper_evolution(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results);
 void infinite_time_outer_evolution(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results);
 void infinite_time_lower_evolution(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results);
 void safety_verification(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results);
@@ -40,8 +40,8 @@ HybridConstraintSet getSafetyConstraint(HybridAutomatonInterface& system);
 // The main method for the analysis of the system
 void analyse(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results)
 {
-    cout << "1/5: Finite time evolution... " << endl << flush;
-    finite_time_evolution(system,initial_set,verbosity,plot_results);
+    cout << "1/5: Finite time (upper) evolution... " << endl << flush;
+    finite_time_upper_evolution(system,initial_set,verbosity,plot_results);
     cout << "2/5: Infinite time outer evolution... " << endl << flush; 
     infinite_time_outer_evolution(system,initial_set,verbosity,plot_results);
     cout << "3/5: Infinite time lower evolution... " << endl << flush; 
@@ -52,7 +52,7 @@ void analyse(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initi
     parametric_safety_verification(system,initial_set,verbosity,plot_results);
 }
 
-void finite_time_evolution(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results) {
+void finite_time_upper_evolution(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results) {
 
     int accuracy = 5;
 
@@ -65,8 +65,10 @@ void finite_time_evolution(HybridAutomatonInterface& system, HybridBoundedConstr
 
     HybridDenotableSet upper_reach = analyser.upper_reach(initial_set,time);
 
-    if (plot_results)
-       plot(".","upper",upper_reach);
+    if (plot_results) {
+        SystemPlotter plotter(system);
+        plotter.plot_set(upper_reach,"upper",accuracy);
+    }
 }
 
 void infinite_time_outer_evolution(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results) {
@@ -80,8 +82,10 @@ void infinite_time_outer_evolution(HybridAutomatonInterface& system, HybridBound
 
     HybridDenotableSet outer_reach = analyser.outer_chain_reach(initial_set);
 
-    if (plot_results)
-       plot(".","outer",outer_reach);
+    if (plot_results) {
+        SystemPlotter plotter(system);
+        plotter.plot_set(outer_reach,"outer",accuracy);
+    }
 }
 
 
@@ -98,8 +102,10 @@ void infinite_time_lower_evolution(HybridAutomatonInterface& system, HybridBound
 	HybridFloatVector epsilon;
     make_lpair<HybridDenotableSet,HybridFloatVector>(lower_reach,epsilon) = analyser.lower_chain_reach_and_epsilon(initial_set);
 
-    if (plot_results)
-       plot(".","lower",lower_reach);
+    if (plot_results) {
+        SystemPlotter plotter(system);
+        plotter.plot_set(lower_reach,"lower",accuracy);
+    }
 }
 
 void safety_verification(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results) {

@@ -24,6 +24,8 @@
 #include "config.h"
 #undef HAVE_GMPXX_H
 
+#include <sys/stat.h>
+#include <sys/types.h>
 #include "macros.h"
 #include "stlio.h"
 #include "numeric.h"
@@ -35,6 +37,7 @@
 #include "curve.h"
 #include "polytope.h"
 #include "graphics.h"
+#include "hybrid_automaton_interface.h"
 
 #ifdef HAVE_GTK_H
 #include <gtk/gtk.h>
@@ -579,17 +582,24 @@ const Colour yellow=Colour("yellow",1.0,1.0,0.0);
 const Colour cyan=Colour("cyan",0.0,1.0,1.0);
 const Colour magenta=Colour("magenta",1.0,0.0,1.0);
 
-} // namespace Ariadne
+SystemPlotter::SystemPlotter(const SystemType& sys) : _sys(sys) {
+    reset();
+}
 
-#include "box.h"
-#include "zonotope.h"
+void
+SystemPlotter::reset() {
+	time_t mytime;
+	time(&mytime);
+	string foldername = this->_sys.name() +"-png";
 
-namespace Ariadne {
+	mkdir(foldername.c_str(),0777);
+	string timestring = asctime(localtime(&mytime));
+	timestring.erase(std::remove(timestring.begin(), timestring.end(), '\n'), timestring.end());
+	foldername = foldername+"/"+timestring;
+	mkdir(foldername.c_str(),0777);
 
-
-
-
-
+	_plot_dirpath = foldername;
+}
 
 
 } // namespace Ariadne
