@@ -67,7 +67,7 @@ void finite_time_upper_evolution(HybridAutomatonInterface& system, HybridBounded
 
     if (plot_results) {
         SystemPlotter plotter(system);
-        plotter.plot_set(upper_reach,"upper",accuracy);
+        plotter.plot(upper_reach,"upper",accuracy);
     }
 }
 
@@ -84,7 +84,7 @@ void infinite_time_outer_evolution(HybridAutomatonInterface& system, HybridBound
 
     if (plot_results) {
         SystemPlotter plotter(system);
-        plotter.plot_set(outer_reach,"outer",accuracy);
+        plotter.plot(outer_reach,"outer",accuracy);
     }
 }
 
@@ -104,7 +104,7 @@ void infinite_time_lower_evolution(HybridAutomatonInterface& system, HybridBound
 
     if (plot_results) {
         SystemPlotter plotter(system);
-        plotter.plot_set(lower_reach,"lower",accuracy);
+        plotter.plot(lower_reach,"lower",accuracy);
     }
 }
 

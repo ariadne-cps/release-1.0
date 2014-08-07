@@ -58,7 +58,7 @@ class Verifier
 
   private:
     boost::shared_ptr<SettingsType> _settings;
-    mutable std::string _plot_dirpath;
+    mutable boost::shared_ptr<SystemPlotter> _plotter_ptr;
     mutable time_t _start_time;
 
 	/*! \brief "Stateless" fields for holding reachability restrictions between successive internal calls. */
@@ -264,12 +264,7 @@ class Verifier
 			ReachabilityRestrictionPtr& restriction,
 			bool EQUAL_GRID_FOR_ALL_LOCATIONS) const;
 
-	// Reached region plotting methods
-	void _plot_dirpath_init(std::string basename) const;
-	void _plot_reach(
-			const SetApproximationType& reach,
-			string base_filename,
-			int accuracy) const;
+	// Dominance plotting utility function
 	void _plot_dominance(
 			const SetApproximationType& reach,
 			DominanceSystem dominanceSystem,

@@ -71,7 +71,7 @@ _safety_nosplitting(
 	SystemType& system = verInput.getSystem();
 
 	if (_settings->plot_results)
-		_plot_dirpath_init(system.name());
+		_plotter_ptr.reset(new SystemPlotter(system));
 
 	_init_safety_restriction(verInput);
 
@@ -154,7 +154,7 @@ _safety_proving_once(
 	    } else {
 	        ARIADNE_LOG(6,"Forward initial set size: " << forward_initial.size());
 	        if (_settings->plot_results)
-	            _plot_reach(forward_initial,"initial",_safety_restriction->accuracy());
+	            _plotter_ptr->plot(forward_initial,"initial",_safety_restriction->accuracy());
 	    }
 
 		result = _safety_proving_once_forward_analysis(verInput.getSystem(),forward_initial,verInput.getSafetyConstraint(),params);
@@ -203,7 +203,7 @@ _safety_proving_once_forward_analysis(
     ARIADNE_LOG(6,"Reachability size: " << forward_reach.size());
 
     if (_settings->plot_results)
-        _plot_reach(forward_reach,"forward",_safety_restriction->accuracy());
+        _plotter_ptr->plot(forward_reach,"forward",_safety_restriction->accuracy());
 
     _safety_restriction->update_with(forward_reach);
 
@@ -231,7 +231,7 @@ _safety_proving_once_backward_refinement(
     } else {
         ARIADNE_LOG(6,"Backward initial set size: " << backward_initial.size());
         if (_settings->plot_results)
-            _plot_reach(backward_initial,"final",_safety_restriction->accuracy());
+            _plotter_ptr->plot(backward_initial,"final",_safety_restriction->accuracy());
     }
 
     ARIADNE_LOG(5,"Creating the analyser...");
@@ -254,7 +254,7 @@ _safety_proving_once_backward_refinement(
     }
 
     if (_settings->plot_results)
-        _plot_reach(backward_reach,"backward",_safety_restriction->accuracy());
+        _plotter_ptr->plot(backward_reach,"backward",_safety_restriction->accuracy());
 }
 
 
@@ -293,7 +293,7 @@ _safety_disproving_once(
 		make_lpair<SetApproximationType,HybridFloatVector>(reach,epsilon) = analyser->lower_chain_reach_and_epsilon(initial_set);
 
 		if (_settings->plot_results)
-			_plot_reach(reach,"lower",_safety_restriction->accuracy());
+			_plotter_ptr->plot(reach,"lower",_safety_restriction->accuracy());
 
 	} catch (ReachUnsatisfiesConstraintException& ex) {
 		ARIADNE_LOG(5, "The lower reached region is partially outside the safe region (skipped).");
@@ -414,7 +414,7 @@ Verifier::_dominance(
 	_reset_start_time();
 
 	if (_settings->plot_results)
-		_plot_dirpath_init(dominating.getSystem().name() + "&" + dominated.getSystem().name());
+		_plotter_ptr.reset(new SystemPlotter(dominating.getSystem()));
 
 	_init_dominance_restriction(dominating,DOMINATING_SYSTEM);
 	_init_dominance_restriction(dominated,DOMINATED_SYSTEM);
@@ -683,39 +683,6 @@ _init_restriction(
     restriction.reset(new ReachabilityRestriction(domain,grid,ACCURACY));
 }
 
-
-void
-Verifier::
-_plot_dirpath_init(std::string basename) const
-{
-	time_t mytime;
-	time(&mytime);
-	string foldername = basename+"-png";
-
-	mkdir(foldername.c_str(),0777);
-	string timestring = asctime(localtime(&mytime));
-	timestring.erase(std::remove(timestring.begin(), timestring.end(), '\n'), timestring.end());
-	foldername = foldername+"/"+timestring;
-	mkdir(foldername.c_str(),0777);
-
-	_plot_dirpath = foldername;
-}
-
-
-void
-Verifier::
-_plot_reach(
-		const SetApproximationType& reach,
-		string base_filename,
-		int accuracy) const
-{
-	char mgd_char[10];
-	sprintf(mgd_char,"%i",accuracy);
-	base_filename.append(mgd_char);
-	plot(_plot_dirpath,base_filename,reach);
-}
-
-
 void
 Verifier::
 _plot_dominance(
@@ -729,7 +696,7 @@ _plot_dominance(
 
 	string filename = system_descr + "-" + verification_descr + "-";
 
-    _plot_reach(reach,filename,accuracy);
+    _plotter_ptr->plot(reach,filename,accuracy);
 }
 
 
