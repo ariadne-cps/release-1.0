@@ -727,13 +727,9 @@ _plot_dominance(
 	string system_descr = (dominanceSystem == DOMINATING_SYSTEM ? "dominating" : "dominated");
 	string verification_descr = (semantics == UPPER_SEMANTICS ? "pos" : "neg");
 
-	char mgd_char[10];
-	sprintf(mgd_char,"%i",accuracy);
 	string filename = system_descr + "-" + verification_descr + "-";
-	filename.append(mgd_char);
 
-    plot(_plot_dirpath,filename,reach);
-
+    _plot_reach(reach,filename,accuracy);
 }
 
 
