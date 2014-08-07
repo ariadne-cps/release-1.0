@@ -66,7 +66,7 @@ void finite_time_upper_evolution(HybridAutomatonInterface& system, HybridBounded
     HybridDenotableSet upper_reach = analyser.upper_reach(initial_set,time);
 
     if (plot_results) {
-        SystemPlotter plotter(system);
+        PlotHelper plotter(system.name());
         plotter.plot(upper_reach,"upper",accuracy);
     }
 }
@@ -83,7 +83,7 @@ void infinite_time_outer_evolution(HybridAutomatonInterface& system, HybridBound
     HybridDenotableSet outer_reach = analyser.outer_chain_reach(initial_set);
 
     if (plot_results) {
-        SystemPlotter plotter(system);
+        PlotHelper plotter(system.name());
         plotter.plot(outer_reach,"outer",accuracy);
     }
 }
@@ -103,7 +103,7 @@ void infinite_time_lower_evolution(HybridAutomatonInterface& system, HybridBound
     make_lpair<HybridDenotableSet,HybridFloatVector>(lower_reach,epsilon) = analyser.lower_chain_reach_and_epsilon(initial_set);
 
     if (plot_results) {
-        SystemPlotter plotter(system);
+        PlotHelper plotter(system.name());
         plotter.plot(lower_reach,"lower",accuracy);
     }
 }
@@ -145,7 +145,7 @@ void parametric_safety_verification(HybridAutomatonInterface& system, HybridBoun
 	list<ParametricOutcome> results = verifier.parametric_safety(verInput, parameters);
 
 	if (plot_results) {
-        SystemPlotter plotter(system);
+        PlotHelper plotter(system.name());
         plotter.plot(results,verifier.settings().maximum_parameter_depth);
     }
 }

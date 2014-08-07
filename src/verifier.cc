@@ -71,7 +71,7 @@ _safety_nosplitting(
 	SystemType& system = verInput.getSystem();
 
 	if (_settings->plot_results)
-		_plotter_ptr.reset(new SystemPlotter(system));
+		_plotter_ptr.reset(new PlotHelper(system.name()));
 
 	_init_safety_restriction(verInput);
 
@@ -414,7 +414,7 @@ Verifier::_dominance(
 	_reset_start_time();
 
 	if (_settings->plot_results)
-		_plotter_ptr.reset(new SystemPlotter(dominating.getSystem()));
+		_plotter_ptr.reset(new PlotHelper(dominating.getSystem().name() + "+" + dominated.getSystem().name()));
 
 	_init_dominance_restriction(dominating,DOMINATING_SYSTEM);
 	_init_dominance_restriction(dominated,DOMINATED_SYSTEM);

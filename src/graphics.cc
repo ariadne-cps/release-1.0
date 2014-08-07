@@ -37,7 +37,6 @@
 #include "curve.h"
 #include "polytope.h"
 #include "graphics.h"
-#include "hybrid_automaton_interface.h"
 
 #ifdef HAVE_GTK_H
 #include <gtk/gtk.h>
@@ -582,15 +581,15 @@ const Colour yellow=Colour("yellow",1.0,1.0,0.0);
 const Colour cyan=Colour("cyan",0.0,1.0,1.0);
 const Colour magenta=Colour("magenta",1.0,0.0,1.0);
 
-SystemPlotter::SystemPlotter(const SystemType& sys) : _sys(sys) {
+PlotHelper::PlotHelper(const string& name) : _name(name) {
     reset();
 }
 
 void
-SystemPlotter::reset() {
+PlotHelper::reset() {
 	time_t mytime;
 	time(&mytime);
-	string foldername = this->_sys.name() +"-png";
+	string foldername = this->_name +"-png";
 
 	mkdir(foldername.c_str(),0777);
 	string timestring = asctime(localtime(&mytime));

@@ -58,7 +58,7 @@ class Verifier
 
   private:
     boost::shared_ptr<SettingsType> _settings;
-    mutable boost::shared_ptr<SystemPlotter> _plotter_ptr;
+    mutable boost::shared_ptr<PlotHelper> _plotter_ptr;
     mutable time_t _start_time;
 
 	/*! \brief "Stateless" fields for holding reachability restrictions between successive internal calls. */

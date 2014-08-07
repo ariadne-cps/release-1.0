@@ -297,14 +297,14 @@ void plot(const string& foldername, const string& filename, const SET& set)
 		ARIADNE_WARN("Empty set, no plotting produced.");
 }
 
-class SystemPlotter {
+class PlotHelper {
     public:
         typedef HybridAutomatonInterface SystemType;
     private:
         string _plot_dirpath;
-        const SystemType& _sys;
+        const string& _name;
     public:
-        SystemPlotter(const SystemType& sys);
+        PlotHelper(const string& name);
         void reset();
 	    template <class SET> void plot(const SET& set, string base_filename, int accuracy) const {
 	        char mgd_char[10];
