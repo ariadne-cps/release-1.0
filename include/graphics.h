@@ -38,6 +38,7 @@
 #include "discrete_location.h"
 #include "parametric.h"
 #include "box.h"
+#include "list_set.h"
 
 typedef unsigned int uint;
 
@@ -297,6 +298,53 @@ void plot(const string& foldername, const string& filename, const SET& set)
 		ARIADNE_WARN("Empty set, no plotting produced.");
 }
 
+template<class CLS>
+void plot_list(const string& foldername, const string& filename, const ListSet<CLS>& set)
+{
+	// If a set exists
+	if (set.size()>0) {
+		// Gets the bounds of the set
+		Box set_bounds = set.bounding_box();
+
+		uint numvar = set_bounds.dimension();
+
+		// For each variable (last excluded)
+		for (uint x=0;x<numvar-1;x++) {
+			// For each following variable
+			for (uint y=x+1;y<numvar;y++) {
+
+				// Sets the initial value for the graphics box
+				Box graphics_box(2);
+				graphics_box[0] = set_bounds[x];
+				graphics_box[1] = set_bounds[y];
+
+				// Plots the global result
+
+				// Assigns local variables
+				Figure fig;
+				array<uint> xy(2,x,y);
+
+				fig.set_projection_map(ProjectionFunction(xy,numvar));
+				fig.set_bounding_box(graphics_box);
+
+				// Appends the set, with the desired fill color
+				fig.set_fill_colour(Colour(1.0,0.75,0.0));
+				draw(fig,set);
+
+				// If there are more than two variables, prints the variable numbers
+				char num_char[7] = "";
+				if (numvar>2)
+					sprintf(num_char,"[%u,%u]",x,y);
+				// Writes the figure file
+				fig.write((foldername+"/"+filename+num_char).c_str());
+			}
+		} 
+	}
+	else
+		ARIADNE_WARN("Empty set, no plotting produced.");
+}
+
+
 class PlotHelper {
     public:
         typedef HybridAutomatonInterface SystemType;
@@ -312,6 +360,12 @@ class PlotHelper {
 	        base_filename.append(mgd_char);
 	        Ariadne::plot(_plot_dirpath,base_filename,set);
         }
+
+        template <class CLS>
+        void plot(const ListSet<CLS> listset, string base_filename) const {
+            Ariadne::plot_list(_plot_dirpath,base_filename,listset);
+        }
+
         void plot(const std::list<ParametricOutcome>& outcomes, int accuracy) const {
 	        char mgd_char[10];
 	        sprintf(mgd_char,"%i",accuracy);

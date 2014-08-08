@@ -261,7 +261,6 @@ final() const
     return this->_data->final;
 }
 
-
 template<> 
 std::ostream& 
 operator<<(std::ostream& os, const Orbit<TaylorSet>& orb)

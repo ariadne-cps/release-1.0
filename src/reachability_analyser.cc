@@ -235,7 +235,7 @@ lower_reach_evolve(
 
     const unsigned EVOLVER_TAB_OFFSET = 3;
 
-    ARIADNE_LOG(2,"HybridReachabilityAnalyser::lower_reach_evolve(...)");
+    ARIADNE_LOG(2,"HybridReachabilityAnalyser::lower_reach_evolve(set,time)");
 
     const HybridGrid& grid = _grid();
 
@@ -313,7 +313,7 @@ upper_reach_evolve(
 
     const unsigned EVOLVER_TAB_OFFSET = 4;
 
-    ARIADNE_LOG(2,"HybridReachabilityAnalyser::upper_reach_evolve(system,set,time)");
+    ARIADNE_LOG(2,"HybridReachabilityAnalyser::upper_reach_evolve(set,time)");
     ARIADNE_LOG(3,"initial_set="<<initial_set);
 
     HybridGrid grid = _grid();

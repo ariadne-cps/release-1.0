@@ -39,8 +39,6 @@
 #include "graphics_interface.h"
 #include "taylor_set.h"
 
-
-
 namespace Ariadne {
 
 #ifdef DOXYGEN
@@ -182,6 +180,7 @@ class Orbit<LocalisedTaylorSet>
     HybridTaylorSetList const& reach() const;
     HybridTaylorSetList const& intermediate() const;
     HybridTaylorSetList const& final() const;
+
   private:
     boost::shared_ptr<Data> _data;
 };

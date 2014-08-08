@@ -54,20 +54,20 @@ void analyse(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initi
 
 void finite_time_upper_evolution(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results) {
 
-    int accuracy = 5;
+    HybridEvolver evolver(system);
+    evolver.verbosity = verbosity;
 
-    HybridTime time(40.0,9);
-
-    HybridBoxes domain(system.state_space(),Box(2,4.5,9.0,0.0,1.0));
-
-    HybridReachabilityAnalyser analyser(system,domain,accuracy);
-    analyser.verbosity = verbosity;
-
-    HybridDenotableSet upper_reach = analyser.upper_reach(initial_set,time);
+    HybridBoxes initial_set_domain = initial_set.domain();
+    std::map<DiscreteLocation,Box>::const_iterator it = initial_set_domain.locations_begin();
+    HybridEvolver::EnclosureType initial_enclosure(it->first,Box(it->second.centre()));
+  
+    HybridTime evol_limits(30.0,8);
+ 
+    HybridEvolver::OrbitType orbit = evolver.orbit(initial_enclosure,evol_limits,UPPER_SEMANTICS);
 
     if (plot_results) {
         PlotHelper plotter(system.name());
-        plotter.plot(upper_reach,"upper",accuracy);
+        plotter.plot(orbit.reach(),"reach");
     }
 }
 
@@ -115,7 +115,7 @@ void safety_verification(HybridAutomatonInterface& system, HybridBoundedConstrai
 
 	Verifier verifier;
 	verifier.verbosity = verbosity;
-	verifier.ttl = 60;
+	verifier.ttl = 5;
 	verifier.settings().plot_results = plot_results;
 
 	SafetyVerificationInput verInput(system, initial_set, domain, safety_constraint);
