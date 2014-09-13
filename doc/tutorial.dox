@@ -28,8 +28,6 @@
 
 \page tutorial_page Tutorial
 
-\dontinclude tutorial.cc
-
 In this tutorial, we show how to use %Ariadne to model and analyse a hybrid automaton model of a water tank system.
 
 The tutorial files can be found in the \em tutorial directory of the distribution. 

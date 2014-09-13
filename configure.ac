@@ -1,6 +1,6 @@
 # Declare versions
 AC_PREREQ(2.57)
-AC_INIT(ariadne, 0.5.1)
+AC_INIT(ariadne, 1.0)
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src])
 AC_CONFIG_HEADER([config.h])
