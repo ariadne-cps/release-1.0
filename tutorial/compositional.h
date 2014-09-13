@@ -44,16 +44,16 @@ HybridIOAutomaton getSystem()
     RealParameter b("b",Interval(0.3,0.32863));
 
     // Locations for discrete states
-	DiscreteLocation flow("flow");
+    DiscreteLocation flow("flow");
 
-	// Registration of the input/output variables
+    // Registration of the input/output variables
     tank.add_input_var(y);
     tank.add_output_var(x);
 
     // Registration of the locations
     tank.new_mode(flow);
 
-	// Input/output variables
+    // Input/output variables
     tank.add_input_var(y);
     tank.add_output_var(x);
 

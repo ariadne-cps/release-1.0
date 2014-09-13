@@ -29,16 +29,14 @@ using namespace Ariadne;
 
 int main(int argc,char *argv[])
 {
-	int verbosity = 1;
+    int verbosity = 1;
     bool plot_results = false;
 
-	// The system
-	HybridIOAutomaton system = Ariadne::getSystem();
+    HybridIOAutomaton system = Ariadne::getSystem();
 
-	// The initial values
-	HybridBoundedConstraintSet initial_set(system.state_space());
-	initial_set[DiscreteLocation("flow,idle,rising")] = Box(2, 6.0,7.5, 1.0,1.0);
-	initial_set[DiscreteLocation("flow,idle,falling")] = Box(2, 6.0,7.5, 0.0,0.0);
+    HybridBoundedConstraintSet initial_set(system.state_space());
+    initial_set[DiscreteLocation("flow,idle,rising")] = Box(2, 6.0,7.5, 1.0,1.0);
+    initial_set[DiscreteLocation("flow,idle,falling")] = Box(2, 6.0,7.5, 0.0,0.0);
 
     analyse(system,initial_set,verbosity,plot_results);
 }

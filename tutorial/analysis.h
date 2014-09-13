@@ -98,8 +98,8 @@ void infinite_time_lower_evolution(HybridAutomatonInterface& system, HybridBound
     HybridReachabilityAnalyser analyser(system,domain,accuracy);
     analyser.verbosity = verbosity;
 
-	HybridDenotableSet lower_reach;
-	HybridFloatVector epsilon;
+    HybridDenotableSet lower_reach;
+    HybridFloatVector epsilon;
     make_lpair<HybridDenotableSet,HybridFloatVector>(lower_reach,epsilon) = analyser.lower_chain_reach_and_epsilon(initial_set);
 
     if (plot_results) {
@@ -113,14 +113,14 @@ void safety_verification(HybridAutomatonInterface& system, HybridBoundedConstrai
     HybridBoxes domain(system.state_space(),Box(2,4.5,9.0,0.0,1.0));
     HybridConstraintSet safety_constraint = getSafetyConstraint(system);
 
-	Verifier verifier;
-	verifier.verbosity = verbosity;
-	verifier.ttl = 5;
-	verifier.settings().plot_results = plot_results;
+    Verifier verifier;
+    verifier.verbosity = verbosity;
+    verifier.ttl = 5;
+    verifier.settings().plot_results = plot_results;
 
-	SafetyVerificationInput verInput(system, initial_set, domain, safety_constraint);
+    SafetyVerificationInput verInput(system, initial_set, domain, safety_constraint);
 
-	verifier.safety(verInput);
+    verifier.safety(verInput);
 }
 
 void parametric_safety_verification(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results) {
@@ -128,23 +128,23 @@ void parametric_safety_verification(HybridAutomatonInterface& system, HybridBoun
     HybridBoxes domain(system.state_space(),Box(2,4.5,9.0,0.0,1.0));
     HybridConstraintSet safety_constraint = getSafetyConstraint(system);
 
-	// The parameters
-	RealParameterSet parameters;
-	parameters.insert(RealParameter("hmin",Interval(5.0,6.0)));
-	parameters.insert(RealParameter("hmax",Interval(7.5,8.5)));
+    // The parameters
+    RealParameterSet parameters;
+    parameters.insert(RealParameter("hmin",Interval(5.0,6.0)));
+    parameters.insert(RealParameter("hmax",Interval(7.5,8.5)));
 
     // Initialization of the verifier
-	Verifier verifier;
-	verifier.verbosity = verbosity;
-	verifier.ttl = 60;
-	verifier.settings().plot_results = plot_results;
+    Verifier verifier;
+    verifier.verbosity = verbosity;
+    verifier.ttl = 60;
+    verifier.settings().plot_results = plot_results;
     verifier.settings().maximum_parameter_depth = 2;
 
-	SafetyVerificationInput verInput(system, initial_set, domain, safety_constraint);
+    SafetyVerificationInput verInput(system, initial_set, domain, safety_constraint);
 
-	list<ParametricOutcome> results = verifier.parametric_safety(verInput, parameters);
+    list<ParametricOutcome> results = verifier.parametric_safety(verInput, parameters);
 
-	if (plot_results) {
+    if (plot_results) {
         PlotHelper plotter(system.name());
         plotter.plot(results,verifier.settings().maximum_parameter_depth);
     }
@@ -152,16 +152,16 @@ void parametric_safety_verification(HybridAutomatonInterface& system, HybridBoun
 
 HybridConstraintSet getSafetyConstraint(HybridAutomatonInterface& system) {
 
-	RealVariable x("x");
-	RealVariable y("y");
-	List<RealVariable> varlist;
-	varlist.append(x);
-	varlist.append(y);
-	RealExpression expr = x;
-	List<RealExpression> consexpr;
-	consexpr.append(expr);
-	VectorFunction cons_f(consexpr,varlist);
-	Box codomain(1,5.52,8.25);
+    RealVariable x("x");
+    RealVariable y("y");
+    List<RealVariable> varlist;
+    varlist.append(x);
+    varlist.append(y);
+    RealExpression expr = x;
+    List<RealExpression> consexpr;
+    consexpr.append(expr);
+    VectorFunction cons_f(consexpr,varlist);
+    Box codomain(1,5.52,8.25);
 
     return HybridConstraintSet(system.state_space(),ConstraintSet(cons_f,codomain));
 }

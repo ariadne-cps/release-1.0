@@ -33,13 +33,13 @@ HybridAutomaton getSystem()
     /// Labeled variables
 
     // Containing system
-	HybridAutomaton system("monolithic-forced");
+    HybridAutomaton system("monolithic-forced");
 
     // Parameters to be used in the system definition
-	RealParameter a("a",0.02);
-	RealParameter b("b",0.31);
-	RealParameter T("T",4.0);
-	RealParameter hmin("hmin",5.75);
+    RealParameter a("a",0.02);
+    RealParameter b("b",0.31);
+    RealParameter T("T",4.0);
+    RealParameter hmin("hmin",5.75);
     RealParameter hmax("hmax",7.75);
 
     // Locations for discrete states
@@ -120,7 +120,7 @@ HybridAutomaton getSystem()
     system.new_forced_transition(b_opening,closed,opening,reset_y_zero,guard_b_opening);
     system.new_forced_transition(e_opening,opening,opened,reset_y_one,guard_e_opening);
 
-	return system;
+    return system;
 }
 
 
