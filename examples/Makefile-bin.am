@@ -1,18 +1,16 @@
-noinst_PROGRAMS= 	tutorial \
-		watertank-monolithic-hysteresis \
-        watertank-compositional-hysteresis \
-		watertank-monolithic-proportional \
-		watertank-nonlinear-monolithic-hysteresis \
-		watertank-nonlinear-monolithic-proportional \
-		watertank-aasap \
-		watertank-monolithic-dominance \
-		watertank-nonlinear-monolithic-dominance \
-		bouncingball 3bouncingballs ecoli sinusoid-sin \
-		rectifier springs \
-		cmos_inverter_analoginput robotarm \
-		fb_refinement traffic-arbitrator4
+noinst_PROGRAMS= watertank-monolithic-hysteresis \
+                 watertank-compositional-hysteresis \
+	 	 watertank-monolithic-proportional \
+		 watertank-nonlinear-monolithic-hysteresis \
+		 watertank-nonlinear-monolithic-proportional \
+		 watertank-aasap \
+		 watertank-monolithic-dominance \
+		 watertank-nonlinear-monolithic-dominance \
+		 bouncingball 3bouncingballs ecoli sinusoid-sin \
+		 rectifier springs \
+		 cmos_inverter_analoginput robotarm \
+		 fb_refinement traffic-arbitrator4
 
-tutorial_SOURCES= tutorial.cc 
 bouncingball_SOURCES= bouncingball.cc
 ecoli_SOURCES= ecoli.cc
 3bouncingballs_SOURCES= 3bouncingballs.cc
