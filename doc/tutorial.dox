@@ -1,7 +1,7 @@
 /***************************************************************************
  *            tutorial.dox
  *
- *  Copyright  2004-8  Pieter Collins
+ *  Copyright  2014  Luca Geretti
  *
  ****************************************************************************/
 
@@ -24,17 +24,36 @@
 /*!
 
 \file tutorial.dox
-\brief Tutorial on %Ariadne's features (outdated).
+\brief Tutorial on %Ariadne's features.
 
 \page tutorial_page Tutorial
 
 \dontinclude tutorial.cc
 
-In this tutorial, we show how to use %Ariadne to model and analyse a hybrid automaton model of a simple heating system.
+In this tutorial, we show how to use %Ariadne to model and analyse a hybrid automaton model of a water tank system.
+
+The tutorial files can be found in the \em tutorial directory of the distribution. 
+
+More specifically, the tutorial focuses on one hybrid system, described with increasing level of detail: 
+
+ - \link tutorial/monolithic-forced.h monolithic-forced.h \endlink: a monolithic version of the system, where
+all transitions are forced; 
+ - \link tutorial/monolithic.h monolithic.h \endlink: the
+monolithic system has both forced and unforced transitions;
+ - \link tutorial/compositional.h compositional.h \endlink: the system, featuring unforced transitions, is expressed as a composition of subsystems.
+
+While the compositional version may be regarded as the most intuitive way to describe the system, we believe that
+comparing the monolithic and compositional versions is still relevant, especially due to numerical issues that may
+arise during the analysis of the compositional case.
+
+For each of these three variants, some analysis routines are performed. The analysis part is common and it is contained 
+within the file \link tutorial/analysis.h analysis.h \endlink. The source files for the executables instead are given by
+\link tutorial/monolithic-forced.cc monolithic-forced.cc \endlink, \link tutorial/monolithic.cc monolithic.cc \endlink 
+and \link tutorial/compositional.cc compositional.cc \endlink, respectively.
 
 \section tutorial_system_model The Hybrid Automaton Model
 
-The system represents a heating system used to control the temperature in a room. The temperature is affected by to the external temperature, which is assumed to vary sinusoidally, and is controlled by a heater which may either be on or off. The heater is turned on whenever the temperature falls below a certain threshold, and is turned off whenever the temperature rises above a certain threshold.
+The automaton represents a hydrodynamic system composed of a tank, a valve and a controller for the valve. In particular, the controller changes the aperture of the valve based on the current water level, with the purpose of keeping the level within two thresholds. 
 
 The system has two discrete modes, \f$\textsc{On}\f$ and \f$\textsc{Off}\f$, representing the state of the heater. There are three events, \f$\textsc{TurnOn}\f$, \f$\textsc{TurnOff}\f$ and \f$\textsc{Midnight}\f$; the first two representing switching the heater, and the last being a reset of the clock at the beginning of a new day.
 

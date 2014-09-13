@@ -1,7 +1,7 @@
 /***************************************************************************
  *            main_page.dox
  *
- *  Copyright  2004-8  Pieter Collins
+ *  Copyright  2004-14  Pieter Collins, Luca Geretti
  *
  ****************************************************************************/
 
@@ -42,13 +42,13 @@ Full instructions on downloading and installing %Ariadne can be found on the \li
 
 \section mainpage_getting_started Getting Started
 
+A step-by-step tutorial on the use of %Ariadne for reachability analysis of a hybrid system is given on the \ref tutorial_page page.
+
 An overview of %Ariadne's capabilities is given on the \ref overview_page documentation page.
 
 A more detailed explanation of the hybrid automaton class can be found on the \ref hybrid_automaton_page documentation page.
 
 A more detailed explanation of how to analyse a hybrid system can be found on the \ref system_analysis_page documentation page.
-
-An example of the use of %Ariadne for reachability analysis of a simple hybrid system is given on the \ref tutorial_page  page. The example is contained in the file  \link examples/tutorial.cc tutorial.cc \endlink.
 
 \section mainpage_mathematical_foundations Mathematical Foundations
 
@@ -75,7 +75,11 @@ More information on the mathematical foundations of %Ariadne can be found on the
 \latexonly A more detailed description of Ariadne's capabilities can be found in the documentation for the individual Modules and Classes. \endlatexonly
 Coding guideline are given on the \ref coding_guidelines_page documentation page.
 
-\example examples/tutorial.cc A simple nonlinear model of a heating system.
-
-
+\example tutorial/monolithic-forced.h A monolithic system model with forced transitions.
+\example tutorial/monolithic.h A monolithic system model with both forced and unforced transitions.
+\example tutorial/compositional.h A compositional system model with forced transitions.
+\example tutorial/analysis.h Analysis routines for tutorial systems.
+\example tutorial/monolithic-forced.cc Executable for the analysis of monolithic system model with forced transitions.
+\example tutorial/monolithic.cc Executable for the analysis of monolithic system model with both forced and unforced transitions.
+\example tutorial/compositional.cc Executable for the analysis of compositional system model with forced transitions.
 */

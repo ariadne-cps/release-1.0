@@ -23,7 +23,7 @@
 
 #include "ariadne.h"
 #include "analysis.h"
-#include "monolithic-unforced.h"
+#include "monolithic.h"
 
 using namespace Ariadne;
 

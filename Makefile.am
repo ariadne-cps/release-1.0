@@ -1,4 +1,4 @@
-SUBDIRS = include src test examples
+SUBDIRS = include src test examples tutorial
 
 EXTRA_DIST = Doxyfile
 
@@ -9,9 +9,9 @@ ACLOCAL_AMFLAGS = -I m4
 DOCS_DESTDIR = $(prefix)/share/doc/libariadne-doc
 EXAMPLES_DESTDIR = $(DOCS_DESTDIR)
 
-.PHONY: shiny doc all lib examples profiles check-lib 
+.PHONY: shiny doc all lib examples profiles tutorial check-lib 
 
-all: lib tests examples profiles doc 
+all: lib tests examples profiles doc tutorial
 
 # Show the values of the environment variables
 evn:
