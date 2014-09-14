@@ -58,12 +58,16 @@ HybridAutomaton getSystem()
     RealVariable x("x");
     RealVariable y("y");
 
+    List<RealVariable> varlist;
+    varlist.append(x);
+    varlist.append(y);
+
     /// Dynamics
 
     // Expressions for the dynamics for x, on every location
     RealExpression x_opening_closing = -a*sqrt(x) + b*y;
-    RealExpression x_opened = -a*x + b;
-    RealExpression x_closed = -a*x;
+    RealExpression x_opened = -a*sqrt(x) + b;
+    RealExpression x_closed = -a*sqrt(x);
 
     // Expressions for the dynamics for y, on every location
     RealExpression y_opening = 1.0/T;
@@ -71,9 +75,6 @@ HybridAutomaton getSystem()
     RealExpression y_opened_closed = 0.0;
 
     // Association of the variables to each expression
-    List<RealVariable> varlist;
-    varlist.append(x);
-    varlist.append(y);
     List<RealExpression> opened_exprlist;
     opened_exprlist.append(x_opened);
     opened_exprlist.append(y_opened_closed);

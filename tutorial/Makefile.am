@@ -5,11 +5,8 @@ LDADD = ../src/libariadne.la $(LIBS)
 
 tutorial: $(bin_PROGRAMS)
 
-noinst_PROGRAMS = monolithic-forced \
-              monolithic \
-              compositional
+noinst_PROGRAMS = monolithic compositional
 		
-monolithic_forced_SOURCES= monolithic-forced.cc
 monolithic_SOURCES = monolithic.cc
 compositional_SOURCES= compositional.cc
 

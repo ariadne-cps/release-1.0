@@ -71,11 +71,9 @@ More information on the mathematical foundations of %Ariadne can be found on the
 \latexonly A more detailed description of Ariadne's capabilities can be found in the documentation for the individual Modules and Classes. \endlatexonly
 Coding guideline are given on the \ref coding_guidelines_page documentation page.
 
-\example tutorial/monolithic-forced.h A monolithic system model with forced transitions.
-\example tutorial/monolithic.h A monolithic system model with both forced and unforced transitions.
-\example tutorial/compositional.h A compositional system model with forced transitions.
+\example tutorial/monolithic.h A monolithic system model example.
+\example tutorial/compositional.h A compositional system model example.
 \example tutorial/analysis.h Analysis routines for tutorial systems.
-\example tutorial/monolithic-forced.cc Executable for the analysis of monolithic system model with forced transitions.
-\example tutorial/monolithic.cc Executable for the analysis of monolithic system model with both forced and unforced transitions.
-\example tutorial/compositional.cc Executable for the analysis of compositional system model with forced transitions.
+\example tutorial/monolithic.cc Executable for the analysis of monolithic system model.
+\example tutorial/compositional.cc Executable for the analysis of compositional system model.
 */

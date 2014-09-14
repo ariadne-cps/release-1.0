@@ -32,13 +32,10 @@ In this tutorial, we show how to use %Ariadne to model and analyse a hybrid auto
 
 The tutorial files can be found in the \em tutorial directory of the distribution. 
 
-More specifically, the tutorial focuses on one hybrid system, described with increasing level of detail: 
+More specifically, the tutorial focuses on one hybrid system, described in two different ways: 
 
- - \link tutorial/monolithic-forced.h monolithic-forced.h \endlink: a monolithic version of the system, where
-all transitions are forced; 
- - \link tutorial/monolithic.h monolithic.h \endlink: the
-monolithic system has both forced and unforced transitions;
- - \link tutorial/compositional.h compositional.h \endlink: the system, featuring unforced transitions, is expressed as a composition of subsystems.
+ - \link tutorial/monolithic.h monolithic.h \endlink: the system is expressed using one automaton that comprises the behavior of tank, valve and controller;
+ - \link tutorial/compositional.h compositional.h \endlink: the system is expressed as a composition of subsystems, one for each component.
 
 While the compositional version may be regarded as the most intuitive way to describe the system, we believe that
 comparing the monolithic and compositional versions is still relevant, especially due to numerical issues that may
@@ -46,20 +43,17 @@ arise during the analysis of the compositional case.
 
 For each of these three variants, some analysis routines are performed. The analysis part is common and it is contained 
 within the file \link tutorial/analysis.h analysis.h \endlink. The source files for the executables instead are given by
-\link tutorial/monolithic-forced.cc monolithic-forced.cc \endlink, \link tutorial/monolithic.cc monolithic.cc \endlink 
-and \link tutorial/compositional.cc compositional.cc \endlink, respectively.
+\link tutorial/monolithic.cc monolithic.cc \endlink and \link tutorial/compositional.cc compositional.cc \endlink, respectively.
 
 The automaton represents a hydrodynamical system composed of a tank, a valve and a controller for the valve. In particular, the controller changes the aperture of the valve based on the current water level, with the purpose of keeping the level within two thresholds. 
 
-In the following we will describe the monolithic version, by focusing on the \em forced variant and presenting the differences
-that unforced transitions introduce. Then we will describe how a compositional version of the same system can be specified. Finally,
-the analysis routines applied to each of the three systems will be explained.
+In the following we will describe the monolithic version. Then we will describe how a compositional version of the same system can be specified. Finally, the analysis routines applied to both systems will be explained.
 
 \section tutorial_system_model_monolithic The Monolithic Hybrid Automaton Model
 
 First, we need to create an object to hold the description of an automaton:
 
-  \code HybridAutomaton system("monolithic-forced"); \endcode
+  \code HybridAutomaton system("monolithic"); \endcode
 
 All the specification for the automaton will be progressively added to this variable. The provided name is useful in particular for
 plotting purposes.
@@ -68,13 +62,16 @@ Instead of using explicit values throughout the automaton description, we can su
 
   \code
     RealParameter a("a",0.02);
-    RealParameter b("b",0.31);
+    RealParameter b("b",Interval(0.3,0.32863));
     RealParameter T("T",4.0);
     RealParameter hmin("hmin",5.75);
-    RealParameter hmax("hmax",7.75);
+    RealParameter hmax("hmax",7.75); 
+    RealParameter Delta("Delta",0.1);
   \endcode
 
-The role of these parameters will be more clear in the following. It is however relevant to note that if a named parameter is used, Ariadne can substitute its value during analysis; this in turn enables some numerical optimizations and also allows to perform parametric analysis (i.e., explore the behavior of the system when some of its parameters vary within finite intervals).
+To provide an interval for a parameter allows to analyze the behavior of the system for \em each of the values in the interval.
+
+The specifc role of these parameters will be more clear in the following. It is however relevant to note that if a named parameter is used, Ariadne can substitute its value during analysis; this in turn enables some numerical optimizations and also allows to perform parametric analysis (i.e., explore the behavior of the system when some of its parameters vary within finite intervals).
 
 \subsection LocationsEvents Locations and Events
 
@@ -104,6 +101,14 @@ the \em continuous state of the system at a given time. The variables are define
     RealVariable y("y");
   \endcode
 
+Within the code it will be often the case that the list of variables is required:
+
+\code
+    List<RealVariable> varlist;
+    varlist.append(x);
+    varlist.append(y);
+\endcode
+
 The variables are used within \em expressions. An expression in Ariadne may be of the following kinds:
 
  - Dynamics: the evolution of a variable within a location;
@@ -115,41 +120,85 @@ An example of an expression:
 
 \code  RealExpression x_opening_closing = -a*sqrt(x) + b*y; \endcode
 
-which, while rather simple, shows how parameters, variables and functions can be used to define an expression. Constant values can be used too, however they do not provide any inherent advantage compared to a parameter having the same value. 
+which, while rather simple, shows how parameters, variables, operators and mathematical nonlinear functions can be used to define an expression. Constant values can be used too, however they do not provide any inherent advantage compared to a parameter having the same value. The functions available are: \c sqrt , \c exp , \c log , \c sin and \c cos .
 
 \subsubsection Dynamics Dynamics
 
-Dynamics are associated with a location to define a \em mode. In order to provide such mode, expressions must be defined for each variable of the mode: each expression is associated to the derivative of a variable: in our case, a \f \dot(x) = f_x(x,y) \f and \f \dot(y) = f_y(x,y) \f are required. For example:
+Dynamics are associated with a location to define a \em mode. In order to provide such mode, expressions must be defined for each variable of the mode: each expression is associated to the derivative of a variable: in our case, a \f$ \dot{x} = fd_x(x,y) \f$ and \f$ \dot{y} = fd_y(x,y) \f$ are required. For example:
 
 \code
-    List<RealVariable> varlist;
-    varlist.append(x);
-    varlist.append(y);
+    RealExpression x_opened = -a*sqrt(x) + b;
+    RealExpression y_opened_closed = 0.0;
+\endcode
+
+Now we need to associate variables to expressions:
+
+\code
+
     List<RealExpression> opened_exprlist;
     opened_exprlist.append(x_opened);
     opened_exprlist.append(y_opened_closed);
     VectorFunction dyn_opened(opened_exprlist, varlist);
 \endcode
 
-The \c VectorFunction simply associates variables with the expressions for their derivatives, following the order of the corresponding lists. 
-
-An example of a mode:
-
-  
-
-As we can see, nonlinear functions that involve the variables can be used. The first expression is the same for both the opening and closing locations, hence it will be reused.
-
-\subsubsection Guards Guards
-
-\subsubsection Invariants Invariants
+The \c VectorFunction simply pairs variables with the expressions for their derivatives, following the order of the corresponding lists.
 
 \subsubsection Reset Resets
 
-\f[ \dot{T} = H + K(T_E + T_A\cos(2\pi t) - T); \quad \dot{t}=1. \f]
+Reset functions associate each variable \c v with an expression that represents its new value \c v', i.e., \f$ x' = r_x(x,y) \f$ and \f$ y' = r_y(x,y) \f$.
 
-\subsection Transitions Transitions
+\code
+    RealExpression idx = x;
+    RealExpression zero = 0.0;
+    List<RealExpression> zero_exprlist;
+    zero_exprlist.append(idx);
+    zero_exprlist.append(zero);
+    VectorFunction reset_y_zero(zero_exprlist, varlist);
+\endcode
 
+which states that \c x is reset to its previous value, while \c y is reset to zero.
 
+\subsubsection Guards Guards
 
+Guards are expressions for which it is assumed that \f$ g(x,y) \geq 0 \f$ for a transition to be enabled. As such, they can be defined using a \c ScalarFunction rather than a \c VectorFunction . For example:
+
+\code
+    RealExpression x_leq_hmin = -x + hmin + Delta;
+    ScalarFunction guard_b_opening(x_leq_hmin, varlist);
+\endcode
+
+\subsubsection Invariants Invariants
+
+Invariants are expressions for which it is assumed that \f$ g(x,y) \leq 0 \f$ for continuous evolution to be enabled. Consequently, we define invariants in a way similar to guards:
+
+\code
+    RealExpression x_leq_hmax = x - hmax - Delta;
+    ScalarFunction inv_opened(x_leq_hmax, varlist);
+\endcode
+
+Invariants are necessary only when unforced transitions are required; for this reason, they are not present in \link tutorial/monolithic-forced.h monolithic-forced.h \endlink.
+
+\subsection Building Building the Automaton
+
+Given a location and the set of dynamics for each continuous variable, a \em mode is then defined as follows:
+
+\code system.new_mode(opened,dyn_opened); \endcode
+
+Only one mode per location is allowed.
+
+If invariants are present, they are associated to each location in a similar way:
+
+\code system.new_invariant(opened,inv_opened); \endcode
+
+Multiple invariants per locations are allowed.
+
+Transitions instead are more complicated, since they require an event, the \em source location, the \em target location, the reset and guard functions. Examples:
+
+\code
+    system.new_unforced_transition(b_closing,opened,closing,reset_y_one,guard_b_closing);
+    system.new_forced_transition(e_closing,closing,closed,reset_y_zero,guard_e_closing);
+\endcode
+
+Only one transition per event is allowed.
 */
 
