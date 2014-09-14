@@ -46,10 +46,6 @@ A step-by-step tutorial on the use of %Ariadne for reachability analysis of a hy
 
 An overview of %Ariadne's capabilities is given on the \ref overview_page documentation page.
 
-A more detailed explanation of the hybrid automaton class can be found on the \ref hybrid_automaton_page documentation page.
-
-A more detailed explanation of how to analyse a hybrid system can be found on the \ref system_analysis_page documentation page.
-
 \section mainpage_mathematical_foundations Mathematical Foundations
 
 More information on the mathematical foundations of %Ariadne can be found on the following pages:

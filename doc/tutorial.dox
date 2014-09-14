@@ -49,171 +49,107 @@ within the file \link tutorial/analysis.h analysis.h \endlink. The source files 
 \link tutorial/monolithic-forced.cc monolithic-forced.cc \endlink, \link tutorial/monolithic.cc monolithic.cc \endlink 
 and \link tutorial/compositional.cc compositional.cc \endlink, respectively.
 
-\section tutorial_system_model The Hybrid Automaton Model
+The automaton represents a hydrodynamical system composed of a tank, a valve and a controller for the valve. In particular, the controller changes the aperture of the valve based on the current water level, with the purpose of keeping the level within two thresholds. 
 
-The automaton represents a hydrodynamic system composed of a tank, a valve and a controller for the valve. In particular, the controller changes the aperture of the valve based on the current water level, with the purpose of keeping the level within two thresholds. 
+In the following we will describe the monolithic version, by focusing on the \em forced variant and presenting the differences
+that unforced transitions introduce. Then we will describe how a compositional version of the same system can be specified. Finally,
+the analysis routines applied to each of the three systems will be explained.
 
-The system has two discrete modes, \f$\textsc{On}\f$ and \f$\textsc{Off}\f$, representing the state of the heater. There are three events, \f$\textsc{TurnOn}\f$, \f$\textsc{TurnOff}\f$ and \f$\textsc{Midnight}\f$; the first two representing switching the heater, and the last being a reset of the clock at the beginning of a new day.
+\section tutorial_system_model_monolithic The Monolithic Hybrid Automaton Model
 
-The system has two continuous variables, \em temperature \f$T\f$ and \em time-of-day \f$\tau\f$.
-The system is described by three parameters, the heater power \f$H\f$, the insulation level \f$K\f$, the average external temperature \f$T_E\f$, the amplitude of the temperature fluctuations \f$T_A\f$.
+First, we need to create an object to hold the description of an automaton:
+
+  \code HybridAutomaton system("monolithic-forced"); \endcode
+
+All the specification for the automaton will be progressively added to this variable. The provided name is useful in particular for
+plotting purposes.
+
+Instead of using explicit values throughout the automaton description, we can supply named parameters:
+
+  \code
+    RealParameter a("a",0.02);
+    RealParameter b("b",0.31);
+    RealParameter T("T",4.0);
+    RealParameter hmin("hmin",5.75);
+    RealParameter hmax("hmax",7.75);
+  \endcode
+
+The role of these parameters will be more clear in the following. It is however relevant to note that if a named parameter is used, Ariadne can substitute its value during analysis; this in turn enables some numerical optimizations and also allows to perform parametric analysis (i.e., explore the behavior of the system when some of its parameters vary within finite intervals).
+
+\subsection LocationsEvents Locations and Events
+
+The monolithic system has four discrete \em locations: 
+- \f$\textsc{Opening}\f$: the valve is opening;
+- \f$\textsc{Opened}\f$: the valve is fully opened;
+- \f$\textsc{Closing}\f$: the valve is closing;
+- \f$\textsc{Closed}\f$: the valve is fully closed.
+
+A location is essentially a named discrete state. Example of the definition of a location:
+
+  \code DiscreteLocation opened("opened"); \endcode
+
+Transitions between locations are triggered by \em events, which can be considered names for the transitions in the same way that locations are names for the states. Example of the definition of an event:
+
+  \code DiscreteEvent b_opening("b_opening"); \endcode
+
+The \c b and \c e prefixes stand for \em beginning and \em ending, in order to denote the beginning/ending of the opening/closing of the valve.
+
+\subsection VariablesExpressions Variables and Expressions
+
+The system has two continuous variables, the water level \f$x\f$ and the valve aperture \f$y\f$. A valuation for such variables determines
+the \em continuous state of the system at a given time. The variables are defined as follows:
+
+  \code
+    RealVariable x("x");
+    RealVariable y("y");
+  \endcode
+
+The variables are used within \em expressions. An expression in Ariadne may be of the following kinds:
+
+ - Dynamics: the evolution of a variable within a location;
+ - Reset: the new value of a variable after a transition between two locations has been taken.
+ - Guard: the condition on the variables that allows a transition between two locations;
+ - Invariant: the condition on the variables that allows evolution within a location;
+
+An example of an expression:
+
+\code  RealExpression x_opening_closing = -a*sqrt(x) + b*y; \endcode
+
+which, while rather simple, shows how parameters, variables and functions can be used to define an expression. Constant values can be used too, however they do not provide any inherent advantage compared to a parameter having the same value. 
+
+\subsubsection Dynamics Dynamics
+
+Dynamics are associated with a location to define a \em mode. In order to provide such mode, expressions must be defined for each variable of the mode: each expression is associated to the derivative of a variable: in our case, a \f \dot(x) = f_x(x,y) \f and \f \dot(y) = f_y(x,y) \f are required. For example:
+
+\code
+    List<RealVariable> varlist;
+    varlist.append(x);
+    varlist.append(y);
+    List<RealExpression> opened_exprlist;
+    opened_exprlist.append(x_opened);
+    opened_exprlist.append(y_opened_closed);
+    VectorFunction dyn_opened(opened_exprlist, varlist);
+\endcode
+
+The \c VectorFunction simply associates variables with the expressions for their derivatives, following the order of the corresponding lists. 
+
+An example of a mode:
+
+  
+
+As we can see, nonlinear functions that involve the variables can be used. The first expression is the same for both the opening and closing locations, hence it will be reused.
+
+\subsubsection Guards Guards
+
+\subsubsection Invariants Invariants
+
+\subsubsection Reset Resets
 
 \f[ \dot{T} = H + K(T_E + T_A\cos(2\pi t) - T); \quad \dot{t}=1. \f]
 
-The heater is turned on whenever the temperature falls below \f$T_{\textsc{On}}\f$, and is turned off whenever the temperature rises above \f$T_{\textsc{Off}}\f$.
+\subsection Transitions Transitions
 
 
 
-\section tutorial_building_system Building the Ariadne Hybrid Automaton
-
-First, choose an ordering for the parameters and variables in each mode.
-In this example, the same parameters and variables are used in each mode, so this is easy.
-
-\skipline // System variables
-\until p[6]
-
-Now define the nonlinear functions used in the system definition.
-
-\skipline // System dynamic
-\until };
-\until };
-
-Next define the function creating the system.
-
-\skipline create_
-\until {
-
-Create the HybridAutomaton object.
-
-\skipline //
-\until HybridAutomaton
-
-Set the system parameters.
-
-\skipline //
-\until Ton_lower
-
-Define the discrete states and discrete events.
-
-\skipline //
-\until heater_off
-\until midnight
-
-Create the nonlinear system dynamics.
-
-\skipline //
-\until heater_off_dynamic
-
-Create the affine reset maps. Note that an affine function has the form \f$x\mapsto Ax+b\f$.
-
-\skipline //
-\until midnight_reset
-
-Create the affine guard functions. Note that continuous dynamics is possible when \f$g(x)\leq0\f$, and discrete transitions are possible for \f$g(x)\geq0\f$.
-
-\skipline //
-\until midnight_guard
-
-Create the system modes.
-
-\skipline //
-\until heater_off_dynamic
-
-Create the system transitions
-
-\skipline //
-\until heater_turn_off_guard
-\until heater_off
-
-
-End of function
-
-\skipline }
-
-
-
-\section tutorial_hybrid_system_evolution Computing the Continuous Evolution
-
-The following function creates a HybridEvolver object, which is a class which can compute system evolution.
-
-\skipline create_evolver
-\until }
-
-We now compute the evolution of the system.
-\skipline compute_evolution
-\until {
-
-Define the intial set and evolution time.
-
-\skipline // Define the initial set
-\until evolution_time
-
-Compute the reachable and evolved sets.
-
-\skipline evolver.reach_evolve
-
-Compute the trajectories parameterised by time.
-
-\skipline evolver.orbit
-
-Write the sets to standard output and to a file.
-
-\skipline write
-\skipline plot
-
-End of function
-
-\skipline }
-
-
-
-\section tutorial_hybrid_system_reachability Computing Reachable Sets
-
-\skipline compute_reachable_sets
-\until {
-
-Create a ReachabilityAnalyser object.
-
-\skipline analyser
-
-Set the initial set.
-
-\skipline initial_set
-\until initial_set[
-
-Set the evolution time.
-\skipline reach_time
-
-Compute lower-approximation to the finite-time evolved set.
-
-\skipline lower_evolve
-\skipline plot
-
-Compute lower-approximation to the finite-time reachable set.
-
-\skipline lower_reach
-
-Compute over-approximation to the finite-time evolved set.
-
-\skipline upper_evolve
-
-Compute over-approximation to the finite-time reachable set.
-
-\skipline upper_reach
-
-Compute over-approximation to the infinite-time chain-reachable set.
-
-\skipline chain_reach
-
-End of function.
-
-\skipline }
-
-\section tutorial_main Main function
-
-\skipline main(
-\skipline {
-\skipline // Create
-\until }
 */
 

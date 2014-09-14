@@ -75,17 +75,22 @@ HybridAutomaton getSystem()
     List<RealVariable> varlist;
     varlist.append(x);
     varlist.append(y);
-    List<RealExpression> exprlist;
-    exprlist.append(x_opened);
-    exprlist.append(y_opened_closed);
-    VectorFunction dyn_opened(exprlist, varlist);
-    exprlist[0] = x_closed;
-    VectorFunction dyn_closed(exprlist, varlist);
-    exprlist[0] = x_opening_closing;
-    exprlist[1] = y_opening;
-    VectorFunction dyn_opening(exprlist, varlist);
-    exprlist[1] = y_closing;
-    VectorFunction dyn_closing(exprlist, varlist);
+    List<RealExpression> opened_exprlist;
+    opened_exprlist.append(x_opened);
+    opened_exprlist.append(y_opened_closed);
+    VectorFunction dyn_opened(opened_exprlist, varlist);
+    List<RealExpression> closed_exprlist;
+    closed_exprlist.append(x_closed);
+    closed_exprlist.append(y_opened_closed);
+    VectorFunction dyn_closed(closed_exprlist, varlist);
+    List<RealExpression> opening_exprlist;
+    opening_exprlist.append(x_opening_closing);
+    opening_exprlist.append(y_opening);
+    VectorFunction dyn_opening(opening_exprlist, varlist);
+    List<RealExpression> closing_exprlist;
+    closing_exprlist.append(x_opening_closing);
+    closing_exprlist.append(y_closing);
+    VectorFunction dyn_closing(closing_exprlist, varlist);
 
     // Registration of the dynamics for each location
     system.new_mode(opened,dyn_opened);
@@ -111,11 +116,14 @@ HybridAutomaton getSystem()
     RealExpression idx = x;
     RealExpression zero = 0.0;
     RealExpression one = 1.0;
-    exprlist[0] = idx;
-    exprlist[1] = zero;
-    VectorFunction reset_y_zero(exprlist, varlist);
-    exprlist[1] = one;
-    VectorFunction reset_y_one(exprlist, varlist);
+    List<RealExpression> zero_exprlist;
+    zero_exprlist.append(idx);
+    zero_exprlist.append(zero);
+    VectorFunction reset_y_zero(zero_exprlist, varlist);
+    List<RealExpression> one_exprlist;
+    one_exprlist.append(idx);
+    one_exprlist.append(one);
+    VectorFunction reset_y_one(one_exprlist, varlist);
 
     // Guards (where f(x) >= 0 must hold for the guard to be true)
     RealExpression x_leq_hmin = -x + hmin + Delta;
