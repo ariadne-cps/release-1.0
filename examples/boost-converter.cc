@@ -47,9 +47,9 @@ int main(int argc,char *argv[])
         evolver.settings().hybrid_maximum_step_size[hs_it->first] = 0.001;
     }
     
-    HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("incr"),Box(3, 0.0,0.0, 0.1,0.1, 5.7,5.7));
+    HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("incr"),Box(3, 0.0,0.0, 1.173,1.173, 5.65,5.65));
   
-    HybridTime evol_limits(20.0,15);
+    HybridTime evol_limits(20.0,14);
  
     HybridEvolver::OrbitType orbit = evolver.orbit(initial_enclosure,evol_limits,UPPER_SEMANTICS);
 
