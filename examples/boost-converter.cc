@@ -29,15 +29,16 @@ using namespace Ariadne;
 
 int main(int argc,char *argv[])
 {
-	int verb = 1;
+	int verbosity = 1;
 	if (argc > 1)
-		verb = atoi(argv[1]);
+		verbosity = atoi(argv[1]);
 
     bool plot_results = true;
 
 	// The system
 	HybridAutomaton system = Ariadne::getBoostConverter();
 
+/*
     HybridEvolver evolver(system);
     evolver.verbosity = verb;
 
@@ -57,4 +58,51 @@ int main(int argc,char *argv[])
         PlotHelper plotter(system.name());
         plotter.plot(orbit.reach(),"reach");
     }
+*/
+/*
+    int accuracy = 7;
+
+    HybridBoxes domain(system.state_space(),Box(3, -0.1,1.1, 1.0,2.6, 5.0,6.0));
+
+    HybridBoundedConstraintSet initial_set(system.state_space());
+    initial_set[DiscreteLocation("incr")] = Box(3, 0.0,0.0, 1.173,1.173, 5.65,5.65);
+
+    HybridReachabilityAnalyser analyser(system,domain,accuracy);
+    analyser.verbosity = verbosity;
+
+    HybridDenotableSet outer_reach = analyser.outer_chain_reach(initial_set);
+
+    if (plot_results) {
+        PlotHelper plotter(system.name());
+        plotter.plot(outer_reach,"outer",accuracy);
+    }
+*/
+    HybridBoxes domain(system.state_space(),Box(3, -0.1,1.1, 1.0,2.6, 4.0,7.0));
+
+    HybridBoundedConstraintSet initial_set(system.state_space());
+    initial_set[DiscreteLocation("incr")] = Box(3, 0.0,0.0, 1.173,1.173, 5.65,5.65);
+
+    RealVariable t("t");
+    RealVariable iL("iL");
+    RealVariable vO("vO");
+    List<RealVariable> varlist;
+    varlist.append(t);
+    varlist.append(iL);
+    varlist.append(vO);
+    RealExpression expr = vO;
+    List<RealExpression> consexpr;
+    consexpr.append(expr);
+    VectorFunction cons_f(consexpr,varlist);
+    Box codomain(1,4.9,6.0);
+
+    HybridConstraintSet safety_constraint(system.state_space(),ConstraintSet(cons_f,codomain));
+
+    Verifier verifier;
+    verifier.verbosity = verbosity;
+    verifier.ttl = 240;
+    verifier.settings().plot_results = plot_results;
+
+    SafetyVerificationInput verInput(system, initial_set, domain, safety_constraint);
+
+    verifier.safety(verInput);
 }
