@@ -101,6 +101,7 @@ int main(int argc,char *argv[])
     verifier.verbosity = verbosity;
     verifier.ttl = 240;
     verifier.settings().plot_results = plot_results;
+    verifier.settings().enable_backward_refinement_for_safety_proving = false;
 
     SafetyVerificationInput verInput(system, initial_set, domain, safety_constraint);
 
