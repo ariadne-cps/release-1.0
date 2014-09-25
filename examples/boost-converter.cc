@@ -77,10 +77,10 @@ int main(int argc,char *argv[])
         plotter.plot(outer_reach,"outer",accuracy);
     }
 */
-    HybridBoxes domain(system.state_space(),Box(3, -0.1,1.1, 1.0,2.6, 4.0,7.0));
+    HybridBoxes domain(system.state_space(),Box(3, -0.1,1.1, -0.1,3.0, 4.0,7.0));
 
     HybridBoundedConstraintSet initial_set(system.state_space());
-    initial_set[DiscreteLocation("incr")] = Box(3, 0.0,0.0, 1.173,1.173, 5.65,5.65);
+    initial_set[DiscreteLocation("incr")] = Box(3, 0.0,0.0, 1.1,1.2, 5.5,5.7);
 
     RealVariable t("t");
     RealVariable iL("iL");
@@ -93,13 +93,13 @@ int main(int argc,char *argv[])
     List<RealExpression> consexpr;
     consexpr.append(expr);
     VectorFunction cons_f(consexpr,varlist);
-    Box codomain(1,4.9,6.0);
+    Box codomain(1,4.5,6.5);
 
     HybridConstraintSet safety_constraint(system.state_space(),ConstraintSet(cons_f,codomain));
 
     Verifier verifier;
     verifier.verbosity = verbosity;
-    verifier.ttl = 240;
+    verifier.ttl = 3600;
     verifier.settings().plot_results = plot_results;
     verifier.settings().enable_backward_refinement_for_safety_proving = false;
 
