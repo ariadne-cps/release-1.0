@@ -77,7 +77,7 @@ int main(int argc,char *argv[])
         plotter.plot(outer_reach,"outer",accuracy);
     }
 */
-    HybridBoxes domain(system.state_space(),Box(3, -0.1,1.1, 0.5,2.0, 4.0,7.0));
+    HybridBoxes domain(system.state_space(),Box(3, 0.0,1.0, 0.0,2.6, 4.0,7.0));
 
     HybridBoundedConstraintSet initial_set(system.state_space());
     initial_set[DiscreteLocation("incr")] = Box(3, 0.0,0.0, 1.1,1.2, 5.5,5.7);
