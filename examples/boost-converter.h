@@ -34,22 +34,24 @@ HybridAutomaton getBoostConverter()
 
     /// Set the system parameters
 	RealParameter Vi("Vi",3.3);
-	RealParameter L("L",1.0);
-	RealParameter C("C",1.0);
 	RealParameter R("R",5.0);
+	RealParameter C("C",1.0);
+	RealParameter L("L",1.0);
+	RealParameter d("d",0.65);
 	RealParameter T("T",1.0);
-	RealParameter d("d",0.4);
 
     /// Create three discrete states
     DiscreteLocation incr("incr");
     DiscreteLocation decr("decr");
     DiscreteLocation zero("zero");
+    DiscreteLocation start("start");
 
     /// Create the discrete events
     DiscreteEvent turn_on_from_zero("turn_on_from_zero");
     DiscreteEvent turn_on_from_decr("turn_on_from_decr");
     DiscreteEvent turn_off("turn_off");
     DiscreteEvent current_becomes_zero("current_is_zero");
+    DiscreteEvent init("init");
 
     // System variables
     RealVariable t("t");    // Clock
@@ -85,6 +87,10 @@ HybridAutomaton getBoostConverter()
     exprlist[1] = iL_zero;
     exprlist[2] = vO_zero;
     VectorFunction dyn_zero(exprlist, varlist);
+    exprlist[0] = t_any;
+    exprlist[1] = 0.0;
+    exprlist[2] = 0.0;
+    VectorFunction dyn_start(exprlist, varlist);
 
     // Reset functions
     RealExpression id_t_r = t;
@@ -95,8 +101,16 @@ HybridAutomaton getBoostConverter()
     exprlist[1] = id_iL_r;
     exprlist[2] = id_vO_r;
     VectorFunction reset_identity(exprlist, varlist);
+    
     exprlist[0] = zero_t_r;
     VectorFunction reset_t_zero(exprlist, varlist);
+
+    RealExpression start_iL_r = (Vi/(1-d))*(1.0 + 0.5*d*T/R/C)/R/(1-d) + 0.5*Vi*d*T/L;
+    RealExpression start_vO_r = (Vi/(1-d))*(1.0 + 0.5*d*T/R/C);
+    exprlist[0] = zero_t_r;
+    exprlist[1] = start_iL_r;
+    exprlist[2] = start_vO_r;
+    VectorFunction reset_init(exprlist, varlist);
 
     // Create the guards.
     // Guards are true when f(x) >= 0
@@ -106,12 +120,16 @@ HybridAutomaton getBoostConverter()
     ScalarFunction zero_current_g(iL_leq_zero, varlist);
     RealExpression t_geq_T = t - T;       // t >= T
     ScalarFunction turn_on_g(t_geq_T, varlist);
+    RealExpression t_geq_0 = t;       // t >= 0
+    ScalarFunction init_g(t_geq_0, varlist);
 
     /// Build the automaton
     system.new_mode(incr,dyn_incr);
     system.new_mode(decr,dyn_decr);
     system.new_mode(zero,dyn_zero);
+    system.new_mode(start,dyn_start);
 
+    system.new_forced_transition(init,start,incr,reset_init,init_g);
     system.new_forced_transition(turn_off,incr,decr,reset_identity,turn_off_g);
     system.new_forced_transition(current_becomes_zero,decr,zero,reset_identity,zero_current_g);
     system.new_forced_transition(turn_on_from_zero,zero,incr,reset_t_zero,turn_on_g);

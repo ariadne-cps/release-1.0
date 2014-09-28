@@ -40,17 +40,17 @@ int main(int argc,char *argv[])
 
 /*
     HybridEvolver evolver(system);
-    evolver.verbosity = verb;
+    evolver.verbosity = verbosity;
 
     HybridSpace hspace(system.state_space());
     for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
-        evolver.settings().minimum_discretised_enclosure_widths[hs_it->first] = Vector<Float>(3,1.0);
+        evolver.settings().minimum_discretised_enclosure_widths[hs_it->first] = Vector<Float>(3,2.0);
         evolver.settings().hybrid_maximum_step_size[hs_it->first] = 0.001;
     }
     
-    HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("incr"),Box(3, 0.0,0.0, 1.173,1.173, 5.65,5.65));
+    HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("start"),Box(3, 0.0,0.0, 0.0,0.0, 0.0,0.0));
   
-    HybridTime evol_limits(20.0,14);
+    HybridTime evol_limits(18.0,14);
  
     HybridEvolver::OrbitType orbit = evolver.orbit(initial_enclosure,evol_limits,UPPER_SEMANTICS);
 
@@ -77,10 +77,11 @@ int main(int argc,char *argv[])
         plotter.plot(outer_reach,"outer",accuracy);
     }
 */
-    HybridBoxes domain(system.state_space(),Box(3, 0.0,1.0, 0.0,2.6, 4.0,7.0));
+
+    HybridBoxes domain(system.state_space(),Box(3, 0.0,1.0, 0.0,3.5, 4.0,7.5));
 
     HybridBoundedConstraintSet initial_set(system.state_space());
-    initial_set[DiscreteLocation("incr")] = Box(3, 0.0,0.0, 1.1,1.2, 5.5,5.7);
+    initial_set[DiscreteLocation("incr")] = Box(3, 0.0,0.0, 2.0,2.0, 5.5,5.5);
 
     RealVariable t("t");
     RealVariable iL("iL");
@@ -102,8 +103,15 @@ int main(int argc,char *argv[])
     verifier.ttl = 3600;
     verifier.settings().plot_results = plot_results;
     verifier.settings().enable_backward_refinement_for_safety_proving = false;
+    verifier.settings().use_param_midpoints_for_proving = true;
+
+	RealParameterSet parameters;
+	parameters.insert(RealParameter("T",Interval(0.5,1.0)));
+	parameters.insert(RealParameter("d",Interval(0.1,0.5)));
 
     SafetyVerificationInput verInput(system, initial_set, domain, safety_constraint);
 
-    verifier.safety(verInput);
+    std::list<ParametricOutcome> results = verifier.parametric_safety(verInput, parameters);
+    draw(system.name(),results);
+
 }
