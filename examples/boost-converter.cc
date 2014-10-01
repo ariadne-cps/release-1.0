@@ -48,7 +48,7 @@ int main(int argc,char *argv[])
         evolver.settings().hybrid_maximum_step_size[hs_it->first] = 0.001;
     }
     
-    HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("start"),Box(3, 0.0,0.0, 0.0,0.0, 0.0,0.0));
+    HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("start"),Box(3, 0.0,0.0, 2.0,2.0, 5.5,5.5));
   
     HybridTime evol_limits(18.0,14);
  
@@ -60,12 +60,12 @@ int main(int argc,char *argv[])
     }
 */
 /*
-    int accuracy = 7;
+    int accuracy = 8;
 
-    HybridBoxes domain(system.state_space(),Box(3, -0.1,1.1, 1.0,2.6, 5.0,6.0));
+    HybridBoxes domain(system.state_space(),Box(3, 0.0,1.0, 0.5,3.5, 3.5,7.0));
 
     HybridBoundedConstraintSet initial_set(system.state_space());
-    initial_set[DiscreteLocation("incr")] = Box(3, 0.0,0.0, 1.173,1.173, 5.65,5.65);
+    initial_set[DiscreteLocation("incr")] = Box(3, 0.0,0.0, 2.0,2.0, 5.5,5.5);
 
     HybridReachabilityAnalyser analyser(system,domain,accuracy);
     analyser.verbosity = verbosity;
@@ -78,7 +78,7 @@ int main(int argc,char *argv[])
     }
 */
 
-    HybridBoxes domain(system.state_space(),Box(3, 0.0,1.0, 0.0,3.5, 4.0,7.5));
+    HybridBoxes domain(system.state_space(),Box(3, 0.0,1.0, 0.0,4.0, 3.5,7.5));
 
     HybridBoundedConstraintSet initial_set(system.state_space());
     initial_set[DiscreteLocation("incr")] = Box(3, 0.0,0.0, 2.0,2.0, 5.5,5.5);
@@ -94,7 +94,7 @@ int main(int argc,char *argv[])
     List<RealExpression> consexpr;
     consexpr.append(expr);
     VectorFunction cons_f(consexpr,varlist);
-    Box codomain(1,4.5,6.5);
+    Box codomain(1,4.0,7.0);
 
     HybridConstraintSet safety_constraint(system.state_space(),ConstraintSet(cons_f,codomain));
 
@@ -111,6 +111,7 @@ int main(int argc,char *argv[])
 
     SafetyVerificationInput verInput(system, initial_set, domain, safety_constraint);
 
+    //verifier.safety(verInput);
     std::list<ParametricOutcome> results = verifier.parametric_safety(verInput, parameters);
     draw(system.name(),results);
 

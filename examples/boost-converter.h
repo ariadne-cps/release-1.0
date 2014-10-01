@@ -37,8 +37,8 @@ HybridAutomaton getBoostConverter()
 	RealParameter R("R",5.0);
 	RealParameter C("C",1.0);
 	RealParameter L("L",1.0);
-	RealParameter d("d",0.65);
-	RealParameter T("T",1.0);
+	RealParameter d("d",0.425);
+	RealParameter T("T",0.96875);
 
     /// Create three discrete states
     DiscreteLocation incr("incr");
@@ -105,7 +105,7 @@ HybridAutomaton getBoostConverter()
     exprlist[0] = zero_t_r;
     VectorFunction reset_t_zero(exprlist, varlist);
 
-    RealExpression start_iL_r = (Vi/(1-d))*(1.0 + 0.5*d*T/R/C)/R/(1-d) + 0.5*Vi*d*T/L;
+    RealExpression start_iL_r = Vi*(1.0/(1-d)/(1-d)/R - 0.5*d*T/L);
     RealExpression start_vO_r = (Vi/(1-d))*(1.0 + 0.5*d*T/R/C);
     exprlist[0] = zero_t_r;
     exprlist[1] = start_iL_r;
