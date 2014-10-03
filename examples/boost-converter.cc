@@ -78,7 +78,7 @@ int main(int argc,char *argv[])
     }
 */
 
-    HybridBoxes domain(system.state_space(),Box(3, 0.0,1.0, 0.0,4.0, 3.5,7.5));
+    HybridBoxes domain(system.state_space(),Box(3, 0.0,0.001, 0.5,4.0, 3.5,7.5));
 
     HybridBoundedConstraintSet initial_set(system.state_space());
     initial_set[DiscreteLocation("incr")] = Box(3, 0.0,0.0, 2.0,2.0, 5.5,5.5);
@@ -106,13 +106,13 @@ int main(int argc,char *argv[])
     verifier.settings().use_param_midpoints_for_proving = true;
 
 	RealParameterSet parameters;
-	parameters.insert(RealParameter("T",Interval(0.5,1.0)));
-	parameters.insert(RealParameter("d",Interval(0.1,0.5)));
+	parameters.insert(RealParameter("T",Interval(0.0008,0.0012)));
+	parameters.insert(RealParameter("d",Interval(0.25,0.5)));
 
     SafetyVerificationInput verInput(system, initial_set, domain, safety_constraint);
 
-    //verifier.safety(verInput);
-    std::list<ParametricOutcome> results = verifier.parametric_safety(verInput, parameters);
-    draw(system.name(),results);
+    verifier.safety(verInput);
+    //std::list<ParametricOutcome> results = verifier.parametric_safety(verInput, parameters);
+    //draw(system.name(),results);
 
 }
