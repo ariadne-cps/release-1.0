@@ -38,7 +38,7 @@ HybridAutomaton getBoostConverter()
 	RealParameter C("C",0.001);
 	RealParameter L("L",0.001);
 	RealParameter d("d",0.45);
-	RealParameter T("T",0.0012);
+	RealParameter T("T",0.001);
 
     /// Create three discrete states
     DiscreteLocation incr("incr");
