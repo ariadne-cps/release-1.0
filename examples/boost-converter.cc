@@ -78,7 +78,7 @@ int main(int argc,char *argv[])
     }
 */
 
-    HybridBoxes domain(system.state_space(),Box(3, 0.0,0.001, 0.0,4.0, 3.5,7.5));
+    HybridBoxes domain(system.state_space(),Box(3, 0.0,0.001, 0.0,3.7, 3.5,7.5));
 
     HybridBoundedConstraintSet initial_set(system.state_space());
     initial_set[DiscreteLocation("incr")] = Box(3, 0.0,0.0, 2.0,2.0, 5.5,5.5);
@@ -94,7 +94,7 @@ int main(int argc,char *argv[])
     List<RealExpression> consexpr;
     consexpr.append(expr);
     VectorFunction cons_f(consexpr,varlist);
-    Box codomain(1,4.5,6.5);
+    Box codomain(1,0.0,7.0);
 
     HybridConstraintSet safety_constraint(system.state_space(),ConstraintSet(cons_f,codomain));
 
@@ -103,9 +103,10 @@ int main(int argc,char *argv[])
     verifier.ttl = 3600;
     verifier.settings().plot_results = plot_results;
     verifier.settings().enable_backward_refinement_for_safety_proving = false;
+    verifier.settings().use_param_midpoints_for_proving = true;
 
 	RealParameterSet parameters;
-	parameters.insert(RealParameter("T",Interval(0.0008,0.0012)));
+	parameters.insert(RealParameter("T",Interval(0.0005,0.001)));
 	parameters.insert(RealParameter("d",Interval(0.1,0.5)));
 
     SafetyVerificationInput verInput(system, initial_set, domain, safety_constraint);
@@ -113,5 +114,4 @@ int main(int argc,char *argv[])
     //verifier.safety(verInput);
     std::list<ParametricOutcome> results = verifier.parametric_safety(verInput, parameters);
     draw(system.name(),results);
-
 }
