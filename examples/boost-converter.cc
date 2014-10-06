@@ -78,7 +78,7 @@ int main(int argc,char *argv[])
     }
 */
 
-    HybridBoxes domain(system.state_space(),Box(3, 0.0,0.001, 0.0,3.7, 3.5,7.5));
+    HybridBoxes domain(system.state_space(),Box(3, 0.0,0.001, 0.0,3.7, 3.0,7.5));
 
     HybridBoundedConstraintSet initial_set(system.state_space());
     initial_set[DiscreteLocation("incr")] = Box(3, 0.0,0.0, 2.0,2.0, 5.5,5.5);
