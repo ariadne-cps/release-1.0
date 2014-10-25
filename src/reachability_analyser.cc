@@ -253,13 +253,10 @@ lower_reach_evolve(
 
         HybridFloatVector local_epsilon = get_epsilon(orbit.reach(),grid,_accuracy());
 
-        HybridBoxes reach_bb = local_reach.bounding_box();
-        for (HybridBoxes::locations_const_iterator it = reach_bb.begin(); it != reach_bb.end(); ++it) {
-            LocalisedBox loc_box(it->first,it->second);
-            if (!it->second.empty() && definitely(_restriction->outer_domain_box().disjoint(loc_box))) {
-                ARIADNE_LOG(1,"Counterexample found: " << loc_box);
-			    throw DomainException("The lower reach is not inside the over-approximated domain: check the domain used for variables.");
-            }
+        HybridBoxes widened_outer_domain = widen(_restriction->outer_domain_box(),local_epsilon);
+        if (!widened_outer_domain.superset(local_reach.bounding_box())) {                
+            ARIADNE_LOG(1,"Counterexample found for local reach bounds: " << local_reach.bounding_box());      
+            throw DomainException("The lower reach is not inside the over-approximated domain. Check the domain used for variables.");
         }
 
         _restriction->apply_to(local_reach);
@@ -595,13 +592,10 @@ _lower_chain_reach_and_epsilon(
 
 		epsilon = max_elementwise(epsilon,local_epsilon);
 
-        HybridBoxes reach_bb = local_reach.bounding_box();
-        for (HybridBoxes::locations_const_iterator it = reach_bb.begin(); it != reach_bb.end(); ++it) {
-            LocalisedBox loc_box(it->first,it->second);
-            if (!it->second.empty() && definitely(_restriction->outer_domain_box().disjoint(loc_box))) {
-                ARIADNE_LOG(1,"Counterexample found: " << loc_box);
-			    throw DomainException("The lower reach is not inside the over-approximated domain: check the domain used for variables.");
-            }
+        HybridBoxes widened_outer_domain = widen(_restriction->outer_domain_box(),local_epsilon);
+        if (!widened_outer_domain.superset(local_reach.bounding_box())) {                
+            ARIADNE_LOG(1,"Counterexample found for local reach bounds: " << local_reach.bounding_box());      
+            throw DomainException("The lower reach is not inside the over-approximated domain. Check the domain used for variables.");
         }
 
 		_restriction->apply_to(local_reach);
