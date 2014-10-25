@@ -255,7 +255,7 @@ lower_reach_evolve(
 
         HybridBoxes widened_outer_domain = widen(_restriction->outer_domain_box(),local_epsilon);
         if (!widened_outer_domain.superset(local_reach.bounding_box())) {                
-            ARIADNE_LOG(1,"Counterexample found for local reach bounds: " << local_reach.bounding_box());      
+            ARIADNE_LOG(1,"Counterexample found for local reach bounds: " << local_reach.bounding_box() << " with epsilon " << local_epsilon);      
             throw DomainException("The lower reach is not inside the over-approximated domain. Check the domain used for variables.");
         }
 
@@ -594,7 +594,7 @@ _lower_chain_reach_and_epsilon(
 
         HybridBoxes widened_outer_domain = widen(_restriction->outer_domain_box(),local_epsilon);
         if (!widened_outer_domain.superset(local_reach.bounding_box())) {                
-            ARIADNE_LOG(1,"Counterexample found for local reach bounds: " << local_reach.bounding_box());      
+            ARIADNE_LOG(1,"Counterexample found for local reach bounds: " << local_reach.bounding_box() << " with epsilon " << local_epsilon);      
             throw DomainException("The lower reach is not inside the over-approximated domain. Check the domain used for variables.");
         }
 
