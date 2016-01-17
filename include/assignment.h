@@ -94,8 +94,9 @@ template<class T> class Expression;
 
 //! \brief An assignment statement.
 template<class LHS, class RHS>
-struct Assignment
+class Assignment
 {
+public:
     template<class XLHS> explicit Assignment(const Assignment<XLHS,RHS>& a)
         : lhs(a.lhs), rhs(a.rhs) { }
     Assignment(const LHS& l, const RHS& r) : lhs(l), rhs(r) { }

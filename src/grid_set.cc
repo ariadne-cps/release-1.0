@@ -207,7 +207,7 @@ void BinaryTreeNode::restore_node( BinaryTreeNode * pCurrentNode, uint & arr_ind
             restore_node( pCurrentNode->_pRightNode, ++arr_index, leaf_counter, theTree, theEnabledCells );
         } else {
             //If we are in a leaf node then check if it needs to be enabled/disabled
-            pCurrentNode->_isEnabled = theEnabledCells[leaf_counter];
+            pCurrentNode->_isEnabled = (theEnabledCells[leaf_counter] ? true : false);
                 
             leaf_counter++;
         }

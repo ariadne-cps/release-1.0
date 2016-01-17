@@ -187,7 +187,7 @@ inline std::ostream& operator<<(std::ostream& os, const EventSet& self) {
 /*! \brief An internal enumerated type, suitable for use when a finite type is needed.
  *  \sa EnumeratedType, EnumeratedVariable, DiscretePredicate
  */
-struct EnumeratedType {
+class EnumeratedType {
   public:
     //! \brief Create a new enumerated type with name \a name and values \a values.
     EnumeratedType(const std::string& name, const std::vector<std::string>& values) : _name(name), _values(values) {
@@ -221,7 +221,7 @@ struct EnumeratedType {
 
 //! \brief A predicate over some discrete variables.
 //! \details \sa EnumeratedValue, EnumeratedVariable, DiscretePredicate
-struct EnumeratedValue {
+class EnumeratedValue {
   public:
     //! \brief Construct a discrete value based on the string \a str.
     EnumeratedValue(const String& str) : _value(str) { }

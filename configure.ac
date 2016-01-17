@@ -9,7 +9,7 @@ AC_CONFIG_HEADER([config.h])
 #CXXFLAGS_EARLY=${CXXFLAGS}
 
 # Checks for programs.
-AC_PROG_CXX
+AC_PROG_CXX([gcc-4.9.1])
 
 # this macro is used to get the arguments supplied
 # to the configure script (./configure --enable-debug)
@@ -54,7 +54,7 @@ AC_STDC_HEADERS
 AC_CHECK_HEADER([fenv.h],[AC_DEFINE([HAVE_FENV_H],[1],[Define to 1 if you have the <fenv.h> header file.])],[AC_MSG_WARN([Standard C header file fenv.h is missing. Only assembly-language rounding is supported.])])
 
 # Check for GMP (optional)
-AC_CHECK_HEADER([gmpxx.h],[AC_DEFINE([HAVE_GMPXX_H],[1],[Define to 1 if you have the <gmpxx.h> header file.])],[AC_MSG_WARN([GNU Multiple Precision (GMP) library development files are missing. You cannot use Integer or Rational numbers.])])
+#AC_CHECK_HEADER([gmpxx.h],[AC_DEFINE([HAVE_GMPXX_H],[1],[Define to 1 if you have the <gmpxx.h> header file.])],[AC_MSG_WARN([GNU Multiple Precision (GMP) library development files are missing. You cannot use Integer or Rational numbers.])])
 
 # Check for MPFR (optional)
 AC_CHECK_HEADER([mpfr.h],[AC_DEFINE([HAVE_MPFR_H],[1],[Define to 1 if you have the <mpfr.h> header file.])],[AC_MSG_WARN([MPFR library development files are missing. You cannot use multiple-precision floating-point numbers.])])
@@ -112,11 +112,11 @@ done
 AC_CHECK_HEADER([boost/version.hpp],,[AC_MSG_ERROR([Boost library development files are missing. You must install them.])])
 
 # Check for Boost Serialization library (required)
-lib=boost_serialization
+lib=boost_serialization-mt
 AC_CHECK_LIB([$lib],[main],[ARIADNE_NONPKGCONFIG_LIBS="$ARIADNE_NONPKGCONFIG_LIBS -l$lib"],[AC_MSG_ERROR([Boost serialization library is missing. You must install the Boost C++ libraries.])])
 
 # Check for Boost Thread library (required)
-lib=boost_thread
+lib=boost_thread-mt
 AC_CHECK_LIB([$lib],[main],[ARIADNE_NONPKGCONFIG_LIBS="$ARIADNE_NONPKGCONFIG_LIBS -l$lib"],[AC_MSG_ERROR([Boost thread library is missing. You must install the Boost C++ libraries.])])
 
 

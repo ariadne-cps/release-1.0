@@ -44,6 +44,7 @@ namespace Ariadne {
 
 //! \brief
 class DiscreteValuation {
+  public:
     typedef std::string StringType;
     typedef int IntegerType;
   public:
