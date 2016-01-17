@@ -54,7 +54,7 @@ class Interruptible {
 	void _reset_start_time() const { _start_time = time(NULL); }
 
 	//! \brief Probe the remaining time.
-	uint _remaining_time() const { return ttl - (time(NULL) - _start_time); }
+	time_t _remaining_time() const { return ttl - (time(NULL) - _start_time); }
 
 	//! \brief Check for a timeout.
 	void _check_timeout() const { if (_remaining_time() <= 0) throw TimeoutException(); }
@@ -63,12 +63,12 @@ class Interruptible {
 
 	//! \brief The Time-To-Live, i.e. the time (in seconds) that any instrumented method is expected to return within,
 	//! or raise a %TimeoutException.
-	uint ttl;
+	time_t ttl;
 
   protected:
 
 	//! \brief An internal variable to hold the start time reference.
-    mutable uint _start_time;
+    mutable time_t _start_time;
 
 };
 
