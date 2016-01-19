@@ -36,6 +36,7 @@
 
 #include "graphics_interface.h"
 #include "discrete_location.h"
+#include "function.h"
 #include "parametric.h"
 #include "box.h"
 #include "list_set.h"
