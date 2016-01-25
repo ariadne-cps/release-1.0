@@ -9,7 +9,7 @@ find_package(Cairo REQUIRED)
 find_package(Buddy REQUIRED)
 find_package(Doxygen)
 
-configure_file ("${PROJECT_SOURCE_DIR}/config.h.in"
+configure_file ("include/config.h.in"
 				"${PROJECT_BINARY_DIR}/config.h")
 				
 include_directories ("include" ${PROJECT_BINARY_DIR} ${Boost_INCLUDE_DIRS} ${GTK2_INCLUDE_DIRS} ${CAIRO_INCLUDE_DIRS})
