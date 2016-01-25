@@ -4,7 +4,7 @@ set(CMAKE_MACOSX_RPATH 1)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
 find_package(Boost REQUIRED COMPONENTS system serialization thread)
-find_package(Gtk2 REQUIRED)
+find_package(GTK2 REQUIRED)
 find_package(Cairo REQUIRED)
 find_package(Buddy REQUIRED)
 find_package(Doxygen)
