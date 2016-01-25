@@ -53,12 +53,6 @@ AC_STDC_HEADERS
 # Check for standard fenv.h (optional)
 AC_CHECK_HEADER([fenv.h],[AC_DEFINE([HAVE_FENV_H],[1],[Define to 1 if you have the <fenv.h> header file.])],[AC_MSG_WARN([Standard C header file fenv.h is missing. Only assembly-language rounding is supported.])])
 
-# Check for GMP (optional)
-#AC_CHECK_HEADER([gmpxx.h],[AC_DEFINE([HAVE_GMPXX_H],[1],[Define to 1 if you have the <gmpxx.h> header file.])],[AC_MSG_WARN([GNU Multiple Precision (GMP) library development files are missing. You cannot use Integer or Rational numbers.])])
-
-# Check for MPFR (optional)
-AC_CHECK_HEADER([mpfr.h],[AC_DEFINE([HAVE_MPFR_H],[1],[Define to 1 if you have the <mpfr.h> header file.])],[AC_MSG_WARN([MPFR library development files are missing. You cannot use multiple-precision floating-point numbers.])])
-
 ## Taken from Cairo: Begin
 PKG_PROG_PKG_CONFIG()
 if test "x$PKG_CONFIG" = x; then
@@ -101,12 +95,6 @@ PKG_CHECK_MODULES(CAIRO,
 )
 
 AC_SUBST(ARIADNE_NONPKGCONFIG_LIBS)
-
-
-# Check for GMP, GMPXX, and MPFR libraries (optional)
-for lib in gmp gmpxx mpfr; do
-  AC_CHECK_LIB([$lib],[main],[ARIADNE_NONPKGCONFIG_LIBS="$ARIADNE_NONPKGCONFIG_LIBS -l$lib"])
-done
 
 # Check for Boost library (required)
 AC_CHECK_HEADER([boost/version.hpp],,[AC_MSG_ERROR([Boost library development files are missing. You must install them.])])
