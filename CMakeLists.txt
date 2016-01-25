@@ -10,9 +10,9 @@ find_package(Buddy REQUIRED)
 find_package(Doxygen)
 
 configure_file ("include/config.h.in"
-				"${PROJECT_BINARY_DIR}/config.h")
-				
-include_directories ("include" ${PROJECT_BINARY_DIR} ${Boost_INCLUDE_DIRS} ${GTK2_INCLUDE_DIRS} ${CAIRO_INCLUDE_DIRS})
+	"${PROJECT_BINARY_DIR}/config.h")
+
+include_directories ("include" ${PROJECT_BINARY_DIR} ${Boost_INCLUDE_DIRS} ${GTK2_INCLUDE_DIR} ${CAIRO_INCLUDE_DIRS})
 
 add_library (ariadne SHARED "src/numeric.cc" "src/vector.cc" "src/matrix.cc" "src/linear_programming.cc" 
 							"src/differential.cc" "src/taylor_model.cc" "src/expression.cc" "src/affine.cc" "src/polynomial.cc" 
