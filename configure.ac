@@ -9,7 +9,7 @@ AC_CONFIG_HEADER([config.h])
 #CXXFLAGS_EARLY=${CXXFLAGS}
 
 # Checks for programs.
-AC_PROG_CXX([gcc-4.9.1])
+AC_PROG_CXX([g++])
 
 # this macro is used to get the arguments supplied
 # to the configure script (./configure --enable-debug)
