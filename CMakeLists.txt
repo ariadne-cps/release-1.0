@@ -29,7 +29,7 @@ target_link_libraries(ariadne ${Boost_LIBRARIES} ${GTK2_LIBRARIES} ${CAIRO_LIBRA
 enable_testing()
 
 set(TESTS
-	#bdd_set
+	bdd_set
 	differential
 	discretised_evolution
 	expansion
