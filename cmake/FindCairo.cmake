@@ -1,47 +1,61 @@
-# - Try to find the cairo library
+# - try to find Cairo
 # Once done this will define
 #
-#  CAIRO_FOUND - system has cairo
-#  CAIRO_INCLUDE_DIRS - the cairo include directory
-#  CAIRO_LIBRARIES - Link these to use cairo
+#  CAIRO_FOUND - system has Cairo
+#  CAIRO_CFLAGS - the Cairo CFlags
+#  CAIRO_INCLUDE_DIRS - the Cairo include directories
+#  CAIRO_LIBRARIES - Link these to use Cairo
 #
-# Define CAIRO_MIN_VERSION for which version desired.
+# Copyright (C) 2007, 2010, Pino Toscano, <pino@kde.org>
 #
+# Redistribution and use is allowed according to the terms of the BSD license.
 
-INCLUDE(FindPkgConfig)
+if(CAIRO_INCLUDE_DIRS AND CAIRO_LIBRARIES)
 
-IF(Cairo_FIND_REQUIRED)
-	SET(_pkgconfig_REQUIRED "REQUIRED")
-ELSE(Cairo_FIND_REQUIRED)
-	SET(_pkgconfig_REQUIRED "")
-ENDIF(Cairo_FIND_REQUIRED)
+  # in cache already
+  set(CAIRO_FOUND TRUE)
 
-IF(CAIRO_MIN_VERSION)
-	PKG_SEARCH_MODULE(CAIRO ${_pkgconfig_REQUIRED} cairo>=${CAIRO_MIN_VERSION})
-ELSE(CAIRO_MIN_VERSION)
-	PKG_SEARCH_MODULE(CAIRO ${_pkgconfig_REQUIRED} cairo)
-ENDIF(CAIRO_MIN_VERSION)
+else(CAIRO_INCLUDE_DIRS AND CAIRO_LIBRARIES)
 
-#IF(NOT CAIRO_FOUND AND NOT PKG_CONFIG_FOUND)
-	FIND_PATH(CAIRO_INCLUDE_DIRS cairo.h)
-	FIND_LIBRARY(CAIRO_LIBRARIES cairo)
+if(NOT WIN32)
+  # use pkg-config to get the directories and then use these values
+  # in the FIND_PATH() and FIND_LIBRARY() calls
+  find_package(PkgConfig REQUIRED)
+  if(Cairo_FIND_VERSION_COUNT GREATER 0)
+    set(_cairo_version_cmp ">=${Cairo_FIND_VERSION}")
+  endif(Cairo_FIND_VERSION_COUNT GREATER 0)
+  pkg_check_modules(_pc_cairo cairo${_cairo_version_cmp})
+  if(_pc_cairo_FOUND)
+    set(CAIRO_FOUND TRUE)
+  endif(_pc_cairo_FOUND)
+else(NOT WIN32)
+  # assume so, for now
+  set(CAIRO_FOUND TRUE)
+endif(NOT WIN32)
 
-	# Report results
-	IF(CAIRO_LIBRARIES AND CAIRO_INCLUDE_DIRS)
-		SET(CAIRO_FOUND 1)
-		#IF(NOT Cairo_FIND_QUIETLY)
-			MESSAGE(STATUS "Found Cairo: ${CAIRO_LIBRARIES}")
-		#ENDIF(NOT Cairo_FIND_QUIETLY)
-	ELSE(CAIRO_LIBRARIES AND CAIRO_INCLUDE_DIRS)	
-		IF(Cairo_FIND_REQUIRED)
-			MESSAGE(SEND_ERROR "Could not find Cairo")
-		ELSE(Cairo_FIND_REQUIRED)
-			#IF(NOT Cairo_FIND_QUIETLY)
-				MESSAGE(STATUS "Could not find Cairo")	
-			#ENDIF(NOT Cairo_FIND_QUIETLY)
-		ENDIF(Cairo_FIND_REQUIRED)
-	ENDIF(CAIRO_LIBRARIES AND CAIRO_INCLUDE_DIRS)
-#ENDIF(NOT CAIRO_FOUND AND NOT PKG_CONFIG_FOUND)
+if(CAIRO_FOUND)
+  # set it back as false
+  set(CAIRO_FOUND FALSE)
 
-# Hide advanced variables from CMake GUIs
-MARK_AS_ADVANCED(CAIRO_LIBRARIES CAIRO_INCLUDE_DIRS)
+  find_library(CAIRO_LIBRARY cairo
+               HINTS ${_pc_cairo_LIBRARY_DIRS}
+  )
+  set(CAIRO_LIBRARIES "${CAIRO_LIBRARY}")
+
+  find_path(CAIRO_INCLUDE_DIR cairo.h
+            HINTS ${_pc_cairo_INCLUDE_DIRS}
+            PATH_SUFFIXES cairo
+  )
+  set(CAIRO_INCLUDE_DIRS "${CAIRO_INCLUDE_DIR}")
+
+  include(FindPackageHandleStandardArgs)
+  find_package_handle_standard_args(Cairo DEFAULT_MSG CAIRO_LIBRARIES CAIRO_INCLUDE_DIRS)
+endif(CAIRO_FOUND)
+
+endif(CAIRO_INCLUDE_DIRS AND CAIRO_LIBRARIES)
+
+mark_as_advanced(
+  CAIRO_CFLAGS
+  CAIRO_INCLUDE_DIRS
+  CAIRO_LIBRARIES
+)
