@@ -7,7 +7,7 @@ find_package(Boost REQUIRED COMPONENTS system serialization thread)
 find_package(GTK2 REQUIRED)
 find_package(Cairo REQUIRED)
 find_package(Buddy REQUIRED)
-find_package(Doxygen)
+include(UseDoxygen OPTIONAL)
 
 configure_file ("include/config.h.in"
 	"${PROJECT_BINARY_DIR}/config.h")
