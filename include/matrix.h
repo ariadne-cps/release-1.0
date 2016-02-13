@@ -112,15 +112,8 @@ class Matrix
     //! \brief A pointer to the first element of the data storage.
     const X* begin() const { return &this->operator()(0,0); }
 
-#ifdef DOXYGEN
-    //! \brief C-style subscripting operator.
-    X& operator[][](size_t i, size_t j);
-    //! \brief C-style constant subscripting operator.
-    const X& operator[][](size_t i, size_t j) const;
-#else
     const X* operator[](size_t r) const { return &this->operator()(r,0); }
     X* operator[](size_t r) { return &this->operator()(r,0); }
-#endif
     //@}
 
     //@{
@@ -131,71 +124,6 @@ class Matrix
     //! \brief The itentity matrix with \a n rows and \a n columns.
     static Matrix<X> identity(size_t n) { Matrix<X> I(n,n); for(size_t i=0; i!=n; ++i) { I[i][i]=1; } return I; }
     //@}
-
-
-#ifdef DOXYGEN
-    //! \brief The supremum norm of the matrix \a A, defined as \f$||A||_\infty=\max_i \sum_j |A_{ij}|\f$.
-    friend template<class X> X norm(const Matrix<X>& A);
-
-     //! \brief %Matrix unary plus.
-    friend template<class X> Matrix<X> operator+(const Matrix<X>& A);
-     //! \brief %Matrix negation.
-    friend template<class X> Matrix<X> operator-(const Matrix<X>& A);
-    //! \brief %Matrix addition.
-    friend template<class X> Matrix<X> operator+(const Matrix<X>& A1, const Matrix<X>& A2);
-    //! \brief %Matrix subtraction.
-    friend template<class X> Matrix<X> operator-(const Matrix<X>& A1, const Matrix<X>& A2);
-    //! \brief %Scalar multiplication.
-    friend template<class X> Matrix<X> operator*(const X& s, const Matrix<X>& A);
-    //! \brief %Scalar multiplication.
-    friend template<class X> Matrix<X> operator*(const Matrix<X>& A, const X& s);
-    //! \brief %Scalar division.
-    friend template<class X> Matrix<X> operator/(const Matrix<X>& A, const X& s);
-
-    //! \brief %Matrix-vector multiplication.
-    friend template<class X> Vector<X> operator*(const Matrix<X>& A, const Vector<X>& v);
-    //! \brief %Matrix-matrix multiplication.
-    friend template<class X> Vector<X> operator*(const Matrix<X>& A1, const Matrix<X>& A2);
-
-    //! \brief The operator norm using the supremum norm on Euclidean space.
-    //! Given explicitly by \f$\max_i \sum_j |a_{ij}|\f$.
-    friend template<class X> X norm(const Matrix<X>& A);
-
-    //! \brief The transpose matrix.
-    friend template<class X> Matrix<X> transpose(const Matrix<X>& A);
-    //! \brief The inverse matrix.
-    friend template<class X> Matrix<X> inverse(const Matrix<X>& A);
-
-    //! \brief Solve a system of linear equations.
-    //!
-    //! Uses Gaussian elimination with column row pivoting for floating-point matrices.
-    //!
-    //! Uses Gauss-Seidel iteration on a preconditioned system for interval matrices.
-    //! First, an approximate inverse \f$S\f$ to \f$m([A])\f$ is computed using floating-point arithmetic.
-    //! Next, the system is reformulated as \f$S[A][x]=S[b]\f$, or \f$[J][x]=[c]\f$
-    //! The interval matrix \f$S[A]\f$ should be close to the identity
-    //! (if the interval matrix \f$[A]\f$ is well-conditioned
-    //! and the radii of the coefficients are sufficiently small).
-    //!
-    //! If (the preconditioned) \f$[A]\f$ is diagonally-dominant, then an initial bound for the solutions to
-    //! to \f$[A][x]=[b]\f$ can be given as \f$|x_i|\leq |b_i|/(|a_{ii}|-\sum_{j\neq i}|a_{ij}|)\f$.
-    //!
-    //! Any bound \f$[x]\f$ for the solutions can then be iteratively updated using the Gauss-Seidel scheme
-    //! \f$x_i' = x_i\cap (b_i-\sum_{j\neq i} a_{ij}x_j)/a_{ii}\f$.
-    friend template<class X> Vector<X> solve(const Matrix<X>& A, const Vector<X>& b);
-    //! \brief Simultaneously solve multiple linear equations.
-    friend template<class X> Matrix<X> solve(const Matrix<X>& A, const Matrix<X>& b);
-
-    //! \brief The midpoint of an interval matrix.
-    friend Matrix<Float> midpoint(const Matrix<Interval>& A);
-
-    //! \brief Write to an output stream.
-    friend template<class X> std::ostream& operator<<(std::ostream& os, const Matrix<X>& A);
-    //! \brief Read from an output stream.
-    friend template<class X> std::istream& operator>>(std::istream& is, Matrix<X>& A);
-
-
-#endif
 
   private:
     //! \brief Auxiliary variables needed for the comma operator.

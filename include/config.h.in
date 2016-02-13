@@ -3,5 +3,3 @@
 #define HAVE_CAIRO_H "${CAIRO_FOUND}"
 
 #define HAVE_GTK_H "${GTK2_FOUND}"
-
-#define DOXYGEN "${DOXYGEN_FOUND}"

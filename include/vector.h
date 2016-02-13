@@ -74,10 +74,6 @@ class Vector
     //! \brief Copy constructor allows conversion from a vector using another numerical type.
     template<class XX> Vector(const Vector<XX>& v)
         : ublas::vector<X>(v) { }
-#ifdef DOXYGEN
-    //! \brief Copy assignement allows conversion from a vector using another numerical type.
-    template<class XX> Vector<X>& operator=(const Vector<XX> &v);
-#endif
     template<class E> Vector(const ublas::vector_expression<E> &ve)
         : ublas::vector<X>(ve) { }
     template<class E> Vector<X>& operator=(const ublas::vector_expression<E> &ve) {
@@ -112,66 +108,12 @@ class Vector
     Vector<X>& operator,(const X& val) {
         (*this)[++current] = val; return *this; }    
 
-#ifdef DOXYGEN
-    //! \brief The number of elements of the vector.
-    size_t size() const;
-#endif
     //! \brief Get the value stored in the \a i<sup>th</sup> element.
     const X& get(size_t i) const { return (*this)[i]; }
     //! \brief Set the value stored in the \a i<sup>th</sup> element to \a x.
     template<class T> void set(size_t i, const T& x) { (*this)[i] = x; }
-#ifdef DOXYGEN
-    //! \brief C-style subscripting operator.
-    X& operator[](size_t i);
-    //! \brief C-style constant subscripting operator.
-    const X& operator[](size_t i) const;
-#endif
+
     //@}
-
-#ifdef DOXYGEN
-    //! \brief Equality operator.
-    friend template<class X1, class X2> bool operator==(const Vector<X1>& v1, const Vector<X2>& v2);
-    //! \brief Inequality operator.
-    friend template<class X1, class X2> bool operator!=(const Vector<X1>& v1, const Vector<X2>& v2);
-
-     //! \brief %Vector unary plus.
-    friend template<class X> Vector<X> operator+(const Vector<X>& v);
-     //! \brief %Vector negation.
-    friend template<class X> Vector<X> operator-(const Vector<X>& v);
-    //! \brief %Vector addition.
-    friend template<class X> Vector<X> operator+(const Vector<X>& v1, const Vector<X>& v2);
-    //! \brief %Vector subtraction.
-    friend template<class X> Vector<X> operator-(const Vector<X>& v1, const Vector<X>& v2);
-    //! \brief %Scalar multiplication.
-    friend template<class X> Vector<X> operator*(const X& s, const Vector<X>& v);
-    //! \brief %Scalar multiplication.
-    friend template<class X> Vector<X> operator*(const Vector<X>& v, const X& s);
-    //! \brief %Scalar division.
-    friend template<class X> Vector<X> operator/(const Vector<X>& v, const X& s);
-
-    //! \brief The minimum value.
-    friend template<class X> X min(const Vector<X>& v);
-    //! \brief The maximum value.
-    friend template<class X> X max(const Vector<X>& v);
-    //! \brief The supremum norm.
-    friend template<class X> X norm(const Vector<X>& v);
-    //! \brief The inner product.
-    friend template<class X> X dot(const Vector<X>& v1, const Vector<X>& v2);
-
-    //! \brief Join (catenate, make the direct sum of) two vectors.
-    friend template<class X> Vector<X> join(const Vector<X>& v1, const Vector<X>& v2);
-    //! \brief Join a vector and a scalar.
-    friend template<class X> Vector<X> join(const Vector<X>& v1, const X& s2);
-    //! \brief Join a scalar and a vector.
-    friend template<class X> Vector<X> join(const X& s1, const Vector<X>& v2);
-    //! \brief Join two scalars.
-    friend template<class X> Vector<X> join(const X& s1, const X& s2);
-
-    //! \brief Write to an output stream.
-    friend template<class X> std::ostream& operator<<(std::ostream& os, const Vector<X>& v);
-    //! \brief Read from an output stream.
-    friend template<class X> std::istream& operator>>(std::istream& is, Vector<X>& v);
-#endif // DOXYGEN
 
   private:
     //! \brief Auxiliary variable needed for the operator comma

@@ -127,41 +127,6 @@ class DenseDifferential
     static Vector< DenseDifferential<X> > variables(uint rs, uint as, uint d, const Vector<X>& x);
 
   public:
-#ifdef DOXYGEN
-    /// 
-    friend bool operator<(const DenseDifferential<X>& x1, const DenseDifferential<X>& x2);
-
-    ///
-    friend DenseDifferential<X> operator+(const DenseDifferential<X>& x);
-    ///
-    friend DenseDifferential<X> operator-(const DenseDifferential<X>& x);
-    ///
-    friend DenseDifferential<X> operator+(const DenseDifferential<X>& x, const DenseDifferential<X>& y);
-    ///
-    friend DenseDifferential<X> operator-(const DenseDifferential<X>& x, const DenseDifferential<X>& y);
-    ///
-    friend DenseDifferential<X> operator*(const DenseDifferential<X>& x, const DenseDifferential<X>& y);
-    ///
-    friend DenseDifferential<X> operator/(const DenseDifferential<X>& x, const DenseDifferential<X>& y);
-    ///
-    friend DenseDifferential<X> min(const DenseDifferential<X>& x1, const DenseDifferential<X>& x2); 
-    ///
-    friend DenseDifferential<X> max(const DenseDifferential<X>& x1, const DenseDifferential<X>& x2); 
-    ///
-    friend DenseDifferential<X> abs(const DenseDifferential<X>& x);
-
-    /// Reciprocal
-    friend DenseDifferential<X> rec(const DenseDifferential<X>& x);
-    /// Power
-    friend DenseDifferential<X> pow(const DenseDifferential<X>& x, int k);
-    /// Square root
-    friend DenseDifferential<X> sqrt(const DenseDifferential<X>& x);
-    /// Exponential
-    friend DenseDifferential<X> exp(const DenseDifferential<X>& x); 
-    /// Natural logarithm
-    friend DenseDifferential<X> log(const DenseDifferential<X>& x); 
-#endif
-  public:
     uint _argument_size;
     uint _degree;
     Vector<X> _data;
@@ -169,8 +134,6 @@ class DenseDifferential
 
 template<class X> DenseDifferential<X> scalar_constant(uint as, uint d, const X& c);
 template<class X> DenseDifferential<X> scalar_variable(uint as, uint d, const X& x, uint i);
-
-
 
 template<class X, class Y> Y evaluate(const DenseDifferential<X>& y, const Vector<Y>& z);
 template<class X> DenseDifferential<X> compose(const Series<X>& y, const DenseDifferential<X>& x);

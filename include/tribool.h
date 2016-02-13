@@ -50,20 +50,4 @@ inline std::string tribool_pretty_print(tribool value) {
 	return "Indeterminate";
 }
 
-/*
-#ifdef DOXYGEN
-namespace Ariadne {
-    //! \brief A three-valued logic type, with values \f$\top\f$ (true), \f$\bot\f$ (false) and \f$\uparrow\f$ (indeterminate).
-    class tribool { 
-    //! \brief Returns \c true if \a tb is \c true, and \c false if \a tb is \c indeterminate or \c false.
-    friend bool definitely(tribool tb);
-    //! \brief Returns \c true if \a tb is \c true or \c indeteriminate, and \c false if \a tb is \c false.
-    friend bool possibly(tribool tb);
-    //! \brief Returns \c true if \a tb is \c indeterminate, and \c false if \a tb is \c true or \c false.
-    friend bool indeterminate(tribool tb);
-    };
-}
-#endif // DOXYGEN
-*/
-
 #endif // ARIADNE_TRIBOOL_H

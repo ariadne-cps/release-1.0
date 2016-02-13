@@ -49,41 +49,6 @@ typedef unsigned long ulong;
 
 namespace Ariadne {
 
-#ifdef DOXYGEN
-//! \brief Integers of arbitrary size with exact arithmetic.
-//! (Only available if the Gnu Multiple Precision library (GMP) is installed.)
-//! \details
-//! Unlike C++ and the Python 2, integer division is performed exactly and returns a rational.
-//! The operations \c quot(Integer,Integer) and \c rem(Integer,Integer) can be used to perform integer division.
-class Integer { };
-//! \brief %Rational numbers with exact arithmetic.
-//! (Only available if the Gnu Multiple Precision library (GMP) is installed.)
-class Rational { };
-//! \brief Floating point numbers (double precision) using approxiamate arithmetic.
-//! \details
-//! The \c Float class represents floating-point numbers. Since most arithmetic operations on floating-point numbers can only be performed approximately, %Ariadne uses <em>interval arithmetic</em> to represent the results of floating-point computations. The result of any floating-point computation is represented as an interval \f$[l,u]\f$ enclosing the exact value of the result. In this way, round-off errors can be propagated automatically.
-//!
-//! Ariadne floating-point numbers can be constructed by conversion from built-in C++ types or from string literals. Note that a string literal representing a \c Float must be exacly representable on the machine. Hence <c>%Float(3.3)</c> and <c>%Float("3.25")</c> are both valid (the former has a value of \f$3.2999999999999998224\ldots\f$) but <c>%Float("3.3")</c> is an error.
-//! \note Constructing a %Float from a string literal is currently not supported!
-//! \sa Interval
-class Float { };
-#endif // DOXYGEN
-
-
-#ifdef HAVE_GMPXX_H
-class Integer : public mpz_class {
-  public:
-    Integer() : mpz_class() { }
-    Integer(const int& n) : mpz_class(n) { }
-    Integer(const std::string& s) : mpz_class(s) { }
-};
-
-#define HAVE_RATIONAL 1
-typedef mpq_class Rational;
-Rational sqr(const Rational& q);
-Rational pow(const Rational& q, int n);
-Rational pow(const Rational& q, uint n);
-#else
 class Integer {
   public:
     Integer() : _value() { }
@@ -116,9 +81,6 @@ inline bool operator< (const Integer& z1, const Integer& z2) {
 inline bool operator> (const Integer& z1, const Integer& z2) {
     return int(z1)> int(z2); }
 
-#endif // HAVE_GMPXX_H
-
-
 typedef double Float;
 
 
@@ -140,9 +102,6 @@ template<class X> X pi();
 template<class X> inline X inf();
 
 template<> inline Float inf<Float>() { return std::numeric_limits<double>::infinity(); }
-#ifdef HAVE_RATIONAL
-template<> inline Rational inf<Rational>() { return Rational(1,-0); }
-#endif
 
 
 inline Float mx() { return std::numeric_limits<double>::max(); }
@@ -309,10 +268,6 @@ class Interval {
     Interval(const Interval& i) : l(i.l), u(i.u) { }
 
     Interval(Float lower, Float upper) : l(lower), u(upper) { ARIADNE_ASSERT_MSG(lower<=upper, "lower = "<<lower<<", upper ="<<upper); }
-#ifdef HAVE_RATIONAL
-    Interval(const Rational& q);
-    Interval(const Rational& lower, const Rational& upper);
-#endif // HAVE_RATIONAL
 
     const Float& lower() const { return l; }
     const Float& upper() const { return u; }

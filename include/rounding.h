@@ -29,36 +29,6 @@
 #ifndef ARIADNE_ROUNDING_H
 #define ARIADNE_ROUNDING_H
 
-#ifdef DOXYGEN
-namespace Ariadne {
-//! \brief The unsigned integral type used to represent the rounding mode.
-typedef unsigned short rounding_mode_t;
-
-//! \brief The floating-point environment value for rounding arithmetic to the nearest exactly-representable value.
-const rounding_mode_t to_nearest;
-//! \brief The floating-point environment value for upwards-rounded arithmetic.
-const rounding_mode_t downward;
-//! \brief The floating-point environment value for downwards-rounded arithmetic.
-const rounding_mode_t upward;
-//! \brief The floating-point environment value for rounding arithmetic to zero.
-const rounding_mode_t toward_zero;
-
-//! \brief Set the rounding mode to nearest.
-inline void set_rounding_to_nearest();
-//! \brief Set the rounding mode to downwards rounding.
-inline void set_rounding_downward();
-//! \brief Set the rounding mode to upwards rounding.
-inline void set_rounding_upward();
-//! \brief Set the rounding mode to towards-zero rounding.
-inline void set_rounding_toward_zero();
-
-//! \brief Set the rounding mode.
-inline void set_rounding_mode(const rounding_mode_t& rnd);
-//! \brief Get the current rounding mode.
-inline rounding_mode_t get_rounding_mode();
-}
-#endif
-
 #if defined __GNUC__ && ( defined __i386__ || defined __x86_64 || defined _M_IX86 || defined _M_X86 )
     #if ( defined __SSE_MATH__ &&  defined __SSE2__ )
         #define ARIADNE_SSE_ROUNDING
