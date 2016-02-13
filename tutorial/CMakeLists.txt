@@ -1,0 +1,5 @@
+add_executable(tutorial_compositional compositional.cc)
+target_link_libraries(tutorial_compositional ariadne)
+
+add_executable(tutorial_monolithic monolithic.cc)
+target_link_libraries(tutorial_monolithic ariadne)
