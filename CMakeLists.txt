@@ -7,7 +7,9 @@ find_package(Boost REQUIRED COMPONENTS system serialization thread)
 find_package(GTK2 REQUIRED)
 find_package(Cairo REQUIRED)
 find_package(Buddy REQUIRED)
-#include(UseDoxygen OPTIONAL)
+include(UseDoxygen)
+
+set(DOXYFILE_SOURCE_DIR ${CMAKE_SOURCE_DIR})
 
 configure_file ("include/config.h.in"
 	"${PROJECT_BINARY_DIR}/config.h")
