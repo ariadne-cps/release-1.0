@@ -552,7 +552,7 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories 
 # with spaces.
 
-INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/include/ 
+INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/include/ \
                          @CMAKE_CURRENT_SOURCE_DIR@/doc/
 
 # This tag can be used to specify the character encoding of the source files 
@@ -990,7 +990,7 @@ LATEX_HEADER           =
 # contain links (just like the HTML output) instead of page references 
 # This makes the output suitable for online browsing using a pdf viewer.
 
-PDF_HYPERLINKS         = YES
+PDF_HYPERLINKS         = YES 
 
 # If the USE_PDFLATEX tag is set to YES, pdflatex will be used instead of 
 # plain latex in the generated Makefile. Set this option to YES to get a 
