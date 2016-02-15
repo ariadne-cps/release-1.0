@@ -149,7 +149,9 @@ read_sequence(std::istream& is, Container& v,
     try {
         is >> c;
         if(c != opening) {
-            throw std::ios_base::failure("Ariadne::Base::read_vector: Input must begin with "+opening);
+        	std::string msg = "Ariadne::Base::read_vector: Input must begin with ";
+        	msg.push_back(opening);
+            throw std::ios_base::failure(msg);
         }
     
         /* Handle case of empty list */
@@ -161,10 +163,12 @@ read_sequence(std::istream& is, Container& v,
     
         while(c != closing) {
             if(is.eof()) {
-                throw std::ios_base::failure("Ariadne::Base::read_vector: End-of-file reached");
+                throw std::ios_base::failure("Ariadne::Base::read_vector: Items in list must be separated by ");
             }
             if(c!=separator) {
-                throw std::ios_base::failure("Ariadne::Base::read_vector: Items in list must be separated by "+separator);
+            	std::string msg = "Ariadne::Base::read_vector: Input must begin with ";
+            	msg.push_back(separator);
+                throw std::ios_base::failure(msg);
             }
             is >> x;
             if(is.fail()) {
