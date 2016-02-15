@@ -33,6 +33,7 @@
 
 #include "rounding.h"
 
+/*
 #if defined ARIADNE_C99_ROUNDING
     #warning "Using standard fenv.h C header file for setting the rounding mode."
 #elif defined ARIADNE_BOOST_ROUNDING
@@ -52,6 +53,7 @@
 #else
     #warning "No rounding mode defined."
 #endif
+*/
 
 #include "numeric.h"
 #include "real.h"
