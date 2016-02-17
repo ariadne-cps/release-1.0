@@ -163,7 +163,7 @@ TestReachabilityRestriction::test_accessors() {
 
 	ARIADNE_TEST_ASSERT(!rr1.has_discretised(q1));
 	ARIADNE_TEST_ASSERT(!rr1.has_discretised(q2));
-    ARIADNE_TEST_FAIL(!rr1.has_discretised(q3));
+    ARIADNE_TEST_FAIL(rr1.has_discretised(q3));
 
     ARIADNE_PRINT_TEST_CASE_TITLE("Bounding box call effect at startup");
 

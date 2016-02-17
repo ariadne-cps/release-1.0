@@ -180,7 +180,7 @@ TestVector::test_misc()
     iv1=iv2/ix;
     ARIADNE_TEST_EQUAL(iv1,iv2);  
 
-    v1==Vector<Float>("[-1.25,0.75]");
+    ARIADNE_TEST_ASSERT(v1==Vector<Float>("[0.25,-1.5]"));
     iv0=iv1+v1;
     ARIADNE_TEST_EQUAL(iv0,Vector<Interval>("[[-0.75,1.25],[-2.5,-0.5]]"));
     iv0=v1+iv1;

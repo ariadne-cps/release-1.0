@@ -126,9 +126,14 @@ void TestPolynomial::test_iterator_concept()
     ++iter; --iter;
     ++citer; --citer;
 
-    iter==iter; iter!=iter; citer==citer; citer!=citer;
-    citer==iter; citer!=iter; iter==citer; iter!=citer;
-
+    ARIADNE_TEST_ASSERT(iter==iter);
+    ARIADNE_TEST_ASSERT_FALSE(iter!=iter);
+    ARIADNE_TEST_ASSERT(citer==citer);
+    ARIADNE_TEST_ASSERT_FALSE(citer!=citer);
+    ARIADNE_TEST_ASSERT_FALSE(citer==iter);
+    ARIADNE_TEST_ASSERT(citer!=iter);
+    ARIADNE_TEST_ASSERT_FALSE(iter==citer);
+    ARIADNE_TEST_ASSERT(iter!=citer);
 }
 
 void TestPolynomial::test_cleanup()
