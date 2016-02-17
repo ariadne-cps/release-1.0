@@ -33,7 +33,7 @@ template class boost::numeric::ublas::vector<Ariadne::Interval>;
 namespace Ariadne {
 
 
-template<> Vector<Float>::Vector(size_t n, const double& t0, const double& t1, ...)
+template<> Vector<Float>::Vector(size_t n, double t0, double t1, ...)
     : ublas::vector<Float>(n)
 {
     assert(n>=2); va_list args; va_start(args,t1);
@@ -42,7 +42,7 @@ template<> Vector<Float>::Vector(size_t n, const double& t0, const double& t1, .
     va_end(args);
 }
 
-template<> Vector<Real>::Vector(size_t n, const double& t0, const double& t1, ...)
+template<> Vector<Real>::Vector(size_t n, double t0, double t1, ...)
     : ublas::vector<Real>(n)
 {
     assert(n>=2); va_list args; va_start(args,t1);
@@ -51,7 +51,7 @@ template<> Vector<Real>::Vector(size_t n, const double& t0, const double& t1, ..
     va_end(args);
 }
 
-template<> Vector<Interval>::Vector(size_t n, const double& t0, const double& t1, ...)
+template<> Vector<Interval>::Vector(size_t n, double t0, double t1, ...)
     : ublas::vector<Interval>(n)
 {
     assert(n>=1); va_list args; va_start(args,t1);
@@ -63,17 +63,6 @@ template<> Vector<Interval>::Vector(size_t n, const double& t0, const double& t1
     }
     va_end(args);
 }
-
-#ifdef HAVE_RATIONAL
-template<> Vector<Rational>::Vector(size_t n, const double& t0, const double& t1, ...)
-    : ublas::vector<Rational>(n)
-{
-    assert(n>=2); va_list args; va_start(args,t1);
-    (*this)[0]=t0; (*this)[1]=t1;
-    for(size_t i=2; i!=n; ++i) { (*this)[i]=va_arg(args,double); }
-    va_end(args);
-}
-#endif // HAVE_RATIONAL
 
 Vector<Interval> operator*(const Vector<Interval>& v, const Float& s)
 {

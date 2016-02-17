@@ -71,7 +71,7 @@ void make_vertices_down(const Box& bx, uint i, uint n, Point& pt, std::vector<Po
 }
 
         
-Box::Box(uint d, const Float& x0l, const Float& x0u, ...)
+Box::Box(uint d, Float x0l, Float x0u, ...)
     : Vector<Interval>(d)
 {
     assert(d>=1); 

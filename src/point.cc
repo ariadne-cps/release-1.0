@@ -33,7 +33,7 @@
 namespace Ariadne {
 
 
-Point::Point(uint d, const double& x0,  ...)
+Point::Point(uint d, const double x0,  ...)
     : Vector<Float>(d)
 {
     assert(d>=1); 

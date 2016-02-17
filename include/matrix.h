@@ -72,7 +72,7 @@ class Matrix
     template<class XX> Matrix(size_t r, size_t c, const XX* ptr, int ri, int ci)
         : ublas::matrix<X>(r,c) { for(size_t i=0; i!=r; ++i) { for(size_t j=0; j!=c; ++j) { (*this)(i,j)=ptr[i*ri+j*ci]; } } }
     //! Construct a matrix with \a r rows and \a c columns, with values initialised from a variadic argument list. WARNING: The values in the list must all be double-precision type; in particular, constants must be floating-point values \c 2.0 rather integer values \c 2 .
-    Matrix(size_t r, size_t c, const double& x0, ... );
+    Matrix(size_t r, size_t c, double x0, ... );
     //! Construct a matrix from a string in Matlab format, with entries in a row separated with commas, and rows separated with semicolons. e.g. <tt>"[a00, a01, a02; a10, a11, a12]"</tt>.
     Matrix(const std::string& str)
         : ublas::matrix<X>() { std::stringstream ss(str); ss >> *this; }
@@ -184,7 +184,7 @@ Matrix<Float> midpoint(const Matrix<Interval>&);
 
 Matrix<Float> pivot_matrix(const array<size_t>& p);
 
-template<class X> Matrix<X>::Matrix(size_t r, size_t c, const double& x0, ...)
+template<class X> Matrix<X>::Matrix(size_t r, size_t c, double x0, ...)
     : ublas::matrix<X>(r,c)
 {
     assert(r>=1 && c>=1); va_list args; va_start(args,x0);

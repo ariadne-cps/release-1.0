@@ -67,7 +67,7 @@ class Vector
     template<class XX> Vector(size_t n, const XX* ptr)
         : ublas::vector<X>(n) { for(size_t i=0; i!=this->size(); ++i) { (*this)[i]=ptr[i]; } }
     //! \brief Construct a vector of size \a n, with values initialised from a variadic argument list. WARNING: The values in the list must all be double-precision type; in particular, constants must be floating-point values \c 2.0 rather integer values \c 2 .
-    Vector(size_t n, const double& t0, const double& t1, ...);
+    Vector(size_t n, const double t0, const double t1, ...);
     //! \brief Construct a matrix from a string literal, with entries enclosed in square braces and separated by commass. e.g. <tt>"[1, 2.3, 4.2]"</tt>.
     explicit Vector(const std::string& str)
         : ublas::vector<X>() { std::stringstream ss(str); ss >> *this; }
