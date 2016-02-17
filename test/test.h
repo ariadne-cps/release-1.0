@@ -166,7 +166,21 @@ int test_case_counter = 0;
             std::cout << "\nERROR: false" << std::endl;                 \
             std::cerr << "ERROR: " << __FILE__ << ":" << __LINE__ << ": " << __FUNCTION__ << ": Assertion `" << #expression << "' failed." << std::endl; \
         }                                                               \
-    }                                                                   \
+    }    \
+
+/*! \brief Evaluates \a expression in a boolean context and checks if the result is \a false. */
+#define ARIADNE_TEST_ASSERT_FALSE(expression)                                 \
+    {                                                                   \
+        std::cout << #expression << ": " << std::flush;                 \
+        bool result = (expression);                                     \
+        if(!result) {                                                    \
+            std::cout << "false\n" << std::endl;                         \
+        } else {                                                        \
+            ++ARIADNE_TEST_FAILURES;                                    \
+            std::cout << "\nERROR: true" << std::endl;                 \
+            std::cerr << "ERROR: " << __FILE__ << ":" << __LINE__ << ": " << __FUNCTION__ << ": Negative assertion `" << #expression << "' failed." << std::endl; \
+        }                                                               \
+    }
 
 
 /*! \brief Evaluates \a expression and checks if the result is equal to \a expected. */
