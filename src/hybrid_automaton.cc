@@ -651,7 +651,7 @@ HybridAutomaton::permissive_guards(DiscreteLocation source) const
     for(discrete_transition_const_iterator transition_iter=this->_transitions.begin();
         transition_iter!=this->_transitions.end(); ++transition_iter)
     {
-        if(transition_iter->source()==source && !transition_iter->kind() == PERMISSIVE) {
+        if(transition_iter->source()==source && transition_iter->kind() == PERMISSIVE) {
             const DiscreteEvent event=transition_iter->event();
             const VectorFunction guard=transition_iter->activation();
             result[event]=guard;
