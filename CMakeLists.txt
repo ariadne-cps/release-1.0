@@ -3,6 +3,8 @@ cmake_policy(SET CMP0045 OLD)
 
 set(CMAKE_MACOSX_RPATH 1)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+set(CMAKE_CXX_FLAGS  ${CMAKE_CXX_FLAGS} "-Wno-pointer-bool-conversion")
+
 
 find_package(Boost REQUIRED COMPONENTS system serialization thread)
 find_package(GTK2 REQUIRED)
