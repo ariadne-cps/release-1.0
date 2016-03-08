@@ -18,6 +18,7 @@ set(EXAMPLES
 		 fb_refinement 
 		 traffic-arbitrator4 
 		 boost-converter
+		 exponential
 )
 
 foreach(example ${EXAMPLES})
