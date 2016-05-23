@@ -37,6 +37,10 @@ Optionally, you can also run the test suite for the library:
 
 where no error should appear.
 
+If you want to build the documentation, you have to issue the following:
+
+> make doc
+
 To install the library globally, you must copy the dynamic library file created (either libariadne.so or libariadne.dylib) into your /usr/local/lib directory, and the content of the include/ directory into a /usr/local/include/ariadne directory. Then you can 
 #include <ariadne/ariadne.h> 
 
