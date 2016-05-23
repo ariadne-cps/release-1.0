@@ -8,9 +8,7 @@ set(EXAMPLES
 		 watertank-monolithic-dominance 
 		 watertank-nonlinear-monolithic-dominance 
 		 bouncingball 
-		 3bouncingballs 
-		 ecoli 
-		 sinusoid-sin 
+		 3bouncingballs
 		 rectifier 
 		 springs
 		 cmos_inverter_analoginput 
@@ -19,6 +17,7 @@ set(EXAMPLES
 		 traffic-arbitrator4 
 		 boost-converter
 		 exponential
+		 circle
 )
 
 foreach(example ${EXAMPLES})
