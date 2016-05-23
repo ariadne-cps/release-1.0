@@ -330,6 +330,10 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
     ARIADNE_LOG(2,"time_step = "<<time_step)
     ARIADNE_LOG(2,"flow_range = "<<flow_set_model.range());
     ARIADNE_LOG(2,"starting_set_range = "<<set_model.range());
+    ARIADNE_LOG(2,"starting_set = "<<set_model);
+    TaylorSet boxed_set_model = TaylorSet(set_model.bounding_box());
+    ARIADNE_LOG(2,"boxed starting_set_range = "<<boxed_set_model.range());
+    ARIADNE_LOG(2,"boxed starting_set = "<<boxed_set_model);
     // Partial evaluation on flow set model to obtain final set must take scaled time equal to 1.0
     SetModelType finishing_set=partial_evaluate(flow_set_model.models(),set_model.argument_size(),1.0);
     ARIADNE_LOG(2,"finishing_set_range = "<<finishing_set.range())
