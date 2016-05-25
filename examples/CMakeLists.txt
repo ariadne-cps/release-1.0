@@ -8,7 +8,6 @@ set(EXAMPLES
 		 watertank-monolithic-dominance 
 		 watertank-nonlinear-monolithic-dominance 
 		 bouncingball 
-		 3bouncingballs
 		 rectifier 
 		 springs
 		 cmos_inverter_analoginput 
