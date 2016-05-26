@@ -59,13 +59,13 @@ int main(int argc,char *argv[])
         plotter.plot(orbit.reach(),"reach");
     }
 */
-/*
-    int accuracy = 8;
+
+    int accuracy = 3;
 
     HybridBoxes domain(system.state_space(),Box(3, 0.0,1.0, 0.5,3.5, 3.5,7.0));
 
     HybridBoundedConstraintSet initial_set(system.state_space());
-    initial_set[DiscreteLocation("incr")] = Box(3, 0.0,0.0, 2.0,2.0, 5.5,5.5);
+    initial_set[DiscreteLocation("incr")] = Box(3, 0.0,0.000001, 2.0,2.0, 5.5,5.5);
 
     HybridReachabilityAnalyser analyser(system,domain,accuracy);
     analyser.verbosity = verbosity;
@@ -76,7 +76,7 @@ int main(int argc,char *argv[])
         PlotHelper plotter(system.name());
         plotter.plot(outer_reach,"outer",accuracy);
     }
-*/
+/*
 
     HybridBoxes domain(system.state_space(),Box(3, 0.0,0.001, 0.0,3.7, 3.0,7.5));
 
@@ -114,4 +114,5 @@ int main(int argc,char *argv[])
     //verifier.safety(verInput);
     std::list<ParametricOutcome> results = verifier.parametric_safety(verInput, parameters);
     draw(system.name(),results);
+    */
 }
