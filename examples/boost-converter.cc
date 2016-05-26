@@ -38,14 +38,14 @@ int main(int argc,char *argv[])
 	// The system
 	HybridAutomaton system = Ariadne::getBoostConverter();
 
-/*
+
     HybridEvolver evolver(system);
     evolver.verbosity = verbosity;
 
     HybridSpace hspace(system.state_space());
     for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
         evolver.settings().minimum_discretised_enclosure_widths[hs_it->first] = Vector<Float>(3,2.0);
-        evolver.settings().hybrid_maximum_step_size[hs_it->first] = 0.001;
+        evolver.settings().hybrid_maximum_step_size[hs_it->first] = 0.00001;
     }
     
     HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("start"),Box(3, 0.0,0.0, 2.0,2.0, 5.5,5.5));
@@ -58,8 +58,8 @@ int main(int argc,char *argv[])
         PlotHelper plotter(system.name());
         plotter.plot(orbit.reach(),"reach");
     }
-*/
 
+/*
     int accuracy = 3;
 
     HybridBoxes domain(system.state_space(),Box(3, 0.0,1.0, 0.5,3.5, 3.5,7.0));
@@ -76,6 +76,7 @@ int main(int argc,char *argv[])
         PlotHelper plotter(system.name());
         plotter.plot(outer_reach,"outer",accuracy);
     }
+    */
 /*
 
     HybridBoxes domain(system.state_space(),Box(3, 0.0,0.001, 0.0,3.7, 3.0,7.5));

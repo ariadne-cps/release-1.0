@@ -36,7 +36,7 @@ HybridAutomaton getBoostConverter()
 	RealParameter Vi("Vi",3.3);
 	RealParameter R("R",5.0);
 	RealParameter C("C",0.001);
-	RealParameter L("L",0.001);
+	RealParameter L("L",0.0011);
 	RealParameter d("d",Interval(0.45,0.5));
 	RealParameter T("T",Interval(0.0009375,0.001));
 
