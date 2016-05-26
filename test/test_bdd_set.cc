@@ -52,14 +52,14 @@ void test_constructors() {
     BDDTreeSet set2(3);
     ARIADNE_TEST_EQUAL(set2.grid(),Grid(3));
     ARIADNE_TEST_EQUAL(set2.root_cell_height(),0);
-    ARIADNE_TEST_EQUAL(set2.root_cell_coordinates(),array<int>(3, 0,0,0));
+    ARIADNE_TEST_EQUAL(set2.root_cell_coordinates(),Ariadne::array<int>(3, 0,0,0));
     ARIADNE_TEST_EQUAL(set2.enabled_cells(),bddfalse);
 
     Grid grid(4, 1.25);
     BDDTreeSet set3(grid, true);
     ARIADNE_TEST_EQUAL(set3.grid(),grid);
     ARIADNE_TEST_EQUAL(set3.root_cell_height(),0);
-    ARIADNE_TEST_EQUAL(set3.root_cell_coordinates(),array<int>(4, 0,0,0,0));
+    ARIADNE_TEST_EQUAL(set3.root_cell_coordinates(),Ariadne::array<int>(4, 0,0,0,0));
     ARIADNE_TEST_EQUAL(set3.enabled_cells(),bddtrue);
     
     // Test copy constructor
@@ -72,14 +72,14 @@ void test_constructors() {
 
     // Test construction from a bdd
     bdd enabled_cells = bdd_ithvar(2);
-    BDDTreeSet set4(grid, 1, array<int>(4, 1,0,0,0), enabled_cells);
+    BDDTreeSet set4(grid, 1, Ariadne::array<int>(4, 1,0,0,0), enabled_cells);
     ARIADNE_TEST_EQUAL(set4.grid(),grid);
     ARIADNE_TEST_EQUAL(set4.root_cell_height(),1);
-    ARIADNE_TEST_EQUAL(set4.root_cell_coordinates(),array<int>(4, 1,0,0,0));
+    ARIADNE_TEST_EQUAL(set4.root_cell_coordinates(),Ariadne::array<int>(4, 1,0,0,0));
     ARIADNE_TEST_EQUAL(set4.enabled_cells(),enabled_cells);
     
     // If the dimension of root_cell_coordinates and grid differs an exception must be thrown.
-    ARIADNE_TEST_FAIL(set4 = BDDTreeSet(grid, 1, array<int>(3, 0,0,0), enabled_cells));
+    ARIADNE_TEST_FAIL(set4 = BDDTreeSet(grid, 1, Ariadne::array<int>(3, 0,0,0), enabled_cells));
 }
 
 void test_properties_subdivisions() {
@@ -91,7 +91,7 @@ void test_properties_subdivisions() {
     BDDTreeSet set1(2, false);
     ARIADNE_TEST_ASSERT(set1.empty());
     bdd enabled_cells = bdd_nithvar(0) & (bdd_ithvar(2) | bdd_ithvar(3));
-    BDDTreeSet set2(Grid(3), 4, array<int>(3, 1,0,0), enabled_cells);
+    BDDTreeSet set2(Grid(3), 4, Ariadne::array<int>(3, 1,0,0), enabled_cells);
     ARIADNE_TEST_ASSERT(!set2.empty());
     
     // Test size
@@ -103,7 +103,7 @@ void test_properties_subdivisions() {
     ARIADNE_TEST_EQUAL(set1.size(), 0);
     set1.recombine();
     ARIADNE_TEST_EQUAL(set1.size(), 0);    
-    BDDTreeSet set3(Grid(3), 0, array<int>(3, 1,0,0), enabled_cells);
+    BDDTreeSet set3(Grid(3), 0, Ariadne::array<int>(3, 1,0,0), enabled_cells);
     set3.mince(1);
     ARIADNE_TEST_EQUAL(set3.size(), 4);
     set3.mince(2);
@@ -121,7 +121,7 @@ void test_properties_subdivisions() {
     ARIADNE_TEST_FAIL(set0.root_cell());
     ARIADNE_TEST_EQUAL(set1.root_cell(), Box(2, 0.0,1.0, 0.0,1.0));
     enabled_cells = bdd_nithvar(0) & bdd_ithvar(1) & bdd_nithvar(2) & bdd_ithvar(3);    
-    set0 = BDDTreeSet(Grid(2), 3, array<int>(2, 0,0), enabled_cells);
+    set0 = BDDTreeSet(Grid(2), 3, Ariadne::array<int>(2, 0,0), enabled_cells);
     ARIADNE_TEST_EQUAL(set0.root_cell(), Box(2, 0.0,2.0, -2.0,2.0));
     ARIADNE_TEST_EQUAL(set2.root_cell(), Box(3, 2.0,4.0, 0.0,2.0, -2.0,2.0));   
     
@@ -146,7 +146,7 @@ void test_predicates() {
     
     // check test with an empty set
     bdd enabled_cells = bdd_ithvar(0) & bdd_nithvar(1) & (bdd_ithvar(3) | bdd_ithvar(4));    
-    set2 = BDDTreeSet(Grid(2), 3, array<int>(2, 1,1), enabled_cells);
+    set2 = BDDTreeSet(Grid(2), 3, Ariadne::array<int>(2, 1,1), enabled_cells);
     ARIADNE_TEST_ASSERT(subset(set1,set2));
     ARIADNE_TEST_ASSERT(!superset(set1,set2));
     
@@ -156,7 +156,7 @@ void test_predicates() {
     ARIADNE_TEST_ASSERT(!superset(set1,set2));
     
     // Sets with the same root coordinates
-    set1 = BDDTreeSet(Grid(2), 3, array<int>(2, 1,1), bdd_ithvar(0));
+    set1 = BDDTreeSet(Grid(2), 3, Ariadne::array<int>(2, 1,1), bdd_ithvar(0));
     ARIADNE_TEST_ASSERT(subset(set2,set1));
     ARIADNE_TEST_ASSERT(!superset(set2,set1));
     
@@ -175,7 +175,7 @@ void test_predicates() {
     // check test with an empty set
     set1 = BDDTreeSet(Grid(2), false);
     enabled_cells = bdd_ithvar(0) & bdd_nithvar(1) & (bdd_ithvar(3) | bdd_ithvar(4));    
-    set2 = BDDTreeSet(Grid(2), 3, array<int>(2, 1,1), enabled_cells);
+    set2 = BDDTreeSet(Grid(2), 3, Ariadne::array<int>(2, 1,1), enabled_cells);
     ARIADNE_TEST_ASSERT(disjoint(set1,set2));
     ARIADNE_TEST_ASSERT(!overlap(set1,set2));
     ARIADNE_TEST_ASSERT(!disjoint(set1,set1));
@@ -187,10 +187,10 @@ void test_predicates() {
     ARIADNE_TEST_ASSERT(!superset(set1,set2));
 
     // Sets with the same root coordinates
-    set1 = BDDTreeSet(Grid(2), 3, array<int>(2, 1,1), bdd_ithvar(0));
+    set1 = BDDTreeSet(Grid(2), 3, Ariadne::array<int>(2, 1,1), bdd_ithvar(0));
     ARIADNE_TEST_ASSERT(!disjoint(set1,set2));
     ARIADNE_TEST_ASSERT(overlap(set1,set2));
-    set1 = BDDTreeSet(Grid(2), 3, array<int>(2, 1,1), bdd_ithvar(0) & bdd_ithvar(1));
+    set1 = BDDTreeSet(Grid(2), 3, Ariadne::array<int>(2, 1,1), bdd_ithvar(0) & bdd_ithvar(1));
     ARIADNE_TEST_ASSERT(disjoint(set1,set2));
     ARIADNE_TEST_ASSERT(!overlap(set1,set2));
     
@@ -237,18 +237,18 @@ void test_predicates() {
     ARIADNE_TEST_ASSERT(definitely(covers(cs3, set2)));
     // test with a general set
     enabled_cells = bdd_ithvar(0) & bdd_nithvar(1) & (bdd_ithvar(3) & bdd_ithvar(4));    
-    set2 = BDDTreeSet(Grid(2), 3, array<int>(2, 1,1), enabled_cells);
+    set2 = BDDTreeSet(Grid(2), 3, Ariadne::array<int>(2, 1,1), enabled_cells);
     Box bx1(2, 2.25,5.0, 4.25,6.5);
     Box bx2(2, 2.25,5.0, 4.75,6.5);
     ARIADNE_TEST_ASSERT(definitely(set2.subset(bx1)));
     ARIADNE_TEST_ASSERT(!possibly(set2.subset(bx2)));
     enabled_cells = bdd_nithvar(0) & bdd_nithvar(1);;
-    set1 = BDDTreeSet(Grid(2), 2, array<int>(2, 0,0), enabled_cells);    
+    set1 = BDDTreeSet(Grid(2), 2, Ariadne::array<int>(2, 0,0), enabled_cells);
     enabled_cells = enabled_cells & bdd_nithvar(2) & bdd_nithvar(3);
-    set2 = BDDTreeSet(Grid(2), 2, array<int>(2, 0,0), enabled_cells);  
+    set2 = BDDTreeSet(Grid(2), 2, Ariadne::array<int>(2, 0,0), enabled_cells);
     // plot("test_bdd_set_set1",PlanarProjectionMap(2,0,1),set1.bounding_box(),Colour(1,0,1),set1);
     enabled_cells = enabled_cells & bdd_nithvar(4);
-    BDDTreeSet set3(Grid(2), 2, array<int>(2, 0,0), enabled_cells);    
+    BDDTreeSet set3(Grid(2), 2, Ariadne::array<int>(2, 0,0), enabled_cells);
     ARIADNE_TEST_ASSERT(!possibly(covers(cs1, set1)));
     ARIADNE_TEST_ASSERT(possibly(covers(cs1, set2)));
     ARIADNE_TEST_ASSERT(!definitely(covers(cs1, set2)));
@@ -265,7 +265,7 @@ void test_predicates() {
     ARIADNE_TEST_ASSERT(definitely(set2.superset(ebx)));
     // test with a general set
     enabled_cells = bdd_ithvar(0) & bdd_nithvar(1) & (bdd_ithvar(3) | bdd_ithvar(4));    
-    set2 = BDDTreeSet(Grid(2), 3, array<int>(2, 1,1), enabled_cells);
+    set2 = BDDTreeSet(Grid(2), 3, Ariadne::array<int>(2, 1,1), enabled_cells);
     bx1 = Box(2, 2.25,5.0, 4.25,6.5);
     bx2 = Box(2, 2.6,2.9, 4.1,5.9);
     ARIADNE_TEST_ASSERT(!possibly(set2.superset(bx1)));
@@ -300,7 +300,7 @@ void test_predicates() {
     ARIADNE_TEST_ASSERT(!possibly(disjoint(cs3, set2)));
     // test with a general set
     enabled_cells = bdd_ithvar(0) & bdd_nithvar(1) & (bdd_ithvar(3) | bdd_ithvar(4));    
-    set2 = BDDTreeSet(Grid(2), 3, array<int>(2, 1,1), enabled_cells);
+    set2 = BDDTreeSet(Grid(2), 3, Ariadne::array<int>(2, 1,1), enabled_cells);
     bx1 = Box(2, 2.25,5.0, 4.25,6.5);
     bx2 = Box(2, 1.25,2.25, 1.75,4.25);
     ARIADNE_TEST_ASSERT(!possibly(set2.disjoint(bx1)));
@@ -308,11 +308,11 @@ void test_predicates() {
     ARIADNE_TEST_ASSERT(definitely(set2.overlaps(bx1)));
     ARIADNE_TEST_ASSERT(!possibly(set2.overlaps(bx2)));
     enabled_cells = bdd_ithvar(1) & bdd_nithvar(2) & bdd_nithvar(3);
-    set1 = BDDTreeSet(Grid(2), 4, array<int>(2, 0,0), enabled_cells);    
+    set1 = BDDTreeSet(Grid(2), 4, Ariadne::array<int>(2, 0,0), enabled_cells);
     enabled_cells = enabled_cells & bdd_ithvar(4) & bdd_nithvar(5) & bdd_ithvar(6);
-    set2 = BDDTreeSet(Grid(2), 4, array<int>(2, 0,0), enabled_cells);    
+    set2 = BDDTreeSet(Grid(2), 4, Ariadne::array<int>(2, 0,0), enabled_cells);
     enabled_cells = enabled_cells & bdd_nithvar(7);
-    set3 = BDDTreeSet(Grid(2), 4, array<int>(2, 0,0), enabled_cells);    
+    set3 = BDDTreeSet(Grid(2), 4, Ariadne::array<int>(2, 0,0), enabled_cells);
     ARIADNE_TEST_ASSERT(definitely(overlaps(cs1, set1)));     
     ARIADNE_TEST_ASSERT(!possibly(disjoint(cs1, set1)));     
     ARIADNE_TEST_ASSERT(possibly(overlaps(cs1, set2)));     
@@ -331,13 +331,13 @@ void test_operations() {
     set0.clear();
     ARIADNE_TEST_ASSERT(set0.empty());
     // test clearing of a non-empty set
-    BDDTreeSet set1(Grid(3, 1.25), 2, array<int>(3, 1,1,1), bdd_ithvar(1));
+    BDDTreeSet set1(Grid(3, 1.25), 2, Ariadne::array<int>(3, 1,1,1), bdd_ithvar(1));
     ARIADNE_TEST_ASSERT(!set1.empty());
     set1.clear();
     ARIADNE_TEST_ASSERT(set1.empty());
     ARIADNE_TEST_EQUAL(set1.grid(), Grid(3, 1.25));
     ARIADNE_TEST_EQUAL(set1.root_cell_height(), 0);
-    ARIADNE_TEST_EQUAL(set1.root_cell_coordinates(), array<int>(3, 0,0,0));
+    ARIADNE_TEST_EQUAL(set1.root_cell_coordinates(), Ariadne::array<int>(3, 0,0,0));
     ARIADNE_TEST_EQUAL(set1.enabled_cells(), bddfalse);
     
     // Test minimize_height
@@ -350,12 +350,12 @@ void test_operations() {
     ARIADNE_TEST_EQUAL(set1, set2);
 
     bdd enabled_cells = bdd_ithvar(0) & bdd_nithvar(1) & (bdd_ithvar(3) | bdd_ithvar(4));    
-    set1 = BDDTreeSet(Grid(3), 4, array<int>(3, 1,1,1), enabled_cells);
+    set1 = BDDTreeSet(Grid(3), 4, Ariadne::array<int>(3, 1,1,1), enabled_cells);
     set2 = set1;
     ARIADNE_TEST_CHECK(set1.minimize_height(), 2);
     ARIADNE_TEST_ASSERT(set1 != set2);
     ARIADNE_TEST_EQUAL(set1.root_cell_height(), 2);
-    ARIADNE_TEST_EQUAL(set1.root_cell_coordinates(), array<int>(3, 2,1,2));
+    ARIADNE_TEST_EQUAL(set1.root_cell_coordinates(), Ariadne::array<int>(3, 2,1,2));
     enabled_cells = bdd_ithvar(1) | bdd_ithvar(2);
     ARIADNE_TEST_EQUAL(set1.enabled_cells(), enabled_cells);
     ARIADNE_TEST_EQUAL(set1.root_cell(), Box(3, 2.0,3.0, 2.0,4.0, 4.0,6.0));
@@ -374,15 +374,15 @@ void test_operations() {
     ARIADNE_TEST_CHECK(set3.increase_height(5), 5);
     ARIADNE_TEST_EQUAL(set3.grid(),Grid(2));
     ARIADNE_TEST_EQUAL(set3.root_cell_height(), 5);
-    ARIADNE_TEST_EQUAL(set3.root_cell_coordinates(), array<int>(2, 0,0));
+    ARIADNE_TEST_EQUAL(set3.root_cell_coordinates(), Ariadne::array<int>(2, 0,0));
     ARIADNE_TEST_EQUAL(set3.root_cell(), Box(2, -2.0,2.0, -2.0,6.0));
     enabled_cells = bdd_nithvar(0) & bdd_ithvar(1) & bdd_ithvar(2) & bdd_nithvar(3) & bdd_nithvar(4);
     ARIADNE_TEST_EQUAL(set3.enabled_cells(), enabled_cells);
-    set3 = BDDTreeSet(Grid(2), 0, array<int>(2, -1,-1), bddtrue);
+    set3 = BDDTreeSet(Grid(2), 0, Ariadne::array<int>(2, -1,-1), bddtrue);
     ARIADNE_TEST_CHECK(set3.increase_height(6), 6);
     ARIADNE_TEST_EQUAL(set3.grid(),Grid(2));
     ARIADNE_TEST_EQUAL(set3.root_cell_height(), 6);
-    ARIADNE_TEST_EQUAL(set3.root_cell_coordinates(), array<int>(2, 0,0));
+    ARIADNE_TEST_EQUAL(set3.root_cell_coordinates(), Ariadne::array<int>(2, 0,0));
     ARIADNE_TEST_EQUAL(set3.root_cell(), Box(2, -2.0,6.0, -2.0,6.0));
     enabled_cells = bdd_nithvar(0) & bdd_nithvar(1) & bdd_nithvar(2) & 
                     bdd_nithvar(3) & bdd_ithvar(4) & bdd_ithvar(5);
@@ -399,7 +399,7 @@ void test_operations() {
     
     // joining an empty set do not change the set, except for minimization
     enabled_cells = bdd_ithvar(0) & bdd_nithvar(1) & (bdd_ithvar(3) | bdd_ithvar(4));    
-    set1 = BDDTreeSet(Grid(3), 4, array<int>(3, 1,1,1), enabled_cells);
+    set1 = BDDTreeSet(Grid(3), 4, Ariadne::array<int>(3, 1,1,1), enabled_cells);
     set2 = BDDTreeSet(Grid(3), false);
     set3 = join(set1, set2);
     ARIADNE_TEST_ASSERT(set1 != set3);
@@ -409,9 +409,9 @@ void test_operations() {
     ARIADNE_TEST_EQUAL(set1, set2);
     
     // test join of nonempty sets with the same root cell
-    set1 = BDDTreeSet(Grid(3), 2, array<int>(3, 1,1,1), enabled_cells);
+    set1 = BDDTreeSet(Grid(3), 2, Ariadne::array<int>(3, 1,1,1), enabled_cells);
     bdd enabled_cells2 = bdd_nithvar(0) | (bdd_nithvar(1) & bdd_nithvar(3));
-    set2 = BDDTreeSet(Grid(3), 2, array<int>(3, 1,1,1), enabled_cells2);
+    set2 = BDDTreeSet(Grid(3), 2, Ariadne::array<int>(3, 1,1,1), enabled_cells2);
     set3 = join(set1, set2);
     ARIADNE_TEST_EQUAL(set3.grid(), set1.grid());
     ARIADNE_TEST_EQUAL(set3.root_cell_height(), set1.root_cell_height());
@@ -420,12 +420,12 @@ void test_operations() {
     
     // test join of nonempty sets with different root cell
     enabled_cells = bdd_nithvar(0) | (bdd_nithvar(1) & bdd_nithvar(3));
-    set1 = BDDTreeSet(Grid(2), 3, array<int>(2, 1,1), enabled_cells);
-    set2 = BDDTreeSet(Grid(2), 0, array<int>(2, -1,-1), bddtrue);
+    set1 = BDDTreeSet(Grid(2), 3, Ariadne::array<int>(2, 1,1), enabled_cells);
+    set2 = BDDTreeSet(Grid(2), 0, Ariadne::array<int>(2, -1,-1), bddtrue);
     set3 = join(set1, set2);
     ARIADNE_TEST_EQUAL(set3.grid(), set1.grid());
     ARIADNE_TEST_EQUAL(set3.root_cell_height(), 6);
-    ARIADNE_TEST_EQUAL(set3.root_cell_coordinates(), array<int>(2, 0,0));
+    ARIADNE_TEST_EQUAL(set3.root_cell_coordinates(), Ariadne::array<int>(2, 0,0));
     enabled_cells = ( bdd_ithvar(0) & bdd_ithvar(1) & bdd_nithvar(2) &
                       (bdd_nithvar(3) | (bdd_nithvar(4) & bdd_nithvar(6))) )
                     |
@@ -444,13 +444,13 @@ void test_operations() {
     
     // Intersection with an empty set make the set empty
     enabled_cells = bdd_ithvar(0) & bdd_nithvar(1) & (bdd_ithvar(3) | bdd_ithvar(4));    
-    set1 = BDDTreeSet(Grid(3), 4, array<int>(3, 1,1,1), enabled_cells);
+    set1 = BDDTreeSet(Grid(3), 4, Ariadne::array<int>(3, 1,1,1), enabled_cells);
     set2 = BDDTreeSet(Grid(3), false);
     set3 = intersection(set1, set2);
     ARIADNE_TEST_ASSERT(set3.empty());
 
     // intersection with a superset set do not change the set, except for minimization
-    set2 = BDDTreeSet(Grid(3), 4, array<int>(3, 1,1,1), bddtrue);
+    set2 = BDDTreeSet(Grid(3), 4, Ariadne::array<int>(3, 1,1,1), bddtrue);
     set3 = intersection(set1, set2);
     ARIADNE_TEST_ASSERT(set1 != set3);
     set1.minimize_height();
@@ -460,9 +460,9 @@ void test_operations() {
     
     // test intersection of nonempty sets with the same root cell
     enabled_cells = bdd_ithvar(1) | (bdd_nithvar(1) & bdd_nithvar(3));
-    set1 = BDDTreeSet(Grid(3), 2, array<int>(3, 1,1,1), enabled_cells);
+    set1 = BDDTreeSet(Grid(3), 2, Ariadne::array<int>(3, 1,1,1), enabled_cells);
     enabled_cells2 = bdd_nithvar(0) | (bdd_nithvar(1) & bdd_nithvar(3));
-    set2 = BDDTreeSet(Grid(3), 2, array<int>(3, 1,1,1), enabled_cells2);
+    set2 = BDDTreeSet(Grid(3), 2, Ariadne::array<int>(3, 1,1,1), enabled_cells2);
     set3 = intersection(set1, set2);
     ARIADNE_TEST_EQUAL(set3.grid(), set1.grid());
     ARIADNE_TEST_EQUAL(set3.root_cell_height(), set1.root_cell_height());
@@ -471,17 +471,17 @@ void test_operations() {
     
     // intersection of nonempty sets with disjoint root cells must be empty
     enabled_cells = bdd_nithvar(0) | (bdd_nithvar(1) & bdd_nithvar(3));
-    set1 = BDDTreeSet(Grid(2), 3, array<int>(2, 1,1), enabled_cells);
-    set2 = BDDTreeSet(Grid(2), 0, array<int>(2, -1,-1), bddtrue);
+    set1 = BDDTreeSet(Grid(2), 3, Ariadne::array<int>(2, 1,1), enabled_cells);
+    set2 = BDDTreeSet(Grid(2), 0, Ariadne::array<int>(2, -1,-1), bddtrue);
     set3 = intersection(set1, set2);
     ARIADNE_TEST_ASSERT(set3.empty());
     
     // test intersection of partially overlapping sets
-    set2 = BDDTreeSet(Grid(2), 1, array<int>(2, 2,2), bddtrue);
+    set2 = BDDTreeSet(Grid(2), 1, Ariadne::array<int>(2, 2,2), bddtrue);
     set3 = intersection(set1, set2);
     ARIADNE_TEST_EQUAL(set3.grid(), set1.grid());
     ARIADNE_TEST_EQUAL(set3.root_cell_height(), 1);
-    ARIADNE_TEST_EQUAL(set3.root_cell_coordinates(), array<int>(2, 2,2));
+    ARIADNE_TEST_EQUAL(set3.root_cell_coordinates(), Ariadne::array<int>(2, 2,2));
     ARIADNE_TEST_EQUAL(set3.enabled_cells(), bdd_nithvar(1));
 
     // Test Difference
@@ -495,7 +495,7 @@ void test_operations() {
 
     // difference with an empty set do not change the set, except for minimization    
     enabled_cells = bdd_ithvar(0) & bdd_nithvar(1) & (bdd_ithvar(3) | bdd_ithvar(4));    
-    set1 = BDDTreeSet(Grid(3), 4, array<int>(3, 1,1,1), enabled_cells);
+    set1 = BDDTreeSet(Grid(3), 4, Ariadne::array<int>(3, 1,1,1), enabled_cells);
     set2 = BDDTreeSet(Grid(3), false);
     set3 = difference(set1, set2);
     ARIADNE_TEST_ASSERT(set1 != set3);
@@ -506,9 +506,9 @@ void test_operations() {
     
     // test difference of nonempty sets with the same root cell
     enabled_cells = bdd_ithvar(0) | (bdd_nithvar(0) & bdd_nithvar(3));
-    set1 = BDDTreeSet(Grid(3), 2, array<int>(3, 1,1,1), enabled_cells);
+    set1 = BDDTreeSet(Grid(3), 2, Ariadne::array<int>(3, 1,1,1), enabled_cells);
     enabled_cells2 = (bdd_nithvar(1) & bdd_nithvar(3));
-    set2 = BDDTreeSet(Grid(3), 2, array<int>(3, 1,1,1), enabled_cells2);
+    set2 = BDDTreeSet(Grid(3), 2, Ariadne::array<int>(3, 1,1,1), enabled_cells2);
     set3 = difference(set1, set2);
     ARIADNE_TEST_EQUAL(set3.grid(), set1.grid());
     ARIADNE_TEST_EQUAL(set3.root_cell_height(), set1.root_cell_height());
@@ -517,17 +517,17 @@ void test_operations() {
     
     // difference with a nonempty sets with disjoint root cell do no change the set
     enabled_cells = bdd_nithvar(0) | (bdd_nithvar(1) & bdd_nithvar(3));
-    set1 = BDDTreeSet(Grid(2), 3, array<int>(2, 1,1), enabled_cells);
-    set2 = BDDTreeSet(Grid(2), 0, array<int>(2, -1,-1), bddtrue);
+    set1 = BDDTreeSet(Grid(2), 3, Ariadne::array<int>(2, 1,1), enabled_cells);
+    set2 = BDDTreeSet(Grid(2), 0, Ariadne::array<int>(2, -1,-1), bddtrue);
     set3 = difference(set1, set2);
     ARIADNE_TEST_EQUAL(set3, set1);
     
     // test difference of partially overlapping sets
-    set2 = BDDTreeSet(Grid(2), 1, array<int>(2, 2,2), bddtrue);
+    set2 = BDDTreeSet(Grid(2), 1, Ariadne::array<int>(2, 2,2), bddtrue);
     set3 = difference(set1, set2);
     ARIADNE_TEST_EQUAL(set3.grid(), set1.grid());
     ARIADNE_TEST_EQUAL(set3.root_cell_height(), 2);
-    ARIADNE_TEST_EQUAL(set3.root_cell_coordinates(), array<int>(2, 1,1));
+    ARIADNE_TEST_EQUAL(set3.root_cell_coordinates(), Ariadne::array<int>(2, 1,1));
     ARIADNE_TEST_EQUAL(set3.enabled_cells(), bddtrue);
  
 }
@@ -557,7 +557,7 @@ void test_box_approximations() {
         
     // test adjoin with a general set
     bdd enabled_cells = bdd_nithvar(0) | (bdd_nithvar(1) & bdd_ithvar(3));
-    set1 = BDDTreeSet(Grid(2, 2.0), 1, array<int>(2, 1,1), enabled_cells);
+    set1 = BDDTreeSet(Grid(2, 2.0), 1, Ariadne::array<int>(2, 1,1), enabled_cells);
     set2 = set1;
     Box bx1 = Box(2, -1.9,2.9, 5.9,6.1);
     set2.adjoin_over_approximation(bx1, 1);
@@ -573,7 +573,7 @@ void test_box_approximations() {
     // compare with the correct result
     ARIADNE_TEST_EQUAL(set2.grid(), set1.grid());
     ARIADNE_TEST_EQUAL(set2.root_cell_height(), 4);
-    ARIADNE_TEST_EQUAL(set2.root_cell_coordinates(), array<int>(2, 0,1));
+    ARIADNE_TEST_EQUAL(set2.root_cell_coordinates(), Ariadne::array<int>(2, 0,1));
     enabled_cells = ( bdd_nithvar(0) & bdd_nithvar(1) & bdd_ithvar(2) & 
                       ( (bdd_nithvar(3) & bdd_ithvar(5)) | (bdd_ithvar(3) & bdd_nithvar(5)) ) )
                     |
@@ -604,7 +604,7 @@ void test_box_approximations() {
     ARIADNE_TEST_ASSERT(set1 != set2);
     ARIADNE_TEST_EQUAL(set2.grid(), set1.grid());
     ARIADNE_TEST_EQUAL(set2.root_cell_height(), 1);
-    ARIADNE_TEST_EQUAL(set2.root_cell_coordinates(), array<int>(2, 0,0));
+    ARIADNE_TEST_EQUAL(set2.root_cell_coordinates(), Ariadne::array<int>(2, 0,0));
     ARIADNE_TEST_EQUAL(set2.enabled_cells(), (bdd_ithvar(0) & bdd_nithvar(2)) | (bdd_nithvar(0) & bdd_ithvar(2)));                          
 
     set1 = BDDTreeSet(Grid(2, 2.0));
@@ -613,7 +613,7 @@ void test_box_approximations() {
     ARIADNE_TEST_ASSERT(set1 != set2);
     ARIADNE_TEST_EQUAL(set2.grid(), set1.grid());
     ARIADNE_TEST_EQUAL(set2.root_cell_height(), 0);
-    ARIADNE_TEST_EQUAL(set2.root_cell_coordinates(), array<int>(2, 0,0));
+    ARIADNE_TEST_EQUAL(set2.root_cell_coordinates(), Ariadne::array<int>(2, 0,0));
     ARIADNE_TEST_EQUAL(set2.enabled_cells(), bdd_nithvar(0));  
     
     bx1 = Box(2, 0.1,1.0, 0.5,0.5);
@@ -622,7 +622,7 @@ void test_box_approximations() {
     ARIADNE_TEST_ASSERT(set1 != set2);
     ARIADNE_TEST_EQUAL(set2.grid(), set1.grid());
     ARIADNE_TEST_EQUAL(set2.root_cell_height(), 0);
-    ARIADNE_TEST_EQUAL(set2.root_cell_coordinates(), array<int>(2, 0,0));
+    ARIADNE_TEST_EQUAL(set2.root_cell_coordinates(), Ariadne::array<int>(2, 0,0));
     ARIADNE_TEST_EQUAL(set2.enabled_cells(), bdd_nithvar(1));  
 
 
@@ -794,8 +794,8 @@ void test_iterators_conversions_drawing() {
 
     // Test complex set
     bdd enabled_cells = bdd_nithvar(0) & (bdd_ithvar(2) | bdd_ithvar(3));
-    BDDTreeSet set2(Grid(2), 2, array<int>(2, 1,1), enabled_cells);
-    array<Box> results(4);
+    BDDTreeSet set2(Grid(2), 2, Ariadne::array<int>(2, 1,1), enabled_cells);
+    Ariadne::array<Box> results(4);
     results[0] = Box(2, 2.0,2.5, 2.5,3.0);
     results[1] = Box(2, 2.5,3.0, 2.0,3.0);
     results[2] = Box(2, 2.0,2.5, 3.5,4.0);
@@ -839,7 +839,7 @@ void test_projection() {
     ARIADNE_TEST_FAIL(set2 = project_down(set1, indices));
     // test projection of a real set.
     bdd enabled_cells = bdd_nithvar(0) & (bdd_ithvar(2) | bdd_ithvar(5));
-    set1 = BDDTreeSet(Grid(3), 3, array<int>(3, 1,0,-1), enabled_cells);
+    set1 = BDDTreeSet(Grid(3), 3, Ariadne::array<int>(3, 1,0,-1), enabled_cells);
     std::cout << "Set1 = ";
     for(BDDTreeSet::const_iterator it = set1.begin(); it != set1.end(); it++) {
         std::cout << *it << ", ";
@@ -952,7 +952,7 @@ void test_projection() {
     Grid grid(2);
     grid.set_length(0, 0.624);
     grid.set_length(1, 1.2);
-    array<int> coordinates(2, 1,0);
+    Ariadne::array<int> coordinates(2, 1,0);
     enabled_cells = bdd_nithvar(1) & ( (bdd_biimp(bdd_nithvar(0), bdd_ithvar(2)) & bdd_biimp(bdd_nithvar(3), bdd_ithvar(5)))
                         | (bdd_ithvar(0) & bdd_ithvar(2) & bdd_nithvar(3) & bdd_nithvar(4) & bdd_ithvar(5)) );
     set1 = BDDTreeSet(grid, 6, coordinates, enabled_cells);

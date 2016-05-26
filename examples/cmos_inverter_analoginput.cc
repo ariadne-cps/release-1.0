@@ -112,7 +112,7 @@ struct support_df : VectorFunctionData<3,3,11> {
 template<class SET> void plot(const char* filename, const int& xaxis, const int& yaxis, const int& numVariables, const Box& bbox, const Colour& fc, const SET& set, const int& MAX_GRID_DEPTH) {
     // Assigns local variables
     Figure fig;
-    array<uint> xy(2,xaxis,yaxis);
+    Ariadne::array<uint> xy(2,xaxis,yaxis);
 
     fig.set_projection_map(ProjectionFunction(xy,numVariables));
     fig.set_bounding_box(bbox);
