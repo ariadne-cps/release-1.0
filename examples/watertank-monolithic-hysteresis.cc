@@ -44,6 +44,23 @@ int main(int argc,char *argv[])
 	// The domain
 	HybridBoxes domain(system.state_space(),Box(2,4.5,9.0,0.0,1.0));
 
+    int accuracy = 4;
+    HybridTime evol_limits(60.0,16);
+
+    HybridReachabilityAnalyser analyser(system,domain,accuracy);
+    analyser.verbosity = verb;
+
+    bool plot_results = true;
+
+    HybridDenotableSet upper_reach = analyser.upper_reach(initial_set,evol_limits);
+
+    if (plot_results) {
+        PlotHelper plotter(system.name());
+        plotter.plot(upper_reach,"upper",accuracy);
+    }
+
+	/*
+
 	// The safety constraint
 	RealVariable x("x");
 	RealVariable y("y");
@@ -67,10 +84,13 @@ int main(int argc,char *argv[])
 	Verifier verifier;
 	verifier.verbosity = verb;
 	verifier.ttl = 60;
-	verifier.settings().plot_results = false;
+	verifier.settings().plot_results = true;
 
 	SafetyVerificationInput verInput(system, initial_set, domain, safety_constraint);
 
-	std::list<ParametricOutcome> results = verifier.parametric_safety(verInput, parameters);
-	draw(system.name(),results);
+	verifier.safety(verInput);
+	//std::list<ParametricOutcome> results = verifier.parametric_safety(verInput, parameters);
+	//draw(system.name(),results);
+
+	*/
 }
