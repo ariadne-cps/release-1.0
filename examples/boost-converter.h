@@ -136,7 +136,6 @@ HybridIOAutomaton getBoostConverter()
     controller.new_forced_transition(turn_off,below_duty,over_duty,clk_geq_dT);
     controller.new_forced_transition(turn_on,over_duty,below_duty,reset_clk_zero,clk_geq_T);
 
-
     /// Composition of automata
     HybridIOAutomaton system = compose("boost",converter,controller,incr,below_duty);
 
