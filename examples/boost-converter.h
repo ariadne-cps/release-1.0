@@ -30,43 +30,41 @@ namespace Ariadne {
 
 HybridIOAutomaton getBoostConverter()
 {
-	HybridIOAutomaton system("boost");
-
-    /// Set the system parameters
-	RealParameter Vi("Vi",3.3);
-	RealParameter R("R",5.0);
-	RealParameter C("C",0.001);
-	RealParameter L("L",0.0011);
-	RealParameter d("d",0.45);
-	RealParameter T("T",0.001);
-
-    /// Create three discrete states
-    DiscreteLocation incr("incr");
-    DiscreteLocation decr("decr");
-    DiscreteLocation zero("zero");
-
-    /// Create the discrete events
-    DiscreteEvent turn_on_from_zero("turn_on_from_zero");
-    DiscreteEvent turn_on_from_decr("turn_on_from_decr");
+    /// Discrete events
+    DiscreteEvent turn_on("turn_on");
     DiscreteEvent turn_off("turn_off");
-    DiscreteEvent current_becomes_zero("current_is_zero");
+    DiscreteEvent current_becomes_zero("current_becomes_zero");
 
-    system.add_output_event(turn_on_from_zero);
-    system.add_output_event(turn_on_from_decr);
-    system.add_output_event(turn_off);
-    system.add_output_event(current_becomes_zero);
-
-    // System variables
+    // Variables
     RealVariable clk("clk");    // Clock
     RealVariable iL("iL");    // Inductor current
     RealVariable vO("vO");    // Output voltage
 
-    system.add_output_var(clk);
-    system.add_output_var(iL);
-    system.add_output_var(vO);
+	/// Converter automaton
+	HybridIOAutomaton converter("converter");
 
-    // clk dynamics
-    RealExpression clk_any = 1.0;
+    /// Parameters
+	RealParameter Vi("Vi",3.3);
+	RealParameter R("R",5.0);
+	RealParameter C("C",0.001);
+	RealParameter L("L",0.0011);
+
+    /// States
+    DiscreteLocation incr("incr");
+    DiscreteLocation decr("decr");
+    DiscreteLocation zero("zero");
+
+    /// Register events
+    converter.add_input_event(turn_on);
+    converter.add_input_event(turn_off);
+    converter.add_internal_event(current_becomes_zero);
+
+    /// Variables
+    converter.add_internal_var(iL);
+    converter.add_output_var(vO);
+
+    /// Set dynamics
+
     // iL dynamics
     RealExpression iL_incr = Vi/L;
     RealExpression iL_decr = (Vi-vO)/L;
@@ -76,41 +74,78 @@ HybridIOAutomaton getBoostConverter()
     RealExpression vO_decr = iL/C - vO/(R*C);
     RealExpression vO_zero = -vO/(R*C);
 
-    system.new_mode(incr);
-    system.set_dynamics(incr,clk,clk_any);
-    system.set_dynamics(incr,iL,iL_incr);
-    system.set_dynamics(incr,vO,vO_incr);
+    converter.new_mode(incr);
+    converter.set_dynamics(incr,iL,iL_incr);
+    converter.set_dynamics(incr,vO,vO_incr);
 
-    system.new_mode(decr);
-    system.set_dynamics(decr,clk,clk_any);
-    system.set_dynamics(decr,iL,iL_decr);
-    system.set_dynamics(decr,vO,vO_decr);
+    converter.new_mode(decr);
+    converter.set_dynamics(decr,iL,iL_decr);
+    converter.set_dynamics(decr,vO,vO_decr);
 
-    system.new_mode(zero);
-    system.set_dynamics(zero,clk,clk_any);
-    system.set_dynamics(zero,iL,iL_zero);
-    system.set_dynamics(zero,vO,vO_zero);
+    converter.new_mode(zero);
+    converter.set_dynamics(zero,iL,iL_zero);
+    converter.set_dynamics(zero,vO,vO_zero);
+
+    /// Transitions
 
     // Reset functions
-    std::map< RealVariable, RealExpression> reset_identity;
-    reset_identity[clk] = clk;
-    reset_identity[iL] = iL;
-    reset_identity[vO] = vO;
+    std::map< RealVariable, RealExpression> reset_iLvO_identity;
+    reset_iLvO_identity[iL] = iL;
+    reset_iLvO_identity[vO] = vO;
 
+    // Guards
+    RealExpression iL_leq_zero = -iL;     // iL <= 0
+
+    converter.new_unforced_transition(turn_off,incr,decr,reset_iLvO_identity);
+    converter.new_unforced_transition(turn_on,zero,incr,reset_iLvO_identity);
+    converter.new_unforced_transition(turn_on,decr,incr,reset_iLvO_identity);
+    converter.new_forced_transition(current_becomes_zero,decr,zero,reset_iLvO_identity,iL_leq_zero);
+
+    /// Controller automaton
+	HybridIOAutomaton controller("controller");
+
+    /// Parameters
+	RealParameter d("d",0.45);
+	RealParameter T("T",0.001);
+
+	/// States
+	DiscreteLocation below_duty("below_duty");
+	DiscreteLocation over_duty("over_duty");
+
+	/// Register events
+    controller.add_output_event(turn_on);
+    controller.add_output_event(turn_off);
+
+    /// Variables
+    controller.add_output_var(clk);
+
+    /// Set dynamics
+    RealExpression clk_any = 1.0;
+
+    controller.new_mode(below_duty);
+    controller.set_dynamics(below_duty,clk,clk_any);
+
+    controller.new_mode(over_duty);
+    controller.set_dynamics(over_duty,clk,clk_any);
+
+    /// Set transitions
+
+    // Resets
     std::map< RealVariable, RealExpression> reset_clk_zero;
     reset_clk_zero[clk] = 0.0;
-    reset_clk_zero[iL] = iL;
-    reset_clk_zero[vO] = vO;
+    std::map< RealVariable, RealExpression> reset_clk_identity;
+    reset_clk_identity[clk] = clk;
 
     // Guards
     RealExpression clk_geq_dT = clk - d*T;    // clk >= d*T
-    RealExpression iL_leq_zero = -iL;     // iL <= 0
     RealExpression clk_geq_T = clk - T;       // clk >= T
 
-    system.new_forced_transition(turn_off,incr,decr,reset_identity,clk_geq_dT);
-    system.new_forced_transition(current_becomes_zero,decr,zero,reset_identity,iL_leq_zero);
-    system.new_forced_transition(turn_on_from_zero,zero,incr,reset_clk_zero,clk_geq_T);
-    system.new_forced_transition(turn_on_from_decr,decr,incr,reset_clk_zero,clk_geq_T);
+    controller.new_forced_transition(turn_off,below_duty,over_duty,reset_clk_identity,clk_geq_dT);
+    controller.new_forced_transition(turn_on,over_duty,below_duty,reset_clk_zero,clk_geq_T);
+
+
+    /// Composition of automata
+    HybridIOAutomaton system = compose("boost",converter,controller,incr,below_duty);
 
 	return system;
 }

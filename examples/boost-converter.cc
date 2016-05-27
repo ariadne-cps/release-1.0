@@ -38,7 +38,8 @@ int main(int argc,char *argv[])
 	// The system
 	HybridIOAutomaton system = Ariadne::getBoostConverter();
 
-/*
+	cout << system << endl;
+
     HybridEvolver evolver(system);
     evolver.verbosity = verbosity;
 
@@ -48,7 +49,7 @@ int main(int argc,char *argv[])
         evolver.settings().hybrid_maximum_step_size[hs_it->first] = 0.00001;
     }
     
-    HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("incr"),Box(3, 0.0,0.0, 2.0,2.0, 5.5,5.5));
+    HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("incr,below_duty"),Box(3, 0.0,0.0, 1.0,1.0, 1.0,1.0));
   
     HybridTime evol_limits(18.0,30);
  
@@ -58,7 +59,7 @@ int main(int argc,char *argv[])
         PlotHelper plotter(system.name());
         plotter.plot(orbit.reach(),"reach");
     }
-*/
+/*
 
     int accuracy = 4;
 
@@ -78,7 +79,7 @@ int main(int argc,char *argv[])
         PlotHelper plotter(system.name());
         plotter.plot(outer_reach,"outer",accuracy);
     }
-
+*/
     /*
     HybridBoxes domain(system.state_space(),Box(3, 0.0,0.001, 0.0,3.7, 3.0,7.5));
 
