@@ -518,6 +518,13 @@ HybridIOAutomaton::new_transition(DiscreteEvent event,
         ": transitions labelled with input events cannot have an activation different from true.");
     this->new_transition(event, source, target, kind);
     this->set_activation(event, source, activation);
+
+    std::map< RealVariable, RealExpression > reset;
+	List<RealVariable> variables = this->continuous_state_space(target).variables();
+	for(List<RealVariable>::const_iterator var_it=variables.begin(); var_it!=variables.end(); ++var_it)
+		reset[*var_it] = *var_it;
+
+    this->set_reset(event, source, reset);
     return this->transition(event,source);
 }
 
@@ -546,8 +553,13 @@ HybridIOAutomaton::new_transition(DiscreteEvent event,
     if(!this->has_mode(target)) {
         ARIADNE_FAIL_MSG("The automaton " << this->_name << " does not contain a target mode with id " << target);
     }
+
+    std::map< RealVariable, RealExpression > reset;
+	List<RealVariable> variables = this->continuous_state_space(target).variables();
+	for(List<RealVariable>::const_iterator var_it=variables.begin(); var_it!=variables.end(); ++var_it)
+		reset[*var_it] = *var_it;
           
-    this->_transitions.push_back(DiscreteIOTransition(event,source,target,kind));
+    this->_transitions.push_back(DiscreteIOTransition(event,source,target,reset,kind));
     return this->transition(event,source);
 }
 
