@@ -28,9 +28,9 @@
 
 namespace Ariadne {
 
-HybridIOAutomaton getBoostConverter()
+HybridAutomaton getBoostConverter()
 {
-	HybridIOAutomaton system("boost");
+	HybridAutomaton system("boost");
 
     /// Set the system parameters
 	RealParameter Vi("Vi",3.3);
@@ -51,66 +51,73 @@ HybridIOAutomaton getBoostConverter()
     DiscreteEvent turn_off("turn_off");
     DiscreteEvent current_becomes_zero("current_is_zero");
 
-    system.add_output_event(turn_on_from_zero);
-    system.add_output_event(turn_on_from_decr);
-    system.add_output_event(turn_off);
-    system.add_output_event(current_becomes_zero);
-
     // System variables
-    RealVariable clk("clk");    // Clock
+    RealVariable t("t");    // Clock
     RealVariable iL("iL");    // Inductor current
     RealVariable vO("vO");    // Output voltage
+    List<RealVariable> varlist;
+    varlist.append(t);
+    varlist.append(iL);
+    varlist.append(vO);
 
-    system.add_output_var(clk);
-    system.add_output_var(iL);
-    system.add_output_var(vO);
+    // t dynamics
+    RealExpression t_any = 1.0;
 
-    // clk dynamics
-    RealExpression clk_any = 1.0;
     // iL dynamics
     RealExpression iL_incr = Vi/L;
     RealExpression iL_decr = (Vi-vO)/L;
     RealExpression iL_zero = 0.0;
+
     // vO dynamics
     RealExpression vO_incr = -vO/(R*C);
     RealExpression vO_decr = iL/C - vO/(R*C);
     RealExpression vO_zero = -vO/(R*C);
 
-    system.new_mode(incr);
-    system.set_dynamics(incr,clk,clk_any);
-    system.set_dynamics(incr,iL,iL_incr);
-    system.set_dynamics(incr,vO,vO_incr);
-
-    system.new_mode(decr);
-    system.set_dynamics(decr,clk,clk_any);
-    system.set_dynamics(decr,iL,iL_decr);
-    system.set_dynamics(decr,vO,vO_decr);
-
-    system.new_mode(zero);
-    system.set_dynamics(zero,clk,clk_any);
-    system.set_dynamics(zero,iL,iL_zero);
-    system.set_dynamics(zero,vO,vO_zero);
+    // Dynamics at the different modes
+    List<RealExpression> exprlist;
+    exprlist.append(t_any);
+    exprlist.append(iL_incr);
+    exprlist.append(vO_incr);
+    VectorFunction dyn_incr(exprlist, varlist);
+    exprlist[1] = iL_decr;
+    exprlist[2] = vO_decr;
+    VectorFunction dyn_decr(exprlist, varlist);
+    exprlist[1] = iL_zero;
+    exprlist[2] = vO_zero;
+    VectorFunction dyn_zero(exprlist, varlist);
 
     // Reset functions
-    std::map< RealVariable, RealExpression> reset_identity;
-    reset_identity[clk] = clk;
-    reset_identity[iL] = iL;
-    reset_identity[vO] = vO;
+    RealExpression id_t_r = t;
+    RealExpression id_iL_r = iL;
+    RealExpression id_vO_r = vO;
+    RealExpression zero_t_r = 0.0;
+    exprlist[0] = id_t_r;
+    exprlist[1] = id_iL_r;
+    exprlist[2] = id_vO_r;
+    VectorFunction reset_identity(exprlist, varlist);
 
-    std::map< RealVariable, RealExpression> reset_clk_zero;
-    reset_clk_zero[clk] = 0.0;
-    reset_clk_zero[iL] = iL;
-    reset_clk_zero[vO] = vO;
+    exprlist[0] = zero_t_r;
+    VectorFunction reset_t_zero(exprlist, varlist);
 
-    // Guards
-    RealExpression clk_geq_dT = clk - d*T;    // clk >= d*T
-    RealExpression iL_leq_zero = -iL;     // iL <= 0
-    RealExpression clk_geq_T = clk - T;       // clk >= T
+    // Create the guards.
+    // Guards are true when f(x) >= 0
+    RealExpression t_geq_dT = t - d*T;       // t >= d*T
+    ScalarFunction turn_off_g(t_geq_dT, varlist);
+    RealExpression iL_leq_zero = -iL;                 // iL <= 0
+    ScalarFunction zero_current_g(iL_leq_zero, varlist);
+    RealExpression t_geq_T = t - T;       // t >= T
+    ScalarFunction turn_on_g(t_geq_T, varlist);
 
-    system.new_forced_transition(turn_off,incr,decr,reset_identity,clk_geq_dT);
-    system.new_forced_transition(current_becomes_zero,decr,zero,reset_identity,iL_leq_zero);
-    system.new_forced_transition(turn_on_from_zero,zero,incr,reset_clk_zero,clk_geq_T);
-    system.new_forced_transition(turn_on_from_decr,decr,incr,reset_clk_zero,clk_geq_T);
+
+    /// Build the automaton
+    system.new_mode(incr,dyn_incr);
+    system.new_mode(decr,dyn_decr);
+    system.new_mode(zero,dyn_zero);
+
+    system.new_forced_transition(turn_off,incr,decr,reset_identity,turn_off_g);
+    system.new_forced_transition(current_becomes_zero,decr,zero,reset_identity,zero_current_g);
+    system.new_forced_transition(turn_on_from_zero,zero,incr,reset_t_zero,turn_on_g);
+    system.new_forced_transition(turn_on_from_decr,decr,incr,reset_t_zero,turn_on_g);
 
 	return system;
 }
