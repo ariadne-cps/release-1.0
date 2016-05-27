@@ -144,8 +144,9 @@ _evolution(EnclosureListType& final_sets,
         EventListType events=current_set.second.second;
 		SetModelType set_model=current_set.second.third;
 		TimeModelType time_model=current_set.second.fourth;
-
-	    //set_model = TaylorSet(set_model.bounding_box());
+		// Boxes the set and time models
+	    set_model = TaylorSet(set_model.bounding_box());
+	    time_model = TaylorModel::scaling(set_model.size(),0,time_model.range());
 
 		Vector<Float> reference_enclosure_widths = this->_settings->minimum_discretised_enclosure_widths.find(loc)->second;
 
@@ -287,7 +288,22 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
     TimeModelType time_model;
     const uint& set_index = current_set.first;
     make_ltuple(location,events_history,set_model,time_model)=current_set.second;
-    //set_model = TaylorSet(set_model.bounding_box());
+/*
+    cout << "Checking set models and related argument sizes: " << endl;
+    cout << "Set model: " << set_model << endl;
+    cout << "Set model argument size: " << set_model.argument_size() << endl;
+    cout << "Time model: " << time_model << endl;
+    cout << "Time model argument size: " << time_model.argument_size() << endl;
+*/
+    // Boxes the set model
+    set_model = TaylorSet(set_model.bounding_box());
+    time_model = TaylorModel::scaling(2,0,time_model.range());
+/*
+    cout << "Boxed set model: " << set_model << endl;
+    cout << "Boxed set model argument size: " << set_model.argument_size() << endl;
+    cout << "Boxed time model: " << time_model << endl;
+    cout << "Boxed time model argument size: " << time_model.argument_size() << endl;
+*/
 
     // Extract information about the current location
     const RealVectorFunction dynamic=get_directed_dynamic(_sys->dynamic_function(location),direction);
@@ -326,17 +342,13 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
     FlowSetModelType flow_set_model; BoxType flow_bounds; 
     Float time_step = this->_settings->hybrid_maximum_step_size[location];
     const Float maximum_time=maximum_hybrid_time.continuous_time();
-    TaylorSet boxed_set_model(set_model.bounding_box());
     compute_flow_model(location,flow_set_model,flow_bounds,time_step,dynamic,set_model,time_model,maximum_time,semantics);
-    //compute_flow_model(location,flow_set_model,flow_bounds,time_step,dynamic,boxed_set_model,time_model,maximum_time,semantics);
 
     ARIADNE_LOG(2,"flow_bounds = "<<flow_bounds)
     ARIADNE_LOG(2,"time_step = "<<time_step)
     ARIADNE_LOG(2,"flow_range = "<<flow_set_model.range());
     ARIADNE_LOG(2,"starting_set_range = "<<set_model.range());
     ARIADNE_LOG(2,"starting_set = "<<set_model);
-    ARIADNE_LOG(2,"boxed starting_set_range = "<<boxed_set_model.range());
-    ARIADNE_LOG(2,"boxed starting_set = "<<boxed_set_model);
     // Partial evaluation on flow set model to obtain final set must take scaled time equal to 1.0
     SetModelType finishing_set=partial_evaluate(flow_set_model.models(),set_model.argument_size(),1.0);
     ARIADNE_LOG(2,"finishing_set_range = "<<finishing_set.range())
