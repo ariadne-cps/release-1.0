@@ -66,7 +66,7 @@ int main(int argc,char *argv[])
 
 	Verifier verifier;
 	verifier.verbosity = verb;
-	verifier.ttl = 5;
+	verifier.ttl = 60;
 	verifier.settings().plot_results = false;
 
 	SafetyVerificationInput verInput(system, initial_set, domain, safety_constraint);
