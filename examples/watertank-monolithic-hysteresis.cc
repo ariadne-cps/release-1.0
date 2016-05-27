@@ -36,6 +36,7 @@ int main(int argc,char *argv[])
 	// The system
 	HybridAutomaton system = Ariadne::getWatertankMonolithicHysteresis();
 
+	/*
     HybridEvolver evolver(system);
     evolver.verbosity = verb;
 
@@ -54,6 +55,7 @@ int main(int argc,char *argv[])
     PlotHelper plotter(system.name());
     plotter.plot(orbit.reach(),"reach");
 
+    */
 	/*
 	// The initial values
 	HybridBoundedConstraintSet initial_set(system.state_space());
@@ -78,7 +80,14 @@ int main(int argc,char *argv[])
         plotter.plot(upper_reach,"upper",accuracy);
     }
 	*/
-	/*
+
+	// The domain
+	HybridBoxes domain(system.state_space(),Box(2,4.5,9.0,0.0,1.0));
+
+	// The initial values
+	HybridBoundedConstraintSet initial_set(system.state_space());
+	initial_set[DiscreteLocation("opened")] = Box(2, 6.0,7.5, 1.0,1.0);
+	initial_set[DiscreteLocation("closed")] = Box(2, 6.0,7.5, 0.0,0.0);
 
 	// The safety constraint
 	RealVariable x("x");
@@ -108,8 +117,8 @@ int main(int argc,char *argv[])
 	SafetyVerificationInput verInput(system, initial_set, domain, safety_constraint);
 
 	verifier.safety(verInput);
-	//std::list<ParametricOutcome> results = verifier.parametric_safety(verInput, parameters);
-	//draw(system.name(),results);
+	std::list<ParametricOutcome> results = verifier.parametric_safety(verInput, parameters);
+	draw(system.name(),results);
 
-	*/
+
 }

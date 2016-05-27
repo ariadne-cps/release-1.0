@@ -145,6 +145,8 @@ _evolution(EnclosureListType& final_sets,
 		SetModelType set_model=current_set.second.third;
 		TimeModelType time_model=current_set.second.fourth;
 
+	    set_model = TaylorSet(set_model.bounding_box());
+
 		Vector<Float> reference_enclosure_widths = this->_settings->minimum_discretised_enclosure_widths.find(loc)->second;
 
 		_log_step_summary(working_sets,reach_sets,events,time_model,set_model,loc);
