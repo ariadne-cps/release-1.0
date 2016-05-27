@@ -31,8 +31,8 @@ namespace Ariadne {
 HybridIOAutomaton getWatertankCompositionalHysteresis()
 {
     /// Set the system parameters
-	RealParameter a("a",0.02);
-	RealParameter b("b",Interval(0.3,0.32863));
+	RealParameter alpha("alpha",0.02);
+	RealParameter bfp("bfp",Interval(0.3,0.32863));
 	RealParameter T("T",4.0);
 	RealParameter hmin("hmin",5.75);
 	RealParameter hmax("hmax",7.75);
@@ -40,7 +40,7 @@ HybridIOAutomaton getWatertankCompositionalHysteresis()
 
     // System variables
     RealVariable x("x");    // water level
-    RealVariable y("y");    // valve aperture
+    RealVariable a("a");    // valve aperture
 
     // Create the tank automaton
 
@@ -50,11 +50,11 @@ HybridIOAutomaton getWatertankCompositionalHysteresis()
 		DiscreteLocation flow("flow");
 
 		// Add the input/output variables
-    	tank.add_input_var(y);
+    	tank.add_input_var(a);
     	tank.add_output_var(x);
 
 		// Only one state with no transitions and no invariants
-		RealExpression dyn = - a * x + b * y;
+		RealExpression dyn = - alpha * x + bfp * a;
 		tank.new_mode(flow);
 		tank.set_dynamics(flow, x, dyn);
 
@@ -68,7 +68,7 @@ HybridIOAutomaton getWatertankCompositionalHysteresis()
 		DiscreteLocation closing("closing");
 
 		// The valve has one output var (the valve aperture)
-		valve.add_output_var(y);
+		valve.add_output_var(a);
 
 		// Two input events (open and close) and one internal event
 		DiscreteEvent e_open("open");
@@ -84,29 +84,28 @@ HybridIOAutomaton getWatertankCompositionalHysteresis()
 		valve.new_mode(idle);
 		//valve.new_invariant(idle, -y);
 		//valve.new_invariant(idle, y-1.0);
-		valve.set_dynamics(idle, y, dynidle);
+		valve.set_dynamics(idle, a, dynidle);
 		// Opening (valve is opening)
 		valve.new_mode(opening);
 		//valve.new_invariant(opening, -y);
 		//valve.new_invariant(opening, y-1.0);
 		RealExpression dynopening = 1.0/T;
-		valve.set_dynamics(opening, y, dynopening);
+		valve.set_dynamics(opening, a, dynopening);
 		// Closing (valve is closing)
 		valve.new_mode(closing);
 		//valve.new_invariant(closing, -y);
 		//valve.new_invariant(closing, y-1.0);
 		RealExpression dynclosing = -1.0/T;
-		valve.set_dynamics(closing, y, dynclosing);
+		valve.set_dynamics(closing, a, dynclosing);
 
 		// Transitions
 
-		// the identity y' = y.
 		std::map< RealVariable, RealExpression> reset_y_identity;
-		reset_y_identity[y] = y;
+		reset_y_identity[a] = a;
 		std::map< RealVariable, RealExpression> reset_y_one;
-		reset_y_one[y] = 1.0;
+		reset_y_one[a] = 1.0;
 		std::map< RealVariable, RealExpression> reset_y_zero;
-		reset_y_zero[y] = 0.0;
+		reset_y_zero[a] = 0.0;
 
 		// when open is received, go to opening
 		valve.new_unforced_transition(e_open, idle, opening, reset_y_identity);
@@ -117,10 +116,10 @@ HybridIOAutomaton getWatertankCompositionalHysteresis()
 		//valve.new_unforced_transition(e_close, opening, closing, res);
 		valve.new_unforced_transition(e_close, closing, closing, reset_y_identity);
 		// when the valve is fully opened go from opening to idle
-		RealExpression y_geq_one = y - 1.0;
+		RealExpression y_geq_one = a - 1.0;
 		valve.new_forced_transition(e_idle, opening, idle, reset_y_identity, y_geq_one);
 		// when the valve is fully closed go from closing to idle
-		RealExpression y_leq_zero = - y;
+		RealExpression y_leq_zero = - a;
 		valve.new_forced_transition(e_idle, closing, idle, reset_y_identity, y_leq_zero);
 
 	// Create the controller automaton
@@ -160,7 +159,7 @@ HybridIOAutomaton getWatertankCompositionalHysteresis()
 
 	/// Compose the automata
 	HybridIOAutomaton tank_valve = compose("tank,valve",tank,valve,flow,idle);
-	HybridIOAutomaton system = compose("watertank-comp-hy",tank_valve,controller,DiscreteLocation("flow,idle"),rising);
+	HybridIOAutomaton system = compose("watertank-hy",tank_valve,controller,DiscreteLocation("flow,idle"),rising);
 
 	return system;
 }
