@@ -145,7 +145,7 @@ _evolution(EnclosureListType& final_sets,
 		SetModelType set_model=current_set.second.third;
 		TimeModelType time_model=current_set.second.fourth;
 
-	    set_model = TaylorSet(set_model.bounding_box());
+	    //set_model = TaylorSet(set_model.bounding_box());
 
 		Vector<Float> reference_enclosure_widths = this->_settings->minimum_discretised_enclosure_widths.find(loc)->second;
 
@@ -287,8 +287,7 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
     TimeModelType time_model;
     const uint& set_index = current_set.first;
     make_ltuple(location,events_history,set_model,time_model)=current_set.second;
-    //steps=events_history.size();
-    set_model = TaylorSet(set_model.bounding_box());
+    //set_model = TaylorSet(set_model.bounding_box());
 
     // Extract information about the current location
     const RealVectorFunction dynamic=get_directed_dynamic(_sys->dynamic_function(location),direction);
