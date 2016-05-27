@@ -288,22 +288,10 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
     TimeModelType time_model;
     const uint& set_index = current_set.first;
     make_ltuple(location,events_history,set_model,time_model)=current_set.second;
-/*
-    cout << "Checking set models and related argument sizes: " << endl;
-    cout << "Set model: " << set_model << endl;
-    cout << "Set model argument size: " << set_model.argument_size() << endl;
-    cout << "Time model: " << time_model << endl;
-    cout << "Time model argument size: " << time_model.argument_size() << endl;
-*/
-    // Boxes the set model
+
+	// Boxes the set and time models
     set_model = TaylorSet(set_model.bounding_box());
-    time_model = TaylorModel::scaling(2,0,time_model.range());
-/*
-    cout << "Boxed set model: " << set_model << endl;
-    cout << "Boxed set model argument size: " << set_model.argument_size() << endl;
-    cout << "Boxed time model: " << time_model << endl;
-    cout << "Boxed time model argument size: " << time_model.argument_size() << endl;
-*/
+    time_model = TaylorModel::scaling(set_model.size(),0,time_model.range());
 
     // Extract information about the current location
     const RealVectorFunction dynamic=get_directed_dynamic(_sys->dynamic_function(location),direction);
