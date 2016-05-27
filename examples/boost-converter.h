@@ -88,18 +88,13 @@ HybridIOAutomaton getBoostConverter()
 
     /// Transitions
 
-    // Reset functions
-    std::map< RealVariable, RealExpression> reset_iLvO_identity;
-    reset_iLvO_identity[iL] = iL;
-    reset_iLvO_identity[vO] = vO;
-
     // Guards
     RealExpression iL_leq_zero = -iL;     // iL <= 0
 
-    converter.new_unforced_transition(turn_off,incr,decr,reset_iLvO_identity);
-    converter.new_unforced_transition(turn_on,zero,incr,reset_iLvO_identity);
-    converter.new_unforced_transition(turn_on,decr,incr,reset_iLvO_identity);
-    converter.new_forced_transition(current_becomes_zero,decr,zero,reset_iLvO_identity,iL_leq_zero);
+    converter.new_unforced_transition(turn_off,incr,decr);
+    converter.new_unforced_transition(turn_on,zero,incr);
+    converter.new_unforced_transition(turn_on,decr,incr);
+    converter.new_forced_transition(current_becomes_zero,decr,zero,iL_leq_zero);
 
     /// Controller automaton
 	HybridIOAutomaton controller("controller");
@@ -133,14 +128,12 @@ HybridIOAutomaton getBoostConverter()
     // Resets
     std::map< RealVariable, RealExpression> reset_clk_zero;
     reset_clk_zero[clk] = 0.0;
-    std::map< RealVariable, RealExpression> reset_clk_identity;
-    reset_clk_identity[clk] = clk;
 
     // Guards
     RealExpression clk_geq_dT = clk - d*T;    // clk >= d*T
     RealExpression clk_geq_T = clk - T;       // clk >= T
 
-    controller.new_forced_transition(turn_off,below_duty,over_duty,reset_clk_identity,clk_geq_dT);
+    controller.new_forced_transition(turn_off,below_duty,over_duty,clk_geq_dT);
     controller.new_forced_transition(turn_on,over_duty,below_duty,reset_clk_zero,clk_geq_T);
 
 
