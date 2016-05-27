@@ -28,10 +28,8 @@
 
 namespace Ariadne {
 
-HybridAutomaton getWatertankProportional()
+HybridIOAutomaton getWatertankProportional()
 {
-	HybridAutomaton system("watertank-pr");
-
     /// Set the system parameters
 	RealParameter alpha("a",0.065); // The constant defining the decrease rate of the tank level
 	RealParameter tau("tau",1.25); // The characteristic time for the opening/closing of the valve
@@ -56,13 +54,13 @@ HybridAutomaton getWatertankProportional()
     	tank.add_input_var(a);
     	tank.add_output_var(x);
 
-		RealExpression flow_dyn = - alpha * x + bfp * y;
+		RealExpression flow_dyn = - alpha * x + bfp * a;
 		tank.new_mode(flow);
 		tank.set_dynamics(flow, x, flow_dyn);
 
 		// Invariants
 	    RealExpression x_geq_zero = -x;   // x >= 0
-	    tank.new_invariant(flow,x_geq_zero);
+	    //tank.new_invariant(flow,x_geq_zero);
 
     /// Create the valve automaton
 
@@ -82,16 +80,16 @@ HybridAutomaton getWatertankProportional()
 		// Invariants
 	    RealExpression a_geq_zero = -a;   // a >= 0
 	    RealExpression a_leq_one = a-1.0;   // a <= 1
-	    valve.new_invariant(modulate,a_geq_zero);
-	    valve.new_invariant(modulate,a_leq_one);
+	    //valve.new_invariant(modulate,a_geq_zero);
+	    //valve.new_invariant(modulate,a_leq_one);
 
 	/// Create the controller automaton
 
 		HybridIOAutomaton controller("controller");
 
 		// Add the input/output variables
-		valve.add_input_var(x);
-		valve.add_output_var(w);
+		controller.add_input_var(x);
+		controller.add_output_var(w);
 
 		// States
 		DiscreteLocation open("open");
@@ -120,8 +118,8 @@ HybridAutomaton getWatertankProportional()
 		// Invariants
 	    RealExpression w_geq_zero = -w;   // w >= 0
 	    RealExpression w_leq_one = w-1.0;   // w <= 1
-	    controller.new_invariant(modulate,w_geq_zero);
-	    controller.new_invariant(modulate,w_leq_one);
+	    //controller.new_invariant(close,w_geq_zero);
+	    //controller.new_invariant(open,w_leq_one);
 
 	    // Create the guards
 	    RealExpression x_lesser_ref_minus_delta = -x-delta+ref; // x <= ref - Delta
@@ -130,12 +128,14 @@ HybridAutomaton getWatertankProportional()
 	    RealExpression x_greater_ref_kp_minus_delta = x-ref+1.0/Kp-delta; // x >= ref - 1/Kp + Delta
 
 	    // Transitions
-	    controller.new_forced_transition(stabilising_after_closing,open,stabilising,x_lesser_ref_minus_delta);
-	    controller.new_forced_transition(stabilising_after_opening,close,stabilising,x_greater_ref_kp_minus_delta);
+	    controller.new_forced_transition(stabilising_after_closing,close,stabilising,x_lesser_ref_minus_delta);
+	    controller.new_forced_transition(stabilising_after_opening,open,stabilising,x_greater_ref_kp_minus_delta);
 	    controller.new_forced_transition(start_closing,stabilising,close,x_greater_ref_minus_delta);
 	    controller.new_forced_transition(start_opening,stabilising,open,x_lesser_ref_kp_minus_delta);
 
 	/// Composition
+	HybridIOAutomaton valve_controller = compose("valve_controller",valve,controller,modulate,open);
+	HybridIOAutomaton system = compose("watertank-pr",valve_controller,tank,DiscreteLocation("modulate,open"),flow);
 
 	return system;
 }

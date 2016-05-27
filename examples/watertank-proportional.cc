@@ -1,7 +1,7 @@
 /***************************************************************************
- *            watertank-monolithic-proportional-verify.cc
+ *            watertank-proportional.cc
  *
- *  Copyright  2011  Luca Geretti
+ *  Copyright  2016  Luca Geretti
  *
  ****************************************************************************/
 
@@ -22,7 +22,7 @@
  */
 
 #include "ariadne.h"
-#include "examples.h"
+#include "watertank-compositional-proportional.h"
 
 using namespace Ariadne;
 
@@ -33,18 +33,20 @@ int main(int argc,char *argv[])
 		verb = atoi(argv[1]);
 
 	// The system
-	HybridAutomaton system = Ariadne::getWatertankMonolithicProportional();
+	HybridIOAutomaton system = Ariadne::getWatertankProportional();
 
     HybridEvolver evolver(system);
     evolver.verbosity = verb;
 
     HybridSpace hspace(system.state_space());
     for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
-        evolver.settings().minimum_discretised_enclosure_widths[hs_it->first] = Vector<Float>(2,0.2);
+        evolver.settings().minimum_discretised_enclosure_widths[hs_it->first] = Vector<Float>(3,0.2);
         evolver.settings().hybrid_maximum_step_size[hs_it->first] = 0.03;
     }
 
-    HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation(1),Box(2, 6.75,6.75, 1.0,1.0));
+    cout << system << endl;
+
+    HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("modulate,open,flow"),Box(3, 0.8,0.8, 1.0,1.0, 6.75,6.75));
 
     HybridTime evol_limits(8.0,5);
 

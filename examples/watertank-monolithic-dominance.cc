@@ -22,7 +22,8 @@
  */
 
 #include "ariadne.h"
-#include "examples.h"
+#include "watertank-monolithic-proportional.h"
+#include "watertank-monolithic-hysteresis.h"
 
 using namespace Ariadne;
 

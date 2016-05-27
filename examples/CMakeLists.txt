@@ -1,7 +1,7 @@
 set(EXAMPLES
 		 watertank-monolithic-hysteresis 
 		 watertank-compositional-hysteresis 
-	 	 watertank-monolithic-proportional 
+	 	 watertank-proportional 
 		 watertank-nonlinear-monolithic-hysteresis 
 		 watertank-nonlinear-monolithic-proportional 
 		 watertank-aasap 
