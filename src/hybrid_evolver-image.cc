@@ -325,7 +325,8 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
     Float time_step = this->_settings->hybrid_maximum_step_size[location];
     const Float maximum_time=maximum_hybrid_time.continuous_time();
     TaylorSet boxed_set_model(set_model.bounding_box());
-    compute_flow_model(location,flow_set_model,flow_bounds,time_step,dynamic,boxed_set_model,time_model,maximum_time,semantics);
+    compute_flow_model(location,flow_set_model,flow_bounds,time_step,dynamic,set_model,time_model,maximum_time,semantics);
+    //compute_flow_model(location,flow_set_model,flow_bounds,time_step,dynamic,boxed_set_model,time_model,maximum_time,semantics);
 
     ARIADNE_LOG(2,"flow_bounds = "<<flow_bounds)
     ARIADNE_LOG(2,"time_step = "<<time_step)
