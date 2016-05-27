@@ -35,6 +35,25 @@ int main(int argc,char *argv[])
 	// The system
 	HybridAutomaton system = Ariadne::getWatertankMonolithicProportional();
 
+    HybridEvolver evolver(system);
+    evolver.verbosity = verb;
+
+    HybridSpace hspace(system.state_space());
+    for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
+        evolver.settings().minimum_discretised_enclosure_widths[hs_it->first] = Vector<Float>(2,0.2);
+        evolver.settings().hybrid_maximum_step_size[hs_it->first] = 0.03;
+    }
+
+    HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation(1),Box(2, 6.75,6.75, 1.0,1.0));
+
+    HybridTime evol_limits(8.0,5);
+
+    HybridEvolver::OrbitType orbit = evolver.orbit(initial_enclosure,evol_limits,UPPER_SEMANTICS);
+
+    PlotHelper plotter(system.name());
+    plotter.plot(orbit.reach(),"reach");
+
+    /*
 	// The initial values
 	HybridBoundedConstraintSet initial_set(system.state_space());
 	initial_set[DiscreteLocation(1)] = Box(2, 6.75,6.75, 0.0,1.0);
@@ -73,4 +92,5 @@ int main(int argc,char *argv[])
 
 	std::list<ParametricOutcome> results = verifier.parametric_safety(verInfo, parameters);
 	draw(system.name(),results);
+	*/
 }

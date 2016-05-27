@@ -36,9 +36,9 @@ HybridAutomaton getWatertankMonolithicProportional()
 	RealParameter a("a",0.065); // The constant defining the decrease rate of the tank level
 	RealParameter tau("tau",1.25); // The characteristic time for the opening/closing of the valve
 	RealParameter ref("ref",6.75); // A reference tank level
-	RealParameter bfp("bfp",Interval(0.3,0.32863)); // The product beta*f(p)
+	RealParameter bfp("bfp",0.3); // The product beta*f(p)
 	RealParameter Kp("Kp",0.6); // The gain of the proportional controller
-	RealParameter delta("delta",Interval(-0.1,0.1)); // An indeterminacy in guards evaluation
+	RealParameter delta("delta",Interval(-0.02,0.02)); // An indeterminacy in guards evaluation
 	RealParameter H("H",9.0); // The height of the tank, over which overflow occurs
 
 	// System variables
