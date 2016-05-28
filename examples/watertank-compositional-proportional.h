@@ -36,12 +36,11 @@ HybridIOAutomaton getWatertankProportional()
 	RealParameter ref("ref",6.75); // A reference tank level
 	RealParameter bfp("bfp",0.3); // The product beta*f(p)
 	RealParameter Kp("Kp",0.6); // The gain of the proportional controller
-	RealParameter delta("delta",Interval(-0.02,0.02)); // An indeterminacy in guards evaluation
+	RealParameter delta("delta",Interval(-0.00,0.00)); // An indeterminacy in guards evaluation
 
 	// System variables
 	RealVariable x("x"); // water level
 	RealVariable a("a"); // valve aperture
-	RealVariable w("w"); // control signal
 
     // Create the tank automaton
 
@@ -60,28 +59,7 @@ HybridIOAutomaton getWatertankProportional()
 
 		// Invariants
 	    RealExpression x_geq_zero = -x;   // x >= 0
-	    //tank.new_invariant(flow,x_geq_zero);
-
-    /// Create the valve automaton
-
-		HybridIOAutomaton valve("valve");
-
-		// States
-		DiscreteLocation modulate("modulate");
-
-		// Add the input/output variables
-		valve.add_input_var(w);
-		valve.add_output_var(a);
-
-		RealExpression modulate_dyn = (w-a)/tau;
-		valve.new_mode(modulate);
-		valve.set_dynamics(modulate, a, modulate_dyn);
-
-		// Invariants
-	    RealExpression a_geq_zero = -a;   // a >= 0
-	    RealExpression a_leq_one = a-1.0;   // a <= 1
-	    //valve.new_invariant(modulate,a_geq_zero);
-	    //valve.new_invariant(modulate,a_leq_one);
+	    tank.new_invariant(flow,x_geq_zero);
 
 	/// Create the controller automaton
 
@@ -89,37 +67,37 @@ HybridIOAutomaton getWatertankProportional()
 
 		// Add the input/output variables
 		controller.add_input_var(x);
-		controller.add_output_var(w);
+		controller.add_output_var(a);
 
 		// States
-		DiscreteLocation open("open");
+		DiscreteLocation opening("opening");
 		DiscreteLocation stabilising("stabilising");
-		DiscreteLocation close("close");
+		DiscreteLocation closing("closing");
 
 		// Create the discrete events
-		DiscreteEvent stabilising_after_closing("stabilising_after_closing");
-		DiscreteEvent stabilising_after_opening("stabilising_after_opening");
-		DiscreteEvent start_closing("start_closing");
-		DiscreteEvent start_opening("start_opening");
+		DiscreteEvent stabilise_after_closing("stabilise_after_closing");
+		DiscreteEvent stabilise_after_opening("stabilise_after_opening");
+		DiscreteEvent close("close");
+		DiscreteEvent open("open");
 
 	    // Create the dynamics
-	    RealExpression open_d = 0.0;
-	    RealExpression close_d = 0.0;
-	    RealExpression stabilising_d = Kp*(ref-x);
+	    RealExpression opening_d = (1-a)/tau;
+	    RealExpression closing_d = -a/tau;
+	    RealExpression stabilising_d = (Kp*(ref-x) - a)/tau;
 
 	    // Dynamics at the different modes
-	    controller.new_mode(open);
-	    controller.set_dynamics(open, w, open_d);
-	    controller.new_mode(close);
-	    controller.set_dynamics(close, w, close_d);
+	    controller.new_mode(opening);
+	    controller.set_dynamics(opening, a, opening_d);
+	    controller.new_mode(closing);
+	    controller.set_dynamics(closing, a, closing_d);
 	    controller.new_mode(stabilising);
-	    controller.set_dynamics(stabilising, w, stabilising_d);
+	    controller.set_dynamics(stabilising, a, stabilising_d);
 
 		// Invariants
-	    RealExpression w_geq_zero = -w;   // w >= 0
-	    RealExpression w_leq_one = w-1.0;   // w <= 1
-	    //controller.new_invariant(close,w_geq_zero);
-	    //controller.new_invariant(open,w_leq_one);
+	    RealExpression a_geq_zero = -a;   // a >= 0
+	    RealExpression a_leq_one = a-1.0;   // a <= 1
+	    //controller.new_invariant(stabilising,a_geq_zero);
+	    //controller.new_invariant(stabilising,a_leq_one);
 
 	    // Create the guards
 	    RealExpression x_lesser_ref_minus_delta = -x-delta+ref; // x <= ref - Delta
@@ -128,14 +106,13 @@ HybridIOAutomaton getWatertankProportional()
 	    RealExpression x_greater_ref_kp_minus_delta = x-ref+1.0/Kp-delta; // x >= ref - 1/Kp + Delta
 
 	    // Transitions
-	    controller.new_forced_transition(stabilising_after_closing,close,stabilising,x_lesser_ref_minus_delta);
-	    controller.new_forced_transition(stabilising_after_opening,open,stabilising,x_greater_ref_kp_minus_delta);
-	    controller.new_forced_transition(start_closing,stabilising,close,x_greater_ref_minus_delta);
-	    controller.new_forced_transition(start_opening,stabilising,open,x_lesser_ref_kp_minus_delta);
+	    controller.new_forced_transition(stabilise_after_closing,closing,stabilising,x_lesser_ref_minus_delta);
+	    controller.new_forced_transition(stabilise_after_opening,opening,stabilising,x_greater_ref_kp_minus_delta);
+	    controller.new_forced_transition(close,stabilising,closing,x_greater_ref_minus_delta);
+	    controller.new_forced_transition(open,stabilising,opening,x_lesser_ref_kp_minus_delta);
 
 	/// Composition
-	HybridIOAutomaton valve_controller = compose("valve_controller",valve,controller,modulate,open);
-	HybridIOAutomaton system = compose("watertank-pr",valve_controller,tank,DiscreteLocation("modulate,open"),flow);
+	HybridIOAutomaton system = compose("watertank-pr",controller,tank,stabilising,flow);
 
 	return system;
 }
