@@ -31,11 +31,11 @@ namespace Ariadne {
 HybridIOAutomaton getWatertankProportional()
 {
     /// Set the system parameters
-	RealParameter alpha("a",0.065); // The constant defining the decrease rate of the tank level
+	RealParameter alpha("alpha",0.065); // The constant defining the decrease rate of the tank level
 	RealParameter tau("tau",1.25); // The characteristic time for the opening/closing of the valve
 	RealParameter ref("ref",6.75); // A reference tank level
 	RealParameter bfp("bfp",0.3); // The product beta*f(p)
-	RealParameter Kp("Kp",0.6); // The gain of the proportional controller
+	RealParameter Kp("Kp",10.0); // The gain of the proportional controller
 	RealParameter delta("delta",Interval(-0.00,0.00)); // An indeterminacy in guards evaluation
 
 	// System variables
@@ -53,7 +53,7 @@ HybridIOAutomaton getWatertankProportional()
     	tank.add_input_var(a);
     	tank.add_output_var(x);
 
-		RealExpression flow_dyn = - alpha * x + bfp * a;
+		RealExpression flow_dyn = - alpha * sqrt(x) + bfp * a;
 		tank.new_mode(flow);
 		tank.set_dynamics(flow, x, flow_dyn);
 
