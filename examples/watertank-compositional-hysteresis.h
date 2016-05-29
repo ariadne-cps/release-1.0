@@ -100,27 +100,20 @@ HybridIOAutomaton getWatertankCompositionalHysteresis()
 
 		// Transitions
 
-		std::map< RealVariable, RealExpression> reset_y_identity;
-		reset_y_identity[a] = a;
-		std::map< RealVariable, RealExpression> reset_y_one;
-		reset_y_one[a] = 1.0;
-		std::map< RealVariable, RealExpression> reset_y_zero;
-		reset_y_zero[a] = 0.0;
-
 		// when open is received, go to opening
-		valve.new_unforced_transition(e_open, idle, opening, reset_y_identity);
-		valve.new_unforced_transition(e_open, opening, opening, reset_y_identity);
+		valve.new_unforced_transition(e_open, idle, opening);
+		valve.new_unforced_transition(e_open, opening, opening);
 		//valve.new_unforced_transition(e_open, closing, opening, res);
 		 // when closed is received, go to closing
-		valve.new_unforced_transition(e_close, idle, closing, reset_y_identity);
+		valve.new_unforced_transition(e_close, idle, closing);
 		//valve.new_unforced_transition(e_close, opening, closing, res);
-		valve.new_unforced_transition(e_close, closing, closing, reset_y_identity);
+		valve.new_unforced_transition(e_close, closing, closing);
 		// when the valve is fully opened go from opening to idle
 		RealExpression y_geq_one = a - 1.0;
-		valve.new_forced_transition(e_idle, opening, idle, reset_y_identity, y_geq_one);
+		valve.new_forced_transition(e_idle, opening, idle, y_geq_one);
 		// when the valve is fully closed go from closing to idle
 		RealExpression y_leq_zero = - a;
-		valve.new_forced_transition(e_idle, closing, idle, reset_y_identity, y_leq_zero);
+		valve.new_forced_transition(e_idle, closing, idle, y_leq_zero);
 
 	// Create the controller automaton
 
