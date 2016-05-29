@@ -29,7 +29,13 @@ int main(int argc, char* argv[])
         evolver.settings().hybrid_maximum_step_size[hs_it->first] = 1.0;
     }
 
-    HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("flow,start"),Box(2, 8.0,8.0, 0.0,0.0));
+    Real day = system.parameter_value("day");
+    Real Tmax = system.parameter_value("Tmax");
+    Real Tmin = system.parameter_value("Tmin");
+    Real phi = system.parameter_value("phi");
+    Real T_e = Tmin + (Tmax - Tmin)*(1.0-cos(phi))/2;
+
+    HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("flow,oscillate"),Box(2, T_e.lower(),T_e.upper(), 0.0,0.0));
 
     HybridTime evol_limits(1450.0,5);
 

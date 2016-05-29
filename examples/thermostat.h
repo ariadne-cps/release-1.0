@@ -75,35 +75,19 @@ HybridIOAutomaton getThermostatSystem()
 	    HybridIOAutomaton exterior("exterior");
 
 		// States
-	    DiscreteLocation start("start");
 		DiscreteLocation oscillate("oscillate");
 
 		// Add the input/output variables
 		exterior.add_input_var(h);
 		exterior.add_output_var(Te);
 
-    	// Events
-    	DiscreteEvent init("init");
-
-		// Add the input/output events
-    	exterior.add_internal_event(init);
-
 		// Dynamics
-		RealExpression Te_dyn_start = 0.0;
-		exterior.new_mode(start);
-		exterior.set_dynamics(start, Te, Te_dyn_start);
-		RealExpression Te_dyn_oscillate = (Tmax - Tmin) * Ariadne::pi<Real>()/day * sin(2.0*Ariadne::pi<Real>()/day*h + phi);
+		RealExpression Te_dyn = (Tmax - Tmin) * Ariadne::pi<Real>()/day * sin(2.0*Ariadne::pi<Real>()/day*h + phi);
 		exterior.new_mode(oscillate);
-		exterior.set_dynamics(oscillate, Te, Te_dyn_oscillate);
-
-		// Transitions
-		std::map<RealVariable,RealExpression> reset_Te_init;
-		reset_Te_init[Te] = Tmin + (Tmax - Tmin) * (1 - cos(phi)) / 2;
-		RealExpression h_geq_zero = h; // Guard: h >= 0
-		exterior.new_forced_transition(init, start, oscillate, reset_Te_init, h_geq_zero);
+		exterior.set_dynamics(oscillate, Te, Te_dyn);
 
 	/// Compose the automata
-	HybridIOAutomaton system = compose("thermostat",timer,exterior,flow,start);
+	HybridIOAutomaton system = compose("thermostat",timer,exterior,flow,oscillate);
 
 	return system;
 }
