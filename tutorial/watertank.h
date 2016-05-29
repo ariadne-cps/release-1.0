@@ -1,5 +1,5 @@
 /***************************************************************************
- *            tutorial.h
+ *            watertank.h
  *
  *  Copyright  2016  Luca Geretti
  *
@@ -21,8 +21,8 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef TUTORIAL_H_
-#define TUTORIAL_H_
+#ifndef WATERTANK_H_
+#define WATERTANK_H_
 
 #include "ariadne.h"
 
@@ -104,15 +104,22 @@ HybridIOAutomaton getSystem()
     valve.set_dynamics(opening, a, dynopening);
     valve.set_dynamics(closing, a, dynclosing);
 
-    // Guards
-    RealExpression a_geq_one = a - 1.0;
-    RealExpression a_leq_zero = - a;
+    // Transitions
 
-    // Registration of the transitions
-    valve.new_unforced_transition(e_open, idle, opening);
-    valve.new_unforced_transition(e_close, idle, closing);
-    valve.new_forced_transition(e_idle, opening, idle, a_geq_one);
-    valve.new_forced_transition(e_idle, closing, idle, a_leq_zero);
+	valve.new_unforced_transition(e_open, idle, opening);
+	valve.new_unforced_transition(e_open, opening, opening);
+	valve.new_unforced_transition(e_close, idle, closing);
+	valve.new_unforced_transition(e_close, closing, closing);
+	// when the valve is fully opened go from opening to idle
+	RealExpression a_geq_one = a - 1.0;
+	std::map<RealVariable,RealExpression> reset_a_one;
+	reset_a_one[a] = 1.0;
+	valve.new_forced_transition(e_idle, opening, idle, reset_a_one, a_geq_one);
+	// when the valve is fully closed go from closing to idle
+	RealExpression a_leq_zero = - a;
+	std::map<RealVariable,RealExpression> reset_a_zero;
+	reset_a_zero[a] = 0.0;
+	valve.new_forced_transition(e_idle, closing, idle, reset_a_zero, a_leq_zero);
 
     /// Controller automaton
 
@@ -166,4 +173,4 @@ HybridIOAutomaton getSystem()
 
 }
 
-#endif /* TUTORIAL_H_ */
+#endif /* WATERTANK_H_ */
