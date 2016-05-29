@@ -128,6 +128,13 @@ HybridIOAutomaton getHomeSystem()
 		thermostat.add_output_event(turn_on_morning);
 		thermostat.add_output_event(turn_off_day);
 
+		// Dynamics
+		RealExpression clk_dyn = 1.0;
+		thermostat.set_dynamics(day,clk,clk_dyn);
+		thermostat.set_dynamics(evening,clk,clk_dyn);
+		thermostat.set_dynamics(night,clk,clk_dyn);
+		thermostat.set_dynamics(morning,clk,clk_dyn);
+
 		// Transitions
 		std::map<RealVariable,RealExpression> reset_clk;
 		reset_clk[clk] = 0.0;
@@ -148,8 +155,8 @@ HybridIOAutomaton getHomeSystem()
 		HybridIOAutomaton interior("interior");
 
 		// Parameters
-		RealParameter Ke("Ke",1.0); // Gain of the effect of the exterior temperature
-		RealParameter Kt("Kt",3.0); // Gain of the effect of the thermostat temperature
+		RealParameter Ke("Ke",0.01); // Gain of the effect of the exterior temperature
+		RealParameter Kt("Kt",0.03); // Gain of the effect of the thermostat temperature
 
 		// Variables
 		RealVariable Ti("Ti");
