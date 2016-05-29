@@ -1,7 +1,7 @@
 /***************************************************************************
- *            compositional.h
+ *            tutorial.h
  *
- *  Copyright  2014  Luca Geretti
+ *  Copyright  2016  Luca Geretti
  *
  ****************************************************************************/
 
@@ -21,8 +21,8 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef COMPOSITIONAL_H_
-#define COMPOSITIONAL_H_
+#ifndef TUTORIAL_H_
+#define TUTORIAL_H_
 
 #include "ariadne.h"
 
@@ -174,4 +174,4 @@ HybridIOAutomaton getSystem()
 
 }
 
-#endif /* COMPOSITIONAL_H_ */
+#endif /* TUTORIAL_H_ */

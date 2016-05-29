@@ -82,19 +82,13 @@ HybridIOAutomaton getWatertankCompositionalHysteresis()
 		// Idle (valve either fully closed or fully opened)
 		RealExpression dynidle = 0.0;
 		valve.new_mode(idle);
-		//valve.new_invariant(idle, -y);
-		//valve.new_invariant(idle, y-1.0);
 		valve.set_dynamics(idle, a, dynidle);
 		// Opening (valve is opening)
 		valve.new_mode(opening);
-		//valve.new_invariant(opening, -y);
-		//valve.new_invariant(opening, y-1.0);
 		RealExpression dynopening = 1.0/T;
 		valve.set_dynamics(opening, a, dynopening);
 		// Closing (valve is closing)
 		valve.new_mode(closing);
-		//valve.new_invariant(closing, -y);
-		//valve.new_invariant(closing, y-1.0);
 		RealExpression dynclosing = -1.0/T;
 		valve.set_dynamics(closing, a, dynclosing);
 
@@ -103,10 +97,8 @@ HybridIOAutomaton getWatertankCompositionalHysteresis()
 		// when open is received, go to opening
 		valve.new_unforced_transition(e_open, idle, opening);
 		valve.new_unforced_transition(e_open, opening, opening);
-		//valve.new_unforced_transition(e_open, closing, opening, res);
 		 // when closed is received, go to closing
 		valve.new_unforced_transition(e_close, idle, closing);
-		//valve.new_unforced_transition(e_close, opening, closing, res);
 		valve.new_unforced_transition(e_close, closing, closing);
 		// when the valve is fully opened go from opening to idle
 		RealExpression y_geq_one = a - 1.0;

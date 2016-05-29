@@ -23,7 +23,6 @@
 
 #include "ariadne.h"
 #include "function.h"
-#include "examples.h"
 
 using namespace Ariadne;
 

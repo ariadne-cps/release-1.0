@@ -1,7 +1,7 @@
 /***************************************************************************
- *            compositional.cc
+ *            tutorial.cc
  *
- *  Copyright  2014  Luca Geretti
+ *  Copyright  2016  Luca Geretti
  *
  ****************************************************************************/
 
@@ -23,7 +23,7 @@
 
 #include "ariadne.h"
 #include "analysis.h"
-#include "compositional.h"
+#include "tutorial.h"
 
 using namespace Ariadne;
 
