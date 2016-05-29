@@ -75,7 +75,7 @@ void infinite_time_outer_evolution(HybridAutomatonInterface& system, HybridBound
 
     int accuracy = 5;
 
-    HybridBoxes domain(system.state_space(),Box(2,4.5,9.0,0.0,1.0));
+    HybridBoxes domain(system.state_space(),Box(2,0.0,1.0,4.5,9.0));
 
     HybridReachabilityAnalyser analyser(system,domain,accuracy);
     analyser.verbosity = verbosity;
@@ -93,7 +93,7 @@ void infinite_time_lower_evolution(HybridAutomatonInterface& system, HybridBound
 
     int accuracy = 5;
 
-    HybridBoxes domain(system.state_space(),Box(2,4.5,9.0,0.0,1.0));
+    HybridBoxes domain(system.state_space(),Box(2,0.0,1.0,4.5,9.0));
 
     HybridReachabilityAnalyser analyser(system,domain,accuracy);
     analyser.verbosity = verbosity;
@@ -110,7 +110,7 @@ void infinite_time_lower_evolution(HybridAutomatonInterface& system, HybridBound
 
 void safety_verification(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results) {
 
-    HybridBoxes domain(system.state_space(),Box(2,4.5,9.0,0.0,1.0));
+    HybridBoxes domain(system.state_space(),Box(2,0.0,1.0,4.5,9.0));
     HybridConstraintSet safety_constraint = getSafetyConstraint(system);
 
     Verifier verifier;
@@ -125,7 +125,7 @@ void safety_verification(HybridAutomatonInterface& system, HybridBoundedConstrai
 
 void parametric_safety_verification(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results) {
 
-    HybridBoxes domain(system.state_space(),Box(2,4.5,9.0,0.0,1.0));
+    HybridBoxes domain(system.state_space(),Box(2,0.0,1.0,4.5,9.0));
     HybridConstraintSet safety_constraint = getSafetyConstraint(system);
 
     // The parameters
@@ -153,10 +153,10 @@ void parametric_safety_verification(HybridAutomatonInterface& system, HybridBoun
 HybridConstraintSet getSafetyConstraint(HybridAutomatonInterface& system) {
 
     RealVariable x("x");
-    RealVariable y("y");
+    RealVariable a("a");
     List<RealVariable> varlist;
     varlist.append(x);
-    varlist.append(y);
+    varlist.append(a);
     RealExpression expr = x;
     List<RealExpression> consexpr;
     consexpr.append(expr);

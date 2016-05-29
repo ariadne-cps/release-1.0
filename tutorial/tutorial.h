@@ -31,8 +31,8 @@ namespace Ariadne {
 HybridIOAutomaton getSystem()
 {
     // System variables
-    RealVariable x("x");
-    RealVariable y("y");
+    RealVariable a("a"); // Valve aperture
+    RealVariable x("x"); // Water level
 
     /// Tank automaton
 
@@ -40,25 +40,25 @@ HybridIOAutomaton getSystem()
     HybridIOAutomaton tank("tank");
 
     // Parameters to be used in the automaton definition
-    RealParameter a("a",0.02);
-    RealParameter b("b",Interval(0.3,0.32863));
+    RealParameter alpha("alpha",0.02);
+    RealParameter bfp("bfp",Interval(0.3,0.32863));
 
     // Locations for discrete states
     DiscreteLocation flow("flow");
 
     // Registration of the input/output variables
-    tank.add_input_var(y);
+    tank.add_input_var(a);
     tank.add_output_var(x);
 
     // Registration of the locations
     tank.new_mode(flow);
 
     // Input/output variables
-    tank.add_input_var(y);
+    tank.add_input_var(a);
     tank.add_output_var(x);
 
     // Dynamics
-    RealExpression dyn = - a * sqrt(x) + b * y;
+    RealExpression dyn = - alpha * sqrt(x) + bfp * a;
 
     // Registration of the dynamics
     tank.set_dynamics(flow, x, dyn);
@@ -77,7 +77,7 @@ HybridIOAutomaton getSystem()
     DiscreteLocation closing("closing");
 
     // Registration of the input/output variables
-    valve.add_output_var(y);
+    valve.add_output_var(a);
 
     // Discrete events for transitions
     DiscreteEvent e_open("open");
@@ -100,27 +100,19 @@ HybridIOAutomaton getSystem()
     valve.new_mode(closing);
 
     // Registration of the dynamics for each location
-    valve.set_dynamics(idle, y, dynidle);
-    valve.set_dynamics(opening, y, dynopening);
-    valve.set_dynamics(closing, y, dynclosing);
-
-    // Resets
-    std::map< RealVariable, RealExpression> reset_y_identity;
-    reset_y_identity[y] = y;
-    std::map< RealVariable, RealExpression> reset_y_one;
-    reset_y_one[y] = 1.0;
-    std::map< RealVariable, RealExpression> reset_y_zero;
-    reset_y_zero[y] = 0.0;
+    valve.set_dynamics(idle, a, dynidle);
+    valve.set_dynamics(opening, a, dynopening);
+    valve.set_dynamics(closing, a, dynclosing);
 
     // Guards
-    RealExpression y_geq_one = y - 1.0;
-    RealExpression y_leq_zero = - y;
+    RealExpression a_geq_one = a - 1.0;
+    RealExpression a_leq_zero = - a;
 
     // Registration of the transitions
-    valve.new_unforced_transition(e_open, idle, opening, reset_y_identity);
-    valve.new_unforced_transition(e_close, idle, closing, reset_y_identity);
-    valve.new_forced_transition(e_idle, opening, idle, reset_y_identity, y_geq_one);
-    valve.new_forced_transition(e_idle, closing, idle, reset_y_identity, y_leq_zero);
+    valve.new_unforced_transition(e_open, idle, opening);
+    valve.new_unforced_transition(e_close, idle, closing);
+    valve.new_forced_transition(e_idle, opening, idle, a_geq_one);
+    valve.new_forced_transition(e_idle, closing, idle, a_leq_zero);
 
     /// Controller automaton
 
