@@ -7,7 +7,7 @@
 
 #include <cstdarg>
 #include "ariadne.h"
-#include "thermostat.h"
+#include "home.h"
 
 using namespace Ariadne;
 
@@ -17,8 +17,7 @@ int main(int argc, char* argv[])
 	if (argc > 1)
 		verb = atoi(argv[1]);
 
-    /// Create a HybridAutomaton object
-    HybridIOAutomaton system = getThermostatSystem();
+    HybridIOAutomaton system = getHomeSystem();
 
     HybridEvolver evolver(system);
     evolver.verbosity = verb;

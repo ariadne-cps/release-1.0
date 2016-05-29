@@ -17,7 +17,7 @@ set(EXAMPLES
 		 boost-converter
 		 exponential
 		 circle
-		 thermostat
+		 home
 )
 
 foreach(example ${EXAMPLES})

@@ -1,7 +1,7 @@
 /***************************************************************************
- *            thermostat.h
+ *            home.h
  *
- *  Describes a system with a controllable thermostat in a closed environment
+ *  Describes a system with a home environment with a controllable thermostat
  *  subject to an outside temperature source.
  *
  *  Copyright  2016  Luca Geretti
@@ -24,14 +24,14 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef THERMOSTAT_H_
-#define THERMOSTAT_H_
+#ifndef HOME_H_
+#define HOME_H_
 
 #include "ariadne.h"
 
 namespace Ariadne {
 
-HybridIOAutomaton getThermostatSystem()
+HybridIOAutomaton getHomeSystem()
 {
     /// Set the system parameters
 	RealParameter day("day",1440); // Total time units to reach one day
@@ -86,8 +86,10 @@ HybridIOAutomaton getThermostatSystem()
 		exterior.new_mode(oscillate);
 		exterior.set_dynamics(oscillate, Te, Te_dyn);
 
+	// Create the thermostat automaton
+
 	/// Compose the automata
-	HybridIOAutomaton system = compose("thermostat",timer,exterior,flow,oscillate);
+	HybridIOAutomaton system = compose("home",timer,exterior,flow,oscillate);
 
 	return system;
 }
@@ -95,4 +97,4 @@ HybridIOAutomaton getThermostatSystem()
 
 }
 
-#endif /* THERMOSTAT_H_ */
+#endif /* HOME_H_ */
