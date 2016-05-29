@@ -57,9 +57,14 @@ void finite_time_upper_evolution(HybridAutomatonInterface& system, HybridBounded
     HybridEvolver evolver(system);
     evolver.verbosity = verbosity;
 
+    HybridEvolver::EnclosureType initial_enclosure;
     HybridBoxes initial_set_domain = initial_set.domain();
-    std::map<DiscreteLocation,Box>::const_iterator it = initial_set_domain.locations_begin();
-    HybridEvolver::EnclosureType initial_enclosure(it->first,Box(it->second.centre()));
+    for (std::map<DiscreteLocation,Box>::const_iterator it = initial_set_domain.locations_begin(); it != initial_set_domain.locations_end(); ++it) {
+    	if (!it->second.empty()) {
+    		initial_enclosure = HybridEvolver::EnclosureType(it->first,Box(it->second.centre()));
+    		break;
+    	}
+    }
   
     HybridTime evol_limits(30.0,8);
  

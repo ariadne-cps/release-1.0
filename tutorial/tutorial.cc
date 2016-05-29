@@ -29,7 +29,10 @@ using namespace Ariadne;
 
 int main(int argc,char *argv[])
 {
-    int verbosity = 1;
+	int verb = 1;
+	if (argc > 1)
+		verb = atoi(argv[1]);
+
     bool plot_results = false;
 
     HybridIOAutomaton system = Ariadne::getSystem();
@@ -38,5 +41,5 @@ int main(int argc,char *argv[])
     initial_set[DiscreteLocation("flow,idle,rising")] = Box(2, 1.0,1.0, 6.0,7.5);
     initial_set[DiscreteLocation("flow,idle,falling")] = Box(2, 0.0,0.0, 6.0,7.5);
 
-    analyse(system,initial_set,verbosity,plot_results);
+    analyse(system,initial_set,verb,plot_results);
 }
