@@ -24,7 +24,7 @@ int main(int argc, char* argv[])
 
     HybridSpace hspace(system.state_space());
     for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
-        evolver.settings().minimum_discretised_enclosure_widths[hs_it->first] = Vector<Float>(3,1.0);
+        evolver.settings().minimum_discretised_enclosure_widths[hs_it->first] = Vector<Float>(4,1.0);
         evolver.settings().hybrid_maximum_step_size[hs_it->first] = 1.0;
     }
 
@@ -34,7 +34,9 @@ int main(int argc, char* argv[])
     Real phi = system.parameter_value("phi");
     Real Te_0 = Te_min + (Te_max - Te_min)*(1.0-cos(phi))/2;
 
-    HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("flow,oscillate,night"),Box(3, Te_0.lower(),Te_0.upper(), 0.0,0.0, 0.0, 0.0));
+    cout << system << endl;
+
+    HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("flow,oscillate,night,unregulated"),Box(4, Te_0.lower(),Te_0.upper(), Te_0.lower(),Te_0.upper(), 0.0,0.0, 0.0, 0.0));
 
     HybridTime evol_limits(2.0*day_len.midpoint(),7);
 

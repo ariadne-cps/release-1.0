@@ -97,6 +97,7 @@ HybridIOAutomaton getHomeSystem()
 		RealParameter t_off_night("t_off_night",23.5); // Time to turn off the thermostat when night arrives, expressed as hours from the start of the time
 		RealParameter t_on_morning("t_on_morning",6.5); // Time to turn on the thermostat when morning arrives, expressed as hours from the start of the time
 		RealParameter t_off_day("t_off_day",8.5); // Time to turn off the thermostat when day arrives, expressed as hours from the start of the time
+		RealParameter Ton("Ton",20.0); // The thermostat temperature when on
 
 		RealVariable clk("clk"); // Thermostat clock
 
@@ -114,13 +115,6 @@ HybridIOAutomaton getHomeSystem()
 		thermostat.new_mode(evening);
 		thermostat.new_mode(night);
 		thermostat.new_mode(morning);
-
-		// Add the dynamics
-		RealExpression clk_d = 1.0;
-		thermostat.set_dynamics(day,clk,clk_d);
-		thermostat.set_dynamics(evening,clk,clk_d);
-		thermostat.set_dynamics(night,clk,clk_d);
-		thermostat.set_dynamics(morning,clk,clk_d);
 		
 		// Events
 		DiscreteEvent turn_on_evening("turn_on_evening");
@@ -131,7 +125,7 @@ HybridIOAutomaton getHomeSystem()
 		// Add the input/output events
 		thermostat.add_output_event(turn_on_evening);
 		thermostat.add_output_event(turn_off_night);
-		thermostat.add_output_event(turn_on_evening);
+		thermostat.add_output_event(turn_on_morning);
 		thermostat.add_output_event(turn_off_day);
 
 		// Transitions
@@ -149,9 +143,50 @@ HybridIOAutomaton getHomeSystem()
 		RealExpression clk_geq_day = clk - 60.0*(t_off_day-t_on_morning);
 		thermostat.new_forced_transition(turn_off_day, morning, day, reset_clk, clk_geq_day);
 
+	// Create the internal environment automaton
+
+		HybridIOAutomaton interior("interior");
+
+		// Parameters
+		RealParameter Ke("Ke",1.0); // Gain of the effect of the exterior temperature
+		RealParameter Kt("Kt",3.0); // Gain of the effect of the thermostat temperature
+
+		// Variables
+		RealVariable Ti("Ti");
+
+		// Add the input/output variables
+		interior.add_input_var(Te);
+		interior.add_output_var(Ti);
+
+		// Discrete states
+		DiscreteLocation regulated("regulated");
+		DiscreteLocation unregulated("unregulated");
+
+		interior.new_mode(regulated);
+		interior.new_mode(unregulated);
+
+		// Add the input/output events
+		interior.add_input_event(turn_on_evening);
+		interior.add_input_event(turn_off_night);
+		interior.add_input_event(turn_on_morning);
+		interior.add_input_event(turn_off_day);
+
+		// Dynamics
+		RealExpression Ti_regulated_dyn = Ke*(Te - Ti) + Kt*(Ton - Ti);
+		interior.set_dynamics(regulated, Ti, Ti_regulated_dyn);
+		RealExpression Ti_unregulated_dyn = Ke*(Te - Ti);
+		interior.set_dynamics(unregulated, Ti, Ti_unregulated_dyn);
+
+		// Transitions
+		interior.new_unforced_transition(turn_on_evening,unregulated,regulated);
+		interior.new_unforced_transition(turn_on_morning,unregulated,regulated);
+		interior.new_unforced_transition(turn_off_night,regulated,unregulated);
+		interior.new_unforced_transition(turn_off_day,regulated,unregulated);
+
 	/// Compose the automata
 	HybridIOAutomaton timer_exterior = compose("timer-exterior",timer,exterior,flow,oscillate);
-	HybridIOAutomaton system = compose("home",timer_exterior,thermostat,DiscreteLocation("flow,oscillate"),night);
+	HybridIOAutomaton timer_exterior_thermostat = compose("timer-exterior-thermostat",timer_exterior,thermostat,DiscreteLocation("flow,oscillate"),night);
+	HybridIOAutomaton system = compose("home",timer_exterior_thermostat,interior,DiscreteLocation("flow,oscillate,night"),unregulated);
 
 	return system;
 }
