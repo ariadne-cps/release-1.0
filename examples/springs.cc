@@ -13,55 +13,6 @@ using namespace Ariadne;
 /// v1: speed of the first mass
 /// v2: speed of the second mass
 
-/// Function for plotting the orbit and reachability set
-template<class SET> void plot(const char* filename, const int& xaxis, const int& yaxis, const int& numVariables, const Box& bbox, const Colour& fc, const SET& set, const int& MAX_GRID_DEPTH) { 
-    // Assigns local variables
-    Figure fig; 
-    Ariadne::array<uint> xy(2,xaxis,yaxis);
-    fig.set_projection_map(ProjectionFunction(xy,numVariables)); 
-    fig.set_bounding_box(bbox); 
-
-    // If the grid must be shown
-    if (MAX_GRID_DEPTH >= 0)
-    {
-	// The rectangle to be drawn
-	Box rect = Box(numVariables);
-	// Chooses the fill colour
-        fig << fill_colour(Colour(1.0,1.0,1.0));
-
-	// Gets the number of times each variable interval would be divided by 2
-        int numDivisions = MAX_GRID_DEPTH / numVariables;
-	// Gets the step in the x direction, by 1/2^(numDivisions+h), where h is 1 if the step is to be further divided by 2, 0 otherwise
-	double step_x = 1.0/(1 << (numDivisions + ((MAX_GRID_DEPTH - numDivisions*numVariables > xaxis) ? 1 : 0)));
-	// Initiates the x position to the bounding box left bound
-        double pos_x = bbox[0].lower();
-        // Sets the rectangle 2-nd interval to the corresponding bounding box interval (while the >2 intervals are kept at [0,0])
-	rect[yaxis] = bbox[1];
-        // While between the interval
-        while (pos_x < bbox[0].upper())
-        {
-	    rect[xaxis] = Interval(pos_x,pos_x+step_x); // Sets the rectangle x coordinate
-	    pos_x += step_x; // Shifts the x position
-	    fig << rect; // Appends the rectangle
-        }
-
-	// Repeats for the rectangles in the y direction
-	double step_y = 1.0/(1 << (numDivisions + ((MAX_GRID_DEPTH - numDivisions*numVariables > yaxis) ? 1 : 0)));  
-        double pos_y = bbox[1].lower();
-	rect[xaxis] = bbox[0];
-        while (pos_y < bbox[1].upper())
-        {
-	    rect[yaxis] = Interval(pos_y,pos_y+step_y);
-   	    fig << rect;
-	    pos_y += step_y;
-        }
-    }
-    // Draws and creates file
-    fig.set_fill_colour(fc); 
-    draw(fig,set); 
-    fig.write(filename); 
-}
-
 int main() 
 {    
 
@@ -83,7 +34,7 @@ int main()
     /// Build the Hybrid System
   
     /// Create a HybridAutomaton object
-    HybridAutomaton springs;
+    HybridAutomaton system("springs");
   
     /// Create the discrete states
     DiscreteLocation free(1);
@@ -143,22 +94,22 @@ int main()
     /// Build the automaton
     
     /// Locations
-    springs.new_mode(free,free_d);
-    springs.new_mode(stuck,stuck_d);
+    system.new_mode(free,free_d);
+    system.new_mode(stuck,stuck_d);
     /// Invariants
     //springs.new_invariant(free,free2stuck_g);
     /// Events
-    springs.new_forced_transition(sticking,free,stuck,stick_r,free2stuck_g);
-    springs.new_forced_transition(unsticking,stuck,free,unstick_r,stuck2free_g);
+    system.new_forced_transition(sticking,free,stuck,stick_r,free2stuck_g);
+    system.new_forced_transition(unsticking,stuck,free,unstick_r,stuck2free_g);
 
     /// Finished building the automaton
 
-    cout << "Automaton = " << springs << endl << endl;
+    cout << "Automaton = " << system << endl << endl;
 
     /// Compute the system evolution
 
     /// Create a HybridEvolver object
-    HybridEvolver evolver(springs);
+    HybridEvolver evolver(system);
     evolver.verbosity = 1;
 
     /// Set the evolution parameters
@@ -175,7 +126,6 @@ int main()
     std::cout << "Computing evolution..." << std::endl;
 
     Box initial_box(5, x1_0,x1_0, x2_0,x2_0, 0.0,0.0, 0.0,0.0, 0.0,0.0);
-//    Box initial_box(4, -0.994037,-0.994037, -0.994037,-0.994037, 0.225821,0.225821, 0.225821,0.225821);
 
     HybridEnclosureType initial_enclosure(free,initial_box);
     
@@ -187,18 +137,6 @@ int main()
     OrbitType orbit = evolver.orbit(initial_enclosure,evolution_time,UPPER_SEMANTICS);
     std::cout << "done." << std::endl;
 
-    std::cout << "Orbit.initial="<<orbit.initial()<<std::endl;
-    std::cout << "Orbit.final="<<orbit.final()<<std::endl;
-
-    Box graphic_box_x1x2(2,min(p1-abs(p1-x1_0),p2-abs(p2-x2_0)),max(p1+abs(p1-x1_0),p2+abs(p2-x2_0)),min(p1-abs(p1-x1_0),p2-abs(p2-x2_0)),max(p1+abs(p1-x1_0),p2+abs(p2-x2_0)));
-    Box graphic_box_x1v1(2,p1-abs(p1-x1_0),p1+abs(p1-x1_0),-ceil(sqrt(k1/m1)*abs(p1-x1_0)),ceil(sqrt(k1/m1)*abs(p1-x1_0)));
-    Box graphic_box_x2v2(2,p2-abs(p2-x2_0),p2+abs(p2-x2_0),-ceil(sqrt(k2/m2)*abs(p2-x2_0)),ceil(sqrt(k2/m2)*abs(p2-x2_0)));
-    Box graphic_box_xv(2, -0.0,3.0, -2.0,2.0);
-    Box graphic_box_xt(2, -0.0,EVOL_TIME, -0.0,3.0);
-    plot("springs_x1v1_orbit", 0, 2, 5, graphic_box_xv, Colour(0.0,0.5,1.0), orbit, 2);
-    plot("springs_x2v2_orbit", 1, 3, 5, graphic_box_xv, Colour(0.0,0.5,1.0), orbit, 2);
-    plot("springs_x1x2_orbit", 0, 1, 5, graphic_box_x1x2, Colour(0.0,0.5,1.0), orbit, 2);
-    plot("springs_x1t_orbit", 4, 0, 5, graphic_box_xt, Colour(0.0,0.5,1.0), orbit, 2);
-    plot("springs_x2t_orbit", 4, 1, 5, graphic_box_xt, Colour(0.0,0.5,1.0), orbit, 2);
-
+    PlotHelper plotter(system.name());
+    plotter.plot(orbit.reach(),"reach");
 }
