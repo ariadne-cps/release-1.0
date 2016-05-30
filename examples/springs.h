@@ -44,6 +44,7 @@ HybridIOAutomaton getSpringsSystem()
 	RealVariable v1("v1"); // Speed of the first ball
 	RealVariable x2("x2"); // Position of the second ball
 	RealVariable v2("v2"); // Speed of the second ball
+	RealVariable t("t"); // Reference time for plotting
 
     /// Spring 1
     HybridIOAutomaton spring1("spring1");
@@ -53,6 +54,7 @@ HybridIOAutomaton getSpringsSystem()
     	spring1.add_input_var(v2);
     	spring1.add_internal_var(x1);
     	spring1.add_output_var(v1);
+    	spring1.add_output_var(t);
 
 		/// Create the discrete states
 		DiscreteLocation free1("free1");
@@ -73,12 +75,16 @@ HybridIOAutomaton getSpringsSystem()
     	/// Create the dynamics
     	RealExpression free_x1_d = v1;
     	RealExpression free_v1_d = k1*(p1-x1)/m1;
+    	RealExpression free_t_d = 1.0;
     	spring1.set_dynamics(free1,x1,free_x1_d);
     	spring1.set_dynamics(free1,v1,free_v1_d);
+    	spring1.set_dynamics(free1,t,free_t_d);
         RealExpression stuck_x1_d = v1;
         RealExpression stuck_v1_d = (k1*p1+k2*p2-(k1+k2)*x1)/(m1+m2);
+        RealExpression stuck_t_d = 1.0;
         spring1.set_dynamics(stuck1,x1,stuck_x1_d);
         spring1.set_dynamics(stuck1,v1,stuck_v1_d);
+        spring1.set_dynamics(stuck1,t,stuck_t_d);
 
         /// Create the guards
         RealExpression sticking_g = x1 - x2; // x1 >= x2
@@ -88,6 +94,7 @@ HybridIOAutomaton getSpringsSystem()
         std::map<RealVariable,RealExpression> sticking1_r;
         sticking1_r[x1] = x1;
         sticking1_r[v1] = (m1*v1+m2*v2)/(m1+m2);
+        sticking1_r[t] = t;
 
         /// Transitions
         spring1.new_forced_transition(sticking,free1,stuck1,sticking1_r,sticking_g);
