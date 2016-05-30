@@ -28,7 +28,7 @@
 
 namespace Ariadne {
 
-HybridIOAutomaton getSpringsAutomaton()
+HybridIOAutomaton getSpringsSystem()
 {
     /// Set the system parameters
 	RealParameter m1("m1",4.0); // Mass of the first ball
@@ -39,72 +39,103 @@ HybridIOAutomaton getSpringsAutomaton()
     RealParameter p2("p2",2.0); // Neutral position for the second spring
     RealParameter st("st",1.9); // Stickyness
 
-    /// Create a HybridAutomaton object
-    HybridIOAutomaton automaton("springs");
+	// Variables
+	RealVariable x1("x1"); // Position of the first ball
+	RealVariable v1("v1"); // Speed of the first ball
+	RealVariable x2("x2"); // Position of the second ball
+	RealVariable v2("v2"); // Speed of the second ball
 
-    // Variables
-    RealVariable x1("x1"); // Position of the first ball
-    RealVariable x2("x2"); // Position of the second ball
-    RealVariable v1("v1"); // Speed of the first ball
-    RealVariable v2("v2"); // Speed of the second ball
+    /// Spring 1
+    HybridIOAutomaton spring1("spring1");
 
-    // Register variables
-    automaton.add_internal_var(x1);
-    automaton.add_internal_var(x2);
-    automaton.add_internal_var(v1);
-    automaton.add_internal_var(v2);
+    	// Register variables
+    	spring1.add_input_var(x2);
+    	spring1.add_input_var(v2);
+    	spring1.add_internal_var(x1);
+    	spring1.add_output_var(v1);
 
-    /// Create the discrete states
-    DiscreteLocation free("free");
-    DiscreteLocation stuck("stuck");
+		/// Create the discrete states
+		DiscreteLocation free1("free1");
+		DiscreteLocation stuck1("stuck1");
 
-    // Register modes
-    automaton.new_mode(free);
-    automaton.new_mode(stuck);
+		// Register modes
+		spring1.new_mode(free1);
+    	spring1.new_mode(stuck1);
 
-    /// Create the discrete events
-    DiscreteEvent sticking("sticking");
-    DiscreteEvent unsticking("unsticking");
+    	/// Create the discrete events
+    	DiscreteEvent sticking("sticking");
+    	DiscreteEvent unsticking("unsticking");
 
-    automaton.add_internal_event(sticking);
-    automaton.add_internal_event(unsticking);
+    	// Register events
+    	spring1.add_output_event(sticking);
+    	spring1.add_output_event(unsticking);
 
-    /// Create the dynamics
+    	/// Create the dynamics
+    	RealExpression free_x1_d = v1;
+    	RealExpression free_v1_d = k1*(p1-x1)/m1;
+    	spring1.set_dynamics(free1,x1,free_x1_d);
+    	spring1.set_dynamics(free1,v1,free_v1_d);
+        RealExpression stuck_x1_d = v1;
+        RealExpression stuck_v1_d = (k1*p1+k2*p2-(k1+k2)*x1)/(m1+m2);
+        spring1.set_dynamics(stuck1,x1,stuck_x1_d);
+        spring1.set_dynamics(stuck1,v1,stuck_v1_d);
 
-    RealExpression free_x1_d = v1;
-    RealExpression free_x2_d = v2;
-    RealExpression free_v1_d = k1*(p1-x1)/m1;
-    RealExpression free_v2_d = k2*(p2-x2)/m2;
-    automaton.set_dynamics(free,x1,free_x1_d);
-    automaton.set_dynamics(free,x2,free_x2_d);
-    automaton.set_dynamics(free,v1,free_v1_d);
-    automaton.set_dynamics(free,v2,free_v2_d);
+        /// Create the guards
+        RealExpression sticking_g = x1 - x2; // x1 >= x2
+        RealExpression unsticking_g = (k1-k2)*x1 + k2*p2 - k1*p1 - st; // (k1-k2)*x1 + k2*p2 - k1*p1 >= st
 
-    RealExpression stuck_x1_d = v1;
-    RealExpression stuck_x2_d = v2;
-    RealExpression stuck_v1_d = (k1*p1+k2*p2-(k1+k2)*x1)/(m1+m2);
-    RealExpression stuck_v2_d = stuck_v1_d;
-    automaton.set_dynamics(stuck,x1,stuck_x1_d);
-    automaton.set_dynamics(stuck,x2,stuck_x2_d);
-    automaton.set_dynamics(stuck,v1,stuck_v1_d);
-    automaton.set_dynamics(stuck,v2,stuck_v2_d);
+        /// Create the resets
+        std::map<RealVariable,RealExpression> sticking1_r;
+        sticking1_r[x1] = x1;
+        sticking1_r[v1] = (m1*v1+m2*v2)/(m1+m2);
 
-    /// Create the resets
-    std::map<RealVariable,RealExpression> sticking_r;
-    sticking_r[x1] = x1;
-    sticking_r[x2] = x2;
-    sticking_r[v1] = (m1*v1+m2*v2)/(m1+m2);
-    sticking_r[v2] = sticking_r[v1];
+        /// Transitions
+        spring1.new_forced_transition(sticking,free1,stuck1,sticking1_r,sticking_g);
+        spring1.new_forced_transition(unsticking,stuck1,free1,unsticking_g);
 
-    /// Create the guards
-    RealExpression sticking_g = x1 - x2; // x1 >= x2
-    RealExpression unsticking_g = (k1-k2)*x1 + k2*p2 - k1*p1 - st; // (k1-k2)*x1 + k2*p2 - k1*p1 >= st
 
-    /// Transitions
-    automaton.new_forced_transition(sticking,free,stuck,sticking_r,sticking_g);
-    automaton.new_forced_transition(unsticking,stuck,free,unsticking_g);
+    /// Spring 2
+	HybridIOAutomaton spring2("spring2");
 
-	return automaton;
+    	// Register variable
+		spring2.add_input_var(v1);
+		spring2.add_output_var(x2);
+		spring2.add_output_var(v2);
+
+		/// Create the discrete states
+		DiscreteLocation free2("free2");
+		DiscreteLocation stuck2("stuck2");
+
+		// Register modes
+		spring2.new_mode(free2);
+    	spring2.new_mode(stuck2);
+
+    	// Register events
+    	spring2.add_input_event(sticking);
+    	spring2.add_input_event(unsticking);
+
+    	// Create the dynamics
+    	RealExpression free_x2_d = v2;
+    	RealExpression free_v2_d = k2*(p2-x2)/m2;
+    	spring2.set_dynamics(free2,x2,free_x2_d);
+    	spring2.set_dynamics(free2,v2,free_v2_d);
+    	RealExpression stuck_x2_d = v2;
+    	RealExpression stuck_v2_d = (k1*p1+k2*p2-(k1+k2)*x2)/(m1+m2);
+    	spring2.set_dynamics(stuck2,x2,stuck_x2_d);
+    	spring2.set_dynamics(stuck2,v2,stuck_v2_d);
+
+		/// Create the resets
+		std::map<RealVariable,RealExpression> sticking2_r;
+		sticking2_r[x2] = x2;
+		sticking2_r[v2] = (m1*v1+m2*v2)/(m1+m2);
+
+		/// Transitions
+		spring2.new_unforced_transition(sticking,free2,stuck2,sticking2_r);
+		spring2.new_unforced_transition(unsticking,stuck2,free2);
+
+    HybridIOAutomaton system = compose("springs",spring1,spring2,free1,free2);
+
+	return system;
 }
 
 
