@@ -31,6 +31,8 @@ add_library (ariadne SHARED "src/numeric.cc" "src/vector.cc" "src/matrix.cc" "sr
 
 target_link_libraries(ariadne ${Boost_LIBRARIES} ${GTK2_LIBRARIES} ${CAIRO_LIBRARIES} ${Buddy_LIBRARIES})
 
+install (TARGETS ariadne DESTINATION lib)
+
 enable_testing()
 
 add_subdirectory(test)
