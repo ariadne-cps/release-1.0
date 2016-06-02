@@ -22,7 +22,6 @@
  */
 
 #include "ariadne.h"
-#include "function.h"
 #include "boost-converter.h"
 
 using namespace Ariadne;

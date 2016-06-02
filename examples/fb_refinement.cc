@@ -22,7 +22,6 @@
  */
 
 #include "ariadne.h"
-#include "function.h"
 
 using namespace Ariadne;
 

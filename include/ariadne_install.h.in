@@ -1,0 +1,88 @@
+/***************************************************************************
+ *            ariadne.h
+ *
+ *  Copyright 2008  Pieter Collins
+ * 
+ ****************************************************************************/
+
+/*
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Library General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ */
+ 
+/*! \file ariadne.h
+ *  \brief Top-level header file includes all user headers.
+ */
+
+#ifndef ARIADNE_ARIADNE_H
+#define ARIADNE_ARIADNE_H
+
+//! \brief Top-level %Ariadne namespace
+namespace Ariadne {
+}
+
+#include <cstdlib>
+
+#include <iostream>
+#include <iomanip>
+#include <fstream>
+
+using std::cin; using std::cout; using std::cerr; using std::clog; 
+using std::endl; using std::flush;
+using std::ofstream; using std::ifstream;
+
+#include "ariadne/config.h"
+#include "${INCLUDE_TARGET}/numeric.h"
+#include "${INCLUDE_TARGET}/vector.h"
+#include "${INCLUDE_TARGET}/matrix.h"
+
+#include "${INCLUDE_TARGET}/real.h"
+#include "${INCLUDE_TARGET}/function.h"
+#include "${INCLUDE_TARGET}/user_function.h"
+#include "${INCLUDE_TARGET}/taylor_model.h"
+
+#include "${INCLUDE_TARGET}/space.h"
+#include "${INCLUDE_TARGET}/expression.h"
+#include "${INCLUDE_TARGET}/variables.h"
+#include "${INCLUDE_TARGET}/assignment.h"
+
+#include "${INCLUDE_TARGET}/function_set.h"
+#include "${INCLUDE_TARGET}/taylor_set.h"
+#include "${INCLUDE_TARGET}/hybrid_set.h"
+
+#include "${INCLUDE_TARGET}/point.h"
+#include "${INCLUDE_TARGET}/box.h"
+#include "${INCLUDE_TARGET}/polytope.h"
+#include "${INCLUDE_TARGET}/polyhedron.h"
+
+#include "${INCLUDE_TARGET}/hybrid_time.h"
+#include "${INCLUDE_TARGET}/orbit.h"
+
+#include "${INCLUDE_TARGET}/discrete_location.h"
+#include "${INCLUDE_TARGET}/discrete_event.h"
+#include "${INCLUDE_TARGET}/hybrid_automaton.h"
+#include "${INCLUDE_TARGET}/hybrid_io_automaton.h"
+
+#include "${INCLUDE_TARGET}/hybrid_evolver.h"
+#include "${INCLUDE_TARGET}/parametric.h"
+#include "${INCLUDE_TARGET}/reachability_analyser.h"
+#include "${INCLUDE_TARGET}/set_checker.h"
+#include "${INCLUDE_TARGET}/reachability_restriction.h"
+#include "${INCLUDE_TARGET}/verifier.h"
+
+#include "${INCLUDE_TARGET}/serialization.h"
+#include "${INCLUDE_TARGET}/graphics.h"
+#include "${INCLUDE_TARGET}/textplot.h"
+
+#endif
