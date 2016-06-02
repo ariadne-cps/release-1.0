@@ -16,6 +16,12 @@ include(UseDoxygen OPTIONAL)
 
 configure_file ("include/config.h.in"
 	"${PROJECT_BINARY_DIR}/config.h")
+set(INCLUDE_TARGET "include")
+configure_file ("include/ariadne.h.in"
+        "${PROJECT_BINARY_DIR}/ariadne.h")
+set(INCLUDE_TARGET "ariadne")
+configure_file ("include/ariadne.h.in"
+        "${PROJECT_BINARY_DIR}/ariadne_install.h")
 
 include_directories ("include" ${PROJECT_BINARY_DIR} ${Boost_INCLUDE_DIRS} ${GTK2_INCLUDE_DIRS} ${CAIRO_INCLUDE_DIRS})
 
@@ -32,6 +38,7 @@ add_library (ariadne SHARED "src/numeric.cc" "src/vector.cc" "src/matrix.cc" "sr
 target_link_libraries(ariadne ${Boost_LIBRARIES} ${GTK2_LIBRARIES} ${CAIRO_LIBRARIES} ${Buddy_LIBRARIES})
 
 install (TARGETS ariadne DESTINATION lib)
+
 
 enable_testing()
 
