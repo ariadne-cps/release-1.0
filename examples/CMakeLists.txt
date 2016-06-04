@@ -3,20 +3,12 @@ set(EXAMPLES
 		 watertank-compositional-hysteresis 
 	 	 watertank-proportional 
 		 watertank-nonlinear-monolithic-hysteresis 
-		 watertank-nonlinear-monolithic-proportional 
-		 watertank-aasap 
+		 watertank-nonlinear-monolithic-proportional
 		 watertank-monolithic-dominance 
 		 watertank-nonlinear-monolithic-dominance 
-		 bouncingball 
-		 rectifier 
+		 bouncingball
 		 springs
-		 cmos_inverter_analoginput 
-		 robotarm
-		 fb_refinement 
-		 traffic-arbitrator4 
 		 boost-converter
-		 exponential
-		 circle
 		 home
 )
 
@@ -24,3 +16,5 @@ foreach(example ${EXAMPLES})
     add_executable(${example} ${example}.cc)
     target_link_libraries(${example} ariadne)
 endforeach()
+
+add_subdirectory(experimental)
