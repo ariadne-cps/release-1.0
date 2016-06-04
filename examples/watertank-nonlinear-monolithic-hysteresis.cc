@@ -22,7 +22,7 @@
  */
 
 #include "ariadne.h"
-#include "examples.h"
+#include "watertank-nonlinear-monolithic-hysteresis.h"
 
 using namespace Ariadne;
 

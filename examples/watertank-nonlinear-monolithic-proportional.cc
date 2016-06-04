@@ -22,7 +22,7 @@
  */
 
 #include "ariadne.h"
-#include "examples.h"
+#include "watertank-nonlinear-monolithic-proportional.h"
 
 using namespace Ariadne;
 
