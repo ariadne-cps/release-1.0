@@ -8,6 +8,7 @@ set(EXPERIMENTAL
 		 exponential
 		 circle
 		 circle-unstable
+		 laser
 )
 
 foreach(experiment ${EXPERIMENTAL})
