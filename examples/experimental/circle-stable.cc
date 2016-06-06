@@ -14,7 +14,7 @@ using namespace Ariadne;
 int main(int argc, char* argv[])
 {
     /// Parameters
-	RealParameter R("R",4.0);
+	RealParameter R("R",Interval(3.0,3.2));
 	RealParameter w("w",1.0);
 
     /// Constants
@@ -73,15 +73,15 @@ int main(int argc, char* argv[])
 	// Resets
 	std::map<RealVariable,RealExpression> reset12;
 	reset12[x] = 0.0;
-	reset12[y] = 1.0;
+	reset12[y] = R;
 	std::map<RealVariable,RealExpression> reset23;
-	reset23[x] = -1.0;
+	reset23[x] = -R;
 	reset23[y] = 0.0;
 	std::map<RealVariable,RealExpression> reset34;
 	reset34[x] = 0.0;
-	reset34[y] = -1.0;
+	reset34[y] = -R;
 	std::map<RealVariable,RealExpression> reset41;
-	reset41[x] = 1.0;
+	reset41[x] = R;
 	reset41[y] = 0.0;
 	automaton.new_forced_transition(first2second,first,second,reset12,x_lesser_zero);
 	automaton.new_forced_transition(second2third,second,third,reset23,y_lesser_zero);
@@ -96,14 +96,14 @@ int main(int argc, char* argv[])
 
     HybridSpace hspace(automaton.state_space());
     for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
-        evolver.settings().minimum_discretised_enclosure_widths[hs_it->first] = Vector<Float>(2,1.0);
+        evolver.settings().minimum_discretised_enclosure_widths[hs_it->first] = Vector<Float>(2,2.0);
         evolver.settings().hybrid_maximum_step_size[hs_it->first] = 0.01;
     }
 
     Box initial_box(2, R.value().lower(), R.value().upper(), 0.0,0.0);
     HybridEvolver::EnclosureType initial_enclosure(first,initial_box);
 
-    HybridTime evolution_time(8*2.0*Ariadne::pi<Real>().upper()*w.value().upper(),32);
+    HybridTime evolution_time(1*2.0*Ariadne::pi<Real>().upper()*w.value().upper(),4);
 
     std::cout << "Computing orbit... " << std::flush;
     HybridEvolver::OrbitType orbit = evolver.orbit(initial_enclosure,evolution_time,UPPER_SEMANTICS);
