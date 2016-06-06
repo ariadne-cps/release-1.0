@@ -7,6 +7,7 @@ set(EXPERIMENTAL
 		 traffic-arbitrator4 
 		 exponential
 		 circle
+		 circle-stable
 )
 
 foreach(experiment ${EXPERIMENTAL})

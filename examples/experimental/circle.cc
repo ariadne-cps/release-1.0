@@ -3,11 +3,10 @@
  *
  *  Copyright  2016  Luca Geretti
  *
- * Provides the behavior of a CMOS inverter fed by a sinusoidal (thus analog) input.
+ * Provides the behavior of a circle.
  *
  *****************************************************************************************************/
 
-#include <cstdarg>
 #include "ariadne.h"
 
 using namespace Ariadne;
