@@ -1,29 +1,24 @@
 /*****************************************************************************************************
- *            circle-stable.cc
+ *            circle.cc
  *
  *  Copyright  2016  Luca Geretti
  *
- * Provides the behavior of a circle with proper resets to keep the trajectory stable.
+ * Provides a circle with proper resets to keep the trajectory stable.
  *
  *****************************************************************************************************/
 
 #include "ariadne.h"
 
-using namespace Ariadne;
+#ifndef CIRCLE_H_
+#define CIRCLE_H_
 
-int main(int argc, char* argv[])
+namespace Ariadne {
+
+HybridIOAutomaton getCircle()
 {
     /// Parameters
 	RealParameter R("R",Interval(3.0,3.2));
 	RealParameter w("w",1.0);
-
-    /// Constants
-    float EVOL_TIME = 8;   /// Evolution time
-    float MAX_ENCL_WIDTH = 0.1;   /// Maximum enclosure width
-    float MAX_STEP_SIZE = 1e-2;     /// Maximum step size
-    int VERBOSITY = 1;              /// Verbosity of the HybridEvolver
-	if (argc > 1)
-		VERBOSITY = atoi(argv[1]);
 
     /// Build the Hybrid System
 
@@ -88,27 +83,9 @@ int main(int argc, char* argv[])
 	automaton.new_forced_transition(third2fourth,third,fourth,reset34,x_greater_zero);
 	automaton.new_forced_transition(fourth2first,fourth,first,reset41,y_greater_zero);
 
-    /// Compute the system evolution
-
-    /// Create a HybridEvolver object
-    HybridEvolver evolver(automaton);
-    evolver.verbosity = VERBOSITY;
-
-    HybridSpace hspace(automaton.state_space());
-    for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
-        evolver.settings().minimum_discretised_enclosure_widths[hs_it->first] = Vector<Float>(2,2.0);
-        evolver.settings().hybrid_maximum_step_size[hs_it->first] = 0.01;
-    }
-
-    Box initial_box(2, R.value().lower(), R.value().upper(), 0.0,0.0);
-    HybridEvolver::EnclosureType initial_enclosure(first,initial_box);
-
-    HybridTime evolution_time(1*2.0*Ariadne::pi<Real>().upper()*w.value().upper(),4);
-
-    std::cout << "Computing orbit... " << std::flush;
-    HybridEvolver::OrbitType orbit = evolver.orbit(initial_enclosure,evolution_time,UPPER_SEMANTICS);
-    std::cout << "done." << std::endl;
-
-    PlotHelper plotter(automaton.name());
-    plotter.plot(orbit.reach(),"reach");
+	return automaton;
 }
+
+}
+
+#endif

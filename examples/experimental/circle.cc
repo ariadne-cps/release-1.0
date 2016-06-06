@@ -3,70 +3,49 @@
  *
  *  Copyright  2016  Luca Geretti
  *
- * Provides the behavior of a circle.
+ * Provides the behavior of a circle with proper resets to keep the trajectory stable.
  *
  *****************************************************************************************************/
 
 #include "ariadne.h"
+#include "circle.h"
 
 using namespace Ariadne;
 
 int main(int argc, char* argv[])
 {
-    /// Dynamics parameters
-    Vector<Float> dp(11);
-
-    double A = 2.0;
-
     /// Constants
-    float EVOL_TIME = 8;   /// Evolution time
-    float MAX_ENCL_WIDTH = 0.1;   /// Maximum enclosure width
-    float MAX_STEP_SIZE = 1e-2;     /// Maximum step size
-    int VERBOSITY = 1;              /// Verbosity of the HybridEvolver
+    int VERBOSITY = 1;
 	if (argc > 1)
 		VERBOSITY = atoi(argv[1]);
 
     /// Build the Hybrid System
 
     /// Create a HybridAutomaton object
-    HybridIOAutomaton automaton;
+    HybridIOAutomaton circle = getCircle();
 
-    /// Create the discrete states
-    DiscreteLocation work("work");
-
-    RealVariable x("x");
-    RealVariable y("y");
-
-    automaton.add_output_var(x);
-    automaton.add_output_var(y);
-
-	automaton.new_mode(work);
-
-	RealExpression dyn_x = - y;
-	automaton.set_dynamics(work, x, dyn_x);
-	RealExpression dyn_y = x;
-	automaton.set_dynamics(work, y, dyn_y);
-
-
-    /// Compute the system evolution
+    Real R = circle.parameter_value("R");
+    Real w = circle.parameter_value("w");
 
     /// Create a HybridEvolver object
-    HybridEvolver evolver(automaton);
+    HybridEvolver evolver(circle);
     evolver.verbosity = VERBOSITY;
 
-    evolver.settings().hybrid_maximum_step_size[work] = MAX_STEP_SIZE;
-    evolver.settings().minimum_discretised_enclosure_widths[work] = Vector<Float>(2,MAX_ENCL_WIDTH);
+    HybridSpace hspace(circle.state_space());
+    for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
+        evolver.settings().minimum_discretised_enclosure_widths[hs_it->first] = Vector<Float>(2,2.0);
+        evolver.settings().hybrid_maximum_step_size[hs_it->first] = 0.01;
+    }
 
-    Box initial_box(2, 0.0,0.0, 1.0,1.0);
-    HybridEvolver::EnclosureType initial_enclosure(work,initial_box);
+    Box initial_box(2, R.lower(), R.upper(), 0.0,0.0);
+    HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("1"),initial_box);
 
-    HybridTime evolution_time(EVOL_TIME,1);
+    HybridTime evolution_time(1*2.0*Ariadne::pi<Real>().upper()*w.upper(),4);
 
     std::cout << "Computing orbit... " << std::flush;
     HybridEvolver::OrbitType orbit = evolver.orbit(initial_enclosure,evolution_time,UPPER_SEMANTICS);
     std::cout << "done." << std::endl;
 
-    Box graphic_box(2, -2.0, 2.0, -2.0, 2.0);
-
-    plot("circle", graphic_box, Colour(0.0,0.5,1.0), orbit);
+    PlotHelper plotter(circle.name());
+    plotter.plot(orbit.reach(),"reach");
 }
