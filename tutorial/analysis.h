@@ -41,11 +41,11 @@ HybridConstraintSet getSafetyConstraint(HybridAutomatonInterface& system);
 void analyse(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results)
 {
     cout << "1/5: Finite time (upper) evolution... " << endl << flush;
-    finite_time_upper_evolution(system,initial_set,verbosity,plot_results);
+    //finite_time_upper_evolution(system,initial_set,verbosity,plot_results);
     cout << "2/5: Infinite time outer evolution... " << endl << flush; 
-    infinite_time_outer_evolution(system,initial_set,verbosity,plot_results);
+    //infinite_time_outer_evolution(system,initial_set,verbosity,plot_results);
     cout << "3/5: Infinite time lower evolution... " << endl << flush; 
-    infinite_time_lower_evolution(system,initial_set,verbosity,plot_results);
+    //infinite_time_lower_evolution(system,initial_set,verbosity,plot_results);
     cout << "4/5: Safety verification... " << endl << flush;
     safety_verification(system,initial_set,verbosity,plot_results);
     cout << "5/5: Parametric safety verification... " << endl << flush;
@@ -120,7 +120,7 @@ void safety_verification(HybridAutomatonInterface& system, HybridBoundedConstrai
 
     Verifier verifier;
     verifier.verbosity = verbosity;
-    verifier.ttl = 5;
+    verifier.ttl = 140;
     verifier.settings().plot_results = plot_results;
 
     SafetyVerificationInput verInput(system, initial_set, domain, safety_constraint);
@@ -141,7 +141,7 @@ void parametric_safety_verification(HybridAutomatonInterface& system, HybridBoun
     // Initialization of the verifier
     Verifier verifier;
     verifier.verbosity = verbosity;
-    verifier.ttl = 60;
+    verifier.ttl = 140;
     verifier.settings().plot_results = plot_results;
     verifier.settings().maximum_parameter_depth = 2;
 

@@ -1,5 +1,5 @@
 /*****************************************************************************************************
- *            circle.cc
+ *            laser.h
  *
  *  Copyright  2016  Luca Geretti
  *
@@ -17,8 +17,8 @@ namespace Ariadne {
 HybridIOAutomaton getCircle()
 {
     /// Parameters
-	RealParameter R("R",Interval(3.0,3.2));
-	RealParameter w("w",1.0);
+	RealParameter R("R",Interval(3.0,3.0));
+	RealParameter w("w",4.0);
 
     /// Build the Hybrid System
 
