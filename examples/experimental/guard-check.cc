@@ -7,21 +7,10 @@ int main(int argc, char* argv[])
 	Box test_box(1, -0.1,0.1);
 	TaylorSet set_model(test_box);
 
-	RealVariable x("x");
+	cout << "Original: " << set_model[0] << endl;
+	TaylorModel square = sqr(set_model[0]);
+    cout << "Square: " << square << endl;
+    cout << "Square range: " << square.range() << endl;
+    cout << "Sqrt of square" << sqrt(square) << endl;
 
-	RealExpression expr = Ariadne::sqrt(Ariadne::sqr(x));
-
-	cout << "Expression: " << expr << endl;
-
-    Map<ExtendedRealVariable,Interval> intervalValuation;
-    intervalValuation[x]=test_box[0];
-
-    Interval intervalEvaluation = Ariadne::evaluate(expr,intervalValuation);
-    cout << "Interval evaluation: " << intervalEvaluation << endl;
-
-    Map<ExtendedRealVariable,TaylorModel> taylorValuation;
-    taylorValuation[x]=set_model[0];
-
-	TaylorModel taylorEvaluation = Ariadne::evaluate(expr,taylorValuation);
-	cout << "TaylorSet evaluation: " << taylorEvaluation << endl;
 }
