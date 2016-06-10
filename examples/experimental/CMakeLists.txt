@@ -9,7 +9,7 @@ set(EXPERIMENTAL
 		 circle
 		 circle-unstable
 		 laser
-		 guard-check
+		 range-check
 )
 
 foreach(experiment ${EXPERIMENTAL})
