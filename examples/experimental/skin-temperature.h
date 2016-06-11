@@ -18,7 +18,7 @@ HybridIOAutomaton getSkinTemperature()
 {
     /// Parameters
 	RealParameter lambda("lambda",16.0);
-	RealParameter mu("mu",1000.0);
+	RealParameter mu("mu",4000.0);
 	RealParameter T0("T0",35.0);
 	RealParameter L("L",0.02);
 	RealParameter x0("x0",0.0);
