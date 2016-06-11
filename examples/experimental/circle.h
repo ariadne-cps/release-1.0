@@ -17,7 +17,7 @@ namespace Ariadne {
 HybridIOAutomaton getCircle()
 {
     /// Parameters
-	RealParameter R("R",Interval(3.0,3.0));
+	RealParameter R("R",Interval(0.05,0.05));
 	RealParameter w("w",4.0);
 
     /// Build the Hybrid System

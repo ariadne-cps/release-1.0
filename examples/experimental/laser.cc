@@ -33,6 +33,7 @@ int main(int argc, char* argv[])
 
     Real R = circle.parameter_value("R");
     Real w = circle.parameter_value("w");
+    Real T0 = skin_temperature.parameter_value("T0");
 
     /// Create a HybridEvolver object
     HybridEvolver evolver(system);
@@ -41,20 +42,13 @@ int main(int argc, char* argv[])
     HybridSpace hspace(system.state_space());
     for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
         evolver.settings().minimum_discretised_enclosure_widths[hs_it->first] = Vector<Float>(4,2.0);
-        evolver.settings().hybrid_maximum_step_size[hs_it->first] = 0.01;
+        evolver.settings().hybrid_maximum_step_size[hs_it->first] = 0.0001;
     }
 
-    Box initial_box(4, 0.0,0.0, 0.0,0.0, R.lower(),R.upper(), 0.0,0.0);
+    Box initial_box(4, T0.lower(),T0.upper(), 0.0,0.0, R.lower(),R.upper(), 0.0,0.0);
     HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("work,1,resting"),initial_box);
 
-    HybridTime evolution_time(1*2.0*Ariadne::pi<Real>().upper()*w.upper(),8);
-
-	RealScalarFunction guard_function = system.guard_function(DiscreteLocation("work,1,resting"),DiscreteEvent("laser_comes"));
-	Box test_box(4, 0.0,0.0, 0.00,0.00, 0.161374,0.962411, 2.83028,3.06335);
-	TaylorSet set_model(test_box);
-	Interval evaluation = guard_function.evaluate(test_box);
-	cout << "Guard function: " << guard_function << endl;
-	cout << "Evaluation: " << evaluation << endl;
+    HybridTime evolution_time(1*2.0*Ariadne::pi<Real>().upper()*w.upper(),16);
 
     std::cout << "Computing orbit... " << std::flush;
     HybridEvolver::OrbitType orbit = evolver.orbit(initial_enclosure,evolution_time,UPPER_SEMANTICS);
