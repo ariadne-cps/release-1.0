@@ -11,6 +11,7 @@
 #include "circle.h"
 #include "timer.h"
 #include "skin-temperature.h"
+#include "cutting-depth.h"
 
 using namespace Ariadne;
 
@@ -27,9 +28,11 @@ int main(int argc, char* argv[])
     HybridIOAutomaton circle = getCircle();
     HybridIOAutomaton timer = getTimer();
     HybridIOAutomaton skin_temperature = getSkinTemperature();
+    HybridIOAutomaton cutting_depth = getCuttingDepth();
 
     HybridIOAutomaton timer_circle = compose("timer-circle",timer,circle,DiscreteLocation("work"),DiscreteLocation("1"));
-    HybridIOAutomaton system = compose("laser",timer_circle,skin_temperature,DiscreteLocation("work,1"),DiscreteLocation("resting"));
+    HybridIOAutomaton timer_circle_temperature = compose("timer_circle_temperature",timer_circle,skin_temperature,DiscreteLocation("work,1"),DiscreteLocation("resting"));
+    HybridIOAutomaton system = compose("laser",timer_circle_temperature,cutting_depth,DiscreteLocation("work,1,resting"),DiscreteLocation("stable"));
 
     Real R = circle.parameter_value("R");
     Real w = circle.parameter_value("w");
@@ -41,14 +44,14 @@ int main(int argc, char* argv[])
 
     HybridSpace hspace(system.state_space());
     for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
-        evolver.settings().minimum_discretised_enclosure_widths[hs_it->first] = Vector<Float>(4,2.0);
+        evolver.settings().minimum_discretised_enclosure_widths[hs_it->first] = Vector<Float>(5,2.0);
         evolver.settings().hybrid_maximum_step_size[hs_it->first] = 0.0001;
     }
 
-    Box initial_box(4, T0.lower(),T0.upper(), 0.0,0.0, R.lower(),R.upper(), 0.0,0.0);
-    HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("work,1,resting"),initial_box);
+    Box initial_box(5, T0.lower(),T0.upper(), 0.0,0.0, R.lower(),R.upper(), 0.0,0.0, 0.0,0.0);
+    HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("work,1,resting,stable"),initial_box);
 
-    HybridTime evolution_time(1*2.0*Ariadne::pi<Real>().upper()*w.upper(),16);
+    HybridTime evolution_time(4*2.0*Ariadne::pi<Real>().upper()*w.upper(),64);
 
     std::cout << "Computing orbit... " << std::flush;
     HybridEvolver::OrbitType orbit = evolver.orbit(initial_enclosure,evolution_time,UPPER_SEMANTICS);
