@@ -45,13 +45,13 @@ int main(int argc, char* argv[])
     HybridSpace hspace(system.state_space());
     for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
         evolver.settings().minimum_discretised_enclosure_widths[hs_it->first] = Vector<Float>(5,2.0);
-        evolver.settings().hybrid_maximum_step_size[hs_it->first] = 0.0001;
+        evolver.settings().hybrid_maximum_step_size[hs_it->first] = 0.0030;
     }
 
     Box initial_box(5, T0.lower(),T0.upper(), 0.0,0.0, R.lower(),R.upper(), 0.0,0.0, 0.0,0.0);
     HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("work,1,resting,stable"),initial_box);
 
-    HybridTime evolution_time(4*2.0*Ariadne::pi<Real>().upper()*w.upper(),64);
+    HybridTime evolution_time(10.0/w.upper(),640);
 
     std::cout << "Computing orbit... " << std::flush;
     HybridEvolver::OrbitType orbit = evolver.orbit(initial_enclosure,evolution_time,UPPER_SEMANTICS);
