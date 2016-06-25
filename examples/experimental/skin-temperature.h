@@ -20,11 +20,8 @@ HybridIOAutomaton getSkinTemperature()
 	RealParameter lambda("lambda",4.0);
 	RealParameter mu("mu",1000.0);
 	RealParameter T0("T0",35.0);
-	RealParameter L("L",0.02);
+	RealParameter L("L",0.002);
 	RealParameter x0("x0",0.0);
-	//RealParameter y0("y0",0.05);
-	//RealParameter x0("x0",Interval(0.0001,0.00005));
-	RealParameter y0("y0",Interval(0.0499,0.0501));
 
     /// Build the Hybrid System
 
@@ -36,11 +33,9 @@ HybridIOAutomaton getSkinTemperature()
     DiscreteLocation resting("resting");
 
     RealVariable x("x");
-    RealVariable y("y");
     RealVariable T("T");
 
     automaton.add_input_var(x);
-    automaton.add_input_var(y);
     automaton.add_output_var(T);
 
     // Events
@@ -53,7 +48,7 @@ HybridIOAutomaton getSkinTemperature()
 	automaton.new_mode(heated);
 	automaton.new_mode(resting);
 
-	RealExpression distance = Ariadne::sqr(x-x0) + Ariadne::sqr(y-y0);
+	RealExpression distance = Ariadne::sqr(x-x0);
 
 	RealExpression dyn_heated = - lambda * (T-T0) + 0.5 * mu * (Ariadne::cos(Ariadne::pi<Real>()/L/L * distance) + 1.0);
 	RealExpression dyn_resting = - lambda * (T-T0);
