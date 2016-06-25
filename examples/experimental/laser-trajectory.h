@@ -22,7 +22,7 @@ HybridIOAutomaton getLaserTrajectory()
     HybridIOAutomaton automaton("trajectory");
 
     // Parameters
-    RealParameter accel("accel",10.0); // Acceleration (modulus) of the laser
+    RealParameter accel("accel",300.0); // Acceleration (modulus) of the laser
     RealParameter half_width("half_width",0.023); // Half width of the cut (excluding the accel/decel tails)
 
     /// Modes
@@ -66,8 +66,8 @@ HybridIOAutomaton getLaserTrajectory()
 
 	automaton.set_dynamics(accelerating_right, vx, dyn_vx_accel);
 	automaton.set_dynamics(decelerating_right, vx, dyn_vx_decel);
-	automaton.set_dynamics(accelerating_left, vx, dyn_vx_accel);
-	automaton.set_dynamics(decelerating_left, vx, dyn_vx_decel);
+	automaton.set_dynamics(accelerating_left, vx, dyn_vx_decel);
+	automaton.set_dynamics(decelerating_left, vx, dyn_vx_accel);
 	automaton.set_dynamics(passing_right, vx, dyn_vx_passing);
 	automaton.set_dynamics(passing_left, vx, dyn_vx_passing);
 
@@ -86,15 +86,16 @@ HybridIOAutomaton getLaserTrajectory()
 	RealExpression x_lesser_minus_half_width = -x - half_width; // x <= -half_width
 	RealExpression x_greater_minus_half_width = x + half_width; // x >= -half_width
 	RealExpression vx_lesser_zero = -vx; // vx <= 0;
+	RealExpression vx_greater_zero = vx; // vx >= 0;
 
 	std::map<RealVariable,RealExpression> reset_left;
-	reset_left[x] = -half_width;
+	reset_left[x] = x;
 	reset_left[vx] = 0.0;
 	std::map<RealVariable,RealExpression> reset_right;
-	reset_right[x] = half_width;
+	reset_right[x] = x;
 	reset_right[vx] = 0.0;
 
-	automaton.new_forced_transition(accelerate_right,decelerating_left,accelerating_right,reset_left,vx_lesser_zero);
+	automaton.new_forced_transition(accelerate_right,decelerating_left,accelerating_right,reset_left,vx_greater_zero);
 	automaton.new_forced_transition(accelerate_left,decelerating_right,accelerating_left,reset_right,vx_lesser_zero);
 	automaton.new_forced_transition(stop_accelerating_right,accelerating_right,passing_right,x_greater_minus_half_width);
 	automaton.new_forced_transition(stop_accelerating_left,accelerating_left,passing_left,x_lesser_half_width);
