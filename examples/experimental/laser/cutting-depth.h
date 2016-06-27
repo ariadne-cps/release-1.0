@@ -17,11 +17,11 @@ namespace Ariadne {
 HybridIOAutomaton getCuttingDepth()
 {
     /// Parameters
-	RealParameter k("k",0.0001);
-	RealParameter lambda("lambda",1000.0);
+	RealParameter k("k",0.000001);
+	RealParameter lambda("lambda",10000.0);
 	RealParameter T0("T0",35.0);
 	RealParameter Tevap("Teval",100.0);
-	RealParameter z_thr("z_thr",0.0001);
+	RealParameter z_thr("z_thr",0.001);
 
     /// Build the Hybrid System
 
@@ -68,7 +68,7 @@ HybridIOAutomaton getCuttingDepth()
 
 	/// Transitions
 	// Guards
-	RealExpression zi_der_greater_zi_thr = z_der - z_thr; // zi' >= z_thr
+	RealExpression zi_greater_zi_thr = zi - z_thr; // zi >= z_thr
 	RealExpression zi_der_lesser_zero = -z_der; // z' <= 0
 
 	// Resets
@@ -78,7 +78,7 @@ HybridIOAutomaton getCuttingDepth()
 
 	automaton.new_unforced_transition(start_evaporating,idle,ablating);
 	automaton.new_forced_transition(stop_evaporating,ablating,idle,reset_zi_zero,zi_der_lesser_zero);
-	automaton.new_forced_transition(start_carbonization,ablating,carbonization,zi_der_greater_zi_thr);
+	automaton.new_forced_transition(start_carbonization,ablating,carbonization,zi_greater_zi_thr);
 
 	return automaton;
 

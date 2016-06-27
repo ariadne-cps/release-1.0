@@ -26,8 +26,10 @@ HybridIOAutomaton getSkinExposure()
     HybridIOAutomaton automaton("skin-exposure");
 
     /// Create the discrete states
-    DiscreteLocation close("close");
-    DiscreteLocation far("far");
+    DiscreteLocation close_from_right("close_from_right");
+    DiscreteLocation close_from_left("close_from_left");
+    DiscreteLocation far_from_right("far_from_right");
+    DiscreteLocation far_from_left("far_from_left");
 
     RealVariable x("x");
     RealVariable p("p");
@@ -36,30 +38,41 @@ HybridIOAutomaton getSkinExposure()
     automaton.add_output_var(p);
 
     // Events
-    DiscreteEvent laser_comes("laser_comes");
-    DiscreteEvent laser_leaves("laser_leaves");
+    DiscreteEvent laser_comes_from_right("laser_comes_from_right");
+    DiscreteEvent laser_comes_from_left("laser_comes_from_left");
+    DiscreteEvent laser_leaves_from_right("laser_leaves_from_right");
+    DiscreteEvent laser_leaves_from_left("laser_leaves_from_left");
 
-    automaton.add_internal_event(laser_comes);
-    automaton.add_internal_event(laser_leaves);
+    automaton.add_internal_event(laser_comes_from_left);
+    automaton.add_internal_event(laser_leaves_from_left);
+    automaton.add_internal_event(laser_comes_from_right);
+    automaton.add_internal_event(laser_leaves_from_right);
 
-	automaton.new_mode(close);
-	automaton.new_mode(far);
+	automaton.new_mode(close_from_right);
+	automaton.new_mode(far_from_right);
+	automaton.new_mode(close_from_left);
+	automaton.new_mode(far_from_left);
 
 	RealExpression distance = Ariadne::sqr(x-x0);
 
-	RealExpression dyn_close = -Ariadne::pi<Real>()/L/L * (x-x0) * Ariadne::sin(Ariadne::pi<Real>()/L/L * distance);
+	RealExpression dyn_close_from_right = Ariadne::pi<Real>()/L/L * (x-x0) * Ariadne::sin(Ariadne::pi<Real>()/L/L * distance);
+	RealExpression dyn_close_from_left = -dyn_close_from_right;
 	RealExpression dyn_far = 0.0;
 
-	automaton.set_dynamics(close, p, dyn_close);
-	automaton.set_dynamics(far, p, dyn_far);
+	automaton.set_dynamics(close_from_right, p, dyn_close_from_right);
+	automaton.set_dynamics(far_from_right, p, dyn_far);
+	automaton.set_dynamics(close_from_left, p, dyn_close_from_left);
+	automaton.set_dynamics(far_from_left, p, dyn_far);
 
 	/// Transitions
 	// Guards
 	RealExpression distance_greater_L = distance - L*L; // distance >= L
 	RealExpression distance_lesser_L = L*L - distance; // distance <= L
 
-	automaton.new_forced_transition(laser_comes,far,close,distance_lesser_L);
-	automaton.new_forced_transition(laser_leaves,close,far,distance_greater_L);
+	automaton.new_forced_transition(laser_comes_from_right,far_from_right,close_from_right,distance_lesser_L);
+	automaton.new_forced_transition(laser_comes_from_left,far_from_left,close_from_left,distance_lesser_L);
+	automaton.new_forced_transition(laser_leaves_from_right,close_from_right,far_from_left,distance_greater_L);
+	automaton.new_forced_transition(laser_leaves_from_left,close_from_left,far_from_right,distance_greater_L);
 
 	return automaton;
 }
