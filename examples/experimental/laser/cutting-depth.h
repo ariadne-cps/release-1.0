@@ -18,10 +18,11 @@ HybridIOAutomaton getCuttingDepth()
 {
     /// Parameters
 	RealParameter k("k",0.000001);
-	RealParameter lambda("lambda",10000.0);
+	RealParameter mu("mu",1000000.0);
+	RealParameter lambda("lambda",5000.0);
 	RealParameter T0("T0",35.0);
 	RealParameter Tevap("Teval",100.0);
-	RealParameter z_thr("z_thr",0.001);
+	RealParameter z_thr("z_thr",0.0003);
 
     /// Build the Hybrid System
 
@@ -54,7 +55,12 @@ HybridIOAutomaton getCuttingDepth()
 	automaton.new_mode(carbonization);
 	automaton.new_mode(idle);
 
-	RealExpression z_der = k*p + lambda*(Tevap-T0);
+	/// Invariants
+	RealExpression invalid = 1.0;
+	automaton.new_invariant(carbonization,invalid);
+	/// Dynamics
+
+	RealExpression z_der = k*(mu*p - lambda*(Tevap-T0));
 
 	RealExpression dyn_ablating = z_der;
 	RealExpression dyn_idle = 0.0;
