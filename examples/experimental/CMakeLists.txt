@@ -8,9 +8,10 @@ set(EXPERIMENTAL
 		 exponential
 		 circle
 		 circle-unstable
-		 laser
 		 range-check
 )
+
+add_subdirectory(laser)
 
 foreach(experiment ${EXPERIMENTAL})
     add_executable(${experiment} ${experiment}.cc)
