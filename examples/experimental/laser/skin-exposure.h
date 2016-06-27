@@ -69,10 +69,14 @@ HybridIOAutomaton getSkinExposure()
 	RealExpression distance_greater_L = distance - L*L; // distance >= L
 	RealExpression distance_lesser_L = L*L - distance; // distance <= L
 
+	// Resets
+	std::map<RealVariable,RealExpression> reset_zero;
+	reset_zero[p] = 0.0;
+
 	automaton.new_forced_transition(laser_comes_from_right,far_from_right,close_from_right,distance_lesser_L);
 	automaton.new_forced_transition(laser_comes_from_left,far_from_left,close_from_left,distance_lesser_L);
-	automaton.new_forced_transition(laser_leaves_from_right,close_from_right,far_from_left,distance_greater_L);
-	automaton.new_forced_transition(laser_leaves_from_left,close_from_left,far_from_right,distance_greater_L);
+	automaton.new_forced_transition(laser_leaves_from_right,close_from_right,far_from_left,reset_zero,distance_greater_L);
+	automaton.new_forced_transition(laser_leaves_from_left,close_from_left,far_from_right,reset_zero,distance_greater_L);
 
 	return automaton;
 }

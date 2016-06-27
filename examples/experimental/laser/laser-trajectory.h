@@ -94,13 +94,19 @@ HybridIOAutomaton getLaserTrajectory()
 	std::map<RealVariable,RealExpression> reset_right;
 	reset_right[x] = x;
 	reset_right[vx] = 0.0;
+	std::map<RealVariable,RealExpression> reset_minus_half;
+	reset_minus_half[x] = -half_width;
+	reset_minus_half[vx] = vx;
+	std::map<RealVariable,RealExpression> reset_half;
+	reset_minus_half[x] = half_width;
+	reset_minus_half[vx] = vx;
 
 	automaton.new_forced_transition(accelerate_right,decelerating_left,accelerating_right,reset_left,vx_greater_zero);
 	automaton.new_forced_transition(accelerate_left,decelerating_right,accelerating_left,reset_right,vx_lesser_zero);
-	automaton.new_forced_transition(stop_accelerating_right,accelerating_right,passing_right,x_greater_minus_half_width);
-	automaton.new_forced_transition(stop_accelerating_left,accelerating_left,passing_left,x_lesser_half_width);
-	automaton.new_forced_transition(decelerate_right,passing_right,decelerating_right,x_greater_half_width);
-	automaton.new_forced_transition(decelerate_left,passing_left,decelerating_left,x_lesser_minus_half_width);
+	automaton.new_forced_transition(stop_accelerating_right,accelerating_right,passing_right,reset_minus_half,x_greater_minus_half_width);
+	automaton.new_forced_transition(stop_accelerating_left,accelerating_left,passing_left,reset_half,x_lesser_half_width);
+	automaton.new_forced_transition(decelerate_right,passing_right,decelerating_right,reset_half,x_greater_half_width);
+	automaton.new_forced_transition(decelerate_left,passing_left,decelerating_left,reset_minus_half,x_lesser_minus_half_width);
 
 	return automaton;
 }
