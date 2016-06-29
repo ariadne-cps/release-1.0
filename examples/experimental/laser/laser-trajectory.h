@@ -98,8 +98,8 @@ HybridIOAutomaton getLaserTrajectory()
 	reset_minus_half[x] = -half_width;
 	reset_minus_half[vx] = vx;
 	std::map<RealVariable,RealExpression> reset_half;
-	reset_minus_half[x] = half_width;
-	reset_minus_half[vx] = vx;
+	reset_half[x] = half_width;
+	reset_half[vx] = vx;
 
 	automaton.new_forced_transition(accelerate_right,decelerating_left,accelerating_right,reset_left,vx_greater_zero);
 	automaton.new_forced_transition(accelerate_left,decelerating_right,accelerating_left,reset_right,vx_lesser_zero);

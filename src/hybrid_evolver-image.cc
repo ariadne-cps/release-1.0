@@ -289,13 +289,9 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
     const uint& set_index = current_set.first;
     make_ltuple(location,events_history,set_model,time_model)=current_set.second;
 
-    ARIADNE_LOG(1,"starting_set = "<<set_model);
-
 	// Boxes the set and time models
     set_model = TaylorSet(set_model.bounding_box());
     time_model = TaylorModel::scaling(set_model.size(),0,time_model.range());
-
-    ARIADNE_LOG(1,"boxed_starting_set = "<<set_model);
 
     // Extract information about the current location
     const RealVectorFunction dynamic=get_directed_dynamic(_sys->dynamic_function(location),direction);
