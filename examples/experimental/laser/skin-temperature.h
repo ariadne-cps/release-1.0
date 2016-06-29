@@ -29,7 +29,9 @@ HybridIOAutomaton getSkinTemperature()
 
     /// Create the discrete states
     DiscreteLocation varying("varying");
+    DiscreteLocation pre_evaporating("pre_evaporating");
     DiscreteLocation evaporating("evaporating");
+    DiscreteLocation post_evaporating("post_evaporating");
 
     RealVariable p("p");
     RealVariable T("T");
@@ -38,29 +40,43 @@ HybridIOAutomaton getSkinTemperature()
     automaton.add_output_var(T);
 
     // Events
+    DiscreteEvent check_pre_evaporating("check_pre_evaporating");
     DiscreteEvent start_evaporating("start_evaporating");
     DiscreteEvent stop_evaporating("stop_evaporating");
+    DiscreteEvent check_post_evaporating("check_post_evaporating");
 
     automaton.add_output_event(start_evaporating);
     automaton.add_input_event(stop_evaporating);
+    automaton.add_internal_event(check_pre_evaporating);
+    automaton.add_internal_event(check_post_evaporating);
 
     automaton.new_mode(varying);
+    automaton.new_mode(pre_evaporating);
 	automaton.new_mode(evaporating);
+	automaton.new_mode(post_evaporating);
 
 	RealExpression dyn_varying = mu*p - lambda*(T-T0);
 	RealExpression dyn_evaporating = 0.0;
 
 	automaton.set_dynamics(varying, T, dyn_varying);
 	automaton.set_dynamics(evaporating, T, dyn_evaporating);
+	automaton.set_dynamics(pre_evaporating, T, dyn_varying);
+	automaton.set_dynamics(post_evaporating, T, dyn_varying);
 
 	/// Transitions
 	// Guards
 	RealExpression T_greater_Tevap = T - Tevap; // T >= Tevap
+	RealExpression Tder_greater_zero = mu*p - lambda*(T+1.0-T0); // T' >= 0
+	RealExpression Tder_lesser_zero = -mu*p + lambda*(T-1.0-T0); // T' <= 0
+
+	// Resets
 	std::map<RealVariable,RealExpression> reset_evap;
 	reset_evap[T] = Tevap;
 
-	automaton.new_forced_transition(start_evaporating,varying,evaporating,reset_evap,T_greater_Tevap);
-	automaton.new_unforced_transition(stop_evaporating,evaporating,varying);
+	automaton.new_forced_transition(check_pre_evaporating,varying,pre_evaporating,Tder_greater_zero);
+	automaton.new_forced_transition(start_evaporating,pre_evaporating,evaporating,reset_evap,T_greater_Tevap);
+	automaton.new_unforced_transition(stop_evaporating,evaporating,post_evaporating);
+	automaton.new_forced_transition(check_post_evaporating,post_evaporating,varying,Tder_lesser_zero);
 
 	return automaton;
 }
