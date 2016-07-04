@@ -21,10 +21,13 @@ The library dependencies of ARIADNE are the following:
 Aptitude packages required: `git cmake libboost-system-dev libboost-serialization-dev libboost-thread-dev libgtk2.0-dev libcairo2-dev libbdd-dev`
 
 ##### OSX
-Install the Command Line Developer Tools (will also be asked when installing Homebrew) from the Apple Store
-Install Homebrew from http://brew.sh/
+1. Install the Command Line Developer Tools (will also be asked when installing Homebrew) from the Apple Store
+
+2. Install Homebrew from http://brew.sh/
+
 Homebrew packages required: `cmake boost gtk cairo`
-No Buddy package is offered, you need to compile the library from https://sourceforge.net/projects/buddy/
+
+3. No Buddy package is offered, you need to compile the library from https://sourceforge.net/projects/buddy/
 Download and extract the Buddy package, then from the extracted directory:
 ```
 $ ./configure
