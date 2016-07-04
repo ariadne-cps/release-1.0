@@ -61,3 +61,15 @@ If you want to build the documentation, you have to issue the following:
 ```
 $ make doc
 ```
+
+### Installing globally
+
+To install the library globally, you must do
+```
+$ make install
+```
+
+To find the installed library under Ubuntu, you may need to set the LD_LIBRARY_PATH in the .bashrc file:
+```
+export LD_LIBRARY_PATH=/usr/local/lib
+```
