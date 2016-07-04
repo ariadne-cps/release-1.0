@@ -31,3 +31,33 @@ $ ./configure
 $ make
 $ make install
 ```
+
+Optionally, if you want to build the documentation, you need Doxygen and a working Latex distribution (including the Math packages).
+
+#### Building
+
+Then you can prepare the build environment:
+
+```
+$ cmake ..
+```
+
+At this point, if no error arises, you can build the library itself:
+
+```
+$ make
+```
+
+Optionally, you can also run the test suite for the library:
+
+```
+$ make test
+```
+
+where no error should appear.
+
+If you want to build the documentation, you have to issue the following:
+
+```
+$ make doc
+```
