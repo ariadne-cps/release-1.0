@@ -21,7 +21,7 @@ int main(int argc, char* argv[])
     /// Constants
     float EVOL_TIME = 8;   /// Evolution time
     float MAX_ENCL_WIDTH = 0.1;   /// Maximum enclosure width
-    float MAX_STEP_SIZE = 1e-2;     /// Maximum step size
+    float MAX_STEP_SIZE = 4e-3;     /// Maximum step size
     int VERBOSITY = 1;              /// Verbosity of the HybridEvolver
 	if (argc > 1)
 		VERBOSITY = atoi(argv[1]);
@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
     /// Build the Hybrid System
 
     /// Create a HybridAutomaton object
-    HybridIOAutomaton automaton;
+    HybridIOAutomaton automaton("circle-unstable");
 
     /// Create the discrete states
     DiscreteLocation work("work");
@@ -66,7 +66,6 @@ int main(int argc, char* argv[])
     HybridEvolver::OrbitType orbit = evolver.orbit(initial_enclosure,evolution_time,UPPER_SEMANTICS);
     std::cout << "done." << std::endl;
 
-    Box graphic_box(2, -2.0, 2.0, -2.0, 2.0);
-
-    plot("circle", graphic_box, Colour(0.0,0.5,1.0), orbit);
+    PlotHelper plotter(automaton.name());
+    plotter.plot(orbit.reach(),"reach");
 }

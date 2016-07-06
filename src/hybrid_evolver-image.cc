@@ -73,6 +73,8 @@ void wait_for_keypress() {
     getline(std::cin,str);
 }
 
+int BOXING_RATE = 400;
+
 
 class DegenerateCrossingException : public std::runtime_error {
   public:
@@ -144,9 +146,11 @@ _evolution(EnclosureListType& final_sets,
         EventListType events=current_set.second.second;
 		SetModelType set_model=current_set.second.third;
 		TimeModelType time_model=current_set.second.fourth;
+		if (reach_sets.size() % BOXING_RATE == 0) {
 		// Boxes the set and time models
 	    set_model = TaylorSet(set_model.bounding_box());
 	    time_model = TaylorModel::scaling(set_model.size(),0,time_model.range());
+		}
 
 		Vector<Float> reference_enclosure_widths = this->_settings->minimum_discretised_enclosure_widths.find(loc)->second;
 
@@ -290,9 +294,10 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
     make_ltuple(location,events_history,set_model,time_model)=current_set.second;
 
 	// Boxes the set and time models
+	if (reach_sets.size() % BOXING_RATE == 0) {
     set_model = TaylorSet(set_model.bounding_box());
     time_model = TaylorModel::scaling(set_model.size(),0,time_model.range());
-
+	}
     // Extract information about the current location
     const RealVectorFunction dynamic=get_directed_dynamic(_sys->dynamic_function(location),direction);
     Set<DiscreteEvent> available_events = _sys->events(location);

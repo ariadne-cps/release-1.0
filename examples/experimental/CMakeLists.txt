@@ -6,6 +6,7 @@ set(EXPERIMENTAL
 		 fb_refinement 
 		 traffic-arbitrator4 
 		 exponential
+		 double-exponential
 		 circle
 		 circle-unstable
 		 range-check
