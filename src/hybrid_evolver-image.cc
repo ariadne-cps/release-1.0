@@ -74,7 +74,8 @@ void wait_for_keypress() {
 }
 
 int BOXING_RATE = 400;
-
+bool box_it = false;
+int boxing_events = 0;
 
 class DegenerateCrossingException : public std::runtime_error {
   public:
@@ -146,10 +147,28 @@ _evolution(EnclosureListType& final_sets,
         EventListType events=current_set.second.second;
 		SetModelType set_model=current_set.second.third;
 		TimeModelType time_model=current_set.second.fourth;
-		if (reach_sets.size() % BOXING_RATE == 0) {
-		// Boxes the set and time models
-	    set_model = TaylorSet(set_model.bounding_box());
-	    time_model = TaylorModel::scaling(set_model.size(),0,time_model.range());
+
+		double k_ratio = 1e-1;
+		TaylorSet boxed_set_model(set_model.bounding_box());
+		Vector<TaylorModel> models = boxed_set_model.models();
+		box_it = false;
+		for (int i=0; i<boxed_set_model.size(); ++i) {
+			const TaylorModel& boxed_model = boxed_set_model[i];
+			const TaylorModel& model = set_model.models()[i];
+			double error = model.error();
+			double range_width = model.range().width();
+			double boxed_range_width = boxed_model.range().width();
+			double difference = boxed_range_width - (range_width-error);
+			if (error/boxed_range_width > k_ratio) {
+				box_it = true;
+				break;
+			}
+		}
+
+		if (box_it) {
+			boxing_events++;
+			set_model = boxed_set_model;
+			time_model = TaylorModel::scaling(set_model.size(),0,time_model.range());
 		}
 
 		Vector<Float> reference_enclosure_widths = this->_settings->minimum_discretised_enclosure_widths.find(loc)->second;
@@ -182,6 +201,8 @@ _evolution(EnclosureListType& final_sets,
 
 		_check_timeout();
     }
+
+	ARIADNE_LOG(1,"Boxing events: " << boxing_events << "/" << reach_sets.size());
 }
 
 
@@ -294,7 +315,7 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
     make_ltuple(location,events_history,set_model,time_model)=current_set.second;
 
 	// Boxes the set and time models
-	if (reach_sets.size() % BOXING_RATE == 0) {
+	if (box_it) {
     set_model = TaylorSet(set_model.bounding_box());
     time_model = TaylorModel::scaling(set_model.size(),0,time_model.range());
 	}
@@ -752,7 +773,7 @@ _log_step_summary(const std::list<pair<uint,HybridTimedSetType> >& working_sets,
                     <<" t="<<std::fixed<<initial_time_model.value()
                     <<" r="<<std::setw(7)<<initial_set_model.radius()
                     <<" l="<<std::setw(3)<<std::left<<initial_location
-                    <<" c="<<initial_set_model.centre()
+                    <<" c="<< std::scientific << initial_set_model.centre() << std::fixed
                     <<" e="<<initial_events);
 }
 
