@@ -17,12 +17,12 @@ namespace Ariadne {
 HybridIOAutomaton getCuttingDepth()
 {
     /// Parameters
-	RealParameter k("k",0.000001);
-	RealParameter mu("mu",1000000.0);
-	RealParameter lambda("lambda",5000.0);
+	RealParameter k("k",1.562e-6);
+	RealParameter lambda("lambda",4461.0);
+	RealParameter mu("mu",3.946e5);
 	RealParameter T0("T0",35.0);
 	RealParameter Tevap("Teval",100.0);
-	RealParameter z_thr("z_thr",0.0003);
+	RealParameter z_thr("z_thr",3e-5);
 
     /// Build the Hybrid System
 
