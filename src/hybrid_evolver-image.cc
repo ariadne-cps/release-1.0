@@ -116,26 +116,29 @@ tune_settings(
 
 void _box_taylor_set(TaylorSet& set_model, TaylorModel& time_model) {
 	double k_ratio = 1e-1;
-	TaylorSet boxed_set_model(set_model.bounding_box());
-	Vector<TaylorModel> models = boxed_set_model.models();
-	box_it = false;
-	for (int i=0; i<boxed_set_model.size(); ++i) {
+	Vector<Interval> bb = set_model.bounding_box();
+	TaylorSet boxed_set_model(bb);
+	Vector<TaylorModel> set_model_models = set_model.models();
+	bool has_boxed = false;
+	for (unsigned int i=0; i<boxed_set_model.size(); ++i) {
 		const TaylorModel& boxed_model = boxed_set_model[i];
 		const TaylorModel& model = set_model.models()[i];
 		double error = model.error();
 		double range_width = model.range().width();
 		double boxed_range_width = boxed_model.range().width();
 		if (error/boxed_range_width > k_ratio) {
-
-			box_it = true;
-			break;
+			has_boxed = true;
+			TaylorModel new_model = TaylorModel::scaling(set_model.size(),i,bb[i]);
+			set_model_models[i] = new_model;
 		}
 	}
 
-	if (box_it) {
-		boxing_events++;
-		set_model = boxed_set_model;
+	if (has_boxed) {
+		std::cout << "Previous model: " << set_model << std::endl;
+		set_model = TaylorSet(set_model_models);
+		std::cout << "New model: " << set_model << std::endl;
 		time_model = TaylorModel::scaling(set_model.size(),0,time_model.range());
+		boxing_events++;
 	}
 }
 
