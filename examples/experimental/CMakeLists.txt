@@ -11,6 +11,7 @@ set(EXPERIMENTAL
 		 circle-unstable
 		 range-check
 		 sin
+		 integration
 )
 
 add_subdirectory(laser)
