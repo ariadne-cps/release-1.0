@@ -23,7 +23,7 @@ HybridIOAutomaton getLaserTrajectory()
 
     // Parameters
     RealParameter velocity("velocity",0.46); // Velocity of the laser
-    RealParameter half_width("half_width",0.023); // Half width of the cut
+    RealParameter half_width("half_width",0.0023); // Half width of the cut
 
     /// Modes
 

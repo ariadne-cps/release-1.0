@@ -17,6 +17,7 @@ namespace Ariadne {
 HybridIOAutomaton getSkinExposure()
 {
     /// Parameters
+	RealParameter velocity("velocity",0.46);
 	RealParameter L("L",0.00025);
 	RealParameter x0("x0",0.0);
 
@@ -55,7 +56,7 @@ HybridIOAutomaton getSkinExposure()
 
 	RealExpression distance = Ariadne::sqr(x-x0);
 
-	RealExpression dyn_close_from_right = Ariadne::pi<Real>()/L/L * (x-x0) * Ariadne::sin(Ariadne::pi<Real>()/L/L * distance);
+	RealExpression dyn_close_from_right = velocity*Ariadne::pi<Real>()/L/L * (x-x0) * Ariadne::sin(Ariadne::pi<Real>()/L/L * distance);
 	RealExpression dyn_close_from_left = -dyn_close_from_right;
 	RealExpression dyn_far = 0.0;
 
