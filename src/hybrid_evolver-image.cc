@@ -114,6 +114,30 @@ tune_settings(
 	ARIADNE_LOG(2, "Maximum step size: " << this->_settings->hybrid_maximum_step_size);
 }
 
+void _box_taylor_set(TaylorSet& set_model, TaylorModel& time_model) {
+	double k_ratio = 1e-1;
+	TaylorSet boxed_set_model(set_model.bounding_box());
+	Vector<TaylorModel> models = boxed_set_model.models();
+	box_it = false;
+	for (int i=0; i<boxed_set_model.size(); ++i) {
+		const TaylorModel& boxed_model = boxed_set_model[i];
+		const TaylorModel& model = set_model.models()[i];
+		double error = model.error();
+		double range_width = model.range().width();
+		double boxed_range_width = boxed_model.range().width();
+		if (error/boxed_range_width > k_ratio) {
+
+			box_it = true;
+			break;
+		}
+	}
+
+	if (box_it) {
+		boxing_events++;
+		set_model = boxed_set_model;
+		time_model = TaylorModel::scaling(set_model.size(),0,time_model.range());
+	}
+}
 
 void
 ImageSetHybridEvolver::
@@ -148,28 +172,7 @@ _evolution(EnclosureListType& final_sets,
 		SetModelType set_model=current_set.second.third;
 		TimeModelType time_model=current_set.second.fourth;
 
-		double k_ratio = 1e-1;
-		TaylorSet boxed_set_model(set_model.bounding_box());
-		Vector<TaylorModel> models = boxed_set_model.models();
-		box_it = false;
-		for (int i=0; i<boxed_set_model.size(); ++i) {
-			const TaylorModel& boxed_model = boxed_set_model[i];
-			const TaylorModel& model = set_model.models()[i];
-			double error = model.error();
-			double range_width = model.range().width();
-			double boxed_range_width = boxed_model.range().width();
-			double difference = boxed_range_width - (range_width-error);
-			if (error/boxed_range_width > k_ratio) {
-				box_it = true;
-				break;
-			}
-		}
-
-		if (box_it) {
-			boxing_events++;
-			set_model = boxed_set_model;
-			time_model = TaylorModel::scaling(set_model.size(),0,time_model.range());
-		}
+		_box_taylor_set(set_model,time_model);
 
 		Vector<Float> reference_enclosure_widths = this->_settings->minimum_discretised_enclosure_widths.find(loc)->second;
 
@@ -314,11 +317,8 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
     const uint& set_index = current_set.first;
     make_ltuple(location,events_history,set_model,time_model)=current_set.second;
 
-	// Boxes the set and time models
-	if (box_it) {
-    set_model = TaylorSet(set_model.bounding_box());
-    time_model = TaylorModel::scaling(set_model.size(),0,time_model.range());
-	}
+	_box_taylor_set(set_model,time_model);
+
     // Extract information about the current location
     const RealVectorFunction dynamic=get_directed_dynamic(_sys->dynamic_function(location),direction);
     Set<DiscreteEvent> available_events = _sys->events(location);
