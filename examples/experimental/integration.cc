@@ -26,15 +26,12 @@ int main(int argc, char* argv[])
 
     // Parameters
     RealParameter velocity("velocity",1.0); // Velocity
-    RealParameter half_width("half_width",1.0); // Half width
 
     /// Modes
 
-    DiscreteLocation passing_right("passing_right");
-    DiscreteLocation passing_left("passing_left");
+    DiscreteLocation move("move");
 
-	trajectory.new_mode(passing_right);
-	trajectory.new_mode(passing_left);
+	trajectory.new_mode(move);
 
     // Variables
 
@@ -42,31 +39,9 @@ int main(int argc, char* argv[])
 
     trajectory.add_output_var(x);
 
-    // Events
-
-    DiscreteEvent switch_left("switch_right");
-    DiscreteEvent switch_right("switch_left");
-
 	// Dynamics
 
-	RealExpression dyn_x_right = velocity;
-	RealExpression dyn_x_left = -velocity;
-
-	trajectory.set_dynamics(passing_right, x, dyn_x_right);
-	trajectory.set_dynamics(passing_left, x, dyn_x_left);
-
-	// Transitions
-
-	RealExpression x_greater_half_width = x - half_width; // x >= half_width
-	RealExpression x_lesser_minus_half_width = -x - half_width; // x <= -half_width
-
-	std::map<RealVariable,RealExpression> reset_minus_half;
-	reset_minus_half[x] = -half_width;
-	std::map<RealVariable,RealExpression> reset_half;
-	reset_half[x] = half_width;
-
-	trajectory.new_forced_transition(switch_left,passing_right,passing_left,reset_half,x_greater_half_width);
-	trajectory.new_forced_transition(switch_right,passing_left,passing_right,reset_minus_half,x_lesser_minus_half_width);
+	trajectory.set_dynamics(move, x, velocity);
 
     /// Create a HybridAutomaton object
     HybridIOAutomaton measurements("measurements");
@@ -79,13 +54,15 @@ int main(int argc, char* argv[])
 
     RealVariable y("y");
     RealVariable z("z");
+    RealVariable w("w");
 
     DiscreteEvent enters("enters");
     DiscreteEvent exits("exits");
 
     measurements.add_input_var(x);
     measurements.add_output_var(y);
-    //measurements.add_output_var(z);
+    measurements.add_output_var(z);
+    measurements.add_output_var(w);
 
     measurements.new_mode(far);
     measurements.new_mode(close);
@@ -95,13 +72,23 @@ int main(int argc, char* argv[])
 	measurements.set_dynamics(far, y, dyn_y_far);
 	measurements.set_dynamics(close, y, dyn_y_close);
 
+	RealExpression dyn_w_far = 0.0;
+	RealExpression dyn_w_close = -Ariadne::pi<Real>()*x/L/L*Ariadne::sin(Ariadne::pi<Real>()*x*x/L/L);
+	measurements.set_dynamics(far, w, dyn_w_far);
+	measurements.set_dynamics(close, w, dyn_w_close);
+
+	RealExpression dyn_z_far = 0.0;
+	RealExpression dyn_z_close = w;
+	measurements.set_dynamics(far, z, dyn_z_far);
+	measurements.set_dynamics(close, z, dyn_z_close);
+
 	RealExpression distance_greater_L = x*x - L*L; // distance >= L
 	RealExpression distance_lesser_L = L*L - x*x; // distance <= L
 
 	measurements.new_forced_transition(enters,far,close,distance_lesser_L);
 	measurements.new_forced_transition(exits,close,far,distance_greater_L);
 
-	HybridIOAutomaton system = compose("integration",trajectory,measurements,DiscreteLocation("passing_right"),DiscreteLocation("far"));
+	HybridIOAutomaton system = compose("integration",trajectory,measurements,DiscreteLocation("move"),DiscreteLocation("far"));
 
     /// Compute the system evolution
 
@@ -111,14 +98,14 @@ int main(int argc, char* argv[])
 
     HybridSpace hspace(system.state_space());
     for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
-        evolver.settings().minimum_discretised_enclosure_widths[hs_it->first] = Vector<Float>(2,2.0);
+        evolver.settings().minimum_discretised_enclosure_widths[hs_it->first] = Vector<Float>(4,2.0);
         evolver.settings().hybrid_maximum_step_size[hs_it->first] = 0.0001;
     }
 
-    Box initial_box(2, -half_width.value(),-half_width.value(), 0.0,0.0);
-    HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("passing_right,far"),initial_box);
+    Box initial_box(4, 0.0,0.0, -1.0,-1.0, 0.0,0.0, 0.0,0.0);
+    HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("move,far"),initial_box);
 
-    HybridTime evolution_time(4.0,3);
+    HybridTime evolution_time(2.0,3);
 
     std::cout << "Computing orbit... " << std::flush;
     HybridEvolver::OrbitType orbit = evolver.orbit(initial_enclosure,evolution_time,UPPER_SEMANTICS);
