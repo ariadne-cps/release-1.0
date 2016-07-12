@@ -134,9 +134,7 @@ void _box_taylor_set(TaylorSet& set_model, TaylorModel& time_model) {
 	}
 
 	if (has_boxed) {
-		std::cout << "Previous model: " << set_model << std::endl;
-		set_model = TaylorSet(set_model_models);
-		std::cout << "New model: " << set_model << std::endl;
+		set_model = boxed_set_model;//TaylorSet(set_model_models);
 		time_model = TaylorModel::scaling(set_model.size(),0,time_model.range());
 		boxing_events++;
 	}

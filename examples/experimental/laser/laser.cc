@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
 
     Real x_i = -laser_trajectory.parameter_value("half_width");
     Real T0 = skin_temperature.parameter_value("T0");
-    Real pass_period = 0.07;
+    Real pass_period = 0.200;
     Real vx_i = -4.0*x_i/pass_period;
 
     /// Create a HybridEvolver object

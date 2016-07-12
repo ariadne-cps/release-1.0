@@ -17,7 +17,7 @@ namespace Ariadne {
 HybridIOAutomaton getSkinExposure()
 {
     /// Parameters
-	RealParameter L("L",0.002);
+	RealParameter L("L",0.00025);
 	RealParameter x0("x0",0.0);
 
     /// Build the Hybrid System
