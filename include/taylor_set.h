@@ -140,6 +140,8 @@ class TaylorSet
     Vector<Float> centre() const;
     //! \brief The radius of the set.
     Float radius() const;
+    //| \brief The widths of the set.
+    Vector<Float> widths() const;
     //! \brief An over-approximation in the form of a zonotope.
     TaylorSet linearise() const;
     //! \brief An over-approximation in the form of a list of boxes.

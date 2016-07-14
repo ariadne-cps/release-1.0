@@ -157,6 +157,16 @@ TaylorSet::radius() const
     return result;
 }
 
+Vector<Float>
+TaylorSet::widths() const
+{
+    Vector<Float> result(this->dimension());
+    for(uint i=0; i!=this->dimension(); ++i) {
+        result[i] = this->models()[i].range().width();
+    }
+    return result;
+}
+
 
 tribool
 TaylorSet::disjoint(const Box& bx) const
