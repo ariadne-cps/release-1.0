@@ -44,6 +44,9 @@ HybridIOAutomaton getLaserTrajectory()
     DiscreteEvent switch_left("switch_right");
     DiscreteEvent switch_right("switch_left");
 
+    automaton.add_output_event(switch_left);
+    automaton.add_output_event(switch_right);
+
 	// Dynamics
 
 	RealExpression dyn_x_right = velocity;
