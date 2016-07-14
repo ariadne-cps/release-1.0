@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
 
     Real x_i = -laser_trajectory.parameter_value("half_width");
     Real T0 = skin_temperature.parameter_value("T0");
-    Real pass_period = 0.008;
+    Real pass_period = 0.100;
     Real vx = -4.0*x_i/pass_period;
 
     system.substitute(RealParameter("velocity",vx));
@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
     HybridSpace hspace(system.state_space());
     for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
         evolver.settings().minimum_discretised_enclosure_widths[hs_it->first] = Vector<Float>(6,2.0);
-        evolver.settings().hybrid_maximum_step_size[hs_it->first] = 0.000001;
+        evolver.settings().hybrid_maximum_step_size[hs_it->first] = 0.00001;
     }
 
     Box initial_box(6, /*T*/ T0.lower(),T0.upper(), /*p*/ 0.0,0.0, /*t*/ 0.0,0.0, /*x*/ x_i.lower(),x_i.upper(), /*z*/ 0.0,0.0, /*zi*/ 0.0,0.0);
