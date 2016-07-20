@@ -1150,10 +1150,12 @@ DiscreteLocation _recursive_composition(HybridIOAutomaton& ha,
     // The composed location is named init1,init2
     DiscreteLocation newloc(init1.name() + "," + init2.name());
 
+    cout << "Building location " << newloc << endl;
+
     if(ha.has_mode(newloc))  // The composed location init1,init2 already exists, return.
         return newloc;    
         
-    // Location init1,init2 do not exist, create it.
+    // Location init1,init2 does not exist, create it.
     const DiscreteIOMode& loc1 = ha1.mode(init1);
     const DiscreteIOMode& loc2 = ha2.mode(init2);    
     ha.new_mode(newloc);
@@ -1194,18 +1196,18 @@ DiscreteLocation _recursive_composition(HybridIOAutomaton& ha,
         std::map< RealVariable, RealExpression > res = iter->reset();
         EventKind kind=iter->kind();
 
-        // std::cout << "Checking transition " << *iter << "..." << std::endl;
+         std::cout << "Checking transition " << *iter << "..." << std::endl;
         // We should distinguish between different cases
         if( ha1.has_input_event(iter->event()) &&        // input event shared with ha2
             (ha2.has_input_event(iter->event()) || ha2.has_output_event(iter->event())) )
         {   // event is shared with ha2: components should synchronize
-           // std::cout << "Event is input and shared with ha2." << std::endl;
+            std::cout << "Event is input and shared with ha2." << std::endl;
            DiscreteIOTransition tr2;
             try {
                 tr2 = ha2.transition(iter->event(), init2);
             }   
             catch(std::runtime_error e) {
-                // std::cout << "No transition in ha2 with the same event." << std::endl;                    
+                 std::cout << "No transition in ha2 with the same event." << std::endl;
                 continue;
             }
             // the target location in the composed automaton is iter->target(),tr2.target()
@@ -1220,20 +1222,20 @@ DiscreteLocation _recursive_composition(HybridIOAutomaton& ha,
         else if( ha1.has_output_event(iter->event()) &&     // output event shared with ha2
                  ha2.has_input_event(iter->event())) 
         {   // event is shared with ha2: components should synchronize
-            // std::cout << "Event is output and shared with ha2." << std::endl;
+             std::cout << "Event is output and shared with ha2." << std::endl;
             DiscreteIOTransition tr2;
             try {
                 tr2 = ha2.transition(iter->event(), init2);
             }   
             catch(std::runtime_error e) {
-                // std::cout << "No transition in ha2 with the same event." << std::endl;                    
+                 std::cout << "No transition in ha2 with the same event." << std::endl;
                 continue;
             }
             // the target location in the composed automaton is iter->target(),tr2.target()
             target2 = tr2.target();
             // join the reset functions
             res.insert(tr2.reset().begin(), tr2.reset().end());
-        } else {    // In all other cases the event is not shared with ha2
+        } else 	{    // In all other cases the event is not shared with ha2
             // The reset function for the variables controlled by ha2 is the identity
             for(std::set<RealVariable>::const_iterator viter=ha2.internal_vars().begin() ;
                 viter != ha2.internal_vars().end() ; viter++ )
@@ -1258,10 +1260,11 @@ DiscreteLocation _recursive_composition(HybridIOAutomaton& ha,
     for(std::list< DiscreteIOTransition >::const_iterator iter = transitions.begin();
         iter != transitions.end() ; iter++)
     {
-        // std::cout << "Checking transition " << *iter << "..." << std::endl;
+         std::cout << "Checking transition " << *iter << "..." << std::endl;
         // remember that transition with shared events have already been added in the previous loop
         if(ha1.has_input_event(iter->event()) || ha1.has_output_event(iter->event()))
         {   // event is shared with ha1: transition have already been added, skip
+        	 std::cout << "Event is shared with ha1, skipping" << std::endl;
             continue;
         }
         // The event is not shared with ha1: the first component should not react
@@ -1284,6 +1287,8 @@ DiscreteLocation _recursive_composition(HybridIOAutomaton& ha,
         // add the new transition to the automaton
         ha.new_transition(iter->event(), newloc, newtarget, res, act, kind);
     }   // end scanning transitions from loc2    
+
+    cout << "Built location " << newloc << endl;
 
     return newloc;
 }
