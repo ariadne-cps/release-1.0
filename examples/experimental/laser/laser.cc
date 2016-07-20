@@ -39,8 +39,8 @@ int main(int argc, char* argv[])
 
     Real x_i = -laser_trajectory.parameter_value("half_width");
     Real T0 = skin_temperature.parameter_value("T0");
-    Real pass_period = 0.100;
-    Real vx = -4.0*x_i/pass_period;
+    Real pass_period = 0.120;
+    Real vx = 4.0*laser_trajectory.parameter_value("half_width")/pass_period;
 
     system.substitute(RealParameter("velocity",vx));
 
@@ -58,7 +58,10 @@ int main(int argc, char* argv[])
     HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("work,passing_right,far_from_left_in,varying,idle"),initial_box);
 
     int num_half_cycles = 2;
-    HybridTime evolution_time(pass_period.upper()/2*num_half_cycles,9*num_half_cycles);
+    HybridTime evolution_time(pass_period.upper()/2*num_half_cycles,7*num_half_cycles);
+
+    //cout << system << endl;
+
 
     std::cout << "Computing orbit... " << std::flush;
     HybridEvolver::OrbitType orbit = evolver.orbit(initial_enclosure,evolution_time,UPPER_SEMANTICS);
@@ -66,4 +69,5 @@ int main(int argc, char* argv[])
 
     PlotHelper plotter(system.name());
     plotter.plot(orbit.reach(),"reach");
+
 }
