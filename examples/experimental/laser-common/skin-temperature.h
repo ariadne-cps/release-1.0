@@ -61,13 +61,13 @@ HybridIOAutomaton getSkinTemperature()
 	/// Transitions
 	// Guards
 	RealExpression T_greater_Tevap = T - Tevap; // T >= Tevap
-	RealExpression T_lesser_Tevap_minus_1 = Tevap - 1.0 - T; // T <= Tevap-1
+	RealExpression T_lesser_Tevap = Tevap - T; // T <= Tevap
 
 	// Resets
 	std::map<RealVariable,RealExpression> reset_evap;
 	reset_evap[T] = Tevap;
 
-	automaton.new_forced_transition(end_post_evaporating,post_evaporating,varying,T_lesser_Tevap_minus_1);
+	automaton.new_forced_transition(end_post_evaporating,post_evaporating,varying,T_lesser_Tevap);
 	automaton.new_forced_transition(start_evaporating,varying,evaporating,reset_evap,T_greater_Tevap);
 	automaton.new_unforced_transition(stop_evaporating,evaporating,post_evaporating);
 
