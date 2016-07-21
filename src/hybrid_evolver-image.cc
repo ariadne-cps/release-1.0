@@ -155,7 +155,6 @@ void ImageSetHybridEvolver::_absorb_error(TaylorSet& starting_set,
 	if (has_boxed) {
 		//set_model = boxed_set_model;
 		starting_set = TaylorSet(starting_set_models);
-		starting_time = TaylorModel::scaling(starting_set.argument_size(),0,starting_time.range());
 		boxing_events++;
 	}
 }
