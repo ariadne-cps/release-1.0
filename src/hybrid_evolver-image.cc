@@ -73,10 +73,6 @@ void wait_for_keypress() {
     getline(std::cin,str);
 }
 
-int BOXING_RATE = 400;
-bool box_it = false;
-int boxing_events = 0;
-
 class DegenerateCrossingException : public std::runtime_error {
   public:
     DegenerateCrossingException(const char* msg) : std::runtime_error(msg) { }
@@ -140,7 +136,6 @@ void ImageSetHybridEvolver::_absorb_error(TaylorSet& starting_set,
 
 	// Boxing based on finishing set derivatives being in modulus smaller than the finishing set derivatives
 	for (unsigned int i=0; i<starting_bb.size(); ++i) {
-		//cout << "dim: " << i << ", starting range: " << starting_dynamic_range[i].midpoint() << ", finishing range: " << finishing_dynamic_range[i].midpoint() << endl;
 		if (abs(finishing_dynamic_range[i].midpoint()) <= abs(starting_dynamic_range[i].midpoint())) {
 			has_boxed = true;
 			TaylorModel new_model = TaylorModel::scaling(starting_set.argument_size(),i,starting_bb[i]);
@@ -148,10 +143,8 @@ void ImageSetHybridEvolver::_absorb_error(TaylorSet& starting_set,
 		}
 	}
 
-	if (has_boxed) {
+	if (has_boxed)
 		starting_set = TaylorSet(starting_set_models);
-		boxing_events++;
-	}
 }
 
 void
@@ -219,8 +212,6 @@ _evolution(EnclosureListType& final_sets,
 
 		_check_timeout();
     }
-
-	ARIADNE_LOG(1,"Boxing events: " << boxing_events << "/" << reach_sets.size());
 }
 
 
@@ -789,7 +780,7 @@ _log_step_summary(const std::list<pair<uint,HybridTimedSetType> >& working_sets,
                     <<" r="<<std::setw(7)<<initial_set_model.radius()
                     <<" l="<<std::setw(3)<<std::left<<initial_location
                     <<" c="<<initial_set_model.centre()
-					<<" w="<<initial_set_model.widths()
+					//<<" w="<<initial_set_model.widths()
                     <<" e="<<initial_events);
 }
 
