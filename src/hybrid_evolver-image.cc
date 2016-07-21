@@ -114,8 +114,8 @@ tune_settings(
 	ARIADNE_LOG(2, "Maximum step size: " << this->_settings->hybrid_maximum_step_size);
 }
 
-void ImageSetHybridEvolver::_absorb_error(TaylorSet& set_model,
-					 TaylorModel& time_model,
+void ImageSetHybridEvolver::_absorb_error(TaylorSet& starting_set,
+					 TaylorModel& starting_time,
 					 const DiscreteLocation& loc,
 					 const TimeType& maximum_hybrid_time,
 					 ContinuousEvolutionDirection direction,
@@ -123,34 +123,39 @@ void ImageSetHybridEvolver::_absorb_error(TaylorSet& set_model,
 
 	double k_ratio = 1e-1;
 
-	FlowSetModelType flow_set_model; BoxType flow_bounds;
+	FlowSetModelType flow_set; BoxType flow_bounds;
 	const RealVectorFunction dynamic=get_directed_dynamic(_sys->dynamic_function(loc),direction);
 	Float time_step = this->_settings->hybrid_maximum_step_size[loc];
 	const Float maximum_time=maximum_hybrid_time.continuous_time();
-	compute_flow_model(loc,flow_set_model,flow_bounds,time_step,dynamic,set_model,time_model,maximum_time,semantics);
-	SetModelType finishing_set=partial_evaluate(flow_set_model.models(),set_model.argument_size(),1.0);
+	compute_flow_model(loc,flow_set,flow_bounds,time_step,dynamic,starting_set,starting_time,maximum_time,semantics);
+	SetModelType finishing_set=partial_evaluate(flow_set.models(),starting_set.argument_size(),1.0);
 
-	Vector<Interval> bb = set_model.bounding_box();
-	TaylorSet boxed_set_model(bb);
-	Vector<TaylorModel> set_model_models = set_model.models();
+	Vector<Interval> starting_bb = starting_set.bounding_box();
+	Vector<Interval> finishing_bb = finishing_set.bounding_box();
+
+	Vector<Interval> starting_dynamic_range = dynamic.evaluate(starting_bb);
+	Vector<Interval> finishing_dynamic_range = dynamic.evaluate(finishing_bb);
+
+	TaylorSet starting_boxed_set(starting_bb);
+	Vector<TaylorModel> starting_set_models = starting_set.models();
 	bool has_boxed = false;
-	for (unsigned int i=0; i<boxed_set_model.size(); ++i) {
-		const TaylorModel& boxed_model = boxed_set_model[i];
-		const TaylorModel& model = set_model.models()[i];
+	for (unsigned int i=0; i<starting_boxed_set.size(); ++i) {
+		const TaylorModel& boxed_model = starting_boxed_set[i];
+		const TaylorModel& model = starting_set.models()[i];
 		double error = model.error();
 		double range_width = model.range().width();
 		double boxed_range_width = boxed_model.range().width();
 		if (error/boxed_range_width > k_ratio) {
 			has_boxed = true;
-			TaylorModel new_model = TaylorModel::scaling(set_model.argument_size(),i,bb[i]);
-			set_model_models[i] = new_model;
+			TaylorModel new_model = TaylorModel::scaling(starting_set.argument_size(),i,starting_bb[i]);
+			starting_set_models[i] = new_model;
 		}
 	}
 
 	if (has_boxed) {
 		//set_model = boxed_set_model;
-		set_model = TaylorSet(set_model_models);
-		time_model = TaylorModel::scaling(set_model.argument_size(),0,time_model.range());
+		starting_set = TaylorSet(starting_set_models);
+		starting_time = TaylorModel::scaling(starting_set.argument_size(),0,starting_time.range());
 		boxing_events++;
 	}
 }
