@@ -1,2 +1,2 @@
-add_executable(laser laser.cc)
-target_link_libraries(laser ariadne)
+add_executable(laser-centre laser.cc)
+target_link_libraries(laser-centre ariadne)

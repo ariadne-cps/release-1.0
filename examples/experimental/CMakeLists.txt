@@ -15,6 +15,7 @@ set(EXPERIMENTAL
 )
 
 add_subdirectory(laser-centre)
+add_subdirectory(laser-border)
 
 foreach(experiment ${EXPERIMENTAL})
     add_executable(${experiment} ${experiment}.cc)
