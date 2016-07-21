@@ -17,9 +17,9 @@ namespace Ariadne {
 HybridIOAutomaton getCuttingDepth()
 {
     /// Parameters
-	RealParameter k("k",3.0163e-8);
-	RealParameter lambda("lambda",4461.0274);
-	RealParameter mu("mu",4.0639e5);
+	RealParameter k("k",4.1475e-8);
+	RealParameter lambda("lambda",3.3456e3);
+	RealParameter mu("mu",2.9595e5);
 	RealParameter T0("T0",37.0);
 	RealParameter Tevap("Teval",100.0);
 	RealParameter z_thr("z_thr",15e-6);
