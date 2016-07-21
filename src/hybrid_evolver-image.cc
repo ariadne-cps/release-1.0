@@ -128,14 +128,15 @@ void _box_taylor_set(TaylorSet& set_model, TaylorModel& time_model) {
 		double boxed_range_width = boxed_model.range().width();
 		if (error/boxed_range_width > k_ratio) {
 			has_boxed = true;
-			TaylorModel new_model = TaylorModel::scaling(set_model.size(),i,bb[i]);
+			TaylorModel new_model = TaylorModel::scaling(set_model.argument_size(),i,bb[i]);
 			set_model_models[i] = new_model;
 		}
 	}
 
 	if (has_boxed) {
-		set_model = boxed_set_model;//TaylorSet(set_model_models);
-		time_model = TaylorModel::scaling(set_model.size(),0,time_model.range());
+		//set_model = boxed_set_model;
+		set_model = TaylorSet(set_model_models);
+		time_model = TaylorModel::scaling(set_model.argument_size(),0,time_model.range());
 		boxing_events++;
 	}
 }
