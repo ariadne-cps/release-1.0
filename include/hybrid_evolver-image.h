@@ -186,6 +186,13 @@ class ImageSetHybridEvolver
 
     std::map<uint,Vector<Float> > _indexed_set_models_widths(std::list< pair<uint,HybridTimedSetType> >& working_sets) const;
 
+    void _absorb_error(TaylorSet& set_model,
+    					 TaylorModel& time_model,
+    					 const DiscreteLocation& loc,
+    					 const TimeType& maximum_hybrid_time,
+    					 ContinuousEvolutionDirection direction,
+    					 Semantics semantics) const;
+
     bool _is_enclosure_too_large(
     		const DiscreteLocation& loc,
     		const SetModelType& set_model,

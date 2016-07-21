@@ -114,8 +114,22 @@ tune_settings(
 	ARIADNE_LOG(2, "Maximum step size: " << this->_settings->hybrid_maximum_step_size);
 }
 
-void _box_taylor_set(TaylorSet& set_model, TaylorModel& time_model) {
+void ImageSetHybridEvolver::_absorb_error(TaylorSet& set_model,
+					 TaylorModel& time_model,
+					 const DiscreteLocation& loc,
+					 const TimeType& maximum_hybrid_time,
+					 ContinuousEvolutionDirection direction,
+					 Semantics semantics) const {
+
 	double k_ratio = 1e-1;
+
+	FlowSetModelType flow_set_model; BoxType flow_bounds;
+	const RealVectorFunction dynamic=get_directed_dynamic(_sys->dynamic_function(loc),direction);
+	Float time_step = this->_settings->hybrid_maximum_step_size[loc];
+	const Float maximum_time=maximum_hybrid_time.continuous_time();
+	compute_flow_model(loc,flow_set_model,flow_bounds,time_step,dynamic,set_model,time_model,maximum_time,semantics);
+	SetModelType finishing_set=partial_evaluate(flow_set_model.models(),set_model.argument_size(),1.0);
+
 	Vector<Interval> bb = set_model.bounding_box();
 	TaylorSet boxed_set_model(bb);
 	Vector<TaylorModel> set_model_models = set_model.models();
@@ -174,7 +188,7 @@ _evolution(EnclosureListType& final_sets,
 		SetModelType set_model=current_set.second.third;
 		TimeModelType time_model=current_set.second.fourth;
 
-		_box_taylor_set(set_model,time_model);
+		// Compute continuous evolution
 
 		Vector<Float> reference_enclosure_widths = this->_settings->minimum_discretised_enclosure_widths.find(loc)->second;
 
@@ -319,7 +333,7 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
     const uint& set_index = current_set.first;
     make_ltuple(location,events_history,set_model,time_model)=current_set.second;
 
-	_box_taylor_set(set_model,time_model);
+    _absorb_error(set_model,time_model,location,maximum_hybrid_time,direction,semantics);
 
     // Extract information about the current location
     const RealVectorFunction dynamic=get_directed_dynamic(_sys->dynamic_function(location),direction);
@@ -776,6 +790,7 @@ _log_step_summary(const std::list<pair<uint,HybridTimedSetType> >& working_sets,
                     <<" r="<<std::setw(7)<<initial_set_model.radius()
                     <<" l="<<std::setw(3)<<std::left<<initial_location
                     <<" c="<<initial_set_model.centre()
+					<<" w="<<initial_set_model.widths()
                     <<" e="<<initial_events);
 }
 
