@@ -121,8 +121,6 @@ void ImageSetHybridEvolver::_absorb_error(TaylorSet& starting_set,
 					 ContinuousEvolutionDirection direction,
 					 Semantics semantics) const {
 
-	double k_ratio = 1e-1;
-
 	FlowSetModelType flow_set; BoxType flow_bounds;
 	const RealVectorFunction dynamic=get_directed_dynamic(_sys->dynamic_function(loc),direction);
 	Float time_step = this->_settings->hybrid_maximum_step_size[loc];
@@ -139,13 +137,11 @@ void ImageSetHybridEvolver::_absorb_error(TaylorSet& starting_set,
 	TaylorSet starting_boxed_set(starting_bb);
 	Vector<TaylorModel> starting_set_models = starting_set.models();
 	bool has_boxed = false;
-	for (unsigned int i=0; i<starting_boxed_set.size(); ++i) {
-		const TaylorModel& boxed_model = starting_boxed_set[i];
-		const TaylorModel& model = starting_set.models()[i];
-		double error = model.error();
-		double range_width = model.range().width();
-		double boxed_range_width = boxed_model.range().width();
-		if (error/boxed_range_width > k_ratio) {
+
+	// Boxing based on finishing set derivatives being in modulus smaller than the finishing set derivatives
+	for (unsigned int i=0; i<starting_bb.size(); ++i) {
+		//cout << "dim: " << i << ", starting range: " << starting_dynamic_range[i].midpoint() << ", finishing range: " << finishing_dynamic_range[i].midpoint() << endl;
+		if (abs(finishing_dynamic_range[i].midpoint()) <= abs(starting_dynamic_range[i].midpoint())) {
 			has_boxed = true;
 			TaylorModel new_model = TaylorModel::scaling(starting_set.argument_size(),i,starting_bb[i]);
 			starting_set_models[i] = new_model;
@@ -153,7 +149,6 @@ void ImageSetHybridEvolver::_absorb_error(TaylorSet& starting_set,
 	}
 
 	if (has_boxed) {
-		//set_model = boxed_set_model;
 		starting_set = TaylorSet(starting_set_models);
 		boxing_events++;
 	}
