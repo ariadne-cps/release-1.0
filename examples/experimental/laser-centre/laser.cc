@@ -8,11 +8,12 @@
  *****************************************************************************************************/
 
 #include "ariadne.h"
+
+#include "../laser-centre/cutting-depth.h"
+#include "../laser-centre/laser-trajectory.h"
+#include "../laser-centre/skin-exposure.h"
+#include "../laser-centre/skin-temperature.h"
 #include "../timer.h"
-#include "laser-trajectory.h"
-#include "skin-temperature.h"
-#include "skin-exposure.h"
-#include "cutting-depth.h"
 
 using namespace Ariadne;
 

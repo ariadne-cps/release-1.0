@@ -14,7 +14,7 @@ set(EXPERIMENTAL
 		 composition
 )
 
-add_subdirectory(laser)
+add_subdirectory(laser-centre)
 
 foreach(experiment ${EXPERIMENTAL})
     add_executable(${experiment} ${experiment}.cc)
