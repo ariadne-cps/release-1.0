@@ -9,11 +9,11 @@
 
 #include "ariadne.h"
 
-#include "../laser-common/cutting-depth.h"
-#include "../laser-common/laser-trajectory.h"
-#include "../laser-common/skin-temperature.h"
 #include "skin-exposure.h"
-#include "../timer.h"
+#include "../common/cutting-depth.h"
+#include "../common/laser-trajectory.h"
+#include "../common/skin-temperature.h"
+#include "../../timer.h"
 
 using namespace Ariadne;
 

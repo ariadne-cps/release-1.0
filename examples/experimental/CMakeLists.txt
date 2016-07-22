@@ -14,10 +14,9 @@ set(EXPERIMENTAL
 		 composition
 )
 
-add_subdirectory(laser-centre)
-add_subdirectory(laser-border)
-
 foreach(experiment ${EXPERIMENTAL})
     add_executable(${experiment} ${experiment}.cc)
     target_link_libraries(${experiment} ariadne)
 endforeach()
+
+add_subdirectory(laser)
