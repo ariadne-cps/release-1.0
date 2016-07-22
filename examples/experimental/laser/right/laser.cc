@@ -9,11 +9,11 @@
 
 #include "ariadne.h"
 
-#include "skin-exposure.h"
 #include "../common/cutting-depth.h"
 #include "../common/laser-trajectory.h"
 #include "../common/skin-temperature.h"
 #include "../../timer.h"
+#include "skin-exposure.h"
 
 using namespace Ariadne;
 
@@ -38,7 +38,7 @@ int main(int argc, char* argv[])
     HybridIOAutomaton timer_traj_exp_temp = compose("timer_traj_exp_temp",timer_traj_exp,skin_temperature,DiscreteLocation("work,passing_right,far_from_left_in"),DiscreteLocation("varying"));
     HybridIOAutomaton system = compose("laser",timer_traj_exp_temp,cutting_depth,DiscreteLocation("work,passing_right,far_from_left_in,varying"),DiscreteLocation("idle"));
 
-    Real x_i = -laser_trajectory.parameter_value("half_width");
+    Real x_i = 0.0;
     Real T0 = skin_temperature.parameter_value("T0");
     Real pass_period = 0.012;
     Real vx = 4.0*laser_trajectory.parameter_value("half_width")/pass_period;
