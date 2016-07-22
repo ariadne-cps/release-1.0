@@ -33,12 +33,12 @@ int main(int argc, char* argv[])
     HybridIOAutomaton skin_temperature = getSkinTemperature();
     HybridIOAutomaton cutting_depth = getCuttingDepth();
 
-    HybridIOAutomaton timer_traj = compose("timer-traj",timer,laser_trajectory,DiscreteLocation("work"),DiscreteLocation("passing_right"));
-    HybridIOAutomaton timer_traj_exp = compose("timer_traj_exposure",timer_traj,exposure,DiscreteLocation("work,passing_right"),DiscreteLocation("far"));
-    HybridIOAutomaton timer_traj_exp_temp = compose("timer_traj_exp_temp",timer_traj_exp,skin_temperature,DiscreteLocation("work,passing_right,far"),DiscreteLocation("varying"));
-    HybridIOAutomaton system = compose("laser",timer_traj_exp_temp,cutting_depth,DiscreteLocation("work,passing_right,far,varying"),DiscreteLocation("idle"));
+    HybridIOAutomaton timer_traj = compose("timer-traj",timer,laser_trajectory,DiscreteLocation("work"),DiscreteLocation("scanning"));
+    HybridIOAutomaton timer_traj_exp = compose("timer_traj_exposure",timer_traj,exposure,DiscreteLocation("work,scanning"),DiscreteLocation("far"));
+    HybridIOAutomaton timer_traj_exp_temp = compose("timer_traj_exp_temp",timer_traj_exp,skin_temperature,DiscreteLocation("work,scanning,far"),DiscreteLocation("varying"));
+    HybridIOAutomaton system = compose("laser",timer_traj_exp_temp,cutting_depth,DiscreteLocation("work,scanning,far,varying"),DiscreteLocation("idle"));
 
-    Real x_i = 0.0;//-laser_trajectory.parameter_value("half_width");
+    Real x_i = -laser_trajectory.parameter_value("half_width");
     Real T0 = skin_temperature.parameter_value("T0");
     Real pass_period = 0.05;
     Real vx = 4.0*laser_trajectory.parameter_value("half_width")/pass_period;
@@ -56,9 +56,9 @@ int main(int argc, char* argv[])
     }
 
     Box initial_box(7, /*T*/ T0.lower(),T0.upper(), /*p*/ 0.0,0.0, /*t*/ 0.0,0.0, /*vx*/ vx.lower(),vx.upper(), /*x*/ x_i.lower(),x_i.upper(), /*z*/ 0.0,0.0, /*zi*/ 0.0,0.0);
-    HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("work,passing_right,far,varying,idle"),initial_box);
+    HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("work,scanning,far,varying,idle"),initial_box);
 
-    int num_half_cycles = 1;
+    int num_half_cycles = 2;
     HybridTime evolution_time(pass_period.upper()/2*num_half_cycles,9*num_half_cycles);
 
     //cout << system << endl;

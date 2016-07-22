@@ -27,11 +27,9 @@ HybridIOAutomaton getLaserTrajectory()
 
     /// Modes
 
-    DiscreteLocation passing_right("passing_right");
-    DiscreteLocation passing_left("passing_left");
+    DiscreteLocation scanning("scanning");
 
-	automaton.new_mode(passing_right);
-	automaton.new_mode(passing_left);
+	automaton.new_mode(scanning);
 
     // Variables
 
@@ -53,13 +51,11 @@ HybridIOAutomaton getLaserTrajectory()
 
 	RealExpression dyn_x = vx;
 
-	automaton.set_dynamics(passing_right, x, dyn_x);
-	automaton.set_dynamics(passing_left, x, dyn_x);
+	automaton.set_dynamics(scanning, x, dyn_x);
 
 	RealExpression dyn_vx = 0.0;
 
-	automaton.set_dynamics(passing_right, vx, dyn_vx);
-	automaton.set_dynamics(passing_left, vx, dyn_vx);
+	automaton.set_dynamics(scanning, vx, dyn_vx);
 
 	// Transitions
 
@@ -73,8 +69,8 @@ HybridIOAutomaton getLaserTrajectory()
 	reset_half[x] = half_width;
 	reset_half[vx] = -velocity;
 
-	automaton.new_forced_transition(switch_left,passing_right,passing_left,reset_half,x_greater_half_width);
-	automaton.new_forced_transition(switch_right,passing_left,passing_right,reset_minus_half,x_lesser_minus_half_width);
+	automaton.new_forced_transition(switch_left,scanning,scanning,reset_half,x_greater_half_width);
+	automaton.new_forced_transition(switch_right,scanning,scanning,reset_minus_half,x_lesser_minus_half_width);
 
 	return automaton;
 }
