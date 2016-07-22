@@ -19,7 +19,7 @@ HybridIOAutomaton getSkinExposure()
     /// Parameters
 	RealParameter velocity("velocity",0.46);
 	RealParameter L("L",0.00025);
-	RealParameter x0("x0",0.0022);
+	RealParameter x0("x0",0.00215);
 
     /// Build the Hybrid System
 
@@ -35,6 +35,7 @@ HybridIOAutomaton getSkinExposure()
     RealVariable p("p");
 
     automaton.add_input_var(x);
+    automaton.add_input_var(vx);
     automaton.add_output_var(p);
 
     // Events
@@ -49,10 +50,11 @@ HybridIOAutomaton getSkinExposure()
 
 	RealExpression distance = Ariadne::sqr(x-x0);
 
-	RealExpression dyn_close = vx*Ariadne::pi<Real>()/L/L * (x-x0) * Ariadne::sin(Ariadne::pi<Real>()/L/L * distance);
+	RealExpression dyn_close = -vx*Ariadne::pi<Real>()/L/L * (x-x0) * Ariadne::sin(Ariadne::pi<Real>()/L/L * distance);
 	RealExpression dyn_far = 0.0;
 
 	automaton.set_dynamics(far, p, dyn_far);
+	automaton.set_dynamics(close, p, dyn_close);
 
 	/// Transitions
 	// Guards
@@ -62,11 +64,9 @@ HybridIOAutomaton getSkinExposure()
 	// Resets
 	std::map<RealVariable,RealExpression> reset_zero;
 	reset_zero[p] = 0.0;
-	std::map<RealVariable,RealExpression> reset_one;
-	reset_one[p] = 1.0;
 
-	automaton.new_forced_transition(comes,far,close,distance_lesser_L);
-	automaton.new_forced_transition(leaves,close,far,distance_lesser_L);
+	automaton.new_forced_transition(comes,far,close,reset_zero,distance_lesser_L);
+	automaton.new_forced_transition(leaves,close,far,reset_zero,distance_greater_L);
 
 	return automaton;
 }

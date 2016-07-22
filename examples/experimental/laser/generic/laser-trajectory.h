@@ -51,11 +51,10 @@ HybridIOAutomaton getLaserTrajectory()
 
 	// Dynamics
 
-	RealExpression dyn_x_right = vx;
-	RealExpression dyn_x_left = -vx;
+	RealExpression dyn_x = vx;
 
-	automaton.set_dynamics(passing_right, x, dyn_x_right);
-	automaton.set_dynamics(passing_left, x, dyn_x_left);
+	automaton.set_dynamics(passing_right, x, dyn_x);
+	automaton.set_dynamics(passing_left, x, dyn_x);
 
 	RealExpression dyn_vx = 0.0;
 
