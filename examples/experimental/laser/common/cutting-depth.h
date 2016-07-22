@@ -63,14 +63,16 @@ HybridIOAutomaton getCuttingDepth()
 	RealExpression z_der = k*(mu*p - lambda*(Tevap-T0));
 
 	RealExpression dyn_ablating = z_der;
-	RealExpression dyn_idle = 0.0;
+
+	RealExpression dyn_z_idle = 0.0;
+	RealExpression dyn_zi_idle = - lambda*zi;
 
 	automaton.set_dynamics(ablating, z, dyn_ablating);
 	automaton.set_dynamics(ablating, zi, dyn_ablating);
-	automaton.set_dynamics(idle, z, dyn_idle);
-	automaton.set_dynamics(idle, zi, dyn_idle);
-	automaton.set_dynamics(carbonization, z, dyn_idle);
-	automaton.set_dynamics(carbonization, zi, dyn_idle);
+	automaton.set_dynamics(idle, z, dyn_z_idle);
+	automaton.set_dynamics(idle, zi, dyn_zi_idle);
+	automaton.set_dynamics(carbonization, z, dyn_ablating);
+	automaton.set_dynamics(carbonization, zi, dyn_ablating);
 
 	/// Transitions
 	// Guards
@@ -78,12 +80,8 @@ HybridIOAutomaton getCuttingDepth()
 	RealExpression zi_der_lesser_zero = -z_der; // z' <= 0
 
 	// Resets
-	std::map<RealVariable,RealExpression> reset_zi_zero;
-	reset_zi_zero[z] = z;
-	reset_zi_zero[zi] = 0.0;
-
 	automaton.new_unforced_transition(start_evaporating,idle,ablating);
-	automaton.new_forced_transition(stop_evaporating,ablating,idle,reset_zi_zero,zi_der_lesser_zero);
+	automaton.new_forced_transition(stop_evaporating,ablating,idle,zi_der_lesser_zero);
 	automaton.new_forced_transition(start_carbonization,ablating,carbonization,zi_greater_zi_thr);
 
 	return automaton;
