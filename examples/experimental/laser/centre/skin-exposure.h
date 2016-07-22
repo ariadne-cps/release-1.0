@@ -19,7 +19,7 @@ HybridIOAutomaton getSkinExposure()
     /// Parameters
 	RealParameter velocity("velocity",0.46);
 	RealParameter L("L",0.00025);
-	RealParameter x0("x0",0.00);
+	RealParameter x0("x0",0.0022);
 
     /// Build the Hybrid System
 
