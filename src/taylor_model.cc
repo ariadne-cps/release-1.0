@@ -1631,7 +1631,7 @@ Interval _range3(const TaylorModel& tm) {
 
 Interval
 TaylorModel::range() const {
-    return Ariadne::_range3(*this);
+    return Ariadne::_range1(*this);
 }
 
 
