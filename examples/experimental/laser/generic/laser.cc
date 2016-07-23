@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
 
     Real pass_period = 0.03;
 
-    Real x0 = 0.000;
+    Real x0(0.000125,0.00012501);
 
     system.substitute(RealParameter("x0",x0));
     Real T0 = skin_temperature.parameter_value("T0");
@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
 
     HybridSpace hspace(system.state_space());
     for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
-        evolver.settings().minimum_discretised_enclosure_widths[hs_it->first] = Vector<Float>(7,0.2);
+        evolver.settings().minimum_discretised_enclosure_widths[hs_it->first] = Vector<Float>(7,0.5);
         evolver.settings().hybrid_maximum_step_size[hs_it->first] = 0.000005;
     }
 
@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
     int num_half_cycles = 1;
     double evol_time = -8.0*exposure.parameter_value("L")/vx_i.upper();
     //HybridTime evolution_time(pass_period.upper()/4*num_half_cycles,5*num_half_cycles);
-    HybridTime evolution_time(evol_time,7);
+    HybridTime evolution_time(evol_time,5);
 
     //cout << system << endl;
 

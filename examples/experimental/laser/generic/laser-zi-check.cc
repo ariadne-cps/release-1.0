@@ -48,7 +48,7 @@ analysis_result compute_z(HybridIOAutomaton system, double x0, int verbosity, bo
     int num_half_cycles = 1;
     double evol_time = -8.0*system.parameter_value("L")/vx_i.upper();
     //HybridTime evolution_time(pass_period.upper()/4*num_half_cycles,5*num_half_cycles);
-    HybridTime evolution_time(evol_time,5);
+    HybridTime evolution_time(evol_time,7);
 
     //cout << system << endl;
 
@@ -63,7 +63,6 @@ analysis_result compute_z(HybridIOAutomaton system, double x0, int verbosity, bo
 
     std::cout << "Depth of cut : " << result.z << std::endl;
     std::cout << "Maximum value of zi : " << result.zi << std::endl;
-    std::cout << "Carbonization occurred? " << (result.z > system.parameter_value("z_thr").upper() ? "yes" : "no") << std::endl;
 
     if (plot_results) {
     	PlotHelper plotter(system.name());
@@ -77,9 +76,9 @@ analysis_result compute_z(HybridIOAutomaton system, double x0, int verbosity, bo
 int main(int argc, char* argv[])
 {
     /// Constants
-    int num_points = 2;
+    int accuracy = 11;
 	if (argc > 1)
-		num_points = atoi(argv[1]);
+		accuracy = atoi(argv[1]);
     int VERBOSITY = 0;
 	if (argc > 2)
 		VERBOSITY = atoi(argv[2]);
@@ -107,6 +106,9 @@ int main(int argc, char* argv[])
 
     List<analysis_result> results;
 
+    double min_width = pow(10,-accuracy);
+    std::cout << "Analyzing down to accuracy " << min_width << std::endl;
+
     std::cout << "Analyzing initial left at x0 = " << left_bound << std::endl;
     analysis_result left_result = compute_z(system,left_bound,VERBOSITY,plot_results);
     std::cout << "Analyzing initial right at x0 = " << right_bound << std::endl;
@@ -121,8 +123,10 @@ int main(int argc, char* argv[])
     results.push_back(centre_result);
 
     bool left = true;
-    while (results.size() <= num_points) {
-    	std::cout << std::endl << "Current interval: " << Interval(left_result.x0,right_result.x0) << std::endl;
+    while (right_result.x0 - left_result.x0 > min_width) {
+    	std::cout << std::endl << "#" << results.size() << " : " << Interval(left_result.x0,right_result.x0)
+    			<< " (width: " << right_result.x0 - left_result.x0 << ")" << std::endl;
+
     	if (left) {
 			double x0_left = (left_result.x0 + centre_result.x0)/2.0;
 			std::cout << "Analyzing left candidate at x0 = " << x0_left << std::endl;
