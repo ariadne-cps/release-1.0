@@ -23,7 +23,7 @@ HybridIOAutomaton getLaserTrajectory()
 
     // Parameters
     RealParameter velocity("velocity",0.46); // Velocity in modulus
-    RealParameter half_width("half_width",0.0023); // Half width of the cut
+    RealParameter width("width",0.0046); // Width of the cut
 
     /// Modes
 
@@ -59,18 +59,18 @@ HybridIOAutomaton getLaserTrajectory()
 
 	// Transitions
 
-	RealExpression x_greater_half_width = x - half_width; // x >= half_width
-	RealExpression x_lesser_minus_half_width = -x - half_width; // x <= -half_width
+	RealExpression x_greater_width = x - width; // x >= width
+	RealExpression x_lesser_zero = -x; // x <= 0
 
-	std::map<RealVariable,RealExpression> reset_minus_half;
-	reset_minus_half[x] = -half_width;
-	reset_minus_half[vx] = velocity;
-	std::map<RealVariable,RealExpression> reset_half;
-	reset_half[x] = half_width;
-	reset_half[vx] = -velocity;
+	std::map<RealVariable,RealExpression> reset_left;
+	reset_left[x] = 0.0;
+	reset_left[vx] = velocity;
+	std::map<RealVariable,RealExpression> reset_right;
+	reset_right[x] = width;
+	reset_right[vx] = -velocity;
 
-	automaton.new_forced_transition(switch_left,scanning,scanning,reset_half,x_greater_half_width);
-	automaton.new_forced_transition(switch_right,scanning,scanning,reset_minus_half,x_lesser_minus_half_width);
+	automaton.new_forced_transition(switch_left,scanning,scanning,reset_right,x_greater_width);
+	automaton.new_forced_transition(switch_right,scanning,scanning,reset_left,x_lesser_zero);
 
 	return automaton;
 }

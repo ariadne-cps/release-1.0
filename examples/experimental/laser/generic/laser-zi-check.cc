@@ -17,6 +17,63 @@
 
 using namespace Ariadne;
 
+struct analysis_result {
+	double x0;
+	double z;
+	double zi;
+};
+
+analysis_result compute_z(HybridIOAutomaton system, double x0, int verbosity, bool plot_results) {
+	double pass_period = 0.03;
+    system.substitute(RealParameter("x0",x0));
+    Real T0 = system.parameter_value("T0");
+    Real velocity = 2.0*system.parameter_value("width")/pass_period;
+    system.substitute(RealParameter("velocity",velocity));
+    Real vx_i = -velocity;
+    Real x_i = 4.0*system.parameter_value("L") + x0;
+
+    /// Create a HybridEvolver object
+    HybridEvolver evolver(system);
+    evolver.verbosity = verbosity;
+
+    HybridSpace hspace(system.state_space());
+    for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
+        evolver.settings().minimum_discretised_enclosure_widths[hs_it->first] = Vector<Float>(7,0.2);
+        evolver.settings().hybrid_maximum_step_size[hs_it->first] = 0.000005;
+    }
+
+    Box initial_box(7, /*T*/ T0.lower(),T0.upper(), /*p*/ 0.0,0.0, /*t*/ 0.0,0.0, /*vx*/ vx_i.lower(),vx_i.upper(), /*x*/ x_i.lower(),x_i.upper(), /*z*/ 0.0,0.0, /*zi*/ 0.0,0.0);
+    HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("work,scanning,far,varying,idle"),initial_box);
+
+    int num_half_cycles = 1;
+    double evol_time = -8.0*system.parameter_value("L")/vx_i.upper();
+    //HybridTime evolution_time(pass_period.upper()/4*num_half_cycles,5*num_half_cycles);
+    HybridTime evolution_time(evol_time,5);
+
+    //cout << system << endl;
+
+    std::cout << "Computing orbit... " << std::flush;
+    HybridEvolver::OrbitType orbit = evolver.orbit(initial_enclosure,evolution_time,UPPER_SEMANTICS);
+    std::cout << "done." << std::endl;
+
+    analysis_result result;
+    result.x0 = x0;
+    result.z = orbit.reach().bounding_box()[5].upper();
+    result.zi = orbit.reach().bounding_box()[6].upper();
+
+    std::cout << "Depth of cut : " << result.z << std::endl;
+    std::cout << "Maximum value of zi : " << result.zi << std::endl;
+    std::cout << "Carbonization occurred? " << (result.z > system.parameter_value("z_thr").upper() ? "yes" : "no") << std::endl;
+
+    if (plot_results) {
+    	PlotHelper plotter(system.name());
+    	plotter.plot(orbit.reach(),"reach");
+    }
+
+    return result;
+}
+
+
 int main(int argc, char* argv[])
 {
     /// Constants
@@ -29,8 +86,6 @@ int main(int argc, char* argv[])
     bool plot_results = false;
 	if (argc > 3)
 		plot_results = true;
-
-    Real pass_period = 0.04;
 
     /// Build the Hybrid System
 
@@ -46,55 +101,70 @@ int main(int argc, char* argv[])
     HybridIOAutomaton timer_traj_exp_temp = compose("timer_traj_exp_temp",timer_traj_exp,skin_temperature,DiscreteLocation("work,scanning,far"),DiscreteLocation("varying"));
     HybridIOAutomaton system = compose("laser",timer_traj_exp_temp,cutting_depth,DiscreteLocation("work,scanning,far,varying"),DiscreteLocation("idle"));
 
-    // Prepare the points
-    Array<double> points(num_points);
-    points[0] = 0.0;
-    points[num_points-1] = laser_trajectory.parameter_value("half_width").upper();
-    for (int i = 1; i<num_points-1; ++i) {
-    	points[i] = (points[num_points-1] + points[i-1])/2.0;
+
+    double left_bound = 0.0;
+    double right_bound = 0.0005;//laser_trajectory.parameter_value("width").upper();
+
+    List<analysis_result> results;
+
+    std::cout << "Analyzing initial left at x0 = " << left_bound << std::endl;
+    analysis_result left_result = compute_z(system,left_bound,VERBOSITY,plot_results);
+    std::cout << "Analyzing initial right at x0 = " << right_bound << std::endl;
+    analysis_result right_result = compute_z(system,right_bound,VERBOSITY,plot_results);
+    std::cout << "Analyzing initial centre at x0 = " << (left_bound + right_bound)/2.0 << std::endl;
+    analysis_result centre_result = compute_z(system,(left_bound + right_bound)/2.0,VERBOSITY,plot_results);
+
+    double eps = 1e-8;
+
+    results.push_back(left_result);
+    results.push_back(right_result);
+    results.push_back(centre_result);
+
+    bool left = true;
+    while (results.size() <= num_points) {
+    	std::cout << std::endl << "Current interval: " << Interval(left_result.x0,right_result.x0) << std::endl;
+    	if (left) {
+			double x0_left = (left_result.x0 + centre_result.x0)/2.0;
+			std::cout << "Analyzing left candidate at x0 = " << x0_left << std::endl;
+			analysis_result left_candidate = compute_z(system,x0_left,VERBOSITY,plot_results);
+			if (left_candidate.zi > centre_result.zi + eps) {
+				std::cout << "Left candidate has greater zi value than centre, moving to the left" << std::endl;
+				right_result = centre_result;
+				centre_result = left_candidate;
+				results.push_back(left_candidate);
+			} else if (left_candidate.zi >= left_result.zi-eps) {
+				std::cout << "Left candidate has no lesser zi value than left, shrinking the left" << std::endl;
+				left_result = left_candidate;
+				results.push_back(left_candidate);
+				double x0_centre = (left_result.x0 + right_result.x0)/2.0;
+				std::cout << std::endl << "Analyzing new centre at x0 = " << x0_centre << std::endl;
+				centre_result = compute_z(system,x0_centre,VERBOSITY,plot_results);
+				results.push_back(centre_result);
+			} else
+				std::cout << "Left candidate has no greater value than centre, no change" << std::endl;
+    	} else {
+			double x0_right = (right_result.x0 + centre_result.x0)/2.0;
+			std::cout << "Analyzing right candidate at x0 = " << x0_right << std::endl;
+			analysis_result right_candidate = compute_z(system,x0_right,VERBOSITY,plot_results);
+			if (right_candidate.zi > centre_result.zi + eps) {
+				std::cout << "Right candidate has greater zi value than centre, moving to the right" << std::endl;
+				left_result = centre_result;
+				centre_result = right_candidate;
+				results.push_back(right_candidate);
+			} else if (right_candidate.zi >= left_result.zi -eps) {
+				std::cout << "Right candidate has no lesser zi value than right, shrinking the right" << std::endl;
+				right_result = right_candidate;
+				results.push_back(right_candidate);
+				double x0_centre = (left_result.x0 + right_result.x0)/2.0;
+				std::cout << std::endl << "Analyzing new centre candidate at x0 = " << x0_centre << std::endl;
+				centre_result = compute_z(system,x0_centre,VERBOSITY,plot_results);
+				results.push_back(centre_result);
+			} else
+				std::cout << "Right candidate has no greater value than centre, no change" << std::endl;
+    	}
+
+    	left = !left;
     }
 
-    for (int i = 0; i<num_points; ++i) {
-    	double x0 = points[i];
-    	std::cout << std::endl << "#" << i << " : Analyzing for x0 = " << x0 << std::endl;
-        system.substitute(RealParameter("x0",x0));
-        Real T0 = skin_temperature.parameter_value("T0");
-        Real vx = 4.0*laser_trajectory.parameter_value("half_width")/pass_period;
-        system.substitute(RealParameter("velocity",vx));
-        Real x_i = -4.0*exposure.parameter_value("L") + x0;
-
-        /// Create a HybridEvolver object
-        HybridEvolver evolver(system);
-        evolver.verbosity = VERBOSITY;
-
-        HybridSpace hspace(system.state_space());
-        for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
-            evolver.settings().minimum_discretised_enclosure_widths[hs_it->first] = Vector<Float>(7,2.0);
-            evolver.settings().hybrid_maximum_step_size[hs_it->first] = 0.000005;
-        }
-
-        Box initial_box(7, /*T*/ T0.lower(),T0.upper(), /*p*/ 0.0,0.0, /*t*/ 0.0,0.0, /*vx*/ vx.lower(),vx.upper(), /*x*/ x_i.lower(),x_i.upper(), /*z*/ 0.0,0.0, /*zi*/ 0.0,0.0);
-        HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("work,scanning,far,varying,idle"),initial_box);
-
-        int num_half_cycles = 1;
-        double evol_time = 8.0*exposure.parameter_value("L")/vx.upper();
-        //HybridTime evolution_time(pass_period.upper()/4*num_half_cycles,5*num_half_cycles);
-        HybridTime evolution_time(evol_time,5);
-
-        //cout << system << endl;
-
-        std::cout << "Computing orbit... " << std::flush;
-        HybridEvolver::OrbitType orbit = evolver.orbit(initial_enclosure,evolution_time,UPPER_SEMANTICS);
-        std::cout << "done." << std::endl;
-
-        double depth = orbit.reach().bounding_box()[5].upper();
-        std::cout << "Depth of cut : " << depth << std::endl;
-        std::cout << "Maximum value of zi : " << orbit.reach().bounding_box()[6].upper() << std::endl;
-        std::cout << "Carbonization occurred? " << (depth > cutting_depth.parameter_value("z_thr").upper() ? "yes" : "no") << std::endl;
-
-        if (plot_results) {
-        	PlotHelper plotter(system.name());
-        	plotter.plot(orbit.reach(),"reach");
-        }
-    }
 }
+
