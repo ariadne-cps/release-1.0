@@ -395,7 +395,6 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
     if(semantics!=LOWER_SEMANTICS || blocking_events.size()==1)
     	_computeEvolutionForEvents(working_sets,intermediate_sets,set_index,location,blocking_events,events_history,
     								activation_times,flow_set_model,time_model,blocking_time_model,time_step,ignore_activations,semantics);
-
 }
 
 

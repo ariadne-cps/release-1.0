@@ -71,8 +71,8 @@ HybridIOAutomaton getCuttingDepth()
 	automaton.set_dynamics(ablating, zi, dyn_ablating);
 	automaton.set_dynamics(idle, z, dyn_z_idle);
 	automaton.set_dynamics(idle, zi, dyn_zi_idle);
-	automaton.set_dynamics(carbonization, z, dyn_ablating);
-	automaton.set_dynamics(carbonization, zi, dyn_ablating);
+	automaton.set_dynamics(carbonization, z, dyn_z_idle);
+	automaton.set_dynamics(carbonization, zi, dyn_z_idle);
 
 	/// Transitions
 	// Guards

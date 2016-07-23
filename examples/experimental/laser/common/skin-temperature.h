@@ -29,7 +29,6 @@ HybridIOAutomaton getSkinTemperature()
 
     /// Create the discrete states
     DiscreteLocation varying("varying");
-    DiscreteLocation post_evaporating("post_evaporating");
     DiscreteLocation evaporating("evaporating");
 
     RealVariable p("p");
@@ -39,16 +38,13 @@ HybridIOAutomaton getSkinTemperature()
     automaton.add_output_var(T);
 
     // Events
-    DiscreteEvent end_post_evaporating("end_post_evaporating");
     DiscreteEvent start_evaporating("start_evaporating");
     DiscreteEvent stop_evaporating("stop_evaporating");
 
     automaton.add_output_event(start_evaporating);
     automaton.add_input_event(stop_evaporating);
-    automaton.add_internal_event(end_post_evaporating);
 
     automaton.new_mode(varying);
-    automaton.new_mode(post_evaporating);
 	automaton.new_mode(evaporating);
 
 	RealExpression dyn_varying = mu*p - lambda*(T-T0);
@@ -56,20 +52,17 @@ HybridIOAutomaton getSkinTemperature()
 
 	automaton.set_dynamics(varying, T, dyn_varying);
 	automaton.set_dynamics(evaporating, T, dyn_evaporating);
-	automaton.set_dynamics(post_evaporating, T, dyn_varying);
 
 	/// Transitions
 	// Guards
 	RealExpression T_greater_Tevap = T - Tevap; // T >= Tevap
-	RealExpression T_lesser_Tevap = Tevap - T; // T <= Tevap
 
 	// Resets
 	std::map<RealVariable,RealExpression> reset_evap;
 	reset_evap[T] = Tevap;
 
-	automaton.new_forced_transition(end_post_evaporating,post_evaporating,varying,T_lesser_Tevap);
 	automaton.new_forced_transition(start_evaporating,varying,evaporating,reset_evap,T_greater_Tevap);
-	automaton.new_unforced_transition(stop_evaporating,evaporating,post_evaporating);
+	automaton.new_unforced_transition(stop_evaporating,evaporating,varying);
 
 	return automaton;
 }
