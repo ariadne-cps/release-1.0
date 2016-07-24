@@ -38,9 +38,10 @@ int main(int argc, char* argv[])
     HybridIOAutomaton timer_traj_exp_temp = compose("timer_traj_exp_temp",timer_traj_exp,skin_temperature,DiscreteLocation("work,scanning,far"),DiscreteLocation("varying"));
     HybridIOAutomaton system = compose("laser",timer_traj_exp_temp,cutting_depth,DiscreteLocation("work,scanning,far,varying"),DiscreteLocation("idle"));
 
-    Real pass_period = 0.03;
+    Real pass_period = 0.088;
 
-    Real x0(0.000125,0.00012501);
+    Real x0(0.00015167,0.00015168);
+    //Real x0(0.00015167,0.00015167);
 
     system.substitute(RealParameter("x0",x0));
     Real T0 = skin_temperature.parameter_value("T0");
@@ -56,7 +57,7 @@ int main(int argc, char* argv[])
     HybridSpace hspace(system.state_space());
     for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
         evolver.settings().minimum_discretised_enclosure_widths[hs_it->first] = Vector<Float>(7,0.5);
-        evolver.settings().hybrid_maximum_step_size[hs_it->first] = 0.000005;
+        evolver.settings().hybrid_maximum_step_size[hs_it->first] = 0.000001;
     }
 
     Box initial_box(7, /*T*/ T0.lower(),T0.upper(), /*p*/ 0.0,0.0, /*t*/ 0.0,0.0, /*vx*/ vx_i.lower(),vx_i.upper(), /*x*/ x_i.lower(),x_i.upper(), /*z*/ 0.0,0.0, /*zi*/ 0.0,0.0);
@@ -65,7 +66,7 @@ int main(int argc, char* argv[])
     int num_half_cycles = 1;
     double evol_time = -8.0*exposure.parameter_value("L")/vx_i.upper();
     //HybridTime evolution_time(pass_period.upper()/4*num_half_cycles,5*num_half_cycles);
-    HybridTime evolution_time(evol_time,5);
+    HybridTime evolution_time(evol_time,7);
 
     //cout << system << endl;
 
@@ -87,5 +88,5 @@ int main(int argc, char* argv[])
     double depth = orbit.reach().bounding_box()[5].upper();
     std::cout << "Depth of cut : " << depth << std::endl;
     std::cout << "Maximum value of zi : " << orbit.reach().bounding_box()[6].upper() << std::endl;
-    std::cout << "Carbonization occurred? " << (depth > cutting_depth.parameter_value("z_thr").upper() ? "yes" : "no") << std::endl;
+    std::cout << "Carbonization occurred? " << (orbit.reach().bounding_box()[6].upper() > cutting_depth.parameter_value("z_thr").upper() ? "yes" : "no") << std::endl;
 }

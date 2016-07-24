@@ -23,6 +23,14 @@ struct analysis_result {
 	double zi;
 };
 
+std::ostream& operator<<(std::ostream& os, const analysis_result& ar)
+{
+    os << "[x0: " << ar.x0;
+    os << ", z: " << ar.z;
+    os << ", zi: " << ar.zi << "]";
+    return os;
+}
+
 analysis_result compute_z(HybridIOAutomaton system, double x0, int verbosity, bool plot_results) {
 	double pass_period = 0.03;
     system.substitute(RealParameter("x0",x0));
@@ -116,7 +124,7 @@ int main(int argc, char* argv[])
     std::cout << "Analyzing initial centre at x0 = " << (left_bound + right_bound)/2.0 << std::endl;
     analysis_result centre_result = compute_z(system,(left_bound + right_bound)/2.0,VERBOSITY,plot_results);
 
-    double eps = 1e-8;
+    double eps = 1e-9;
 
     results.push_back(left_result);
     results.push_back(right_result);
@@ -170,5 +178,6 @@ int main(int argc, char* argv[])
     	left = !left;
     }
 
+    std::cout << "Results: " << results << std::endl;
 }
 
