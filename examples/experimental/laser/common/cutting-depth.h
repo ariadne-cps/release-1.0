@@ -22,7 +22,7 @@ HybridIOAutomaton getCuttingDepth()
 	RealParameter mu("mu",2.9595e5);
 	RealParameter T0("T0",37.0);
 	RealParameter Tevap("Teval",100.0);
-	RealParameter z_thr("z_thr",15e-6);
+	RealParameter z_thr("z_thr",30e-6);
 
     /// Build the Hybrid System
 

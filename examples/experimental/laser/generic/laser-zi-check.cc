@@ -32,7 +32,7 @@ std::ostream& operator<<(std::ostream& os, const analysis_result& ar)
 }
 
 analysis_result compute_z(HybridIOAutomaton system, double x0, int verbosity, bool plot_results) {
-	double pass_period = 0.03;
+	double pass_period = 0.164;
     system.substitute(RealParameter("x0",x0));
     Real T0 = system.parameter_value("T0");
     Real velocity = 2.0*system.parameter_value("width")/pass_period;
@@ -47,7 +47,7 @@ analysis_result compute_z(HybridIOAutomaton system, double x0, int verbosity, bo
     HybridSpace hspace(system.state_space());
     for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
         evolver.settings().minimum_discretised_enclosure_widths[hs_it->first] = Vector<Float>(7,0.2);
-        evolver.settings().hybrid_maximum_step_size[hs_it->first] = 0.000005;
+        evolver.settings().hybrid_maximum_step_size[hs_it->first] = 0.00001;
     }
 
     Box initial_box(7, /*T*/ T0.lower(),T0.upper(), /*p*/ 0.0,0.0, /*t*/ 0.0,0.0, /*vx*/ vx_i.lower(),vx_i.upper(), /*x*/ x_i.lower(),x_i.upper(), /*z*/ 0.0,0.0, /*zi*/ 0.0,0.0);
@@ -60,17 +60,17 @@ analysis_result compute_z(HybridIOAutomaton system, double x0, int verbosity, bo
 
     //cout << system << endl;
 
-    std::cout << "Computing orbit... " << std::flush;
+    //std::cout << "Computing orbit... " << std::flush;
     HybridEvolver::OrbitType orbit = evolver.orbit(initial_enclosure,evolution_time,UPPER_SEMANTICS);
-    std::cout << "done." << std::endl;
+    //std::cout << "done." << std::endl;
 
     analysis_result result;
     result.x0 = x0;
     result.z = orbit.reach().bounding_box()[5].upper();
     result.zi = orbit.reach().bounding_box()[6].upper();
 
-    std::cout << "Depth of cut : " << result.z << std::endl;
-    std::cout << "Maximum value of zi : " << result.zi << std::endl;
+    //std::cout << "Depth of cut : " << result.z << std::endl;
+    //std::cout << "Maximum value of zi : " << result.zi << std::endl;
 
     if (plot_results) {
     	PlotHelper plotter(system.name());
@@ -110,10 +110,10 @@ int main(int argc, char* argv[])
 
 
     double left_bound = 0.0;
-    double right_bound = 0.0005;//laser_trajectory.parameter_value("width").upper();
+    double right_bound = 0.0023;
 
     List<analysis_result> results;
-
+    /*
     double min_width = pow(10,-accuracy);
     std::cout << "Analyzing down to accuracy " << min_width << std::endl;
 
@@ -163,7 +163,7 @@ int main(int argc, char* argv[])
 				left_result = centre_result;
 				centre_result = right_candidate;
 				results.push_back(right_candidate);
-			} else if (right_candidate.zi >= left_result.zi -eps) {
+			} else if (right_candidate.zi >= right_result.zi -eps) {
 				std::cout << "Right candidate has no lesser zi value than right, shrinking the right" << std::endl;
 				right_result = right_candidate;
 				results.push_back(right_candidate);
@@ -177,7 +177,20 @@ int main(int argc, char* argv[])
 
     	left = !left;
     }
+    */
 
-    std::cout << "Results: " << results << std::endl;
+    for (int i=0; i < accuracy; ++i) {
+
+    	double x0 = left_bound + (right_bound - left_bound)*i/(accuracy-1);
+    	//std::cout << "#" << i << ": computing for x0 = " << x0 << std::endl;
+    	analysis_result result = compute_z(system,x0,VERBOSITY,plot_results);
+    	results.push_back(result);
+    	std::cout << results[i].x0 << " " << results[i].z << " " << results[i].zi << std::endl;
+    }
+
+    std::cout << "Results: " << std::endl;
+    for(int i = 0; i < results.size(); ++i) {
+    	std::cout << results[i].x0 << " " << results[i].z << " " << results[i].zi << std::endl;
+    }
 }
 
