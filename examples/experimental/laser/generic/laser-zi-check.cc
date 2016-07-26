@@ -31,8 +31,7 @@ std::ostream& operator<<(std::ostream& os, const analysis_result& ar)
     return os;
 }
 
-analysis_result compute_z(HybridIOAutomaton system, double x0, int verbosity, bool plot_results) {
-	double pass_period = 0.164;
+analysis_result compute_z(HybridIOAutomaton system, double x0, double pass_period, int verbosity, bool plot_results) {
     system.substitute(RealParameter("x0",x0));
     Real T0 = system.parameter_value("T0");
     Real velocity = 2.0*system.parameter_value("width")/pass_period;
@@ -109,20 +108,21 @@ int main(int argc, char* argv[])
     HybridIOAutomaton system = compose("laser",timer_traj_exp_temp,cutting_depth,DiscreteLocation("work,scanning,far,varying"),DiscreteLocation("idle"));
 
 
-    double left_bound = 0.0;
-    double right_bound = 0.0023;
+    double left_bound = 0.00;
+    double right_bound = 0.00025;
 
     List<analysis_result> results;
     /*
+    double pass_period = 0.164;
     double min_width = pow(10,-accuracy);
     std::cout << "Analyzing down to accuracy " << min_width << std::endl;
 
     std::cout << "Analyzing initial left at x0 = " << left_bound << std::endl;
-    analysis_result left_result = compute_z(system,left_bound,VERBOSITY,plot_results);
+    analysis_result left_result = compute_z(system,left_bound,pass_period,VERBOSITY,plot_results);
     std::cout << "Analyzing initial right at x0 = " << right_bound << std::endl;
-    analysis_result right_result = compute_z(system,right_bound,VERBOSITY,plot_results);
+    analysis_result right_result = compute_z(system,right_bound,pass_period,VERBOSITY,plot_results);
     std::cout << "Analyzing initial centre at x0 = " << (left_bound + right_bound)/2.0 << std::endl;
-    analysis_result centre_result = compute_z(system,(left_bound + right_bound)/2.0,VERBOSITY,plot_results);
+    analysis_result centre_result = compute_z(system,(left_bound + right_bound)/2.0,pass_period,VERBOSITY,plot_results);
 
     double eps = 1e-9;
 
@@ -138,7 +138,7 @@ int main(int argc, char* argv[])
     	if (left) {
 			double x0_left = (left_result.x0 + centre_result.x0)/2.0;
 			std::cout << "Analyzing left candidate at x0 = " << x0_left << std::endl;
-			analysis_result left_candidate = compute_z(system,x0_left,VERBOSITY,plot_results);
+			analysis_result left_candidate = compute_z(system,x0_left,pass_period,VERBOSITY,plot_results);
 			if (left_candidate.zi > centre_result.zi + eps) {
 				std::cout << "Left candidate has greater zi value than centre, moving to the left" << std::endl;
 				right_result = centre_result;
@@ -150,14 +150,14 @@ int main(int argc, char* argv[])
 				results.push_back(left_candidate);
 				double x0_centre = (left_result.x0 + right_result.x0)/2.0;
 				std::cout << std::endl << "Analyzing new centre at x0 = " << x0_centre << std::endl;
-				centre_result = compute_z(system,x0_centre,VERBOSITY,plot_results);
+				centre_result = compute_z(system,x0_centre,pass_period,VERBOSITY,plot_results);
 				results.push_back(centre_result);
 			} else
 				std::cout << "Left candidate has no greater value than centre, no change" << std::endl;
     	} else {
 			double x0_right = (right_result.x0 + centre_result.x0)/2.0;
 			std::cout << "Analyzing right candidate at x0 = " << x0_right << std::endl;
-			analysis_result right_candidate = compute_z(system,x0_right,VERBOSITY,plot_results);
+			analysis_result right_candidate = compute_z(system,x0_right,pass_period,VERBOSITY,plot_results);
 			if (right_candidate.zi > centre_result.zi + eps) {
 				std::cout << "Right candidate has greater zi value than centre, moving to the right" << std::endl;
 				left_result = centre_result;
@@ -169,7 +169,7 @@ int main(int argc, char* argv[])
 				results.push_back(right_candidate);
 				double x0_centre = (left_result.x0 + right_result.x0)/2.0;
 				std::cout << std::endl << "Analyzing new centre candidate at x0 = " << x0_centre << std::endl;
-				centre_result = compute_z(system,x0_centre,VERBOSITY,plot_results);
+				centre_result = compute_z(system,x0_centre,pass_period,VERBOSITY,plot_results);
 				results.push_back(centre_result);
 			} else
 				std::cout << "Right candidate has no greater value than centre, no change" << std::endl;
@@ -179,18 +179,22 @@ int main(int argc, char* argv[])
     }
     */
 
+    /*
     for (int i=0; i < accuracy; ++i) {
 
     	double x0 = left_bound + (right_bound - left_bound)*i/(accuracy-1);
-    	//std::cout << "#" << i << ": computing for x0 = " << x0 << std::endl;
-    	analysis_result result = compute_z(system,x0,VERBOSITY,plot_results);
-    	results.push_back(result);
-    	std::cout << results[i].x0 << " " << results[i].z << " " << results[i].zi << std::endl;
+    	analysis_result result_first = compute_z(system,x0,0.041,VERBOSITY,plot_results);
+    	analysis_result result_second = compute_z(system,x0,0.082,VERBOSITY,plot_results);
+    	analysis_result result_third = compute_z(system,x0,0.164,VERBOSITY,plot_results);
+    	std::cout << x0 << " " << result_first.zi << " " << result_second.zi << " " << result_third.zi << std::endl;
     }
+    */
 
-    std::cout << "Results: " << std::endl;
-    for(int i = 0; i < results.size(); ++i) {
-    	std::cout << results[i].x0 << " " << results[i].z << " " << results[i].zi << std::endl;
+    for (int i=0; i < accuracy; ++i) {
+
+    	double x0 = left_bound + (right_bound - left_bound)*i/(accuracy-1);
+    	analysis_result result = compute_z(system,x0,0.100,VERBOSITY,plot_results);
+    	std::cout << result.x0 << " " << result.z << " " << result.zi << std::endl;
     }
 }
 

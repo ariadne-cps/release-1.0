@@ -83,6 +83,8 @@ int main(int argc, char* argv[])
     PlotHelper plotter(system.name());
     plotter.plot(orbit.reach(),"reach");
 
+    std::cout << "Final z : " << 2.0*orbit.final().bounding_box()[5] << std::endl;
+
     double depth = orbit.reach().bounding_box()[5].upper();
     std::cout << "Depth of cut : " << depth << std::endl;
     std::cout << "Maximum value of zi : " << orbit.reach().bounding_box()[6].upper() << std::endl;
