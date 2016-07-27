@@ -38,10 +38,11 @@ int main(int argc, char* argv[])
     HybridIOAutomaton timer_traj_exp_temp = compose("timer_traj_exp_temp",timer_traj_exp,skin_temperature,DiscreteLocation("work,scanning,far"),DiscreteLocation("varying"));
     HybridIOAutomaton system = compose("laser",timer_traj_exp_temp,cutting_depth,DiscreteLocation("work,scanning,far,varying"),DiscreteLocation("idle"));
 
-    Real pass_period = 0.164;
+    Real pass_period = 0.191;
 
-    Real x0(0.0023);
+    //Real x0(0.0023);
     //Real x0(0.000150603);
+    Real x0(0.000150242);
     // 0.00015160: 1.64067e-05
     // 0.00015165: 1.6363e-05
     // 0.00015166: 1.63543e-05
@@ -63,7 +64,7 @@ int main(int argc, char* argv[])
     HybridSpace hspace(system.state_space());
     for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
         evolver.settings().minimum_discretised_enclosure_widths[hs_it->first] = Vector<Float>(7,0.5);
-        evolver.settings().hybrid_maximum_step_size[hs_it->first] = 0.00001;
+        evolver.settings().hybrid_maximum_step_size[hs_it->first] = 0.000002;
     }
 
     Box initial_box(7, /*T*/ T0.lower(),T0.upper(), /*p*/ 0.0,0.0, /*t*/ 0.0,0.0, /*vx*/ vx_i.lower(),vx_i.upper(), /*x*/ x_i.lower(),x_i.upper(), /*z*/ 0.0,0.0, /*zi*/ 0.0,0.0);

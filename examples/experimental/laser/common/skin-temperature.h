@@ -17,8 +17,8 @@ namespace Ariadne {
 HybridIOAutomaton getSkinTemperature()
 {
     /// Parameters
-	RealParameter lambda("lambda",3.3456e3);
-	RealParameter mu("mu",2.9595e5);
+	RealParameter lambda("lambda",6825.5643);
+	RealParameter mu("mu",6.03796e5);
 	RealParameter T0("T0",37.0);
 	RealParameter Tevap("Tevap",100.0);
 

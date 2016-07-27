@@ -17,9 +17,9 @@ namespace Ariadne {
 HybridIOAutomaton getCuttingDepth()
 {
     /// Parameters
-	RealParameter k("k",4.1475e-8);
-	RealParameter lambda("lambda",3.3456e3);
-	RealParameter mu("mu",2.9595e5);
+	RealParameter kcut("kcut",1.78833087e-8);
+	RealParameter lambda("lambda",6825.5643);
+	RealParameter mu("mu",6.03796e5);
 	RealParameter T0("T0",37.0);
 	RealParameter Tevap("Teval",100.0);
 	RealParameter z_thr("z_thr",30e-6);
@@ -60,7 +60,7 @@ HybridIOAutomaton getCuttingDepth()
 	automaton.new_invariant(carbonization,invalid);
 	/// Dynamics
 
-	RealExpression z_der = k*(mu*p - lambda*(Tevap-T0));
+	RealExpression z_der = kcut*(mu*p - lambda*(Tevap-T0));
 
 	RealExpression dyn_ablating = z_der;
 
