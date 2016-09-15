@@ -54,8 +54,6 @@ int main(int argc,char *argv[])
     PlotHelper plotter(system.name());
     plotter.plot(orbit.reach(),"reach");
 
-    */
-	/*
 	// The initial values
 	HybridBoundedConstraintSet initial_set(system.state_space());
 	initial_set[DiscreteLocation("opened")] = Box(2, 6.0,7.5, 1.0,1.0);
@@ -65,28 +63,27 @@ int main(int argc,char *argv[])
 	HybridBoxes domain(system.state_space(),Box(2,4.5,9.0,0.0,1.0));
 
     int accuracy = 4;
-    HybridTime evol_limits(160.0,16);
 
     HybridReachabilityAnalyser analyser(system,domain,accuracy);
     analyser.verbosity = verb;
 
     bool plot_results = true;
 
-    HybridDenotableSet upper_reach = analyser.upper_reach(initial_set,evol_limits);
+    HybridDenotableSet reach = analyser.outer_chain_reach(initial_set);
 
     if (plot_results) {
         PlotHelper plotter(system.name());
-        plotter.plot(upper_reach,"upper",accuracy);
+        plotter.plot(reach,"reach",accuracy);
     }
-	*/
-
+*/
 	// The domain
 	HybridBoxes domain(system.state_space(),Box(2,4.5,9.0,0.0,1.0));
 
 	// The initial values
 	HybridBoundedConstraintSet initial_set(system.state_space());
-	initial_set[DiscreteLocation("opened")] = Box(2, 6.0,7.5, 1.0,1.0);
-	initial_set[DiscreteLocation("closed")] = Box(2, 6.0,7.5, 0.0,0.0);
+	//initial_set[DiscreteLocation("opened")] = Box(2, 6.0,7.5, 1.0,1.0);
+	//initial_set[DiscreteLocation("closed")] = Box(2, 6.0,7.5, 0.0,0.0);
+	initial_set[DiscreteLocation("closed")] = Box(2, 6.5,6.5, 0.0,0.0);
 
 	// The safety constraint
 	RealVariable x("x");
@@ -98,7 +95,7 @@ int main(int argc,char *argv[])
 	List<RealExpression> consexpr;
 	consexpr.append(expr);
 	VectorFunction cons_f(consexpr,varlist);
-	Box codomain(1,5.52,8.25);
+	Box codomain(1,5.9,7.0);
 	HybridConstraintSet safety_constraint(system.state_space(),ConstraintSet(cons_f,codomain));
 
 	// The parameters
@@ -116,8 +113,7 @@ int main(int argc,char *argv[])
 	SafetyVerificationInput verInput(system, initial_set, domain, safety_constraint);
 
 	verifier.safety(verInput);
-	std::list<ParametricOutcome> results = verifier.parametric_safety(verInput, parameters);
-	draw(system.name(),results);
-
+	//std::list<ParametricOutcome> results = verifier.parametric_safety(verInput, parameters);
+	//draw(system.name(),results);
 
 }
