@@ -54,8 +54,8 @@ public:
     		const HybridTime& time,
     		const HybridGrid& grid,
     		const int& accuracy,
-    		bool ignore_activations,
-    		ContinuousEvolutionDirection continuous_direction)
+    		const bool& ignore_activations,
+    		const ContinuousEvolutionDirection& continuous_direction)
 	: _evolver(evolver),
 	  _initial_enclosures(initial_enclosures),
 	  _time(time),
@@ -101,7 +101,7 @@ private:
  
 	void _start()
 	{
-		const uint concurrency = boost::thread::hardware_concurrency() - FREE_CORES;
+		const uint concurrency = 1;//boost::thread::hardware_concurrency() - FREE_CORES;
 
 		for (uint i=0;i<concurrency;i++)
 	        _m_threads.push_back(boost::shared_ptr<boost::thread>(new boost::thread(boost::bind(&UpperReachEvolveWorker::_compute, this))));
@@ -119,7 +119,7 @@ private:
 
 				EnclosureType enclosure = _initial_enclosures.front();
 				_initial_enclosures.pop_front();
-				_inp_mutex.unlock();		
+				_inp_mutex.unlock();
 
 				ELS current_reach_enclosures, current_evolve_enclosures;
 				try {
