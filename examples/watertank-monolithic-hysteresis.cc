@@ -34,8 +34,8 @@ int main(int argc,char *argv[])
 
 	// The system
 	HybridAutomaton system = Ariadne::getWatertankMonolithicHysteresis();
+/*
 
-	/*
     HybridEvolver evolver(system);
     evolver.verbosity = verb;
 
@@ -53,29 +53,32 @@ int main(int argc,char *argv[])
 
     PlotHelper plotter(system.name());
     plotter.plot(orbit.reach(),"reach");
-
+*/
+/*
 	// The initial values
 	HybridBoundedConstraintSet initial_set(system.state_space());
-	initial_set[DiscreteLocation("opened")] = Box(2, 6.0,7.5, 1.0,1.0);
-	initial_set[DiscreteLocation("closed")] = Box(2, 6.0,7.5, 0.0,0.0);
+	initial_set[DiscreteLocation("opened")] = Box(2, 6.5,6.5, 1.0,1.0);
 
 	// The domain
 	HybridBoxes domain(system.state_space(),Box(2,4.5,9.0,0.0,1.0));
 
-    int accuracy = 4;
+    int accuracy = 6;
 
     HybridReachabilityAnalyser analyser(system,domain,accuracy);
     analyser.verbosity = verb;
 
+    HybridTime evol_limits(320.0,20);
     bool plot_results = true;
 
-    HybridDenotableSet reach = analyser.outer_chain_reach(initial_set);
+    HybridDenotableSet reach = analyser.upper_reach(initial_set,evol_limits);
+    //HybridDenotableSet reach = analyser.outer_chain_reach(initial_set);
 
     if (plot_results) {
         PlotHelper plotter(system.name());
         plotter.plot(reach,"reach",accuracy);
     }
-*/
+    */
+
 	// The domain
 	HybridBoxes domain(system.state_space(),Box(2,4.5,9.0,0.0,1.0));
 
@@ -83,7 +86,7 @@ int main(int argc,char *argv[])
 	HybridBoundedConstraintSet initial_set(system.state_space());
 	//initial_set[DiscreteLocation("opened")] = Box(2, 6.0,7.5, 1.0,1.0);
 	//initial_set[DiscreteLocation("closed")] = Box(2, 6.0,7.5, 0.0,0.0);
-	initial_set[DiscreteLocation("closed")] = Box(2, 6.5,6.5, 0.0,0.0);
+	initial_set[DiscreteLocation("opened")] = Box(2, 6.5,6.5, 1.0,1.0);
 
 	// The safety constraint
 	RealVariable x("x");
@@ -95,7 +98,7 @@ int main(int argc,char *argv[])
 	List<RealExpression> consexpr;
 	consexpr.append(expr);
 	VectorFunction cons_f(consexpr,varlist);
-	Box codomain(1,5.9,7.0);
+	Box codomain(1,5.3,8.2);
 	HybridConstraintSet safety_constraint(system.state_space(),ConstraintSet(cons_f,codomain));
 
 	// The parameters
@@ -107,13 +110,14 @@ int main(int argc,char *argv[])
 
 	Verifier verifier;
 	verifier.verbosity = verb;
-	verifier.ttl = 60;
-	verifier.settings().plot_results = true;
+	verifier.ttl = 120;
+	//verifier.settings().plot_results = true;
+	verifier.settings().enable_backward_refinement_for_safety_proving = false;
 
 	SafetyVerificationInput verInput(system, initial_set, domain, safety_constraint);
 
-	verifier.safety(verInput);
-	//std::list<ParametricOutcome> results = verifier.parametric_safety(verInput, parameters);
-	//draw(system.name(),results);
+	//verifier.safety(verInput);
+	std::list<ParametricOutcome> results = verifier.parametric_safety(verInput, parameters);
+	draw(system.name(),results);
 
 }
