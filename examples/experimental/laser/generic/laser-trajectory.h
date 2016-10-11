@@ -33,8 +33,8 @@ HybridIOAutomaton getLaserTrajectory()
 
     // Variables
 
-    RealVariable x("x"); // X position of the sprayer
-    RealVariable y("y"); // Y position of the sprayer
+    RealVariable x("x"); // X position
+    RealVariable vx("vx"); // X velocity
 
     automaton.add_output_var(x);
     automaton.add_output_var(vx);

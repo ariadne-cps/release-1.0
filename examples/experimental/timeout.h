@@ -7,10 +7,10 @@
  *
  *****************************************************************************************************/
 
-#include "timeout.h"
+#include "ariadne.h"
 
-#ifndef TIMER_H_
-#define TIMER_H_
+#ifndef TIMEOUT_H_
+#define TIMEOUT_H_
 
 namespace Ariadne {
 

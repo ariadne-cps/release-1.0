@@ -20,3 +20,4 @@ foreach(experiment ${EXPERIMENTAL})
 endforeach()
 
 add_subdirectory(laser)
+add_subdirectory(painting)

@@ -22,9 +22,8 @@ HybridIOAutomaton getTrajectory()
     HybridIOAutomaton automaton("trajectory");
 
     // Parameters
-    RealParameter width("width",0.7); // Width of the spraying pass
-    RealParameter angle("angle",Ariadne::pi<Real>()*4); // Angle of orientation of the spraying pass
-    RealParameter d_decrement("d_decrement",0.001); // Decrement of the d distance at each pass
+    RealParameter angle("angle",Ariadne::pi<Real>()*0.0); // Angle of orientation of the spraying pass
+    RealParameter d("d",0.01); // The distance between the lines of each pass
 
     /// Modes
 
@@ -40,13 +39,11 @@ HybridIOAutomaton getTrajectory()
     RealVariable vx("vx"); // X velocity of the laser
     RealVariable y("y"); // Y position of the laser
     RealVariable vy("vy"); // Y velocity of the laser
-    RealVariable d("d"); // Distance between each spray line
 
     automaton.add_output_var(x);
     automaton.add_output_var(vx);
     automaton.add_output_var(y);
     automaton.add_output_var(vy);
-    automaton.add_output_var(d);
 
     // Events
 
@@ -72,21 +69,13 @@ HybridIOAutomaton getTrajectory()
 	automaton.set_dynamics(jumping_line, vy, dyn_vy);
 	automaton.set_dynamics(scanning, vy, dyn_vy);
 
-	RealExpression dyn_d = 0.0;
-	automaton.set_dynamics(jumping_line, d, dyn_d);
-	automaton.set_dynamics(scanning, d, dyn_d);
-
 	// Transitions
 
-	RealExpression x_greater_width = x - width; // x >= width
-	RealExpression x_lesser_zero = -x; // x <= 0
-
 	std::map<RealVariable,RealExpression> reset_jump;
-	reset_jump[x] = x+d*Ariadne::sin(angle);
-	reset_jump[y] = y-d*Ariadne::cos(angle);
+	reset_jump[x] = x - d*Ariadne::sin(angle);
+	reset_jump[y] = y + d*Ariadne::cos(angle);
 	reset_jump[vx] = -vx;
 	reset_jump[vy] = -vy;
-	reset_jump[d] = d - d_decrement;
 
 	automaton.new_unforced_transition(stop,scanning,jumping_line);
 	automaton.new_forced_transition(start,jumping_line,scanning,reset_jump);
