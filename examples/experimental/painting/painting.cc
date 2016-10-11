@@ -38,12 +38,13 @@ int main(int argc, char* argv[])
     HybridIOAutomaton timer_traj_timeout_spray = compose("timer_traj_timeout_spray",timer_traj_timeout,spray,DiscreteLocation("work,scanning,running"),DiscreteLocation("far"));
     HybridIOAutomaton system = compose("painting",timer_traj_timeout_spray,deposition,DiscreteLocation("work,scanning,running,far"),DiscreteLocation("accumulating"));
 
-    Real x0(0.02);
+    Real x0(0.02,0.0201);
+    Real y0(0.00,0.0001);
     Real velocity(0.05);
-    //Real x0(0.000150603);
 
     system.substitute(RealParameter("x0",x0));
-    Real angle = system.parameter_value("angle");
+    system.substitute(RealParameter("y0",y0));
+    Real angle = trajectory.parameter_value("angle");
     Real vx_i = velocity*Ariadne::cos(angle);
     Real vy_i = velocity*Ariadne::sin(angle);
     Real x_i = 0.0;
@@ -56,7 +57,7 @@ int main(int argc, char* argv[])
     HybridSpace hspace(system.state_space());
     for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
         evolver.settings().minimum_discretised_enclosure_widths[hs_it->first] = Vector<Float>(8,1.0);
-        evolver.settings().hybrid_maximum_step_size[hs_it->first] = 0.0005;
+        evolver.settings().hybrid_maximum_step_size[hs_it->first] = 0.03;
     }
 
     Box initial_box(8,
@@ -71,7 +72,7 @@ int main(int argc, char* argv[])
     HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("work,scanning,running,far,accumulating"),initial_box);
 
     double evol_time = 2.0*timeout.parameter_value("stop_time");
-    HybridTime evolution_time(evol_time,6);
+    HybridTime evolution_time(evol_time,7);
 
     //cout << system << endl;
 

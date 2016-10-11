@@ -18,8 +18,8 @@ HybridIOAutomaton getSpray()
 {
     /// Parameters
 	RealParameter L("L",0.01);
-	RealParameter x0("x0",0.02);
-	RealParameter y0("y0",0.00);
+	RealParameter x0("x0",Interval(0.02,0.0201));
+	RealParameter y0("y0",Interval(0.00,0.0001));
 
     /// Build the Hybrid System
 
