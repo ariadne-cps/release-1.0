@@ -17,7 +17,7 @@ namespace Ariadne {
 HybridIOAutomaton getSpray()
 {
     /// Parameters
-	RealParameter L("L",0.005);
+	RealParameter L("L",0.01);
 	RealParameter x0("x0",0.02);
 	RealParameter y0("y0",0.00);
 

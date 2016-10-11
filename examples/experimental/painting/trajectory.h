@@ -23,7 +23,7 @@ HybridIOAutomaton getTrajectory()
 
     // Parameters
     RealParameter angle("angle",Ariadne::pi<Real>()*0.0); // Angle of orientation of the spraying pass
-    RealParameter d("d",0.01); // The distance between the lines of each pass
+    RealParameter d("d",0.005); // The distance between the lines of each pass
 
     /// Modes
 
