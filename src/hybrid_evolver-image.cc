@@ -441,8 +441,8 @@ compute_initially_active_events(
     for(std::map<DiscreteEvent,RealScalarFunction>::const_iterator iter=urgent_guards.begin(); iter!=urgent_guards.end(); ++iter) {
         RealVectorFunction activation(1,iter->second);
 
-        Vector<Interval> infinite_box(initial_set.bounding_box());
-        infinite_box = infinite_box * Interval(std::numeric_limits<double>::lowest(),std::numeric_limits<double>::max());
+        Vector<Interval> infinite_box(initial_set.size(),Interval(std::numeric_limits<double>::lowest(),std::numeric_limits<double>::max()));
+
         tribool everywhere_active = _toolbox->active(iter->second,infinite_box);
         if (definitely(everywhere_active)) {
         	ARIADNE_LOG(3,"Ignoring urgent guard '" << iter->first.name() << "' with activation true...");
