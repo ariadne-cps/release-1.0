@@ -10,7 +10,6 @@
 #include "ariadne.h"
 
 #include "../timer.h"
-#include "../timeout.h"
 #include "spray.h"
 #include "trajectory.h"
 #include "deposition.h"
@@ -29,24 +28,20 @@ int main(int argc, char* argv[])
     /// Get the automata
     HybridIOAutomaton trajectory = getTrajectory();
     HybridIOAutomaton timer = getTimer();
-    HybridIOAutomaton timeout = getTimeout();
     HybridIOAutomaton spray = getSpray();
     HybridIOAutomaton deposition = getDeposition();
 
     HybridIOAutomaton timer_traj = compose("timer-traj",timer,trajectory,DiscreteLocation("work"),DiscreteLocation("scanning"));
-    HybridIOAutomaton timer_traj_timeout = compose("timer_traj_timeout",timer_traj,timeout,DiscreteLocation("work,scanning"),DiscreteLocation("running"));
-    HybridIOAutomaton timer_traj_timeout_spray = compose("timer_traj_timeout_spray",timer_traj_timeout,spray,DiscreteLocation("work,scanning,running"),DiscreteLocation("far"));
-    HybridIOAutomaton system = compose("painting",timer_traj_timeout_spray,deposition,DiscreteLocation("work,scanning,running,far"),DiscreteLocation("accumulating"));
+    HybridIOAutomaton timer_traj_spray = compose("timer_traj_spray",timer_traj,spray,DiscreteLocation("work,scanning"),DiscreteLocation("far"));
+    HybridIOAutomaton system = compose("painting",timer_traj_spray,deposition,DiscreteLocation("work,scanning,far"),DiscreteLocation("accumulating"));
 
-    Real x0(0.02,0.0201);
-    Real y0(0.00,0.0001);
+    Real x0(0.025,0.025);
+    Real y0(0.0049,0.0051);
     Real velocity(0.05);
 
     system.substitute(RealParameter("x0",x0));
     system.substitute(RealParameter("y0",y0));
-    Real angle = trajectory.parameter_value("angle");
-    Real vx_i = velocity*Ariadne::cos(angle);
-    Real vy_i = velocity*Ariadne::sin(angle);
+    Real vx_i = velocity;
     Real x_i = 0.0;
     Real y_i = 0.0;
 
@@ -56,25 +51,22 @@ int main(int argc, char* argv[])
 
     HybridSpace hspace(system.state_space());
     for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
-        evolver.settings().minimum_discretised_enclosure_widths[hs_it->first] = Vector<Float>(8,1.0);
-        evolver.settings().hybrid_maximum_step_size[hs_it->first] = 0.03;
+        evolver.settings().minimum_discretised_enclosure_widths[hs_it->first] = Vector<Float>(6,1.0);
+        evolver.settings().hybrid_maximum_step_size[hs_it->first] = 0.01;
     }
 
-    Box initial_box(8,
-    		/*clk*/ 0.0,0.0,
+    Box initial_box(6,
 			/*s*/ 0.0,0.0,
 			/*t*/ 0.0,0.0,
 			/*vx*/ vx_i.lower(),vx_i.upper(),
-			/*vy*/ vy_i.lower(),vy_i.upper(),
 			/*x*/ x_i.lower(),x_i.upper(),
 			/*y*/ y_i.lower(),y_i.upper(),
 			/*z*/ 0.0,0.0);
-    HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("work,scanning,running,far,accumulating"),initial_box);
+    HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("work,scanning,far,accumulating"),initial_box);
 
-    double evol_time = 2.0*timeout.parameter_value("stop_time");
-    HybridTime evolution_time(evol_time,7);
-
-    //cout << system << endl;
+    int num_passes = 3.0;
+    double evol_time = num_passes * velocity.upper() / trajectory.parameter_value("width").lower();
+    HybridTime evolution_time(evol_time,num_passes*3);
 
     std::cout << "Computing orbit... " << std::flush;
     HybridEvolver::OrbitType orbit = evolver.orbit(initial_enclosure,evolution_time,UPPER_SEMANTICS);

@@ -22,63 +22,60 @@ HybridIOAutomaton getTrajectory()
     HybridIOAutomaton automaton("trajectory");
 
     // Parameters
-    RealParameter angle("angle",Ariadne::pi<Real>()*0.0); // Angle of orientation of the spraying pass
     RealParameter d("d",0.005); // The distance between the lines of each pass
+    RealParameter width("width",0.05); // The width of the scan
 
     /// Modes
 
     DiscreteLocation scanning("scanning");
 	automaton.new_mode(scanning);
 
-	DiscreteLocation jumping_line("jumping_line");
-	automaton.new_mode(jumping_line);
-
     // Variables
 
     RealVariable x("x"); // X position of the laser
     RealVariable vx("vx"); // X velocity of the laser
     RealVariable y("y"); // Y position of the laser
-    RealVariable vy("vy"); // Y velocity of the laser
 
     automaton.add_output_var(x);
     automaton.add_output_var(vx);
     automaton.add_output_var(y);
-    automaton.add_output_var(vy);
 
     // Events
 
-    DiscreteEvent stop("stop");
-    DiscreteEvent start("start");
+    DiscreteEvent switch_left("switch_left");
+    DiscreteEvent switch_right("switch_right");
 
-    automaton.add_input_event(stop);
-    automaton.add_output_event(start);
+    automaton.add_internal_event(switch_left);
+    automaton.add_internal_event(switch_right);
 
 	// Dynamics
 
 	RealExpression dyn_x = vx;
-	automaton.set_dynamics(jumping_line, x, dyn_x);
 	automaton.set_dynamics(scanning, x, dyn_x);
-	RealExpression dyn_y = vy;
-	automaton.set_dynamics(jumping_line, y, dyn_y);
-	automaton.set_dynamics(scanning, y, dyn_y);
 
 	RealExpression dyn_vx = 0.0;
-	automaton.set_dynamics(jumping_line, vx, dyn_vx);
 	automaton.set_dynamics(scanning, vx, dyn_vx);
-	RealExpression dyn_vy = 0.0;
-	automaton.set_dynamics(jumping_line, vy, dyn_vy);
-	automaton.set_dynamics(scanning, vy, dyn_vy);
+
+	RealExpression dyn_y = 0.0;
+	automaton.set_dynamics(scanning, y, dyn_y);
 
 	// Transitions
 
-	std::map<RealVariable,RealExpression> reset_jump;
-	reset_jump[x] = x - d*Ariadne::sin(angle);
-	reset_jump[y] = y + d*Ariadne::cos(angle);
-	reset_jump[vx] = -vx;
-	reset_jump[vy] = -vy;
+	RealExpression x_greater_width = x - width; // x >= width
+	RealExpression x_lesser_zero = -x; // x <= 0
 
-	automaton.new_unforced_transition(stop,scanning,jumping_line);
-	automaton.new_forced_transition(start,jumping_line,scanning,reset_jump);
+	std::map<RealVariable,RealExpression> reset_switch_left;
+	reset_switch_left[x] = width;
+	reset_switch_left[y] = y + d;
+	reset_switch_left[vx] = -vx;
+
+	std::map<RealVariable,RealExpression> reset_switch_right;
+	reset_switch_right[x] = 0.0;
+	reset_switch_right[y] = y + d;
+	reset_switch_right[vx] = -vx;
+
+	automaton.new_forced_transition(switch_left,scanning,scanning,reset_switch_left,x_greater_width);
+	automaton.new_forced_transition(switch_right,scanning,scanning,reset_switch_right,x_lesser_zero);
 
 	return automaton;
 }

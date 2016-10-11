@@ -18,8 +18,8 @@ HybridIOAutomaton getSpray()
 {
     /// Parameters
 	RealParameter L("L",0.01);
-	RealParameter x0("x0",Interval(0.02,0.0201));
-	RealParameter y0("y0",Interval(0.00,0.0001));
+	RealParameter x0("x0",0.02);
+	RealParameter y0("y0",0.00);
 
     /// Build the Hybrid System
 
@@ -33,13 +33,11 @@ HybridIOAutomaton getSpray()
     RealVariable x("x");
     RealVariable y("y");
     RealVariable vx("vx");
-    RealVariable vy("vy");
     RealVariable s("s");
 
     automaton.add_input_var(x);
     automaton.add_input_var(y);
     automaton.add_input_var(vx);
-    automaton.add_input_var(vy);
     automaton.add_output_var(s);
 
     // Events
@@ -54,7 +52,7 @@ HybridIOAutomaton getSpray()
 
 	RealExpression distance = Ariadne::sqr(x-x0) + Ariadne::sqr(y-y0);
 
-	RealExpression dyn_close = -1.0*Ariadne::pi<Real>()/L/L * (vx*(x-x0) + vy*(y-y0)) * Ariadne::sin(Ariadne::pi<Real>()/L/L * distance);
+	RealExpression dyn_close = -1.0*Ariadne::pi<Real>()/L/L * vx * (x-x0) * Ariadne::sin(Ariadne::pi<Real>()/L/L * distance);
 	RealExpression dyn_far = 0.0;
 
 	automaton.set_dynamics(far, s, dyn_far);
