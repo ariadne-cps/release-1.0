@@ -440,14 +440,22 @@ compute_initially_active_events(
     tribool blocking_event_initially_active=false;
     for(std::map<DiscreteEvent,RealScalarFunction>::const_iterator iter=urgent_guards.begin(); iter!=urgent_guards.end(); ++iter) {
         RealVectorFunction activation(1,iter->second);
-        ARIADNE_LOG(3,"Evaluating urgent guard '" << iter->first.name() << "' with activation " << activation << "...");
-        tribool initially_active=_toolbox->active(activation,initial_set);
-        if(possibly(initially_active)) {
-        	ARIADNE_LOG(3,"Possibly active.");
-            initially_active_events.insert(std::make_pair(iter->first,initially_active));
-            blocking_event_initially_active = blocking_event_initially_active || initially_active;
+
+        Vector<Interval> infinite_box(initial_set.bounding_box());
+        infinite_box = infinite_box * Interval(std::numeric_limits<double>::lowest(),std::numeric_limits<double>::max());
+        tribool everywhere_active = _toolbox->active(iter->second,infinite_box);
+        if (definitely(everywhere_active)) {
+        	ARIADNE_LOG(3,"Ignoring urgent guard '" << iter->first.name() << "' with activation true...");
         } else {
-        	ARIADNE_LOG(3,"Inactive.");
+			ARIADNE_LOG(3,"Evaluating urgent guard '" << iter->first.name() << "' with activation " << activation << "...");
+			tribool initially_active=_toolbox->active(activation,initial_set);
+			if(possibly(initially_active)) {
+				ARIADNE_LOG(3,"Possibly active.");
+				initially_active_events.insert(std::make_pair(iter->first,initially_active));
+				blocking_event_initially_active = blocking_event_initially_active || initially_active;
+			} else {
+				ARIADNE_LOG(3,"Inactive.");
+			}
         }
     }
     initially_active_events.insert(std::make_pair(blocking_event,blocking_event_initially_active));
