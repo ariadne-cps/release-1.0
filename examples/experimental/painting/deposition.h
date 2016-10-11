@@ -17,7 +17,7 @@ namespace Ariadne {
 HybridIOAutomaton getDeposition()
 {
     /// Parameters
-	RealParameter k("k",1.78833087e-8);
+	RealParameter k("k",1.0e-3);
 	RealParameter z_thr("z_thr",300e-6);
 
     /// Build the Hybrid System
