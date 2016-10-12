@@ -35,12 +35,14 @@ int main(int argc, char* argv[])
     HybridIOAutomaton timer_traj_spray = compose("timer_traj_spray",timer_traj,spray,DiscreteLocation("work,scanning"),DiscreteLocation("far"));
     HybridIOAutomaton system = compose("painting",timer_traj_spray,deposition,DiscreteLocation("work,scanning,far"),DiscreteLocation("accumulating"));
 
-    Real x0(0.025,0.025);
+    Real x0(0.015);
     Real y0(0.0049,0.0051);
-    Real velocity(0.05);
+    Real velocity(0.03);
 
+    Real d(0.01);
     system.substitute(RealParameter("x0",x0));
     system.substitute(RealParameter("y0",y0));
+    system.substitute(RealParameter("d",d));
     Real vx_i = velocity;
     Real x_i = 0.0;
     Real y_i = 0.0;

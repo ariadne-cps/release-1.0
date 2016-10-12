@@ -23,7 +23,7 @@ HybridIOAutomaton getTrajectory()
 
     // Parameters
     RealParameter d("d",0.005); // The distance between the lines of each pass
-    RealParameter width("width",0.05); // The width of the scan
+    RealParameter width("width",0.03); // The width of the scan
 
     /// Modes
 
