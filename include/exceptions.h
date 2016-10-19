@@ -48,6 +48,11 @@ class DomainException : public std::runtime_error {
     DomainException(const std::string& str) : std::runtime_error(str) { }
 };
 
+class WorkingSetTooLargeException : public std::runtime_error {
+  public:
+	WorkingSetTooLargeException(const std::string& str) : std::runtime_error(str) { }
+};
+
 class IncompatibleSizes : public std::runtime_error {
   public:
     IncompatibleSizes(const std::string& str) : std::runtime_error(str) { }

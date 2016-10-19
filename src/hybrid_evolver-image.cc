@@ -41,6 +41,8 @@
 #include "hybrid_evolver-image.h"
 #include "interruptible.h"
 
+#include "exceptions.h"
+
 namespace {
 
 using namespace Ariadne;
@@ -168,6 +170,9 @@ _evolution(EnclosureListType& final_sets,
 
 	// While there exists a working set, process it
 	while(!working_sets.empty()) {
+
+		if (this->_settings->maximum_number_of_working_sets > 1 && working_sets.size() > this->_settings->maximum_number_of_working_sets)
+			throw WorkingSetTooLargeException("too large");
 
 		// Get the least recent working set, pop it and update the corresponding size
 		pair<uint,HybridTimedSetType> current_set = working_sets.front();
@@ -1122,7 +1127,8 @@ ImageSetHybridEvolverSettings::ImageSetHybridEvolverSettings(const SystemType& s
     : minimum_discretised_enclosure_widths(getMinimumGridCellWidths(HybridGrid(sys.state_space()),0)),
       maximum_enclosure_widths_ratio(2.0),
       enable_subdivisions(false),
-      enable_premature_termination_on_enclosure_size(true)
+      enable_premature_termination_on_enclosure_size(true),
+	  maximum_number_of_working_sets(-1)
 {
     HybridSpace hspace(sys.state_space());
     for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
@@ -1140,6 +1146,7 @@ operator<<(std::ostream& os, const ImageSetHybridEvolverSettings& s)
        << ",\n  maximum_enclosure_widths_ratio=" << s.maximum_enclosure_widths_ratio
        << ",\n  enable_subdivisions=" << s.enable_subdivisions
        << ",\n  enable_premature_termination_on_enclosure_size=" << s.enable_premature_termination_on_enclosure_size
+	   << ",\n  maximum_number_of_working_sets=" << s.maximum_number_of_working_sets
        << "\n)\n";
     return os;
 }
