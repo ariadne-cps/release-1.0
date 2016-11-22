@@ -1,6 +1,10 @@
-cmake_minimum_required (VERSION 2.6)
+cmake_minimum_required (VERSION 2.8.12)
 if(POLICY CMP0045)
   cmake_policy(SET CMP0045 OLD)
+endif()
+
+if(POLICY CMP0058)
+  cmake_policy(SET CMP0058 NEW)
 endif()
 
 set(CMAKE_MACOSX_RPATH 1)
@@ -13,6 +17,7 @@ find_package(GTK2 REQUIRED)
 find_package(Cairo REQUIRED)
 find_package(Buddy REQUIRED)
 include(UseDoxygen OPTIONAL)
+include(cotire)
 
 configure_file ("include/config.h.in"
 	"${PROJECT_BINARY_DIR}/config.h")
