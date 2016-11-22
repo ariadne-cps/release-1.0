@@ -42,6 +42,8 @@ add_library (ariadne SHARED "src/numeric.cc" "src/vector.cc" "src/matrix.cc" "sr
 
 target_link_libraries(ariadne ${Boost_LIBRARIES} ${GTK2_LIBRARIES} ${CAIRO_LIBRARIES} ${Buddy_LIBRARIES})
 
+cotire(ariadne)
+
 install (TARGETS ariadne DESTINATION lib)
 install (FILES ${PROJECT_BINARY_DIR}/ariadne_install.h RENAME ariadne.h DESTINATION include)
 install (FILES ${PROJECT_BINARY_DIR}/config.h DESTINATION include/ariadne)
