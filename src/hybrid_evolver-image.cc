@@ -822,7 +822,7 @@ _computeEvolutionForEvents(std::list< pair<uint,HybridTimedSetType> >& working_s
         if(event==finishing_event) {
             // TODO: Better estimate to use smaller blocking time
             intermediate_sets.adjoin(make_pair(location,evolved_set_model));
-            working_sets.push_back(make_pair(set_index,make_tuple(location,events,evolved_set_model,final_time_model)));
+            working_sets.push_back(make_pair(set_index,make_tuple<DiscreteLocation, set<DiscreteEvent>, TaylorSet, TaylorModel>(location,events,evolved_set_model,final_time_model)));
         } else {
             EventKind kind = _sys->event_kind(location,event);
             bool is_transition = (kind == URGENT || kind == PERMISSIVE);
@@ -830,9 +830,9 @@ _computeEvolutionForEvents(std::list< pair<uint,HybridTimedSetType> >& working_s
         		intermediate_sets.adjoin(make_pair(location,evolved_set_model));
 				SetModelType jump_set_model=apply(_sys->reset_function(location,event),evolved_set_model);
 				DiscreteLocation jump_location=_sys->target(location,event);
-				std::vector<DiscreteEvent> jump_events=events;
-				jump_events.push_back(event);
-				working_sets.push_back(make_pair(set_index,make_tuple(jump_location,jump_events,jump_set_model,final_time_model)));
+				std::set<DiscreteEvent> jump_events=events;
+				jump_events.insert(event);
+				working_sets.push_back(make_pair(set_index,make_tuple<DiscreteLocation, set<DiscreteEvent>, TaylorSet, TaylorModel>(jump_location,jump_events,jump_set_model,final_time_model)));
         	}
         }
     }
@@ -854,9 +854,9 @@ _computeEvolutionForEvents(std::list< pair<uint,HybridTimedSetType> >& working_s
 			ARIADNE_LOG(3,"active_time_model="<<active_time_model.range());
 
 			DiscreteLocation jump_location=_sys->target(location,event);
-			std::vector<DiscreteEvent> jump_events=events;
-			jump_events.push_back(event);
-			working_sets.push_back(make_pair(set_index,make_tuple(jump_location,jump_events,jump_set_model,active_time_model)));
+			std::set<DiscreteEvent> jump_events=events;
+			jump_events.insert(event);
+			working_sets.push_back(make_pair(set_index,make_tuple<DiscreteLocation, set<DiscreteEvent>, TaylorSet, TaylorModel>(jump_location,jump_events,jump_set_model,active_time_model)));
 		}
     }
 }
@@ -1009,7 +1009,7 @@ _evolution_add_initialSet(
     ARIADNE_LOG(3,"initial_time_model = "<<initial_time_model);
     TimedSetModelType initial_timed_set_model=join(initial_set_model.models(),initial_time_model);
     ARIADNE_LOG(3,"initial_timed_set_model = "<<initial_timed_set_model);
-    working_sets.push_back(make_pair(working_sets.size(),make_tuple(initial_location,EventListType(),initial_set_model,initial_time_model)));
+    working_sets.push_back(make_pair(working_sets.size(),make_tuple<DiscreteLocation, set<DiscreteEvent>, TaylorSet, TaylorModel>(initial_location,EventListType(),initial_set_model,initial_time_model)));
 }
 
 std::map<uint,Vector<Float> >
@@ -1083,7 +1083,7 @@ _add_subdivisions(std::list< pair<uint,HybridTimedSetType> >& working_sets,
         ARIADNE_LOG(3,"subdivided_set_model.range()="<<subdivided_set_model.range());
         ARIADNE_LOG(3,"subdivided_set_model.radius()*10000="<<radius(subdivided_set_model.range())*10000);
         ARIADNE_LOG(3,"subdivided_time_model.range()="<<subdivided_time_model.range());
-        working_sets.push_back(make_pair(set_index,make_tuple(initial_location,initial_events,subdivided_set_model,subdivided_time_model)));
+        working_sets.push_back(make_pair(set_index,make_tuple<DiscreteLocation, set<DiscreteEvent>, TaylorSet, TaylorModel>(initial_location,initial_events,subdivided_set_model,subdivided_time_model)));
     }
 }
 

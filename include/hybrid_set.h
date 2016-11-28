@@ -674,15 +674,15 @@ class HybridDenotableSet
     HybridDenotableSet(const HybridSpace& hspace) {
         for(HybridSpace::locations_const_iterator loc_iter = hspace.
                 locations_begin(); loc_iter!=hspace.locations_end(); ++loc_iter) {
-            this->insert(make_pair(loc_iter->first,Grid(loc_iter->second))); } }
+            this->insert(make_pair(loc_iter->first,DenotableSetType(Grid(loc_iter->second)))); } }
     HybridDenotableSet(const HybridSpace& hspace, const Vector<Float>& lengths) {
         for(HybridSpace::locations_const_iterator loc_iter = hspace.
                 locations_begin(); loc_iter!=hspace.locations_end(); ++loc_iter) {
-            this->insert(make_pair(loc_iter->first,Grid(lengths))); } }
+            this->insert(make_pair(loc_iter->first,DenotableSetType(Grid(lengths)))); } }
     HybridDenotableSet(const HybridGrid& hgrid) {
         for(HybridGrid::locations_const_iterator loc_iter = hgrid.
                 locations_begin(); loc_iter!=hgrid.locations_end(); ++loc_iter) {
-            this->insert(make_pair(loc_iter->first,Grid(loc_iter->second))); } }
+            this->insert(make_pair(loc_iter->first,DenotableSetType(Grid(loc_iter->second)))); } }
 
     void adjoin(const HybridDenotableSet& hgts) {
         for(HybridDenotableSet::locations_const_iterator loc_iter=hgts.locations_begin(); loc_iter!=hgts.locations_end(); ++loc_iter) {

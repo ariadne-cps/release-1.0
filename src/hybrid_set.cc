@@ -291,10 +291,11 @@ HybridBoxes
 widen(const HybridBoxes& box)
 {
 	HybridBoxes result;
-	for (HybridBoxes::const_iterator loc_it = box.begin(); loc_it != box.end(); loc_it++) {
-		Box bx = loc_it->second;
+	for (HybridBoxes::const_iterator hbx_it = box.begin(); hbx_it != box.end(); hbx_it++) {	
+                DiscreteLocation loc = hbx_it->first;
+                Box bx = hbx_it->second;
 		bx.widen();
-		result.insert(make_pair<DiscreteLocation,Box>(loc_it->first,bx));
+		result.insert(make_pair(loc,bx));
 	}
 
 	return result;

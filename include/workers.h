@@ -77,7 +77,7 @@ public:
     	_start();
     	_wait_completion();
 
-		return make_pair<HDS,HDS>(_reach,_evolve);
+		return make_pair(_reach,_evolve);
     }
  
 private:
@@ -222,7 +222,7 @@ public:
     	for (HybridSpace::const_iterator hs_it = state_space.begin(); hs_it != state_space.end(); ++hs_it)
     		_epsilon[hs_it->first] += grid_lengths[hs_it->first]/accuracy_divider;
 
-		return make_tuple<std::pair<HUM,HUM>,EL,HDS,HybridFloatVector>(make_pair<HUM,HUM>(_adjoined_evolve_sizes,_superposed_evolve_sizes),_final_enclosures,_reach,_epsilon);
+		return make_tuple<std::pair<HUM,HUM>,EL,HDS,HybridFloatVector>(make_pair(_adjoined_evolve_sizes,_superposed_evolve_sizes),_final_enclosures,_reach,_epsilon);
     }
  
 private:

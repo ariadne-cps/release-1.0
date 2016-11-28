@@ -1481,7 +1481,7 @@ HybridIOAutomaton aasap_relaxation(const HybridIOAutomaton& hioa)
 						locationname += "_" + input_event_it->name();
 
 					// Insert the information about whether the event is considered received
-					rem.insert(make_pair<DiscreteEvent,bool>(*input_event_it,is_received));
+					rem.insert(make_pair(*input_event_it,is_received));
 
 					// Increase the iterator and the counter
 					input_event_it++; 
@@ -1492,7 +1492,7 @@ HybridIOAutomaton aasap_relaxation(const HybridIOAutomaton& hioa)
 				aasap.new_mode(DiscreteLocation(locationname),mode_it->dynamics());
 
 				// Add the original location with received events
-				lwre.push_back(make_pair<DiscreteLocation,ReceivedEventsMap>(mode_it->location(),rem));
+				lwre.push_back(make_pair(mode_it->location(),rem));
 			}
 		}
 

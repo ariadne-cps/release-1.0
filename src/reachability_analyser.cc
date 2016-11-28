@@ -1075,7 +1075,7 @@ getHybridGrid(
 		}
 
 		// Add the pair to the hybrid lengths
-		hybridgridlengths.insert(make_pair<DiscreteLocation,Vector<Float> >(hfv_it->first,gridlengths));
+		hybridgridlengths.insert(make_pair(hfv_it->first,gridlengths));
 	}
 
 	// Populate the grid, centered on the centre of the domain

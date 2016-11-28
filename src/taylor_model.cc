@@ -229,7 +229,7 @@ void _neg(TaylorModel& r)
 inline void _scal_exact(TaylorModel& r, const Float& c)
 {
     // Operation can be performed exactly
-    register Float pc=c;
+    Float pc=c;
     for(TaylorModel::iterator iter=r.begin(); iter!=r.end(); ++iter) {
         iter->data()*=pc;
     }
@@ -245,8 +245,8 @@ inline void _scal_approx(TaylorModel& r, const Float& c)
     set_rounding_upward();
     volatile Float u,ml;
     Float te=0; // Twice the maximum accumulated error
-    register Float pc=c;
-    register Float mc=-c;
+    Float pc=c;
+    Float mc=-c;
     for(TaylorModel::const_iterator riter=r.begin(); riter!=r.end(); ++riter) {
         const Float& rv=riter->data();
         u=rv*pc;
@@ -284,8 +284,8 @@ void _scal(TaylorModel& r, const Interval& c)
     set_rounding_upward();
     volatile Float u,ml;
     Float te=0; // Twice the maximum accumulated error
-    register Float cu=c.upper();
-    register Float mcl=-c.lower();
+    Float cu=c.upper();
+    Float mcl=-c.lower();
     for(TaylorModel::const_iterator riter=r.begin(); riter!=r.end(); ++riter) {
         const Float& rv=riter->data();
         if(rv>=0) {
@@ -2211,8 +2211,8 @@ void _antidifferentiate1(TaylorModel& x, uint k)
     volatile Float tre=0; // Twice the maximum accumulated roundoff error
     for(TaylorModel::const_iterator xiter=x.begin(); xiter!=x.end(); ++xiter) {
         const uint c=xiter->key()[k]+1;
-        register double xv=xiter->data();
-        register double mxv=-xv;
+        double xv=xiter->data();
+        double mxv=-xv;
         assert(c>0);
         //volatile double ml,u;
         if(xv>=0) {
