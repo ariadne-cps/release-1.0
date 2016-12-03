@@ -140,13 +140,12 @@ void ImageSetHybridEvolver::_absorb_error(TaylorSet& starting_set,
 	for (unsigned int i=0; i<starting_bb.size(); ++i) {
 		if (abs(finishing_dynamic_range[i].midpoint()) <= abs(starting_dynamic_range[i].midpoint())) {
 			has_boxed = true;
-			TaylorModel new_model = TaylorModel::scaling(starting_set.argument_size(),i,starting_bb[i]);
-			starting_set_models[i] = new_model;
+			break;
 		}
 	}
 
 	if (has_boxed)
-		starting_set = TaylorSet(starting_set_models);
+		starting_set = TaylorSet(starting_set.bounding_box());
 }
 
 void
