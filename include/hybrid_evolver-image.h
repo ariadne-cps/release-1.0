@@ -330,7 +330,10 @@ class ImageSetHybridEvolverSettings {
     //! \details In the case of upper semantics, if true and no subdivisions are present, the set is put into the final sets. In the case of lower semantics, the set is discarded.
     bool enable_premature_termination_on_enclosure_size;
 
+    //! \brief Terminate evolution if too many working sets are present (0 by default, hence disabled).
     unsigned int maximum_number_of_working_sets;
+
+
 };
 
 

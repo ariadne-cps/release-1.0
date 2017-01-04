@@ -170,7 +170,7 @@ _evolution(EnclosureListType& final_sets,
 	// While there exists a working set, process it
 	while(!working_sets.empty()) {
 
-		if (this->_settings->maximum_number_of_working_sets > 1 && working_sets.size() > this->_settings->maximum_number_of_working_sets)
+		if (this->_settings->maximum_number_of_working_sets > 0 && working_sets.size() > this->_settings->maximum_number_of_working_sets)
 			throw WorkingSetTooLargeException("too large");
 
 		// Get the least recent working set, pop it and update the corresponding size
@@ -1127,7 +1127,7 @@ ImageSetHybridEvolverSettings::ImageSetHybridEvolverSettings(const SystemType& s
       maximum_enclosure_widths_ratio(2.0),
       enable_subdivisions(false),
       enable_premature_termination_on_enclosure_size(true),
-	  maximum_number_of_working_sets(-1)
+	  maximum_number_of_working_sets(0)
 {
     HybridSpace hspace(sys.state_space());
     for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
