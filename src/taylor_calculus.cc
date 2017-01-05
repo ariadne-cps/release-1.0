@@ -120,26 +120,6 @@ flow_bounds(VectorFunction const& vf,
 
     b=nb;
 
-/*
-    // Expand the resulting bound by a small constant for robustness
-    volatile float new_bound;
-    set_rounding_mode(upward);
-    for(uint i=0; i!=b.size(); ++i) {
-        new_bound=b[i].upper();
-        new_bound+=1e-8;
-        new_bound+=1e-8;
-        b[i].u=new_bound;
-    }
-    set_rounding_mode(downward);
-    for(uint i=0; i!=b.size(); ++i) {
-        new_bound=b[i].lower();
-        new_bound-=1e-8;
-        new_bound-=1e-8;
-        b[i].l=new_bound;
-    }
-    set_rounding_mode(to_nearest);
-*/
-
     ARIADNE_ASSERT(subset(d,b));
 
     ARIADNE_ASSERT_MSG(subset(d+h*vf.evaluate(b),b),
