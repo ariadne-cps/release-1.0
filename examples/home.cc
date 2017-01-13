@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
     HybridSpace hspace(system.state_space());
     for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
         evolver.settings().minimum_discretised_enclosure_widths[hs_it->first] = Vector<Float>(4,1.0);
-        evolver.settings().hybrid_maximum_step_size[hs_it->first] = 1.0;
+        evolver.settings().set_hybrid_maximum_step_size(1.0);
     }
 
     Real day_len = system.parameter_value("day_len");

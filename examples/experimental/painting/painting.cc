@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
     HybridSpace hspace(system.state_space());
     for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
         evolver.settings().minimum_discretised_enclosure_widths[hs_it->first] = Vector<Float>(6,0.7);
-        evolver.settings().hybrid_maximum_step_size[hs_it->first] = 0.01;
+        evolver.settings().set_hybrid_maximum_step_size(0.01);
     }
 
     Box initial_box(6,

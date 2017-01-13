@@ -381,7 +381,7 @@ int main(int argc, char** argv)
 
     HybridSpace hspace = system.state_space();
     for (HybridSpace::locations_const_iterator loc_it = hspace.locations_begin(); loc_it != hspace.locations_end(); loc_it++) {
-        evolver.settings().hybrid_maximum_step_size[loc_it->first]=step_size;
+        evolver.settings().set_hybrid_maximum_step_size(step_size);
         evolver.settings().minimum_discretised_enclosure_widths[loc_it->first]=enclosure_cell;
     }
     evolver.settings().enable_premature_termination_on_enclosure_size=true;

@@ -341,7 +341,7 @@ int main()
 
     /// Set the evolution parameters
     for (uint i=1;i<=11;i++) {
-    	evolver.settings().hybrid_maximum_step_size[i] = MAX_STEP_SIZE;
+    	evolver.settings().set_hybrid_maximum_step_size(MAX_STEP_SIZE);
     	evolver.settings().minimum_discretised_enclosure_widths[i] = Vector<Float>(3,MAX_ENCL_WIDTH);
     }
     std::cout <<  evolver.settings() << std::endl;

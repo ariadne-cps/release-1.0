@@ -298,7 +298,7 @@ class ImageSetHybridEvolverSettings {
     friend class ImageSetHybridEvolver;
   public:
     typedef uint UnsignedIntType;
-    typedef double RealType;
+    typedef Float RealType;
     typedef HybridAutomatonInterface SystemType;
 
   protected:
@@ -306,11 +306,19 @@ class ImageSetHybridEvolverSettings {
     //! \brief Default constructor gives reasonable values.
     ImageSetHybridEvolverSettings(const SystemType& sys);
 
-  public:
+  private:
+
+    const SystemType& _sys;
 
     //! \brief The maximum allowable step size for integration, different for each location.
     //! \details Decreasing the values increases the accuracy of the computation.
-    std::map<DiscreteLocation,RealType> hybrid_maximum_step_size;
+    std::map<DiscreteLocation,RealType> _hybrid_maximum_step_size;
+
+  public:
+
+    const std::map<DiscreteLocation,RealType>& hybrid_maximum_step_size() const;
+    void set_hybrid_maximum_step_size(const RealType&);
+    void set_hybrid_maximum_step_size(const std::map<DiscreteLocation,RealType>&);
 
     //! \brief The minimum enclosure widths that a discretised enclosure would have.
     //! \details If an enclosure starts evolution with widths strictly lesser than these, premature termination is performed
