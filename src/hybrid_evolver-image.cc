@@ -144,8 +144,10 @@ void ImageSetHybridEvolver::_absorb_error(TaylorSet& starting_set,
 		}
 	}
 
-	if (has_boxed)
+	if (has_boxed) {
 		starting_set = TaylorSet(starting_set.bounding_box());
+		starting_time = TaylorModel::scaling(starting_set.argument_size(),0,starting_time.range());
+	}
 }
 
 void
