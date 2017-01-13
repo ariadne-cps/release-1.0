@@ -206,7 +206,7 @@ _evolution(EnclosureListType& final_sets,
             ARIADNE_LOG(2,"Computed set range " << set_model.range() << " widths larger than allowed, subdividing.");
             _add_models_subdivisions_autoselect(working_sets,set_index,set_model,time_model,loc,events,semantics);
         } else if((semantics == LOWER_SEMANTICS || !this->_settings->enable_subdivisions()) &&
-                  this->_settings->enable_premature_termination_on_enclosure_size && isEnclosureTooLarge) {
+                  this->_settings->enable_premature_termination_on_enclosure_size() && isEnclosureTooLarge) {
             ARIADNE_LOG(2,"Terminating evolution at time " << time_model.value()
                         << " and set " << set_model.centre() << " due to maximum enclosure bounds being exceeded.");
             if(semantics == UPPER_SEMANTICS)
@@ -1126,13 +1126,13 @@ _add_models_subdivisions_time(
 
 ImageSetHybridEvolverSettings::ImageSetHybridEvolverSettings(const SystemType& sys)
     : _sys(sys),
-      enable_premature_termination_on_enclosure_size(true),
 	  maximum_number_of_working_sets(0)
 {
 	set_maximum_step_size(1.0);
 	set_reference_enclosure_widths(getMinimumGridCellWidths(HybridGrid(sys.state_space()),0));
 	set_maximum_enclosure_widths_ratio(2.0);
 	set_enable_subdivisions(false);
+	set_enable_premature_termination_on_enclosure_size(true);
 }
 
 const std::map<DiscreteLocation,Float>&
@@ -1199,6 +1199,15 @@ ImageSetHybridEvolverSettings::set_enable_subdivisions(const bool& value) {
 	_enable_subdivisions = value;
 }
 
+const bool&
+ImageSetHybridEvolverSettings::enable_premature_termination_on_enclosure_size() const {
+	return _enable_premature_termination_on_enclosure_size;
+}
+void
+ImageSetHybridEvolverSettings::set_enable_premature_termination_on_enclosure_size(const bool& value) {
+	_enable_premature_termination_on_enclosure_size = value;
+}
+
 std::ostream&
 operator<<(std::ostream& os, const ImageSetHybridEvolverSettings& s)
 {
@@ -1207,7 +1216,7 @@ operator<<(std::ostream& os, const ImageSetHybridEvolverSettings& s)
        << ",\n  reference_enclosure_widths=" << s.reference_enclosure_widths()
        << ",\n  maximum_enclosure_widths_ratio=" << s.maximum_enclosure_widths_ratio()
        << ",\n  enable_subdivisions=" << s.enable_subdivisions()
-       << ",\n  enable_premature_termination_on_enclosure_size=" << s.enable_premature_termination_on_enclosure_size
+       << ",\n  enable_premature_termination_on_enclosure_size=" << s.enable_premature_termination_on_enclosure_size()
 	   << ",\n  maximum_number_of_working_sets=" << s.maximum_number_of_working_sets
        << "\n)\n";
     return os;

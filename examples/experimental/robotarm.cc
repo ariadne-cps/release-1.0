@@ -380,7 +380,7 @@ int main(int argc, char** argv)
 
     evolver.settings().set_maximum_step_size(step_size);
     evolver.settings().set_reference_enclosure_widths(enclosure_cell);
-    evolver.settings().enable_premature_termination_on_enclosure_size=true;
+    evolver.settings().set_enable_premature_termination_on_enclosure_size(true);
 
     std::cout << "Evolution settings:" << evolver.settings() << std::endl;
     

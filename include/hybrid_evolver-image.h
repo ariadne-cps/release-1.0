@@ -327,6 +327,10 @@ class ImageSetHybridEvolverSettings {
     //! \brief Enable subdivision of basic sets (false by default).
     bool _enable_subdivisions;
 
+    //! \brief Terminate evolution if basic sets became too large (true by default).
+    //! \details In the case of upper semantics, if true and no subdivisions are present, the set is put into the final sets. In the case of lower semantics, the set is discarded.
+    bool _enable_premature_termination_on_enclosure_size;
+
   public:
 
     // Accessors
@@ -346,9 +350,8 @@ class ImageSetHybridEvolverSettings {
     const bool& enable_subdivisions() const;
     void set_enable_subdivisions(const bool&);
 
-    //! \brief Terminate evolution if basic sets became too large (true by default).
-    //! \details In the case of upper semantics, if true and no subdivisions are present, the set is put into the final sets. In the case of lower semantics, the set is discarded.
-    bool enable_premature_termination_on_enclosure_size;
+    const bool& enable_premature_termination_on_enclosure_size() const;
+    void set_enable_premature_termination_on_enclosure_size(const bool&);
 
     //! \brief Terminate evolution if too many working sets are present (0 by default, hence disabled).
     unsigned int maximum_number_of_working_sets;
