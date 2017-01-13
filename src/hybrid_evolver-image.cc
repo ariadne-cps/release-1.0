@@ -172,7 +172,7 @@ _evolution(EnclosureListType& final_sets,
 	// While there exists a working set, process it
 	while(!working_sets.empty()) {
 
-		if (this->_settings->maximum_number_of_working_sets > 0 && working_sets.size() > this->_settings->maximum_number_of_working_sets)
+		if (this->_settings->maximum_number_of_working_sets() > 0 && working_sets.size() > this->_settings->maximum_number_of_working_sets())
 			throw WorkingSetTooLargeException("too large");
 
 		// Get the least recent working set, pop it and update the corresponding size
@@ -1125,14 +1125,14 @@ _add_models_subdivisions_time(
 
 
 ImageSetHybridEvolverSettings::ImageSetHybridEvolverSettings(const SystemType& sys)
-    : _sys(sys),
-	  maximum_number_of_working_sets(0)
+    : _sys(sys)
 {
 	set_maximum_step_size(1.0);
 	set_reference_enclosure_widths(getMinimumGridCellWidths(HybridGrid(sys.state_space()),0));
 	set_maximum_enclosure_widths_ratio(2.0);
 	set_enable_subdivisions(false);
 	set_enable_premature_termination_on_enclosure_size(true);
+	set_maximum_number_of_working_sets(0);
 }
 
 const std::map<DiscreteLocation,Float>&
@@ -1189,7 +1189,6 @@ ImageSetHybridEvolverSettings::set_maximum_enclosure_widths_ratio(const Float& v
 	_maximum_enclosure_widths_ratio = value;
 }
 
-
 const bool&
 ImageSetHybridEvolverSettings::enable_subdivisions() const {
 	return _enable_subdivisions;
@@ -1208,6 +1207,16 @@ ImageSetHybridEvolverSettings::set_enable_premature_termination_on_enclosure_siz
 	_enable_premature_termination_on_enclosure_size = value;
 }
 
+const unsigned int&
+ImageSetHybridEvolverSettings::maximum_number_of_working_sets() const {
+	return _maximum_number_of_working_sets;
+}
+
+void
+ImageSetHybridEvolverSettings::set_maximum_number_of_working_sets(const unsigned int& value) {
+	_maximum_number_of_working_sets = value;
+}
+
 std::ostream&
 operator<<(std::ostream& os, const ImageSetHybridEvolverSettings& s)
 {
@@ -1217,7 +1226,7 @@ operator<<(std::ostream& os, const ImageSetHybridEvolverSettings& s)
        << ",\n  maximum_enclosure_widths_ratio=" << s.maximum_enclosure_widths_ratio()
        << ",\n  enable_subdivisions=" << s.enable_subdivisions()
        << ",\n  enable_premature_termination_on_enclosure_size=" << s.enable_premature_termination_on_enclosure_size()
-	   << ",\n  maximum_number_of_working_sets=" << s.maximum_number_of_working_sets
+	   << ",\n  maximum_number_of_working_sets=" << s.maximum_number_of_working_sets()
        << "\n)\n";
     return os;
 }
