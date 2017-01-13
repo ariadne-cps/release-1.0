@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
     HybridEvolver evolver(automaton);
     evolver.verbosity = VERBOSITY;
 
-    evolver.settings().set_hybrid_maximum_step_size(MAX_STEP_SIZE);
+    evolver.settings().set_maximum_step_size(MAX_STEP_SIZE);
     evolver.settings().set_reference_enclosure_widths(MAX_ENCL_WIDTH);
 
     Box initial_box(2, 0.0,0.0, 1.0,1.0);

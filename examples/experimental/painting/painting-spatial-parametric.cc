@@ -102,7 +102,7 @@ int main(int argc, char* argv[])
 			evolver.verbosity = 0;
 
 			evolver.settings().set_reference_enclosure_widths(1.0);
-			evolver.settings().set_hybrid_maximum_step_size(0.0005/velocity);
+			evolver.settings().set_maximum_step_size(0.0005/velocity);
 			evolver.settings().maximum_number_of_working_sets = 20;
 
 			Box initial_box(6,

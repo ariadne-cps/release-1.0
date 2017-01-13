@@ -43,7 +43,7 @@ int main(int argc,char *argv[])
     evolver.verbosity = verbosity;
 
     evolver.settings().set_reference_enclosure_widths(1.0);
-    evolver.settings().set_hybrid_maximum_step_size(0.00001);
+    evolver.settings().set_maximum_step_size(0.00001);
     
     HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("incr,below_duty"),Box(3, 0.0,0.0, 1.0,1.0, 1.0,1.0));
   

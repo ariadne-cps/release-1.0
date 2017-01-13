@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
     evolver.verbosity = VERBOSITY;
 
     evolver.settings().set_reference_enclosure_widths(0.7);
-    evolver.settings().set_hybrid_maximum_step_size(0.01);
+    evolver.settings().set_maximum_step_size(0.01);
 
     Box initial_box(6,
 			/*s*/ 0.0,0.0,
