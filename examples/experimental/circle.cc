@@ -31,11 +31,8 @@ int main(int argc, char* argv[])
     HybridEvolver evolver(circle);
     evolver.verbosity = VERBOSITY;
 
-    HybridSpace hspace(circle.state_space());
-    for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
-        evolver.settings().minimum_discretised_enclosure_widths[hs_it->first] = Vector<Float>(2,2.0);
-        evolver.settings().set_hybrid_maximum_step_size(0.01);
-    }
+    evolver.settings().set_reference_enclosure_widths(2.0);
+    evolver.settings().set_hybrid_maximum_step_size(0.01);
 
     Box initial_box(2, R.lower(), R.upper(), 0.0,0.0);
     HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("1"),initial_box);

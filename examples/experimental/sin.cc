@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
     evolver.verbosity = VERBOSITY;
 
     evolver.settings().set_hybrid_maximum_step_size(MAX_STEP_SIZE);
-    evolver.settings().minimum_discretised_enclosure_widths[work] = Vector<Float>(2,MAX_ENCL_WIDTH);
+    evolver.settings().set_reference_enclosure_widths(MAX_ENCL_WIDTH);
 
     Box initial_box(2, 0.0,0.0, 0.0,0.0);
     HybridEvolver::EnclosureType initial_enclosure(work,initial_box);

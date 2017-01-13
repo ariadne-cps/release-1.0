@@ -77,7 +77,7 @@ int main()
     HybridEvolver evolver(ball);
 
     /// Set the evolution parameters
-    evolver.settings().minimum_discretised_enclosure_widths[l1] = Vector<Float>(2,0.05);
+    evolver.settings().set_reference_enclosure_widths(0.05);
     evolver.settings().set_hybrid_maximum_step_size(1.0/64);
     evolver.verbosity = 1;
     std::cout <<  evolver.settings() << std::endl;

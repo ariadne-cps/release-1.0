@@ -298,7 +298,6 @@ class ImageSetHybridEvolverSettings {
     friend class ImageSetHybridEvolver;
   public:
     typedef uint UnsignedIntType;
-    typedef Float RealType;
     typedef HybridAutomatonInterface SystemType;
 
   protected:
@@ -312,24 +311,29 @@ class ImageSetHybridEvolverSettings {
 
     //! \brief The maximum allowable step size for integration, different for each location.
     //! \details Decreasing the values increases the accuracy of the computation.
-    std::map<DiscreteLocation,RealType> _hybrid_maximum_step_size;
+    std::map<DiscreteLocation,Float> _hybrid_maximum_step_size;
 
-  public:
-
-    const std::map<DiscreteLocation,RealType>& hybrid_maximum_step_size() const;
-    void set_hybrid_maximum_step_size(const RealType&);
-    void set_hybrid_maximum_step_size(const std::map<DiscreteLocation,RealType>&);
-
-    //! \brief The minimum enclosure widths that a discretised enclosure would have.
+    //! \brief The reference enclosure widths that a discretised enclosure would have.
     //! \details If an enclosure starts evolution with widths strictly lesser than these, premature termination is performed
     //! when the widths are maximum_enclosure_widths_ratio times the minimum_discretised_enclosure_widths. If not,
     //! premature termination is performed when the widths are maximum_enclosure_widths_ratio times the initial enclosure widths.
-    HybridFloatVector minimum_discretised_enclosure_widths;
+    HybridFloatVector _reference_enclosure_widths;
+
+  public:
+
+    const std::map<DiscreteLocation,Float>& hybrid_maximum_step_size() const;
+    void set_hybrid_maximum_step_size(const Float&);
+    void set_hybrid_maximum_step_size(const std::map<DiscreteLocation,Float>&);
+
+    const HybridFloatVector& reference_enclosure_widths() const;
+    void set_reference_enclosure_widths(const Float&);
+    void set_reference_enclosure_widths(const Vector<Float>&);
+    void set_reference_enclosure_widths(const HybridFloatVector&);
 
     //! \brief The maximum ratio between enclosure widths and reference widths.
     //! \details Reference widths are the initial ones, if larger than maximum_discretised_enclosure_widths, or
     //! maximum_discretised_enclosure_widths themselves if not.
-    RealType maximum_enclosure_widths_ratio;
+    Float maximum_enclosure_widths_ratio;
 
     //! \brief Enable subdivision of basic sets (false by default).
     bool enable_subdivisions;

@@ -339,12 +339,8 @@ int main()
     HybridEvolver evolver(inverter);
     evolver.verbosity = VERBOSITY;
 
-    /// Set the evolution parameters
-    for (uint i=1;i<=11;i++) {
-    	evolver.settings().set_hybrid_maximum_step_size(MAX_STEP_SIZE);
-    	evolver.settings().minimum_discretised_enclosure_widths[i] = Vector<Float>(3,MAX_ENCL_WIDTH);
-    }
-    std::cout <<  evolver.settings() << std::endl;
+    evolver.settings().set_hybrid_maximum_step_size(MAX_STEP_SIZE);
+    evolver.settings().set_reference_enclosure_widths(MAX_ENCL_WIDTH);
 
     // Declare the type to be used for the system evolution
     typedef HybridEvolver::EnclosureType HybridEnclosureType;

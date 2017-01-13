@@ -32,11 +32,8 @@ int main(int argc, char* argv[])
     evolver.verbosity = verb;
 
     /// Set the evolution parameters
-    HybridSpace hspace(system.state_space());
-    for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
-        evolver.settings().minimum_discretised_enclosure_widths[hs_it->first] = Vector<Float>(5,MAX_ENCLOSURE_WIDTH);
-        evolver.settings().set_hybrid_maximum_step_size(MAX_STEP_SIZE);
-    }
+    evolver.settings().set_reference_enclosure_widths(MAX_ENCLOSURE_WIDTH);
+    evolver.settings().set_hybrid_maximum_step_size(MAX_STEP_SIZE);
 
     Box initial_box(5, 0.0, 0.0, 0.0,0.0, 0.0,0.0, x1_0,x1_0, x2_0,x2_0);
     HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("free1,free2"),initial_box);
