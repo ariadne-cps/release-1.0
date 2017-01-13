@@ -324,6 +324,9 @@ class ImageSetHybridEvolverSettings {
     //! maximum_discretised_enclosure_widths themselves if not.
     Float _maximum_enclosure_widths_ratio;
 
+    //! \brief Enable subdivision of basic sets (false by default).
+    bool _enable_subdivisions;
+
   public:
 
     // Accessors
@@ -337,11 +340,11 @@ class ImageSetHybridEvolverSettings {
     void set_reference_enclosure_widths(const Vector<Float>&);
     void set_reference_enclosure_widths(const HybridFloatVector&);
 
-    Float maximum_enclosure_widths_ratio() const;
+    const Float& maximum_enclosure_widths_ratio() const;
     void set_maximum_enclosure_widths_ratio(const Float&);
 
-    //! \brief Enable subdivision of basic sets (false by default).
-    bool enable_subdivisions;
+    const bool& enable_subdivisions() const;
+    void set_enable_subdivisions(const bool&);
 
     //! \brief Terminate evolution if basic sets became too large (true by default).
     //! \details In the case of upper semantics, if true and no subdivisions are present, the set is put into the final sets. In the case of lower semantics, the set is discarded.

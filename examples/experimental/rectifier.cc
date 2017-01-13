@@ -223,7 +223,7 @@ int main()
     evolver.settings().set_reference_enclosure_widths(MAX_ENCL_WIDTH);
     evolver.settings().set_maximum_step_size(MAX_STEP_SIZE);
 
-    evolver.settings().enable_subdivisions = ENABLE_SUBDIV;
+    evolver.settings().set_enable_subdivisions(ENABLE_SUBDIV);
     std::cout <<  evolver.settings() << std::endl;
 
     // Declare the type to be used for the system evolution

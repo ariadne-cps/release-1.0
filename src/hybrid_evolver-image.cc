@@ -199,13 +199,13 @@ _evolution(EnclosureListType& final_sets,
 		   events.size()>=uint(maximum_hybrid_time.discrete_time())) {
             ARIADNE_LOG(2,"Final time reached, adjoining result to final sets.");
             final_sets.adjoin(loc,_toolbox->enclosure(set_model));
-        } else if (subdivideOverTime && this->_settings->enable_subdivisions) {
+        } else if (subdivideOverTime && this->_settings->enable_subdivisions()) {
             ARIADNE_LOG(2,"Computed time range " << time_model.range() << " width larger than half the maximum step size " << this->_settings->maximum_step_size().at(loc) << ", subdividing over time.");
             _add_models_subdivisions_time(working_sets,set_index,set_model,time_model,loc,events,semantics);
-		} else if (semantics == UPPER_SEMANTICS && this->_settings->enable_subdivisions && isEnclosureTooLarge) {
+		} else if (semantics == UPPER_SEMANTICS && this->_settings->enable_subdivisions() && isEnclosureTooLarge) {
             ARIADNE_LOG(2,"Computed set range " << set_model.range() << " widths larger than allowed, subdividing.");
             _add_models_subdivisions_autoselect(working_sets,set_index,set_model,time_model,loc,events,semantics);
-        } else if((semantics == LOWER_SEMANTICS || !this->_settings->enable_subdivisions) &&
+        } else if((semantics == LOWER_SEMANTICS || !this->_settings->enable_subdivisions()) &&
                   this->_settings->enable_premature_termination_on_enclosure_size && isEnclosureTooLarge) {
             ARIADNE_LOG(2,"Terminating evolution at time " << time_model.value()
                         << " and set " << set_model.centre() << " due to maximum enclosure bounds being exceeded.");
@@ -1126,13 +1126,13 @@ _add_models_subdivisions_time(
 
 ImageSetHybridEvolverSettings::ImageSetHybridEvolverSettings(const SystemType& sys)
     : _sys(sys),
-      enable_subdivisions(false),
       enable_premature_termination_on_enclosure_size(true),
 	  maximum_number_of_working_sets(0)
 {
 	set_maximum_step_size(1.0);
 	set_reference_enclosure_widths(getMinimumGridCellWidths(HybridGrid(sys.state_space()),0));
 	set_maximum_enclosure_widths_ratio(2.0);
+	set_enable_subdivisions(false);
 }
 
 const std::map<DiscreteLocation,Float>&
@@ -1179,7 +1179,7 @@ ImageSetHybridEvolverSettings::set_reference_enclosure_widths(const HybridFloatV
 	_reference_enclosure_widths = value;
 }
 
-Float
+const Float&
 ImageSetHybridEvolverSettings::maximum_enclosure_widths_ratio() const {
 	return _maximum_enclosure_widths_ratio;
 }
@@ -1189,6 +1189,16 @@ ImageSetHybridEvolverSettings::set_maximum_enclosure_widths_ratio(const Float& v
 	_maximum_enclosure_widths_ratio = value;
 }
 
+
+const bool&
+ImageSetHybridEvolverSettings::enable_subdivisions() const {
+	return _enable_subdivisions;
+}
+void
+ImageSetHybridEvolverSettings::set_enable_subdivisions(const bool& value) {
+	_enable_subdivisions = value;
+}
+
 std::ostream&
 operator<<(std::ostream& os, const ImageSetHybridEvolverSettings& s)
 {
@@ -1196,7 +1206,7 @@ operator<<(std::ostream& os, const ImageSetHybridEvolverSettings& s)
        << ",\n  maximum_step_size=" << s.maximum_step_size()
        << ",\n  reference_enclosure_widths=" << s.reference_enclosure_widths()
        << ",\n  maximum_enclosure_widths_ratio=" << s.maximum_enclosure_widths_ratio()
-       << ",\n  enable_subdivisions=" << s.enable_subdivisions
+       << ",\n  enable_subdivisions=" << s.enable_subdivisions()
        << ",\n  enable_premature_termination_on_enclosure_size=" << s.enable_premature_termination_on_enclosure_size
 	   << ",\n  maximum_number_of_working_sets=" << s.maximum_number_of_working_sets
        << "\n)\n";
