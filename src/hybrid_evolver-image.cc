@@ -554,7 +554,7 @@ compute_flow_model(
     float remaining_time = finishing_time - starting_time_model.range().lower();
     const Float maximum_step_size=min(time_step, remaining_time);
     const Float maximum_bounds_diameter=max(this->_settings->_reference_enclosure_widths.find(loc)->second)*
-    		MAXIMUM_BOUNDS_DIAMETER_FACTOR*this->_settings->maximum_enclosure_widths_ratio;
+    		MAXIMUM_BOUNDS_DIAMETER_FACTOR*this->_settings->maximum_enclosure_widths_ratio();
 
     BoxType starting_set_bounding_box=starting_set_model.range();
     ARIADNE_LOG(3,"starting_set_bounding_box="<<starting_set_bounding_box);
@@ -1054,11 +1054,11 @@ _is_enclosure_too_large(
 	const Vector<Interval> set_model_range = set_model.range();
 	for (uint i=0;i<set_model_range.size();++i) {
 		if (use_initial_set_as_reference) {
-			if (set_model_range[i].width()/initial_set_model_widths[i] >= this->_settings->maximum_enclosure_widths_ratio)
+			if (set_model_range[i].width()/initial_set_model_widths[i] >= this->_settings->maximum_enclosure_widths_ratio())
 				return true;
 		} else {
 			if (set_model_range[i].width() >= loc_reference_enclosure_widths[i]*
-					this->_settings->maximum_enclosure_widths_ratio)
+					this->_settings->maximum_enclosure_widths_ratio())
 				return true;
 		}
 	}
@@ -1126,13 +1126,13 @@ _add_models_subdivisions_time(
 
 ImageSetHybridEvolverSettings::ImageSetHybridEvolverSettings(const SystemType& sys)
     : _sys(sys),
-      maximum_enclosure_widths_ratio(2.0),
       enable_subdivisions(false),
       enable_premature_termination_on_enclosure_size(true),
 	  maximum_number_of_working_sets(0)
 {
 	set_maximum_step_size(1.0);
 	set_reference_enclosure_widths(getMinimumGridCellWidths(HybridGrid(sys.state_space()),0));
+	set_maximum_enclosure_widths_ratio(2.0);
 }
 
 const std::map<DiscreteLocation,Float>&
@@ -1179,13 +1179,23 @@ ImageSetHybridEvolverSettings::set_reference_enclosure_widths(const HybridFloatV
 	_reference_enclosure_widths = value;
 }
 
+Float
+ImageSetHybridEvolverSettings::maximum_enclosure_widths_ratio() const {
+	return _maximum_enclosure_widths_ratio;
+}
+
+void
+ImageSetHybridEvolverSettings::set_maximum_enclosure_widths_ratio(const Float& value) {
+	_maximum_enclosure_widths_ratio = value;
+}
+
 std::ostream&
 operator<<(std::ostream& os, const ImageSetHybridEvolverSettings& s)
 {
     os << "ImageSetHybridEvolverSettings"
        << ",\n  maximum_step_size=" << s.maximum_step_size()
        << ",\n  reference_enclosure_widths=" << s.reference_enclosure_widths()
-       << ",\n  maximum_enclosure_widths_ratio=" << s.maximum_enclosure_widths_ratio
+       << ",\n  maximum_enclosure_widths_ratio=" << s.maximum_enclosure_widths_ratio()
        << ",\n  enable_subdivisions=" << s.enable_subdivisions
        << ",\n  enable_premature_termination_on_enclosure_size=" << s.enable_premature_termination_on_enclosure_size
 	   << ",\n  maximum_number_of_working_sets=" << s.maximum_number_of_working_sets

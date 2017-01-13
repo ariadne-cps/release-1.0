@@ -120,8 +120,7 @@ void TestHybridEvolution::test_constant_derivative_system() const
 
     HybridEvolver evolver(automaton);
     evolver.verbosity=evolver_verbosity;
-	evolver.settings().minimum_discretised_enclosure_widths[q1]=Vector<Float>(2,0.5);
-	evolver.settings().minimum_discretised_enclosure_widths[q2]=Vector<Float>(2,0.5);
+	evolver.settings().set_reference_enclosure_widths(0.5);
 
     ARIADNE_TEST_PRINT(automaton);
     ARIADNE_TEST_PRINT(initial_set);
@@ -188,9 +187,8 @@ void TestHybridEvolution::test_bouncing_ball() const
 
     HybridEvolver evolver(automaton);
     evolver.verbosity=evolver_verbosity;
-    evolver.settings().set_hybrid_maximum_step_size(0.125);
-	evolver.settings().minimum_discretised_enclosure_widths[q1]=Vector<Float>(2,0.5);
-	evolver.settings().minimum_discretised_enclosure_widths[q2]=Vector<Float>(2,0.5);
+    evolver.settings().set_maximum_step_size(0.125);
+	evolver.settings().set_reference_enclosure_widths(0.5);
 
     ARIADNE_TEST_PRINT(automaton);
     ARIADNE_TEST_PRINT(initial_set);
@@ -233,10 +231,8 @@ void TestHybridEvolution::test_affine_system() const
     // Set up the evaluators
     HybridEvolver evolver(automaton);
     evolver.verbosity = evolver_verbosity;
-    evolver.settings().minimum_discretised_enclosure_widths[location1]=Vector<Float>(2,max_enclosure_width);
-    evolver.settings().minimum_discretised_enclosure_widths[location2]=Vector<Float>(2,max_enclosure_width);
-
-    evolver.settings().set_hybrid_maximum_step_size(step_size);
+    evolver.settings().set_reference_enclosure_widths(max_enclosure_width);
+    evolver.settings().set_maximum_step_size(step_size);
 
     // Define the initial box
     Box initial_box(2, -0.01,0.01, 0.49,0.51);
@@ -348,12 +344,8 @@ void TestHybridEvolver::test_transverse_linear_crossing()
 
     HybridEvolver evolver(system);
 
-	evolver.settings().minimum_discretised_enclosure_widths[q1]=Vector<Float>(2,0.5);
-	evolver.settings().minimum_discretised_enclosure_widths[q2]=Vector<Float>(2,0.5);
-
-	HybridSpace hspace = system.state_space();
-	for (HybridSpace::locations_const_iterator loc_it = hspace.locations_begin(); loc_it != hspace.locations_end(); loc_it++)
-		evolver.settings().set_hybrid_maximum_step_size(1.0);
+	evolver.settings().set_reference_enclosure_widths(0.5);
+	evolver.settings().set_maximum_step_size(1.0);
 
     ListSet<LocalisedTaylorSet> evolved_set=evolver.evolve(initial_set,evolution_time,UPPER_SEMANTICS);
 
@@ -383,8 +375,7 @@ void TestHybridEvolver::test_transverse_cubic_crossing()
 
     HybridEvolver evolver(system);
 
-	evolver.settings().minimum_discretised_enclosure_widths[q1]=Vector<Float>(2,0.5);
-	evolver.settings().minimum_discretised_enclosure_widths[q2]=Vector<Float>(2,0.5);
+	evolver.settings().set_reference_enclosure_widths(0.5);
 
     ListSet<LocalisedTaylorSet> evolved_set=evolver.evolve(initial_set,evolution_time,UPPER_SEMANTICS);
 
@@ -414,8 +405,7 @@ void TestHybridEvolver::test_transverse_cube_root_crossing()
 
     HybridEvolver evolver(system);
 
-	evolver.settings().minimum_discretised_enclosure_widths[q1]=Vector<Float>(2,0.5);
-	evolver.settings().minimum_discretised_enclosure_widths[q2]=Vector<Float>(2,0.5);
+	evolver.settings().set_reference_enclosure_widths(0.5);
 
     ScalarFunction ct=y-pow(y,3)+3*pow(y,5)-12*pow(y,7)+55*pow(y,9)-273*pow(y,11)+1-x;
     VectorFunction f=join(x+ct,y+2-ct);

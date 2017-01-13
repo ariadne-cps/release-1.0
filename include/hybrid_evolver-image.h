@@ -319,6 +319,11 @@ class ImageSetHybridEvolverSettings {
     //! premature termination is performed when the widths are maximum_enclosure_widths_ratio times the initial enclosure widths.
     HybridFloatVector _reference_enclosure_widths;
 
+    //! \brief The maximum ratio between enclosure widths and reference widths.
+    //! \details Reference widths are the initial ones, if larger than maximum_discretised_enclosure_widths, or
+    //! maximum_discretised_enclosure_widths themselves if not.
+    Float _maximum_enclosure_widths_ratio;
+
   public:
 
     // Accessors
@@ -332,10 +337,8 @@ class ImageSetHybridEvolverSettings {
     void set_reference_enclosure_widths(const Vector<Float>&);
     void set_reference_enclosure_widths(const HybridFloatVector&);
 
-    //! \brief The maximum ratio between enclosure widths and reference widths.
-    //! \details Reference widths are the initial ones, if larger than maximum_discretised_enclosure_widths, or
-    //! maximum_discretised_enclosure_widths themselves if not.
-    Float maximum_enclosure_widths_ratio;
+    Float maximum_enclosure_widths_ratio() const;
+    void set_maximum_enclosure_widths_ratio(const Float&);
 
     //! \brief Enable subdivision of basic sets (false by default).
     bool enable_subdivisions;
