@@ -112,7 +112,7 @@ tune_settings(
 	ARIADNE_LOG(2, "Maximum step size: " << this->_settings->maximum_step_size());
 }
 
-void ImageSetHybridEvolver::_absorb_error(TaylorSet& starting_set,
+void ImageSetHybridEvolver::_box_on_contraction(TaylorSet& starting_set,
 					 TaylorModel& starting_time,
 					 const DiscreteLocation& loc,
 					 const TimeType& maximum_hybrid_time,
@@ -134,17 +134,17 @@ void ImageSetHybridEvolver::_absorb_error(TaylorSet& starting_set,
 
 	TaylorSet starting_boxed_set(starting_bb);
 	Vector<TaylorModel> starting_set_models = starting_set.models();
-	bool has_boxed = false;
+	bool is_contractive = false;
 
 	// Boxing based on finishing set derivatives being in modulus smaller than the finishing set derivatives
 	for (unsigned int i=0; i<starting_bb.size(); ++i) {
 		if (abs(finishing_dynamic_range[i].midpoint()) <= abs(starting_dynamic_range[i].midpoint())) {
-			has_boxed = true;
+			is_contractive = true;
 			break;
 		}
 	}
 
-	if (has_boxed) {
+	if (is_contractive) {
 		starting_set = TaylorSet(starting_set.bounding_box());
 		starting_time = TaylorModel::scaling(starting_set.argument_size(),0,starting_time.range());
 	}
@@ -329,7 +329,8 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
     const uint& set_index = current_set.first;
     make_ltuple(location,events_history,set_model,time_model)=current_set.second;
 
-    _absorb_error(set_model,time_model,location,maximum_hybrid_time,direction,semantics);
+    if (_settings->enable_boxing_on_contraction())
+    	_box_on_contraction(set_model,time_model,location,maximum_hybrid_time,direction,semantics);
 
     // Extract information about the current location
     const RealVectorFunction dynamic=get_directed_dynamic(_sys->dynamic_function(location),direction);
@@ -1132,6 +1133,7 @@ ImageSetHybridEvolverSettings::ImageSetHybridEvolverSettings(const SystemType& s
 	set_maximum_enclosure_widths_ratio(2.0);
 	set_enable_subdivisions(false);
 	set_enable_premature_termination_on_enclosure_size(true);
+	set_enable_boxing_on_contraction(true);
 	set_maximum_number_of_working_sets(0);
 }
 
@@ -1205,6 +1207,15 @@ ImageSetHybridEvolverSettings::enable_premature_termination_on_enclosure_size() 
 void
 ImageSetHybridEvolverSettings::set_enable_premature_termination_on_enclosure_size(const bool& value) {
 	_enable_premature_termination_on_enclosure_size = value;
+}
+
+const bool&
+ImageSetHybridEvolverSettings::enable_boxing_on_contraction() const {
+	return _enable_boxing_on_contraction;
+}
+void
+ImageSetHybridEvolverSettings::set_enable_boxing_on_contraction(const bool& value) {
+	_enable_boxing_on_contraction = value;
 }
 
 const unsigned int&

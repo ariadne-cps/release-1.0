@@ -186,7 +186,7 @@ class ImageSetHybridEvolver
 
     std::map<uint,Vector<Float> > _indexed_set_models_widths(std::list< pair<uint,HybridTimedSetType> >& working_sets) const;
 
-    void _absorb_error(TaylorSet& set_model,
+    void _box_on_contraction(TaylorSet& set_model,
     					 TaylorModel& time_model,
     					 const DiscreteLocation& loc,
     					 const TimeType& maximum_hybrid_time,
@@ -331,6 +331,11 @@ class ImageSetHybridEvolverSettings {
     //! \details In the case of upper semantics, if true and no subdivisions are present, the set is put into the final sets. In the case of lower semantics, the set is discarded.
     bool _enable_premature_termination_on_enclosure_size;
 
+    //! \brief Boxes the enclosure if the dynamics is contractive (true by default).
+    //! \details In order to reduce the error, it overapproximates the enclosure with a box. In such a way, the error (which is
+    //! now affected by the dynamics) would be reduced if the set is shrinked. This operation is hence performed only if the local dynamics is contractive.
+    bool _enable_boxing_on_contraction;
+
     //! \brief Terminate evolution if too many working sets are present (0 by default, hence disabled).
     unsigned int _maximum_number_of_working_sets;
 
@@ -355,6 +360,9 @@ class ImageSetHybridEvolverSettings {
 
     const bool& enable_premature_termination_on_enclosure_size() const;
     void set_enable_premature_termination_on_enclosure_size(const bool&);
+
+    const bool& enable_boxing_on_contraction() const;
+    void set_enable_boxing_on_contraction(const bool&);
 
     const unsigned int& maximum_number_of_working_sets() const;
     void set_maximum_number_of_working_sets(const unsigned int&);
