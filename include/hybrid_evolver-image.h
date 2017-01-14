@@ -81,7 +81,7 @@ class ImageSetHybridEvolver
     typedef int IntegerType;
     typedef uint AccuracyType;
     typedef Float RealType;
-    typedef std::set<DiscreteEvent> EventListType;
+    typedef std::vector<DiscreteEvent> EventListType;
     typedef HybridAutomatonInterface SystemType;
     typedef TaylorSet ContinuousEnclosureType;
     typedef TaylorSet TimedSetModelType;
