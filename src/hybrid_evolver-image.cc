@@ -448,7 +448,7 @@ compute_initially_active_events(
     for(std::map<DiscreteEvent,RealScalarFunction>::const_iterator iter=urgent_guards.begin(); iter!=urgent_guards.end(); ++iter) {
         RealVectorFunction activation(1,iter->second);
 
-        Vector<Interval> infinite_box(initial_set.size(),Interval(std::numeric_limits<double>::lowest(),std::numeric_limits<double>::max()));
+        Vector<Interval> infinite_box(initial_set.size(),Interval(-std::numeric_limits<double>::max(),std::numeric_limits<double>::max()));
 
         tribool everywhere_active = _toolbox->active(iter->second,infinite_box);
         if (definitely(everywhere_active)) {
