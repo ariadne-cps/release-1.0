@@ -1010,8 +1010,6 @@ _evolution_add_initialSet(
     ARIADNE_LOG(3,"initial_location = "<<initial_location);
     SetModelType initial_set_model=_toolbox->set_model(initial_continuous_set);
 
-	// Check for non-zero maximum step size
-	ARIADNE_ASSERT_MSG(this->_settings->maximum_step_size().at(initial_location) > 0, "Error: the maximum step size for location " << initial_location.name() << " is zero.");
 	// Check for match between the enclosure cell size and the set size
 	ARIADNE_ASSERT_MSG(this->_settings->_reference_enclosure_widths.find(initial_location)->second.size() ==
 			initial_set_model.size(), "Error: mismatch between the reference_enclosure_widths size and the set size.");
@@ -1154,6 +1152,8 @@ ImageSetHybridEvolverSettings::maximum_step_size() const {
 
 void
 ImageSetHybridEvolverSettings::set_maximum_step_size(const Float& value) {
+	ARIADNE_ASSERT_MSG(value > 0, "Error: the maximum step size must be greater than zero.");
+
     HybridSpace hspace(_sys.state_space());
     for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
         _maximum_step_size[hs_it->first] = value;
@@ -1162,6 +1162,10 @@ ImageSetHybridEvolverSettings::set_maximum_step_size(const Float& value) {
 
 void
 ImageSetHybridEvolverSettings::set_maximum_step_size(const std::map<DiscreteLocation,Float>& value) {
+
+	for (std::map<DiscreteLocation,Float>::const_iterator it = value.begin(); it != value.end(); ++it)
+	    ARIADNE_ASSERT_MSG(it->second > 0, "Error: the maximum step size for location " << it->first.name() << " is zero.");
+
 	_maximum_step_size = value;
 }
 
