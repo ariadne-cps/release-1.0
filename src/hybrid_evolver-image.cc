@@ -1192,6 +1192,15 @@ ImageSetHybridEvolverSettings::set_maximum_enclosure_widths_ratio(const Float& v
 }
 
 const bool&
+ImageSetHybridEvolverSettings::enable_adaptive_step_size() const {
+	return _enable_adaptive_step_size;
+}
+void
+ImageSetHybridEvolverSettings::set_enable_adaptive_step_size(const bool& value) {
+	_enable_adaptive_step_size = value;
+}
+
+const bool&
 ImageSetHybridEvolverSettings::enable_subdivisions() const {
 	return _enable_subdivisions;
 }
@@ -1235,6 +1244,7 @@ operator<<(std::ostream& os, const ImageSetHybridEvolverSettings& s)
        << ",\n  maximum_step_size=" << s.maximum_step_size()
        << ",\n  reference_enclosure_widths=" << s.reference_enclosure_widths()
        << ",\n  maximum_enclosure_widths_ratio=" << s.maximum_enclosure_widths_ratio()
+	   << ",\n  enable_adaptive_step_size=" << s.enable_adaptive_step_size()
        << ",\n  enable_subdivisions=" << s.enable_subdivisions()
        << ",\n  enable_premature_termination_on_enclosure_size=" << s.enable_premature_termination_on_enclosure_size()
 	   << ",\n  maximum_number_of_working_sets=" << s.maximum_number_of_working_sets()

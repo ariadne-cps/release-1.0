@@ -324,6 +324,10 @@ class ImageSetHybridEvolverSettings {
     //! maximum_discretised_enclosure_widths themselves if not.
     Float _maximum_enclosure_widths_ratio;
 
+    //! \brief Use an adaptive step size instead of a fixed one.
+    //| \details Ignores the _maximum_step_size value and instead changes the step size in respect to the local dynamics.
+    bool _enable_adaptive_step_size;
+
     //! \brief Enable subdivision of basic sets (false by default).
     bool _enable_subdivisions;
 
@@ -354,6 +358,9 @@ class ImageSetHybridEvolverSettings {
 
     const Float& maximum_enclosure_widths_ratio() const;
     void set_maximum_enclosure_widths_ratio(const Float&);
+
+    const bool& enable_adaptive_step_size() const;
+    void set_enable_adaptive_step_size(const bool&);
 
     const bool& enable_subdivisions() const;
     void set_enable_subdivisions(const bool&);
