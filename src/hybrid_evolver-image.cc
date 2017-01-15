@@ -1152,6 +1152,7 @@ ImageSetHybridEvolverSettings::ImageSetHybridEvolverSettings(const SystemType& s
 	set_maximum_step_size(1.0);
 	set_reference_enclosure_widths(getMinimumGridCellWidths(HybridGrid(sys.state_space()),0));
 	set_maximum_enclosure_widths_ratio(2.0);
+	set_enable_adaptive_step_size(true);
 	set_enable_subdivisions(false);
 	set_enable_premature_termination_on_enclosure_size(true);
 	set_enable_boxing_on_contraction(true);
