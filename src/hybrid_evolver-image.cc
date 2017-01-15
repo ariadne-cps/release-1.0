@@ -814,6 +814,7 @@ _log_step_summary(const std::list<pair<uint,HybridTimedSetType> >& working_sets,
                     <<"#r="<<std::setw(4)<<std::left<<reach_sets.size()
                     <<" s="<<std::setw(3)<<std::left<<initial_events.size()
                     <<" t="<<std::fixed<<initial_time_model.value()
+                    <<" ts="<<std::scientific<<std::setw(5)<<std::left<<_get_step_size(initial_set_model,initial_location) << std::fixed
                     <<" r="<<std::setw(7)<<initial_set_model.radius()
                     <<" l="<<std::setw(3)<<std::left<<initial_location
                     <<" c="<<initial_set_model.centre()
@@ -1151,7 +1152,7 @@ ImageSetHybridEvolverSettings::ImageSetHybridEvolverSettings(const SystemType& s
 {
 	set_maximum_step_size(1.0);
 	set_reference_enclosure_widths(getMinimumGridCellWidths(HybridGrid(sys.state_space()),0));
-	set_maximum_enclosure_widths_ratio(2.0);
+	set_maximum_enclosure_widths_ratio(5.0);
 	set_enable_adaptive_step_size(false);
 	set_enable_subdivisions(false);
 	set_enable_premature_termination_on_enclosure_size(true);
