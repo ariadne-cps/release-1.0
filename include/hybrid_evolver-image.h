@@ -193,6 +193,8 @@ class ImageSetHybridEvolver
     					 ContinuousEvolutionDirection direction,
     					 Semantics semantics) const;
 
+    Float _get_step_size(DiscreteLocation loc) const;
+
     bool _is_enclosure_too_large(
     		const DiscreteLocation& loc,
     		const SetModelType& set_model,
