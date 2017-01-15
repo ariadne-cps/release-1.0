@@ -193,7 +193,7 @@ class ImageSetHybridEvolver
     					 ContinuousEvolutionDirection direction,
     					 Semantics semantics) const;
 
-    Float _get_step_size(const SetModelType& set_model,
+    Float _get_maximum_step_size(const SetModelType& set_model,
     				 	 const DiscreteLocation& location) const;
 
     bool _is_enclosure_too_large(
@@ -312,9 +312,10 @@ class ImageSetHybridEvolverSettings {
 
     const SystemType& _sys;
 
-    //! \brief The maximum allowable step size for integration, different for each location.
-    //! \details Decreasing the values increases the accuracy of the computation.
-    std::map<DiscreteLocation,Float> _maximum_step_size;
+    //! \brief A fixed value for the maximum allowable step size for integration, different for each location.
+    //! \details Decreasing the values increases the accuracy of the computation. The actual step size may be lower,
+    //! if higher than a fixed threshold value related to the dynamics of the system.
+    std::map<DiscreteLocation,Float> _fixed_maximum_step_size;
 
     //! \brief The reference enclosure widths that a discretised enclosure would have.
     //! \details If an enclosure starts evolution with widths strictly lesser than these, premature termination is performed
@@ -327,9 +328,9 @@ class ImageSetHybridEvolverSettings {
     //! maximum_discretised_enclosure_widths themselves if not.
     Float _maximum_enclosure_widths_ratio;
 
-    //! \brief Use an adaptive step size instead of a fixed one.
-    //| \details Ignores the _maximum_step_size value and instead changes the step size in respect to the local dynamics.
-    bool _enable_adaptive_step_size;
+    //! \brief Use an adaptive maximum step size instead of a fixed one.
+    //| \details Ignores the _fixed_maximum_step_size value and instead changes the maximum step size in respect to the local dynamics.
+    bool _enable_adaptive_maximum_step_size;
 
     //! \brief Enable subdivision of basic sets (false by default).
     bool _enable_subdivisions;
@@ -350,9 +351,9 @@ class ImageSetHybridEvolverSettings {
 
     // Accessors
 
-    const std::map<DiscreteLocation,Float>& maximum_step_size() const;
-    void set_maximum_step_size(const Float&);
-    void set_maximum_step_size(const std::map<DiscreteLocation,Float>&);
+    const std::map<DiscreteLocation,Float>& fixed_maximum_step_size() const;
+    void set_fixed_maximum_step_size(const Float&);
+    void set_fixed_maximum_step_size(const std::map<DiscreteLocation,Float>&);
 
     const HybridFloatVector& reference_enclosure_widths() const;
     void set_reference_enclosure_widths(const Float&);
@@ -362,8 +363,8 @@ class ImageSetHybridEvolverSettings {
     const Float& maximum_enclosure_widths_ratio() const;
     void set_maximum_enclosure_widths_ratio(const Float&);
 
-    const bool& enable_adaptive_step_size() const;
-    void set_enable_adaptive_step_size(const bool&);
+    const bool& enable_adaptive_maximum_step_size() const;
+    void set_enable_adaptive_maximum_step_size(const bool&);
 
     const bool& enable_subdivisions() const;
     void set_enable_subdivisions(const bool&);

@@ -221,7 +221,7 @@ int main()
     evolver.verbosity = 0;
 
     evolver.settings().set_reference_enclosure_widths(MAX_ENCL_WIDTH);
-    evolver.settings().set_maximum_step_size(MAX_STEP_SIZE);
+    evolver.settings().set_fixed_maximum_step_size(MAX_STEP_SIZE);
 
     evolver.settings().set_enable_subdivisions(ENABLE_SUBDIV);
     std::cout <<  evolver.settings() << std::endl;

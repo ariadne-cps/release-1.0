@@ -187,7 +187,7 @@ void TestHybridEvolution::test_bouncing_ball() const
 
     HybridEvolver evolver(automaton);
     evolver.verbosity=evolver_verbosity;
-    evolver.settings().set_maximum_step_size(0.125);
+    evolver.settings().set_fixed_maximum_step_size(0.125);
 	evolver.settings().set_reference_enclosure_widths(0.5);
 
     ARIADNE_TEST_PRINT(automaton);
@@ -232,7 +232,7 @@ void TestHybridEvolution::test_affine_system() const
     HybridEvolver evolver(automaton);
     evolver.verbosity = evolver_verbosity;
     evolver.settings().set_reference_enclosure_widths(max_enclosure_width);
-    evolver.settings().set_maximum_step_size(step_size);
+    evolver.settings().set_fixed_maximum_step_size(step_size);
 
     // Define the initial box
     Box initial_box(2, -0.01,0.01, 0.49,0.51);
@@ -345,7 +345,7 @@ void TestHybridEvolver::test_transverse_linear_crossing()
     HybridEvolver evolver(system);
 
 	evolver.settings().set_reference_enclosure_widths(0.5);
-	evolver.settings().set_maximum_step_size(1.0);
+	evolver.settings().set_fixed_maximum_step_size(1.0);
 
     ListSet<LocalisedTaylorSet> evolved_set=evolver.evolve(initial_set,evolution_time,UPPER_SEMANTICS);
 

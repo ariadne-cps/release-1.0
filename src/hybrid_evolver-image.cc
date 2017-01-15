@@ -108,8 +108,8 @@ tune_settings(
     ARIADNE_LOG(1, "Tuning settings for evolution...");
 	this->_settings->_reference_enclosure_widths = getMinimumGridCellWidths(grid,accuracy);
 	ARIADNE_LOG(2, "Reference enclosure widths: " << this->_settings->_reference_enclosure_widths);
-	this->_settings->set_maximum_step_size(getHybridMaximumStepSize(hmad,grid,accuracy));
-	ARIADNE_LOG(2, "Maximum step size: " << this->_settings->maximum_step_size());
+	this->_settings->set_fixed_maximum_step_size(getHybridMaximumStepSize(hmad,grid,accuracy));
+	ARIADNE_LOG(2, "Fixed maximum step size: " << this->_settings->fixed_maximum_step_size());
 }
 
 void ImageSetHybridEvolver::_box_on_contraction(TaylorSet& starting_set,
@@ -121,7 +121,7 @@ void ImageSetHybridEvolver::_box_on_contraction(TaylorSet& starting_set,
 
 	FlowSetModelType flow_set; BoxType flow_bounds;
 	const RealVectorFunction dynamic=get_directed_dynamic(_sys->dynamic_function(loc),direction);
-	Float time_step = _get_step_size(starting_set,loc);
+	Float time_step = _get_maximum_step_size(starting_set,loc);
 	const Float maximum_time=maximum_hybrid_time.continuous_time();
 	compute_flow_model(loc,flow_set,flow_bounds,time_step,dynamic,starting_set,starting_time,maximum_time,semantics);
 	SetModelType finishing_set=partial_evaluate(flow_set.models(),starting_set.argument_size(),1.0);
@@ -152,11 +152,11 @@ void ImageSetHybridEvolver::_box_on_contraction(TaylorSet& starting_set,
 
 Float
 ImageSetHybridEvolver::
-_get_step_size(const SetModelType& set_model,
+_get_maximum_step_size(const SetModelType& set_model,
 		       const DiscreteLocation& location) const {
 
-    if (!_settings->enable_adaptive_step_size())
-    	return _settings->maximum_step_size().at(location);
+    if (!_settings->enable_adaptive_maximum_step_size())
+    	return _settings->fixed_maximum_step_size().at(location);
 
     Float result = std::numeric_limits<Float>::max();
 
@@ -216,14 +216,14 @@ _evolution(EnclosureListType& final_sets,
 		_log_step_summary(working_sets,reach_sets,events,time_model,set_model,loc);
 
 		bool isEnclosureTooLarge = _is_enclosure_too_large(loc,set_model,initial_indexed_set_models_widths[set_index]);
-		bool subdivideOverTime = (time_model.range().width() > _get_step_size(set_model,loc)/2);
+		bool subdivideOverTime = (time_model.range().width() > _get_maximum_step_size(set_model,loc)/2);
 
 		if(time_model.range().lower()>=maximum_hybrid_time.continuous_time() ||
 		   events.size()>=uint(maximum_hybrid_time.discrete_time())) {
             ARIADNE_LOG(2,"Final time reached, adjoining result to final sets.");
             final_sets.adjoin(loc,_toolbox->enclosure(set_model));
         } else if (subdivideOverTime && this->_settings->enable_subdivisions()) {
-            ARIADNE_LOG(2,"Computed time range " << time_model.range() << " width larger than half the step size " << _get_step_size(set_model,loc) << ", subdividing over time.");
+            ARIADNE_LOG(2,"Computed time range " << time_model.range() << " width larger than half the step size " << _get_maximum_step_size(set_model,loc) << ", subdividing over time.");
             _add_models_subdivisions_time(working_sets,set_index,set_model,time_model,loc,events,semantics);
 		} else if (semantics == UPPER_SEMANTICS && this->_settings->enable_subdivisions() && isEnclosureTooLarge) {
             ARIADNE_LOG(2,"Computed set range " << set_model.range() << " widths larger than allowed, subdividing.");
@@ -390,7 +390,7 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
 
     // Compute continuous evolution
     FlowSetModelType flow_set_model; BoxType flow_bounds; 
-    Float time_step = _get_step_size(set_model,location);
+    Float time_step = _get_maximum_step_size(set_model,location);
     const Float maximum_time=maximum_hybrid_time.continuous_time();
     compute_flow_model(location,flow_set_model,flow_bounds,time_step,dynamic,set_model,time_model,maximum_time,semantics);
 
@@ -814,7 +814,7 @@ _log_step_summary(const std::list<pair<uint,HybridTimedSetType> >& working_sets,
                     <<"#r="<<std::setw(4)<<std::left<<reach_sets.size()
                     <<" s="<<std::setw(3)<<std::left<<initial_events.size()
                     <<" t="<<std::fixed<<initial_time_model.value()
-                    <<" ts="<<std::scientific<<std::setw(5)<<std::left<<_get_step_size(initial_set_model,initial_location) << std::fixed
+                    <<" ts="<<std::scientific<<std::setw(5)<<std::left<<_get_maximum_step_size(initial_set_model,initial_location) << std::fixed
                     <<" r="<<std::scientific<<std::setw(7)<<initial_set_model.radius()<<std::fixed
                     <<" l="<<std::setw(3)<<std::left<<initial_location
                     <<" c="<<initial_set_model.centre()
@@ -1150,10 +1150,10 @@ _add_models_subdivisions_time(
 ImageSetHybridEvolverSettings::ImageSetHybridEvolverSettings(const SystemType& sys)
     : _sys(sys)
 {
-	set_maximum_step_size(1.0);
+	set_fixed_maximum_step_size(1.0);
 	set_reference_enclosure_widths(getMinimumGridCellWidths(HybridGrid(sys.state_space()),0));
 	set_maximum_enclosure_widths_ratio(5.0);
-	set_enable_adaptive_step_size(false);
+	set_enable_adaptive_maximum_step_size(false);
 	set_enable_subdivisions(false);
 	set_enable_premature_termination_on_enclosure_size(true);
 	set_enable_boxing_on_contraction(true);
@@ -1161,28 +1161,28 @@ ImageSetHybridEvolverSettings::ImageSetHybridEvolverSettings(const SystemType& s
 }
 
 const std::map<DiscreteLocation,Float>&
-ImageSetHybridEvolverSettings::maximum_step_size() const {
-	return _maximum_step_size;
+ImageSetHybridEvolverSettings::fixed_maximum_step_size() const {
+	return _fixed_maximum_step_size;
 }
 
 void
-ImageSetHybridEvolverSettings::set_maximum_step_size(const Float& value) {
+ImageSetHybridEvolverSettings::set_fixed_maximum_step_size(const Float& value) {
 	ARIADNE_ASSERT_MSG(value > 0, "Error: the maximum step size must be greater than zero.");
 
     HybridSpace hspace(_sys.state_space());
     for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
-        _maximum_step_size[hs_it->first] = value;
+        _fixed_maximum_step_size[hs_it->first] = value;
     }
 }
 
 void
-ImageSetHybridEvolverSettings::set_maximum_step_size(const std::map<DiscreteLocation,Float>& value) {
+ImageSetHybridEvolverSettings::set_fixed_maximum_step_size(const std::map<DiscreteLocation,Float>& value) {
 
 	for (std::map<DiscreteLocation,Float>::const_iterator it = value.begin(); it != value.end(); ++it) {
 	    ARIADNE_ASSERT_MSG(it->second > 0, "Error: the maximum step size for location " << it->first.name() << " is zero.");
 	}
 
-	_maximum_step_size = value;
+	_fixed_maximum_step_size = value;
 }
 
 const HybridFloatVector&
@@ -1222,12 +1222,12 @@ ImageSetHybridEvolverSettings::set_maximum_enclosure_widths_ratio(const Float& v
 }
 
 const bool&
-ImageSetHybridEvolverSettings::enable_adaptive_step_size() const {
-	return _enable_adaptive_step_size;
+ImageSetHybridEvolverSettings::enable_adaptive_maximum_step_size() const {
+	return _enable_adaptive_maximum_step_size;
 }
 void
-ImageSetHybridEvolverSettings::set_enable_adaptive_step_size(const bool& value) {
-	_enable_adaptive_step_size = value;
+ImageSetHybridEvolverSettings::set_enable_adaptive_maximum_step_size(const bool& value) {
+	_enable_adaptive_maximum_step_size = value;
 }
 
 const bool&
@@ -1271,10 +1271,10 @@ std::ostream&
 operator<<(std::ostream& os, const ImageSetHybridEvolverSettings& s)
 {
     os << "ImageSetHybridEvolverSettings"
-       << ",\n  maximum_step_size=" << s.maximum_step_size()
+       << ",\n  maximum_step_size=" << s.fixed_maximum_step_size()
        << ",\n  reference_enclosure_widths=" << s.reference_enclosure_widths()
        << ",\n  maximum_enclosure_widths_ratio=" << s.maximum_enclosure_widths_ratio()
-	   << ",\n  enable_adaptive_step_size=" << s.enable_adaptive_step_size()
+	   << ",\n  enable_adaptive_step_size=" << s.enable_adaptive_maximum_step_size()
        << ",\n  enable_subdivisions=" << s.enable_subdivisions()
        << ",\n  enable_premature_termination_on_enclosure_size=" << s.enable_premature_termination_on_enclosure_size()
 	   << ",\n  maximum_number_of_working_sets=" << s.maximum_number_of_working_sets()

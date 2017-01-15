@@ -52,8 +52,11 @@ int main(int argc, char* argv[])
     HybridEvolver evolver(system);
     evolver.verbosity = VERBOSITY;
 
-    evolver.settings().set_reference_enclosure_widths(0.7);
-    evolver.settings().set_maximum_step_size(0.01);
+    Vector<Float> enclosure_widths(6,0.01,0.01,0.01,0.00001,0.00001,1e-8);
+    evolver.settings().set_reference_enclosure_widths(enclosure_widths*420);
+    evolver.settings().set_fixed_maximum_step_size(0.01);
+    evolver.settings().set_enable_adaptive_maximum_step_size(true);
+    evolver.settings().set_maximum_enclosure_widths_ratio(10000.0);
 
     Box initial_box(6,
 			/*s*/ 0.0,0.0,

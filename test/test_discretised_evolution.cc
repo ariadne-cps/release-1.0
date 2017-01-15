@@ -98,7 +98,7 @@ void TestDiscretisedEvolution::test_hybrid_time() const
     HybridEvolver evolver(ha);
 
     evolver.settings().set_reference_enclosure_widths(0.5);
-    evolver.settings().set_maximum_step_size(maximum_step_size);
+    evolver.settings().set_fixed_maximum_step_size(maximum_step_size);
 
     // Define a bounding box for the evolution
     std::cout<<"making bounding_box"<<std::endl;
