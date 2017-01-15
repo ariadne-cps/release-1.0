@@ -815,7 +815,7 @@ _log_step_summary(const std::list<pair<uint,HybridTimedSetType> >& working_sets,
                     <<" s="<<std::setw(3)<<std::left<<initial_events.size()
                     <<" t="<<std::fixed<<initial_time_model.value()
                     <<" ts="<<std::scientific<<std::setw(5)<<std::left<<_get_step_size(initial_set_model,initial_location) << std::fixed
-                    <<" r="<<std::setw(7)<<initial_set_model.radius()
+                    <<" r="<<std::scientific<<std::setw(7)<<initial_set_model.radius()<<std::fixed
                     <<" l="<<std::setw(3)<<std::left<<initial_location
                     <<" c="<<initial_set_model.centre()
 					//<<" w="<<initial_set_model.widths()
