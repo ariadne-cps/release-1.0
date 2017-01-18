@@ -499,14 +499,19 @@ TaylorSet::subsume(double eps) const
 TaylorSet
 TaylorSet::recondition() const
 {
-    Matrix<Float> T=triangular_multiplier(this->jacobian());
-    Vector<TaylorModel> scal(T.row_size(),T.column_size());
-    for(uint i=0; i!=T.row_size(); ++i) {
-        for(uint j=0; j!=T.column_size(); ++j) {
-            scal[i][MultiIndex::unit(this->generators_size(),j)]=T[i][j];
-        }
-    }
-    return TaylorSet(compose(this->models(),scal));
+    return this->kuhn_recondition().uniform_error_recondition();
+}
+
+TaylorSet
+TaylorSet::uniform_error_recondition() const {
+
+	return *this;
+}
+
+TaylorSet
+TaylorSet::kuhn_recondition() const {
+
+	return *this;
 }
 
 std::ostream&

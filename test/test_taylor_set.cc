@@ -39,7 +39,6 @@ class TestTaylorSet {
   private:
     void test_linearise();
     void test_split();
-    void test_recondition();
     void test_subsume();
 };
 
@@ -48,7 +47,6 @@ TestTaylorSet::test()
 {
     ARIADNE_TEST_CALL(test_linearise());
     ARIADNE_TEST_CALL(test_split());
-    ARIADNE_TEST_CALL(test_recondition());
     ARIADNE_TEST_CALL(test_subsume());
 }
 
@@ -122,37 +120,6 @@ TestTaylorSet::test_split()
         TaylorSet(2,2,2, 1.75,1.0,0.25,0.0,0.0,0.0, 1.25, 0.0,0.5,1.0,1.0,0.0,0.0, 1.0));
     
 
-}
-
-void
-TestTaylorSet::test_recondition()
-{
-    TaylorSet ts(2,2,2, 0.,4.,0.,0.5,0.,0., 0.0,  0.,3.,1.,0.,0.,0., 0.0);
-    TaylorSet rts=ts.recondition();
-    ARIADNE_TEST_PRINT(ts);
-    ARIADNE_TEST_PRINT(rts);
-    Box bounding_box(2, -10.,+10., -10.,+10.);
-    plot("test_taylor_set-recondition-1",bounding_box,Colour(0,1,1),rts,Colour(1,0,1),ts);
-
-    //ts=TaylorSet(2,3,2, 0.,4.,0.,0.,0.5,0.,0.,0.,0., 0.0,
-    //                    0.,3.,1.,0.,0.0,0.,0.,0.,0., 0.0);
-    //rts=ts.recondition();
-    //plot("test_taylor_set-recondition-2",bounding_box,Colour(0,1,1),rts,Colour(1,0,1),ts);
-
-    TaylorSet sts1,sts2,srts1,srts2;;
-    make_lpair(sts1,sts2)=ts.split();
-    make_lpair(srts1,srts2)=rts.split();
-
-    TaylorSet sts11,sts12,sts21,sts22,srts11,srts12,srts21,srts22;
-    make_lpair(sts11,sts12)=sts1.split();
-    make_lpair(sts21,sts22)=sts2.split();
-    make_lpair(srts11,srts12)=srts1.split();
-    make_lpair(srts21,srts22)=srts2.split();
-
-   plot("test_taylor_set-split-norecondition",bounding_box,
-         Colour(0,1,1),sts11,Colour(0,1,1),sts12,Colour(1,0,1),sts21,Colour(1,0,1),sts22);
-    plot("test_taylor_set-split-recondition",bounding_box,
-         Colour(0,1,1),srts11,Colour(0,1,1),srts12,Colour(1,0,1),srts21,Colour(1,0,1),srts22);
 }
 
 
