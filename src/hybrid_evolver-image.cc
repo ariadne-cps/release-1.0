@@ -352,6 +352,10 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
     const uint& set_index = current_set.first;
     make_ltuple(location,events_history,set_model,time_model)=current_set.second;
 
+    if (_settings->enable_reconditioning()) {
+
+    }
+
     if (_settings->enable_boxing_on_contraction())
     	_box_on_contraction(set_model,time_model,location,maximum_hybrid_time,direction,semantics);
 
@@ -1154,6 +1158,7 @@ ImageSetHybridEvolverSettings::ImageSetHybridEvolverSettings(const SystemType& s
 	set_reference_enclosure_widths(getMinimumGridCellWidths(HybridGrid(sys.state_space()),0));
 	set_maximum_enclosure_widths_ratio(5.0);
 	set_enable_adaptive_maximum_step_size(false);
+	set_enable_reconditioning(false);
 	set_enable_subdivisions(false);
 	set_enable_premature_termination_on_enclosure_size(true);
 	set_enable_boxing_on_contraction(true);
@@ -1231,6 +1236,15 @@ ImageSetHybridEvolverSettings::set_enable_adaptive_maximum_step_size(const bool&
 }
 
 const bool&
+ImageSetHybridEvolverSettings::enable_reconditioning() const {
+	return _enable_reconditioning;
+}
+void
+ImageSetHybridEvolverSettings::set_enable_reconditioning(const bool& value) {
+	_enable_reconditioning = value;
+}
+
+const bool&
 ImageSetHybridEvolverSettings::enable_subdivisions() const {
 	return _enable_subdivisions;
 }
@@ -1275,6 +1289,7 @@ operator<<(std::ostream& os, const ImageSetHybridEvolverSettings& s)
        << ",\n  reference_enclosure_widths=" << s.reference_enclosure_widths()
        << ",\n  maximum_enclosure_widths_ratio=" << s.maximum_enclosure_widths_ratio()
 	   << ",\n  enable_adaptive_step_size=" << s.enable_adaptive_maximum_step_size()
+	   << ",\n  enable_reconditioning=" << s.enable_reconditioning()
        << ",\n  enable_subdivisions=" << s.enable_subdivisions()
        << ",\n  enable_premature_termination_on_enclosure_size=" << s.enable_premature_termination_on_enclosure_size()
 	   << ",\n  maximum_number_of_working_sets=" << s.maximum_number_of_working_sets()

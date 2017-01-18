@@ -332,6 +332,9 @@ class ImageSetHybridEvolverSettings {
     //| \details Ignores the _fixed_maximum_step_size value and instead changes the maximum step size in respect to the local dynamics.
     bool _enable_adaptive_maximum_step_size;
 
+    //! \brief Recondition sets to handle the increase in the error terms.
+    bool _enable_reconditioning;
+
     //! \brief Enable subdivision of basic sets (false by default).
     bool _enable_subdivisions;
 
@@ -365,6 +368,9 @@ class ImageSetHybridEvolverSettings {
 
     const bool& enable_adaptive_maximum_step_size() const;
     void set_enable_adaptive_maximum_step_size(const bool&);
+
+    const bool& enable_reconditioning() const;
+    void set_enable_reconditioning(const bool&);
 
     const bool& enable_subdivisions() const;
     void set_enable_subdivisions(const bool&);
