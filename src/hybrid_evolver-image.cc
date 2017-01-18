@@ -353,7 +353,13 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
     make_ltuple(location,events_history,set_model,time_model)=current_set.second;
 
     if (_settings->enable_reconditioning()) {
-
+    	TaylorSet set_time_model(join(set_model.models(),time_model));
+    	Vector<TaylorModel> reconditioned_set_time_models = set_time_model.recondition().models();
+    	Vector<TaylorModel> new_set_model_models(set_model.size());
+    	for (int i = 0; i < set_model.size()-1; ++i)
+    		new_set_model_models.set(i,reconditioned_set_time_models.get(i));
+    	set_model = TaylorSet(new_set_model_models);
+    	time_model = reconditioned_set_time_models.get(set_model.size());
     }
 
     if (_settings->enable_boxing_on_contraction())
