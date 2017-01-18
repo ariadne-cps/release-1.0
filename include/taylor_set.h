@@ -146,12 +146,11 @@ class TaylorSet
     TaylorSet linearise() const;
     //! \brief An over-approximation in the form of a list of boxes.
     ListSet<Box> discretise(const Float& eps) const;
-    //! \brief An over-approximation with better numerical conditioning.
-    TaylorSet recondition() const;
     //! \brief Simplifies the representation by changing all uniform errors into independent variables.
-    TaylorSet uniform_error_recondition() const;
+    //| Uses \a scalings to identify for each dimension whether the error is sufficiently high.
+    void uniform_error_recondition(Vector<Float> scalings);
      //! \brief Simplifies the representation by choosing most significant independent variables to keep, and merging the rest into a single error for each component.
-    TaylorSet kuhn_recondition() const;
+    void kuhn_recondition();
     //! \brief Subsume the constant error terms in new generators.
     TaylorSet subsume() const;
     //! \brief Subsume constant error terms of magnitude greater than \a e in new generators.

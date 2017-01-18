@@ -495,23 +495,42 @@ TaylorSet::subsume(double eps) const
     return result;
 }
 
+void
+TaylorSet::uniform_error_recondition(Vector<Float> scalings) {
 
-TaylorSet
-TaylorSet::recondition() const
-{
-    return this->kuhn_recondition().uniform_error_recondition();
+    uint old_number_of_parameters = this->argument_size();
+
+    List<uint> large_error_indices;
+
+    for(uint i=0; i!=this->result_size(); ++i) {
+        double error=this->_models[i].error();
+        if(error > scalings[i]) {
+            large_error_indices.append(i);
+        }
+    }
+
+    if (large_error_indices.size() > 0) {
+
+    	uint new_np = this->argument_size()+large_error_indices.size();
+
+    	for(uint i=0; i!=this->result_size(); ++i) {
+			this->_models[i] = embed(this->_models[i], large_error_indices.size());
+    	}
+
+		for(uint i=0; i!=large_error_indices.size(); ++i) {
+			double error=this->_models[large_error_indices[i]].error();
+			this->_models[large_error_indices[i]].set_error(0u);
+			TaylorModel error_component(new_np);
+			error_component.set_gradient(old_number_of_parameters+i,error);
+			this->_models[large_error_indices[i]] = this->_models[large_error_indices[i]] + error_component;
+   		}
+    }
+
 }
 
-TaylorSet
-TaylorSet::uniform_error_recondition() const {
+void
+TaylorSet::kuhn_recondition() {
 
-	return *this;
-}
-
-TaylorSet
-TaylorSet::kuhn_recondition() const {
-
-	return *this;
 }
 
 std::ostream&

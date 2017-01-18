@@ -353,13 +353,13 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
     make_ltuple(location,events_history,set_model,time_model)=current_set.second;
 
     if (_settings->enable_reconditioning()) {
-    	TaylorSet set_time_model(join(set_model.models(),time_model));
-    	Vector<TaylorModel> reconditioned_set_time_models = set_time_model.recondition().models();
-    	Vector<TaylorModel> new_set_model_models(set_model.size());
-    	for (int i = 0; i < set_model.size()-1; ++i)
-    		new_set_model_models.set(i,reconditioned_set_time_models.get(i));
-    	set_model = TaylorSet(new_set_model_models);
-    	time_model = reconditioned_set_time_models.get(set_model.size());
+    	//ARIADNE_LOG(1,"pre-reconditioning set model = " << set_model);
+    	set_model.uniform_error_recondition(_settings->reference_enclosure_widths().at(location));
+    //	ARIADNE_LOG(1,"post-reconditioning set model = " << set_model);
+    	int argument_difference = set_model.argument_size() - time_model.argument_size();
+    	if (argument_difference > 0) {
+    		time_model = embed(time_model,argument_difference);
+    	}
     }
 
     if (_settings->enable_boxing_on_contraction())
@@ -828,6 +828,7 @@ _log_step_summary(const std::list<pair<uint,HybridTimedSetType> >& working_sets,
                     <<" r="<<std::scientific<<std::setw(7)<<initial_set_model.radius()<<std::fixed
                     <<" l="<<std::setw(3)<<std::left<<initial_location
                     <<" c="<<initial_set_model.centre()
+                    <<" as="<<initial_set_model.argument_size()
 					//<<" w="<<initial_set_model.widths()
                     <<" e="<<initial_events);
 }
