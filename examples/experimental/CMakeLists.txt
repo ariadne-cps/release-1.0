@@ -12,6 +12,7 @@ set(EXPERIMENTAL
 		 range-check
 		 sin
 		 composition
+         vanderpol
 )
 
 foreach(experiment ${EXPERIMENTAL})
