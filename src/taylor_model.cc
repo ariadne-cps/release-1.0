@@ -3903,7 +3903,7 @@ TaylorModel recondition(const TaylorModel& tm, Array<uint>& discarded_variables,
         bool keep=true;
         for(uint k=0; k!=number_of_discarded_variables; ++k) {
             if(xa[discarded_variables[k]]!=0) {
-                error *= mag(xv);
+                error += mag(xv);
                 keep=false;
                 break;
             }
@@ -3917,7 +3917,7 @@ TaylorModel recondition(const TaylorModel& tm, Array<uint>& discarded_variables,
     }
     set_rounding_to_nearest();
 
-    return tm;
+    return r;
 }
 
 

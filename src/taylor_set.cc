@@ -570,6 +570,7 @@ TaylorSet::kuhn_recondition() {
     std::sort(discarded_parameters.begin(),discarded_parameters.end());
 
     Vector<TaylorModel> new_models(_models.size(),TaylorModel(number_of_kept_parameters+number_of_error_parameters,this->accuracy_ptr()));
+
     for(uint i=0; i!=this->dimension(); ++i) {
         new_models[i] = Ariadne::recondition(_models[i],discarded_parameters,number_of_error_parameters,i);
     }
