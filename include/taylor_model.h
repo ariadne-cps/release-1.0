@@ -34,6 +34,7 @@
 #include "array.h"
 #include "pointer.h"
 #include "vector.h"
+#include "container.h"
 #include "multi_index.h"
 #include "expansion.h"
 
@@ -434,6 +435,7 @@ class TaylorModel
     TaylorModel& clean();
     //! \brief Sort the terms in index order and combine terms with the same index.
     TaylorModel& unique_sort();
+
     //@}
 
     //@{
@@ -464,7 +466,7 @@ class TaylorModel
     uint maximum_degree() const;
      //! \brief The minimum absolute value for coefficients of terms which may be present in the expansion.
     //! Any term with coefficient \f$c\f$ with \f$|c|<e_{\max}\f$ will be assimilated into the error term when sweep() or clean() are called.
-   double sweep_threshold() const;
+    double sweep_threshold() const;
     //@}
 
     //@{
@@ -587,6 +589,9 @@ class TaylorModel
     friend TaylorModel atan(const TaylorModel& x);
     //@}
 
+    friend TaylorModel recondition(const TaylorModel& tm, Array<uint>& discarded_variables, uint number_of_error_variables, uint index_of_error);
+
+
     //@{
     /*! \name Stream input/output operators. */
     //! \brief Write to an output stream.
@@ -638,6 +643,8 @@ TaylorModel tan(const TaylorModel& x);
 TaylorModel asin(const TaylorModel& x);
 TaylorModel acos(const TaylorModel& x);
 TaylorModel atan(const TaylorModel& x);
+
+TaylorModel recondition(const TaylorModel& tm, Array<uint>& discarded_variables, uint number_of_error_variables, uint index_of_error);
 
 std::ostream& operator<<(std::ostream&, const TaylorModel::Accuracy&);
 

@@ -528,9 +528,55 @@ TaylorSet::uniform_error_recondition(Vector<Float> scalings) {
 
 }
 
-void
+Array<uint>
 TaylorSet::kuhn_recondition() {
 
+    static const uint NUMBER_OF_BLOCKS = 2;
+
+    const uint number_of_kept_parameters = (NUMBER_OF_BLOCKS-1)*this->dimension();
+    const uint number_of_discarded_parameters=this->argument_size()-number_of_kept_parameters;
+    const uint number_of_error_parameters = this->dimension();
+
+    if(this->argument_size()<=number_of_kept_parameters) {
+        return Array<uint>();
+    }
+
+    Matrix<double> dependencies(this->dimension(),this->argument_size());
+    for(uint i=0; i!=dependencies.row_size(); ++i) {
+        for(TaylorModel::const_iterator iter=_models[i].begin(); iter!=_models[i].end(); ++iter) {
+            for(uint j=0; j!=dependencies.column_size(); ++j) {
+                if(iter->key()[j]!=0) {
+                    dependencies[i][j]+=abs(iter->data());
+                }
+            }
+        }
+    }
+
+    Array< Pair<double,uint> > column_max_dependencies(this->argument_size());
+    for(uint j=0; j!=dependencies.column_size(); ++j) {
+        column_max_dependencies[j] = make_pair(0.0,j);
+        for(uint i=0; i!=dependencies.row_size(); ++i) {
+            column_max_dependencies[j].first=std::max(column_max_dependencies[j].first,dependencies[i][j]);
+        }
+    }
+    std::sort(column_max_dependencies.begin(),column_max_dependencies.end(),std::greater< Pair<double,uint> >());
+
+
+    Array<uint> kept_parameters(number_of_kept_parameters);
+    Array<uint> discarded_parameters(number_of_discarded_parameters);
+    for(uint j=0; j!=number_of_kept_parameters; ++j) { kept_parameters[j]=column_max_dependencies[j].second; }
+    for(uint j=0; j!=number_of_discarded_parameters; ++j) { discarded_parameters[j]=column_max_dependencies[number_of_kept_parameters+j].second; }
+    std::sort(kept_parameters.begin(),kept_parameters.end());
+    std::sort(discarded_parameters.begin(),discarded_parameters.end());
+
+    Vector<TaylorModel> new_models(_models.size(),TaylorModel(number_of_kept_parameters+number_of_error_parameters,this->accuracy_ptr()));
+    for(uint i=0; i!=this->dimension(); ++i) {
+        new_models[i] = Ariadne::recondition(_models[i],discarded_parameters,number_of_error_parameters,i);
+    }
+
+    (*this)=TaylorSet(new_models);
+
+    return discarded_parameters;
 }
 
 std::ostream&

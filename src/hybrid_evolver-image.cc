@@ -355,11 +355,15 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
     if (_settings->enable_reconditioning()) {
     	//ARIADNE_LOG(1,"pre-reconditioning set model = " << set_model);
     	set_model.uniform_error_recondition(_settings->reference_enclosure_widths().at(location));
-    //	ARIADNE_LOG(1,"post-reconditioning set model = " << set_model);
+        //ARIADNE_LOG(1,"post-reconditioning set model = " << set_model);
     	int argument_difference = set_model.argument_size() - time_model.argument_size();
     	if (argument_difference > 0) {
     		time_model = embed(time_model,argument_difference);
     	}
+
+    	Array<uint> discarded_parameters = set_model.kuhn_recondition();
+    	if (!discarded_parameters.empty())
+    		time_model = recondition(time_model,discarded_parameters,set_model.dimension(),set_model.dimension());
     }
 
     if (_settings->enable_boxing_on_contraction())

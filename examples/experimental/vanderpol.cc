@@ -60,11 +60,12 @@ int main()
     HybridEvolver evolver(vanderpol);
 
     /// Set the evolution parameters
-    evolver.settings().set_reference_enclosure_widths(1e-2);
+    evolver.settings().set_reference_enclosure_widths(1e-5);
     evolver.settings().set_maximum_enclosure_widths_ratio(4000.0);
     evolver.settings().set_fixed_maximum_step_size(1e-2);
     evolver.settings().set_enable_adaptive_maximum_step_size(false);
-    evolver.settings().set_enable_boxing_on_contraction(true);
+    evolver.settings().set_enable_reconditioning(true);
+    evolver.settings().set_enable_boxing_on_contraction(false);
     evolver.verbosity = 1;
     std::cout <<  evolver.settings() << std::endl;
 

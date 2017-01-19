@@ -149,8 +149,9 @@ class TaylorSet
     //! \brief Simplifies the representation by changing all uniform errors into independent variables.
     //| Uses \a scalings to identify for each dimension whether the error is sufficiently high.
     void uniform_error_recondition(Vector<Float> scalings);
-     //! \brief Simplifies the representation by choosing most significant independent variables to keep, and merging the rest into a single error for each component.
-    void kuhn_recondition();
+    //! \brief Simplifies the representation by choosing most significant independent variables to keep, and merging the rest into a single error for each component.
+    //| Returns the discarded parameters.
+    Array<uint> kuhn_recondition();
     //! \brief Subsume the constant error terms in new generators.
     TaylorSet subsume() const;
     //! \brief Subsume constant error terms of magnitude greater than \a e in new generators.

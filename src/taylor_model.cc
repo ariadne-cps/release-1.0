@@ -3850,6 +3850,76 @@ parameterised_flow(const Vector<TaylorModel>& vf, const Vector<TaylorModel>& y0,
     return y;
 }
 
+Array<uint> complement(uint nmax, Array<uint> vars) {
+    Array<uint> cmpl(nmax-vars.size());
+    uint kr=0; uint kv=0;
+    for(uint j=0; j!=nmax; ++j) {
+        if(kv==vars.size() || j!=vars[kv]) {
+            cmpl[kr]=j; ++kr;
+        } else {
+            ++kv;
+        }
+    }
+    return cmpl;
+}
+
+TaylorModel recondition(const TaylorModel& tm, Array<uint>& discarded_variables, uint number_of_error_variables, uint index_of_error)
+{
+    for(uint i=0; i!=discarded_variables.size()-1; ++i) {
+        ARIADNE_PRECONDITION(discarded_variables[i]<discarded_variables[i+1]);
+    }
+    ARIADNE_PRECONDITION(discarded_variables[discarded_variables.size()-1]<tm.argument_size());
+    ARIADNE_PRECONDITION(index_of_error<=number_of_error_variables);
+
+    const uint number_of_variables = tm.argument_size();
+    const uint number_of_discarded_variables = discarded_variables.size();
+    const uint number_of_kept_variables = number_of_variables - number_of_discarded_variables;
+
+
+    // Make an Array of the variables to be kept
+    Array<uint> kept_variables=complement(number_of_variables,discarded_variables);
+
+    // Construct result and reserve memory
+    TaylorModel r(number_of_kept_variables+number_of_error_variables,tm.accuracy_ptr());
+    r.expansion().reserve(tm.number_of_nonzeros()+1u);
+    MultiIndex ra(number_of_kept_variables+number_of_error_variables);
+
+    // Set the uniform error of the original model
+    // If index_of_error == number_of_error_variables, then the error is kept as a uniform error bound
+    double* error_ptr;
+    if(number_of_error_variables==index_of_error) {
+        error_ptr = &r.error();
+    } else {
+        ra[number_of_kept_variables+index_of_error]=1;
+        r.expansion().append(ra,reinterpret_cast<double const&>(tm.error()));
+        ra[number_of_kept_variables+index_of_error]=0;
+        error_ptr = reinterpret_cast<double*>(&r.begin()->data());
+    }
+    double& error=*error_ptr;
+
+    for(TaylorModel::const_iterator iter=tm.begin(); iter!=tm.end(); ++iter) {
+        MultiIndex const& xa=iter->key();
+        double const& xv=iter->data();
+        bool keep=true;
+        for(uint k=0; k!=number_of_discarded_variables; ++k) {
+            if(xa[discarded_variables[k]]!=0) {
+                error *= mag(xv);
+                keep=false;
+                break;
+            }
+        }
+        if(keep) {
+            for(uint k=0; k!=number_of_kept_variables; ++k) {
+                ra[k]=xa[kept_variables[k]];
+            }
+            r.expansion().append(ra,xv);
+        }
+    }
+    set_rounding_to_nearest();
+
+    return tm;
+}
+
 
 
 } //namespace Ariadne
