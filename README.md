@@ -30,7 +30,8 @@ Aptitude packages required: `git cmake libboost-system-dev libboost-serializatio
     Homebrew packages required: `cmake boost gtk cairo`
 
 3. No Buddy package is offered, you need to compile the library from https://sourceforge.net/projects/buddy/
-Download and extract the Buddy package, then from the extracted directory:
+
+    Download and extract the Buddy package, then from the extracted directory:
 ```
 $ ./configure
 $ make
