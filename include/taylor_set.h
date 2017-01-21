@@ -147,8 +147,8 @@ class TaylorSet
     //! \brief An over-approximation in the form of a list of boxes.
     ListSet<Box> discretise(const Float& eps) const;
     //! \brief Simplifies the representation by changing all uniform errors into independent variables.
-    //| Uses \a scalings to identify for each dimension whether the error is sufficiently high.
-    void uniform_error_recondition(Vector<Float> scalings);
+    //| Uses \a thresholds to identify for each dimension whether the error is sufficiently high.
+    void uniform_error_recondition(Vector<Float> thresholds);
     //! \brief Simplifies the representation by choosing most significant independent variables to keep, and merging the rest into a single error for each component.
     //| Returns the discarded parameters.
     Array<uint> kuhn_recondition();

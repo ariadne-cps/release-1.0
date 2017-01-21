@@ -353,9 +353,15 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
     make_ltuple(location,events_history,set_model,time_model)=current_set.second;
 
     if (_settings->enable_reconditioning()) {
-    	//ARIADNE_LOG(1,"pre-reconditioning set model = " << set_model);
-    	set_model.uniform_error_recondition(_settings->reference_enclosure_widths().at(location));
-        //ARIADNE_LOG(1,"post-reconditioning set model = " << set_model);
+
+    	Vector<Float> error_thresholds(set_model.dimension());
+    	Vector<Float> reference_enclosure_widths = _settings->reference_enclosure_widths().at(location);
+    	Float evolution_time_fraction = _get_maximum_step_size(set_model,location)/maximum_hybrid_time._continuous_time;
+    	for (uint i = 0; i < reference_enclosure_widths.size(); ++i)
+    		error_thresholds[i] = reference_enclosure_widths[i]*evolution_time_fraction;
+
+    	set_model.uniform_error_recondition(error_thresholds);
+
     	int argument_difference = set_model.argument_size() - time_model.argument_size();
     	if (argument_difference > 0) {
     		time_model = embed(time_model,argument_difference);

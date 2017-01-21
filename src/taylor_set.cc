@@ -496,7 +496,7 @@ TaylorSet::subsume(double eps) const
 }
 
 void
-TaylorSet::uniform_error_recondition(Vector<Float> scalings) {
+TaylorSet::uniform_error_recondition(Vector<Float> thresholds) {
 
     uint old_number_of_parameters = this->argument_size();
 
@@ -504,7 +504,7 @@ TaylorSet::uniform_error_recondition(Vector<Float> scalings) {
 
     for(uint i=0; i!=this->result_size(); ++i) {
         double error=this->_models[i].error();
-        if(error > scalings[i]) {
+        if(error > thresholds[i]) {
             large_error_indices.append(i);
         }
     }
