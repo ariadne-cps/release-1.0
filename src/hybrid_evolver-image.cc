@@ -1174,6 +1174,7 @@ ImageSetHybridEvolverSettings::ImageSetHybridEvolverSettings(const SystemType& s
 	set_reference_enclosure_widths(getMinimumGridCellWidths(HybridGrid(sys.state_space()),0));
 	set_maximum_enclosure_widths_ratio(5.0);
 	set_enable_adaptive_maximum_step_size(false);
+	set_enable_error_rate_enforcement(false);
 	set_enable_reconditioning(false);
 	set_enable_subdivisions(false);
 	set_enable_premature_termination_on_enclosure_size(true);
@@ -1252,6 +1253,15 @@ ImageSetHybridEvolverSettings::set_enable_adaptive_maximum_step_size(const bool&
 }
 
 const bool&
+ImageSetHybridEvolverSettings::enable_error_rate_enforcement() const {
+    return _enable_error_rate_enforcement;
+}
+void
+ImageSetHybridEvolverSettings::set_enable_error_rate_enforcement(const bool& value) {
+    _enable_error_rate_enforcement = value;
+}
+
+const bool&
 ImageSetHybridEvolverSettings::enable_reconditioning() const {
 	return _enable_reconditioning;
 }
@@ -1305,6 +1315,7 @@ operator<<(std::ostream& os, const ImageSetHybridEvolverSettings& s)
        << ",\n  reference_enclosure_widths=" << s.reference_enclosure_widths()
        << ",\n  maximum_enclosure_widths_ratio=" << s.maximum_enclosure_widths_ratio()
 	   << ",\n  enable_adaptive_step_size=" << s.enable_adaptive_maximum_step_size()
+	   << ",\n  enable_error_rate_enforcement=" << s.enable_error_rate_enforcement()
 	   << ",\n  enable_reconditioning=" << s.enable_reconditioning()
        << ",\n  enable_subdivisions=" << s.enable_subdivisions()
        << ",\n  enable_premature_termination_on_enclosure_size=" << s.enable_premature_termination_on_enclosure_size()
