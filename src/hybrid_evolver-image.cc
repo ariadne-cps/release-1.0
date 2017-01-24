@@ -121,9 +121,9 @@ void ImageSetHybridEvolver::_box_on_contraction(TaylorSet& starting_set,
 
 	FlowSetModelType flow_set; BoxType flow_bounds;
 	const RealVectorFunction dynamic=get_directed_dynamic(_sys->dynamic_function(loc),direction);
-	Float time_step = _get_maximum_step_size(starting_set,loc);
+	Float time_step = _get_time_step(starting_set,loc);
 	const Float maximum_time=maximum_hybrid_time.continuous_time();
-	compute_flow_model(loc,flow_set,flow_bounds,time_step,dynamic,starting_set,starting_time,maximum_time,semantics);
+	compute_flow_model(loc,flow_set,flow_bounds,time_step,dynamic,starting_set,starting_time,maximum_time);
 	SetModelType finishing_set=partial_evaluate(flow_set.models(),starting_set.argument_size(),1.0);
 
 	Vector<Interval> starting_bb = starting_set.bounding_box();
@@ -152,7 +152,7 @@ void ImageSetHybridEvolver::_box_on_contraction(TaylorSet& starting_set,
 
 Float
 ImageSetHybridEvolver::
-_get_maximum_step_size(const SetModelType& set_model,
+_get_time_step(const SetModelType& set_model,
 		       const DiscreteLocation& location) const {
 
     if (!_settings->enable_adaptive_maximum_step_size())
@@ -216,14 +216,14 @@ _evolution(EnclosureListType& final_sets,
 		_log_step_summary(working_sets,reach_sets,events,time_model,set_model,loc);
 
 		bool isEnclosureTooLarge = _is_enclosure_too_large(loc,set_model,initial_indexed_set_models_widths[set_index]);
-		bool subdivideOverTime = (time_model.range().width() > _get_maximum_step_size(set_model,loc)/2);
+		bool subdivideOverTime = (time_model.range().width() > _get_time_step(set_model,loc)/2);
 
 		if(time_model.range().lower()>=maximum_hybrid_time.continuous_time() ||
 		   events.size()>=uint(maximum_hybrid_time.discrete_time())) {
             ARIADNE_LOG(2,"Final time reached, adjoining result to final sets.");
             final_sets.adjoin(loc,_toolbox->enclosure(set_model));
         } else if (subdivideOverTime && this->_settings->enable_subdivisions()) {
-            ARIADNE_LOG(2,"Computed time range " << time_model.range() << " width larger than half the step size " << _get_maximum_step_size(set_model,loc) << ", subdividing over time.");
+            ARIADNE_LOG(2,"Computed time range " << time_model.range() << " width larger than half the step size " << _get_time_step(set_model,loc) << ", subdividing over time.");
             _add_models_subdivisions_time(working_sets,set_index,set_model,time_model,loc,events,semantics);
 		} else if (semantics == UPPER_SEMANTICS && this->_settings->enable_subdivisions() && isEnclosureTooLarge) {
             ARIADNE_LOG(2,"Computed set range " << set_model.range() << " widths larger than allowed, subdividing.");
@@ -356,7 +356,7 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
 
     	Vector<Float> error_thresholds(set_model.dimension());
     	Vector<Float> reference_enclosure_widths = _settings->reference_enclosure_widths().at(location);
-    	Float evolution_time_fraction = _get_maximum_step_size(set_model,location)/maximum_hybrid_time._continuous_time;
+    	Float evolution_time_fraction = _get_time_step(set_model,location)/maximum_hybrid_time._continuous_time;
     	for (uint i = 0; i < reference_enclosure_widths.size(); ++i)
     		error_thresholds[i] = reference_enclosure_widths[i]*evolution_time_fraction;
 
@@ -410,17 +410,17 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
 
     // Compute continuous evolution
     FlowSetModelType flow_set_model; BoxType flow_bounds; 
-    Float time_step = _get_maximum_step_size(set_model,location);
+    Float time_step = _get_time_step(set_model,location);
     const Float maximum_time=maximum_hybrid_time.continuous_time();
-    compute_flow_model(location,flow_set_model,flow_bounds,time_step,dynamic,set_model,time_model,maximum_time,semantics);
+    compute_flow_model(location,flow_set_model,flow_bounds,time_step,dynamic,set_model,time_model,maximum_time);
+    // Partial evaluation on flow set model to obtain final set must take scaled time equal to 1.0
+    SetModelType finishing_set=partial_evaluate(flow_set_model.models(),set_model.argument_size(),1.0);
 
     ARIADNE_LOG(2,"flow_bounds = "<<flow_bounds)
     ARIADNE_LOG(2,"time_step = "<<time_step)
     ARIADNE_LOG(2,"flow_range = "<<flow_set_model.range());
     ARIADNE_LOG(2,"starting_set_range = "<<set_model.range());
     ARIADNE_LOG(2,"starting_set = "<<set_model);
-    // Partial evaluation on flow set model to obtain final set must take scaled time equal to 1.0
-    SetModelType finishing_set=partial_evaluate(flow_set_model.models(),set_model.argument_size(),1.0);
     ARIADNE_LOG(2,"finishing_set_range = "<<finishing_set.range())
 
     // Set special events and times; note that the time step is scaled to [0,1]
@@ -590,8 +590,7 @@ compute_flow_model(
         VectorFunction dynamic,
         const SetModelType& starting_set_model,
         const TimeModelType& starting_time_model,
-        Float finishing_time,
-        Semantics semantics) const
+        Float finishing_time) const
 {
     ARIADNE_LOG(2,"Computing flow model...");
     const int MAXIMUM_BOUNDS_DIAMETER_FACTOR = 8;
@@ -834,7 +833,7 @@ _log_step_summary(const std::list<pair<uint,HybridTimedSetType> >& working_sets,
                     <<"#r="<<std::setw(4)<<std::left<<reach_sets.size()
                     <<" s="<<std::setw(3)<<std::left<<initial_events.size()
                     <<" t="<<std::fixed<<initial_time_model.value()
-                    <<" ts="<<std::scientific<<std::setw(5)<<std::left<<_get_maximum_step_size(initial_set_model,initial_location) << std::fixed
+                    <<" ts="<<std::scientific<<std::setw(5)<<std::left<<_get_time_step(initial_set_model,initial_location) << std::fixed
                     <<" r="<<std::scientific<<std::setw(7)<<initial_set_model.radius()<<std::fixed
                     <<" l="<<std::setw(3)<<std::left<<initial_location
                     <<" c="<<initial_set_model.centre()

@@ -161,8 +161,7 @@ class ImageSetHybridEvolver
     		RealVectorFunction,
             const SetModelType&,
             const TimeModelType&,
-            Float,
-            Semantics) const;
+            Float) const;
 
     void compute_eventBlockingTimes_and_nonTransverseEvents(
     		std::map<DiscreteEvent,TimeModelType>&,
@@ -193,7 +192,7 @@ class ImageSetHybridEvolver
     					 ContinuousEvolutionDirection direction,
     					 Semantics semantics) const;
 
-    Float _get_maximum_step_size(const SetModelType& set_model,
+    Float _get_time_step(const SetModelType& set_model,
     				 	 const DiscreteLocation& location) const;
 
     bool _is_enclosure_too_large(
