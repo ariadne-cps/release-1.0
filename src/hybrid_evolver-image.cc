@@ -187,16 +187,13 @@ _get_time_step(const SetModelType& starting_set,
     Vector<Float> previous_error_rates(starting_set.dimension(),std::numeric_limits<Float>::max());
     while(true) {
 
-        cout << "Testing at step size " << result << endl;
-
         TaylorSet flow_set = compute_flow_model_simplified(result, dynamic, maximum_bounds_diameter, starting_set);
         TaylorSet finishing_set = partial_evaluate(flow_set.models(),starting_set.argument_size(),1.0);
 
         bool within_rate = true;
         for (uint j = 0; j < starting_set.size(); ++j) {
-            Float current_error_difference = finishing_set.models()[j].error() - starting_set.models()[j].error();
+            Float current_error_difference = (finishing_set.models()[j].range() - starting_set.models()[j].range()).upper();
             Float current_error_rate = current_error_difference/result;
-            cout << "Error rate " << current_error_rate << endl;
             if (current_error_rate > error_rates[j]) {
                 within_rate = false;
                 if (current_error_rate >= previous_error_rates[j])
