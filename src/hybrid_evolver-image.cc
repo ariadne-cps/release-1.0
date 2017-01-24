@@ -121,7 +121,7 @@ void ImageSetHybridEvolver::_box_on_contraction(TaylorSet& starting_set,
 
 	FlowSetModelType flow_set; BoxType flow_bounds;
 	const RealVectorFunction dynamic=get_directed_dynamic(_sys->dynamic_function(loc),direction);
-	Float time_step = _get_time_step(starting_set,loc);
+	Float time_step = _get_time_step(starting_set,loc,direction,maximum_hybrid_time.continuous_time());
 	const Float maximum_time=maximum_hybrid_time.continuous_time();
 	compute_flow_model(loc,flow_set,flow_bounds,time_step,dynamic,starting_set,starting_time,maximum_time);
 	SetModelType finishing_set=partial_evaluate(flow_set.models(),starting_set.argument_size(),1.0);
@@ -152,23 +152,64 @@ void ImageSetHybridEvolver::_box_on_contraction(TaylorSet& starting_set,
 
 Float
 ImageSetHybridEvolver::
-_get_time_step(const SetModelType& set_model,
-		       const DiscreteLocation& location) const {
+_get_time_step(const SetModelType& starting_set,
+		       const DiscreteLocation& location,
+		       ContinuousEvolutionDirection direction,
+		       const Float& maximum_continuous_time) const {
+
+    Float result;
 
     if (!_settings->enable_adaptive_maximum_step_size())
-    	return _settings->fixed_maximum_step_size().at(location);
+    	result = _settings->fixed_maximum_step_size().at(location);
+    else {
+        result = std::numeric_limits<Float>::max();
 
-    Float result = std::numeric_limits<Float>::max();
+        Vector<Interval> dynamic_bounds = get_directed_dynamic(_sys->dynamic_function(location),direction)(starting_set.box());
+        for (uint i=0;i<starting_set.dimension();i++) {
+            Float maximum_derivative = abs(dynamic_bounds[i]).upper();
+            // If the derivative is always zero, we ignore such dimension
+            if (maximum_derivative > 0) {
+                Float step = _settings->reference_enclosure_widths().at(location)[i] / maximum_derivative;
+                result = min(result,step);
+            }
+        }
+    }
 
-    Vector<Interval> dynamic_bounds = _sys->dynamic_function(location)(set_model.box());
-	for (uint i=0;i<set_model.dimension();i++) {
-		Float maximum_derivative = abs(dynamic_bounds[i]).upper();
-		// If the derivative is always zero, we ignore such dimension
-		if (maximum_derivative > 0) {
-			Float step = _settings->reference_enclosure_widths().at(location)[i] / maximum_derivative;
-			result = min(result,step);
-		}
-	}
+    Vector<Float> error_rates = this->_settings->_reference_enclosure_widths.find(location)->second/maximum_continuous_time;
+
+    RealVectorFunction dynamic = get_directed_dynamic(_sys->dynamic_function(location),direction);
+
+    const int MAXIMUM_BOUNDS_DIAMETER_FACTOR = 8;
+    Float maximum_bounds_diameter=max(this->_settings->_reference_enclosure_widths.find(location)->second)*
+            MAXIMUM_BOUNDS_DIAMETER_FACTOR*this->_settings->maximum_enclosure_widths_ratio();
+
+    bool terminate = false;
+    Vector<Float> previous_error_rates(starting_set.dimension(),std::numeric_limits<Float>::max());
+    while(true) {
+
+        cout << "Testing at step size " << result << endl;
+
+        TaylorSet flow_set = compute_flow_model_simplified(result, dynamic, maximum_bounds_diameter, starting_set);
+        TaylorSet finishing_set = partial_evaluate(flow_set.models(),starting_set.argument_size(),1.0);
+
+        bool within_rate = true;
+        for (uint j = 0; j < starting_set.size(); ++j) {
+            Float current_error_difference = finishing_set.models()[j].error() - starting_set.models()[j].error();
+            Float current_error_rate = current_error_difference/result;
+            cout << "Error rate " << current_error_rate << endl;
+            if (current_error_rate > error_rates[j]) {
+                within_rate = false;
+                if (current_error_rate >= previous_error_rates[j])
+                    terminate = true;
+                previous_error_rates[j] = current_error_rate;
+            }
+        }
+
+        if (terminate || within_rate)
+            break;
+
+        result /= 2;
+    }
 
     return result;
 }
@@ -213,19 +254,13 @@ _evolution(EnclosureListType& final_sets,
 
 		Vector<Float> reference_enclosure_widths = this->_settings->_reference_enclosure_widths.find(loc)->second;
 
-		_log_step_summary(working_sets,reach_sets,events,time_model,set_model,loc);
-
 		bool isEnclosureTooLarge = _is_enclosure_too_large(loc,set_model,initial_indexed_set_models_widths[set_index]);
-		bool subdivideOverTime = (time_model.range().width() > _get_time_step(set_model,loc)/2);
 
 		if(time_model.range().lower()>=maximum_hybrid_time.continuous_time() ||
 		   events.size()>=uint(maximum_hybrid_time.discrete_time())) {
             ARIADNE_LOG(2,"Final time reached, adjoining result to final sets.");
             final_sets.adjoin(loc,_toolbox->enclosure(set_model));
-        } else if (subdivideOverTime && this->_settings->enable_subdivisions()) {
-            ARIADNE_LOG(2,"Computed time range " << time_model.range() << " width larger than half the step size " << _get_time_step(set_model,loc) << ", subdividing over time.");
-            _add_models_subdivisions_time(working_sets,set_index,set_model,time_model,loc,events,semantics);
-		} else if (semantics == UPPER_SEMANTICS && this->_settings->enable_subdivisions() && isEnclosureTooLarge) {
+        } else if (semantics == UPPER_SEMANTICS && this->_settings->enable_subdivisions() && isEnclosureTooLarge) {
             ARIADNE_LOG(2,"Computed set range " << set_model.range() << " widths larger than allowed, subdividing.");
             _add_models_subdivisions_autoselect(working_sets,set_index,set_model,time_model,loc,events,semantics);
         } else if((semantics == LOWER_SEMANTICS || !this->_settings->enable_subdivisions()) &&
@@ -352,13 +387,16 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
     const uint& set_index = current_set.first;
     make_ltuple(location,events_history,set_model,time_model)=current_set.second;
 
+    Float time_step = _get_time_step(set_model,location,direction,maximum_hybrid_time.continuous_time());
+
+    _log_step_summary(working_sets,reach_sets,events_history,time_model,set_model,location,time_step);
+
     if (_settings->enable_reconditioning()) {
 
     	Vector<Float> error_thresholds(set_model.dimension());
     	Vector<Float> reference_enclosure_widths = _settings->reference_enclosure_widths().at(location);
-    	Float evolution_time_fraction = _get_time_step(set_model,location)/maximum_hybrid_time._continuous_time;
     	for (uint i = 0; i < reference_enclosure_widths.size(); ++i)
-    		error_thresholds[i] = reference_enclosure_widths[i]*evolution_time_fraction;
+    		error_thresholds[i] = reference_enclosure_widths[i]*time_step;
 
     	set_model.uniform_error_recondition(error_thresholds);
 
@@ -410,7 +448,6 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
 
     // Compute continuous evolution
     FlowSetModelType flow_set_model; BoxType flow_bounds; 
-    Float time_step = _get_time_step(set_model,location);
     const Float maximum_time=maximum_hybrid_time.continuous_time();
     compute_flow_model(location,flow_set_model,flow_bounds,time_step,dynamic,set_model,time_model,maximum_time);
     // Partial evaluation on flow set model to obtain final set must take scaled time equal to 1.0
@@ -596,8 +633,9 @@ compute_flow_model(
     const int MAXIMUM_BOUNDS_DIAMETER_FACTOR = 8;
     float remaining_time = finishing_time - starting_time_model.range().lower();
     const Float maximum_step_size=min(time_step, remaining_time);
+
     const Float maximum_bounds_diameter=max(this->_settings->_reference_enclosure_widths.find(loc)->second)*
-    		MAXIMUM_BOUNDS_DIAMETER_FACTOR*this->_settings->maximum_enclosure_widths_ratio();
+            MAXIMUM_BOUNDS_DIAMETER_FACTOR*this->_settings->maximum_enclosure_widths_ratio();
 
     BoxType starting_set_bounding_box=starting_set_model.range();
     ARIADNE_LOG(3,"starting_set_bounding_box="<<starting_set_bounding_box);
@@ -609,6 +647,22 @@ compute_flow_model(
     ARIADNE_LOG(3,"flow_model="<<flow_model);
     ScalarTaylorFunction identity_time_expression=ScalarTaylorFunction::variable(BoxType(1u,Interval(-time_step,+time_step)),0u);
     flow_set_model=unchecked_apply(flow_model,combine(starting_set_model.models(),identity_time_expression.model()));
+}
+
+ImageSetHybridEvolver::FlowSetModelType ImageSetHybridEvolver::
+compute_flow_model_simplified(
+        Float& time_step,
+        RealVectorFunction dynamic,
+        Float& maximum_bounds_diameter,
+        const SetModelType& starting_set_model) const
+{
+    Box starting_set_bounding_box=starting_set_model.range();
+    Box flow_bounds;
+    Float effective_time_step;
+    make_lpair(effective_time_step,flow_bounds)=_toolbox->flow_bounds(dynamic,starting_set_bounding_box,time_step,maximum_bounds_diameter);
+    TaylorCalculus::FlowModelType flow_model= _toolbox->flow_model(dynamic,starting_set_bounding_box,effective_time_step,flow_bounds);
+    ScalarTaylorFunction identity_time_expression=ScalarTaylorFunction::variable(Box(1u,Interval(-effective_time_step,+effective_time_step)),0u);
+    return unchecked_apply(flow_model,combine(starting_set_model.models(),identity_time_expression.model()));
 }
 
 
@@ -827,13 +881,14 @@ _log_step_summary(const std::list<pair<uint,HybridTimedSetType> >& working_sets,
 					 const EventListType& initial_events,
 					 const TimeModelType& initial_time_model,
 					 const SetModelType& initial_set_model,
-					 const DiscreteLocation& initial_location) const
+					 const DiscreteLocation& initial_location,
+					 const Float& time_step) const
 {
         ARIADNE_LOG(1,"#w="<<std::setw(4)<<working_sets.size()
                     <<"#r="<<std::setw(4)<<std::left<<reach_sets.size()
                     <<" s="<<std::setw(3)<<std::left<<initial_events.size()
                     <<" t="<<std::fixed<<initial_time_model.value()
-                    <<" ts="<<std::scientific<<std::setw(5)<<std::left<<_get_time_step(initial_set_model,initial_location) << std::fixed
+                    <<" ts="<<std::scientific<<std::setw(5)<<std::left<< time_step << std::fixed
                     <<" r="<<std::scientific<<std::setw(7)<<initial_set_model.radius()<<std::fixed
                     <<" l="<<std::setw(3)<<std::left<<initial_location
                     <<" c="<<initial_set_model.centre()

@@ -163,6 +163,12 @@ class ImageSetHybridEvolver
             const TimeModelType&,
             Float) const;
 
+    FlowSetModelType compute_flow_model_simplified(
+            Float&,
+            RealVectorFunction,
+            Float&,
+            const SetModelType&) const;
+
     void compute_eventBlockingTimes_and_nonTransverseEvents(
     		std::map<DiscreteEvent,TimeModelType>&,
     		std::set<DiscreteEvent>&,
@@ -193,7 +199,9 @@ class ImageSetHybridEvolver
     					 Semantics semantics) const;
 
     Float _get_time_step(const SetModelType& set_model,
-    				 	 const DiscreteLocation& location) const;
+    				 	 const DiscreteLocation& location,
+    				 	 ContinuousEvolutionDirection direction,
+    				 	 const Float& maximum_continuous_time) const;
 
     bool _is_enclosure_too_large(
     		const DiscreteLocation& loc,
@@ -232,7 +240,8 @@ class ImageSetHybridEvolver
     					 const EventListType& events,
     					 const TimeModelType& time_model,
     					 const SetModelType& set_model,
-    					 const DiscreteLocation& location) const;
+    					 const DiscreteLocation& location,
+    					 const Float& step_size) const;
 
     void _computeEvolutionForEvents(std::list< pair<uint,HybridTimedSetType> >& working_sets,
 			   	   	   	   	   	    EnclosureListType& intermediate_sets,
