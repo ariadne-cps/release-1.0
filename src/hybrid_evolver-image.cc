@@ -155,7 +155,7 @@ ImageSetHybridEvolver::
 _get_time_step(const SetModelType& starting_set,
 		       const DiscreteLocation& location,
 		       ContinuousEvolutionDirection direction,
-		       const Float& maximum_continuous_time) const {
+		       const Float& remaining_time) const {
 
     Float result;
 
@@ -175,37 +175,44 @@ _get_time_step(const SetModelType& starting_set,
         }
     }
 
-    Vector<Float> error_rates = this->_settings->_reference_enclosure_widths.find(location)->second/maximum_continuous_time;
+    if (_settings->enable_error_rate_enforcement()) {
 
-    RealVectorFunction dynamic = get_directed_dynamic(_sys->dynamic_function(location),direction);
-
-    const int MAXIMUM_BOUNDS_DIAMETER_FACTOR = 8;
-    Float maximum_bounds_diameter=max(this->_settings->_reference_enclosure_widths.find(location)->second)*
-            MAXIMUM_BOUNDS_DIAMETER_FACTOR*this->_settings->maximum_enclosure_widths_ratio();
-
-    bool terminate = false;
-    Vector<Float> previous_error_rates(starting_set.dimension(),std::numeric_limits<Float>::max());
-    while(true) {
-
-        TaylorSet flow_set = compute_flow_model_simplified(result, dynamic, maximum_bounds_diameter, starting_set);
-        TaylorSet finishing_set = partial_evaluate(flow_set.models(),starting_set.argument_size(),1.0);
-
-        bool within_rate = true;
-        for (uint j = 0; j < starting_set.size(); ++j) {
-            Float current_error_difference = (finishing_set.models()[j].range() - starting_set.models()[j].range()).upper();
-            Float current_error_rate = current_error_difference/result;
-            if (current_error_rate > error_rates[j]) {
-                within_rate = false;
-                if (current_error_rate >= previous_error_rates[j])
-                    terminate = true;
-                previous_error_rates[j] = current_error_rate;
-            }
+        Vector<Float> error_rates(starting_set.dimension());
+        Vector<Float> target_widths = this->_settings->_reference_enclosure_widths.find(location)->second;
+        for (int i = 0; i < error_rates.size(); ++i) {
+            error_rates[i] = (target_widths[i] - starting_set.widths()[i])/remaining_time;
         }
 
-        if (terminate || within_rate)
-            break;
+        RealVectorFunction dynamic = get_directed_dynamic(_sys->dynamic_function(location),direction);
 
-        result /= 2;
+        const int MAXIMUM_BOUNDS_DIAMETER_FACTOR = 8;
+        Float maximum_bounds_diameter=max(this->_settings->_reference_enclosure_widths.find(location)->second)*
+                MAXIMUM_BOUNDS_DIAMETER_FACTOR*this->_settings->maximum_enclosure_widths_ratio();
+
+        bool terminate = false;
+        Vector<Float> previous_error_rates(starting_set.dimension(),std::numeric_limits<Float>::max());
+        while(true) {
+
+            TaylorSet flow_set = compute_flow_model_simplified(result, dynamic, maximum_bounds_diameter, starting_set);
+            TaylorSet finishing_set = partial_evaluate(flow_set.models(),starting_set.argument_size(),1.0);
+
+            bool within_rate = true;
+            for (uint j = 0; j < starting_set.size(); ++j) {
+                Float current_error_difference = (finishing_set.models()[j].range() - starting_set.models()[j].range()).upper();
+                Float current_error_rate = current_error_difference/result;
+                if (current_error_rate > error_rates[j]) {
+                    within_rate = false;
+                    if (current_error_rate >= previous_error_rates[j])
+                        terminate = true;
+                    previous_error_rates[j] = current_error_rate;
+                }
+            }
+
+            if (terminate || within_rate)
+                break;
+
+            result /= 2;
+        }
     }
 
     return result;
@@ -384,7 +391,9 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
     const uint& set_index = current_set.first;
     make_ltuple(location,events_history,set_model,time_model)=current_set.second;
 
-    Float time_step = _get_time_step(set_model,location,direction,maximum_hybrid_time.continuous_time());
+    Float remaining_time = maximum_hybrid_time.continuous_time() - time_model.range().lower();
+
+    Float time_step = _get_time_step(set_model,location,direction,remaining_time);
 
     _log_step_summary(working_sets,reach_sets,events_history,time_model,set_model,location,time_step);
 
