@@ -183,36 +183,52 @@ _get_time_step(const SetModelType& starting_set,
             error_rates[i] = (target_widths[i] - starting_set.widths()[i])/remaining_time;
         }
 
+        cout << "Target error rates: " << error_rates << " (starting set widths: " << starting_set.widths() << ", remaining time " << remaining_time << ")" << endl;
+
         RealVectorFunction dynamic = get_directed_dynamic(_sys->dynamic_function(location),direction);
 
         const int MAXIMUM_BOUNDS_DIAMETER_FACTOR = 8;
         Float maximum_bounds_diameter=max(this->_settings->_reference_enclosure_widths.find(location)->second)*
                 MAXIMUM_BOUNDS_DIAMETER_FACTOR*this->_settings->maximum_enclosure_widths_ratio();
 
-        bool terminate = false;
         Vector<Float> previous_error_rates(starting_set.dimension(),std::numeric_limits<Float>::max());
         while(true) {
 
             TaylorSet flow_set = compute_flow_model_simplified(result, dynamic, maximum_bounds_diameter, starting_set);
             TaylorSet finishing_set = partial_evaluate(flow_set.models(),starting_set.argument_size(),1.0);
 
-            bool within_rate = true;
+            cout << "Finishing set width: " << finishing_set.widths() << endl;
+
+            bool all_within_rate = true;
+            bool not_improved = false;
+            bool worsened = false;
             for (uint j = 0; j < starting_set.size(); ++j) {
-                Float current_error_difference = (finishing_set.models()[j].range() - starting_set.models()[j].range()).upper();
+                Float current_error_difference = finishing_set.models()[j].range().width() - starting_set.models()[j].range().width();
                 Float current_error_rate = current_error_difference/result;
                 if (current_error_rate > error_rates[j]) {
-                    within_rate = false;
-                    if (current_error_rate >= previous_error_rates[j])
-                        terminate = true;
-                    previous_error_rates[j] = current_error_rate;
+                    all_within_rate = false;
+                    if (current_error_rate >= previous_error_rates[j]) {
+                        not_improved = true;
+                        if (current_error_rate > previous_error_rates[j])
+                            worsened = true;
+                    }
                 }
+                previous_error_rates[j] = current_error_rate;
             }
 
-            if (terminate || within_rate)
+            //cout << "Error rates at step " << result << " : " << previous_error_rates << endl;
+
+            if (not_improved || all_within_rate) {
+                if (worsened)
+                    result *= 2;
                 break;
+            }
+
 
             result /= 2;
         }
+
+        cout << "Using step " << result << endl;
     }
 
     return result;
@@ -399,21 +415,31 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
 
     if (_settings->enable_reconditioning()) {
 
+        bool has_reconditioned = false;
+
     	Vector<Float> error_thresholds(set_model.dimension());
     	Vector<Float> reference_enclosure_widths = _settings->reference_enclosure_widths().at(location);
     	for (uint i = 0; i < reference_enclosure_widths.size(); ++i)
-    		error_thresholds[i] = reference_enclosure_widths[i]*time_step;
+    		error_thresholds[i] = reference_enclosure_widths[i]*time_step/maximum_hybrid_time.continuous_time();
 
+    	cout << "Set model widths before reconditioning: " << set_model.widths() << endl;
     	set_model.uniform_error_recondition(error_thresholds);
 
     	int argument_difference = set_model.argument_size() - time_model.argument_size();
     	if (argument_difference > 0) {
+    	    has_reconditioned = true;
+    	    cout << "Set model widths after reconditioning: " << set_model.widths() << endl;
     		time_model = embed(time_model,argument_difference);
     	}
 
     	Array<uint> discarded_parameters = set_model.kuhn_recondition();
-    	if (!discarded_parameters.empty())
+    	if (!discarded_parameters.empty()) {
+    	    has_reconditioned = true;
     		time_model = recondition(time_model,discarded_parameters,set_model.dimension(),set_model.dimension());
+    	}
+
+    	if (has_reconditioned)
+    	    time_step = _get_time_step(set_model,location,direction,remaining_time);
     }
 
     if (_settings->enable_boxing_on_contraction())
@@ -1239,7 +1265,7 @@ ImageSetHybridEvolverSettings::ImageSetHybridEvolverSettings(const SystemType& s
 	set_enable_reconditioning(false);
 	set_enable_subdivisions(false);
 	set_enable_premature_termination_on_enclosure_size(true);
-	set_enable_boxing_on_contraction(true);
+	set_enable_boxing_on_contraction(false);
 	set_maximum_number_of_working_sets(0);
 }
 
