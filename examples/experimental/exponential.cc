@@ -20,9 +20,9 @@ int main(int argc, char* argv[])
     double A = 1.0;
 
     /// Constants
-    float EVOL_TIME = 40.0/A;   /// Evolution time
-    float MAX_ENCL_WIDTH = 1e-5;   /// Maximum enclosure width
-    float MAX_STEP_SIZE = 1e-1 / A;     /// Maximum step size
+    float EVOL_TIME = 160.0/A;   /// Evolution time
+    float MAX_ENCL_WIDTH = 1e-2;   /// Maximum enclosure width
+    float MAX_STEP_SIZE = 1e-2 / A;     /// Maximum step size
     int VERBOSITY = 1;              /// Verbosity of the HybridEvolver
 	if (argc > 1)
 		VERBOSITY = atoi(argv[1]);
@@ -57,10 +57,10 @@ int main(int argc, char* argv[])
     evolver.settings().set_fixed_maximum_step_size(MAX_STEP_SIZE);
     Vector<Float> enclosure_widths(2,0.1,MAX_ENCL_WIDTH);
     evolver.settings().set_reference_enclosure_widths(enclosure_widths);
-    evolver.settings().set_maximum_enclosure_widths_ratio(100.0);
+    evolver.settings().set_maximum_enclosure_widths_ratio(2.0);
     evolver.settings().set_enable_adaptive_maximum_step_size(false);
-    evolver.settings().set_enable_boxing_on_contraction(false);
-    evolver.settings().set_enable_reconditioning(true);
+    evolver.settings().set_enable_reconditioning(false);
+    evolver.settings().set_enable_error_rate_enforcement(true);
 
     Box initial_box(2, 0.0,0.0, 1.0,1.0);
     HybridEvolver::EnclosureType initial_enclosure(work,initial_box);

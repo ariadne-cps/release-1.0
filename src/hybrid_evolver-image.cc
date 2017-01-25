@@ -112,43 +112,6 @@ tune_settings(
 	ARIADNE_LOG(2, "Fixed maximum step size: " << this->_settings->fixed_maximum_step_size());
 }
 
-void ImageSetHybridEvolver::_box_on_contraction(TaylorSet& starting_set,
-					 TaylorModel& starting_time,
-					 const DiscreteLocation& loc,
-					 const TimeType& maximum_hybrid_time,
-					 ContinuousEvolutionDirection direction,
-					 Semantics semantics) const {
-
-	FlowSetModelType flow_set; BoxType flow_bounds;
-	const RealVectorFunction dynamic=get_directed_dynamic(_sys->dynamic_function(loc),direction);
-	Float time_step = _get_time_step(starting_set,loc,direction,maximum_hybrid_time.continuous_time());
-	const Float maximum_time=maximum_hybrid_time.continuous_time();
-	compute_flow_model(loc,flow_set,flow_bounds,time_step,dynamic,starting_set,starting_time,maximum_time);
-	SetModelType finishing_set=partial_evaluate(flow_set.models(),starting_set.argument_size(),1.0);
-
-	Vector<Interval> starting_bb = starting_set.bounding_box();
-	Vector<Interval> finishing_bb = finishing_set.bounding_box();
-
-	Vector<Interval> starting_dynamic_range = dynamic.evaluate(starting_bb);
-	Vector<Interval> finishing_dynamic_range = dynamic.evaluate(finishing_bb);
-
-	TaylorSet starting_boxed_set(starting_bb);
-	Vector<TaylorModel> starting_set_models = starting_set.models();
-	bool is_contractive = false;
-
-	// Boxing based on finishing set derivatives being in modulus smaller than the finishing set derivatives
-	for (unsigned int i=0; i<starting_bb.size(); ++i) {
-		if (abs(finishing_dynamic_range[i].midpoint()) <= abs(starting_dynamic_range[i].midpoint())) {
-			is_contractive = true;
-			break;
-		}
-	}
-
-	if (is_contractive) {
-		starting_set = TaylorSet(starting_set.bounding_box());
-		starting_time = TaylorModel::scaling(starting_set.argument_size(),0,starting_time.range());
-	}
-}
 
 Float
 ImageSetHybridEvolver::
@@ -441,9 +404,6 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
     	if (has_reconditioned)
     	    time_step = _get_time_step(set_model,location,direction,remaining_time);
     }
-
-    if (_settings->enable_boxing_on_contraction())
-    	_box_on_contraction(set_model,time_model,location,maximum_hybrid_time,direction,semantics);
 
     // Extract information about the current location
     const RealVectorFunction dynamic=get_directed_dynamic(_sys->dynamic_function(location),direction);
@@ -1265,7 +1225,6 @@ ImageSetHybridEvolverSettings::ImageSetHybridEvolverSettings(const SystemType& s
 	set_enable_reconditioning(false);
 	set_enable_subdivisions(false);
 	set_enable_premature_termination_on_enclosure_size(true);
-	set_enable_boxing_on_contraction(false);
 	set_maximum_number_of_working_sets(0);
 }
 
@@ -1373,15 +1332,6 @@ ImageSetHybridEvolverSettings::enable_premature_termination_on_enclosure_size() 
 void
 ImageSetHybridEvolverSettings::set_enable_premature_termination_on_enclosure_size(const bool& value) {
 	_enable_premature_termination_on_enclosure_size = value;
-}
-
-const bool&
-ImageSetHybridEvolverSettings::enable_boxing_on_contraction() const {
-	return _enable_boxing_on_contraction;
-}
-void
-ImageSetHybridEvolverSettings::set_enable_boxing_on_contraction(const bool& value) {
-	_enable_boxing_on_contraction = value;
 }
 
 const unsigned int&

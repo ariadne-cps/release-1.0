@@ -60,12 +60,12 @@ int main()
     HybridEvolver evolver(vanderpol);
 
     /// Set the evolution parameters
-    evolver.settings().set_reference_enclosure_widths(1e-3);
+    evolver.settings().set_reference_enclosure_widths(1e-5);
     evolver.settings().set_maximum_enclosure_widths_ratio(1e+5);
     evolver.settings().set_fixed_maximum_step_size(1e-2);
-    evolver.settings().set_enable_adaptive_maximum_step_size(true);
+    evolver.settings().set_enable_adaptive_maximum_step_size(false);
     evolver.settings().set_enable_reconditioning(true);
-    evolver.settings().set_enable_boxing_on_contraction(false);
+    evolver.settings().set_enable_error_rate_enforcement(true);
     evolver.verbosity = 1;
     std::cout <<  evolver.settings() << std::endl;
 
@@ -76,7 +76,7 @@ int main()
     Box initial_box(2, 2.0,2.0, 0.0,0.0);
     HybridEnclosureType initial_enclosure(loc,initial_box);
 
-    HybridTime evolution_time(8.0,4);
+    HybridTime evolution_time(2.0,4);
 
     std::cout << "Computing orbit... " << std::flush;
     OrbitType orbit = evolver.orbit(initial_enclosure,evolution_time,UPPER_SEMANTICS);

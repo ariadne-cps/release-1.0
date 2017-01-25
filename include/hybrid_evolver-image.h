@@ -394,9 +394,6 @@ class ImageSetHybridEvolverSettings {
     const bool& enable_premature_termination_on_enclosure_size() const;
     void set_enable_premature_termination_on_enclosure_size(const bool&);
 
-    const bool& enable_boxing_on_contraction() const;
-    void set_enable_boxing_on_contraction(const bool&);
-
     const unsigned int& maximum_number_of_working_sets() const;
     void set_maximum_number_of_working_sets(const unsigned int&);
 };
