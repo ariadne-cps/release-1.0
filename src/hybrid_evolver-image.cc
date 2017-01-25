@@ -120,23 +120,7 @@ _get_time_step(const SetModelType& starting_set,
 		       ContinuousEvolutionDirection direction,
 		       const Float& remaining_time) const {
 
-    Float result;
-
-    if (!_settings->enable_adaptive_maximum_step_size())
-    	result = _settings->fixed_maximum_step_size().at(location);
-    else {
-        result = std::numeric_limits<Float>::max();
-
-        Vector<Interval> dynamic_bounds = get_directed_dynamic(_sys->dynamic_function(location),direction)(starting_set.box());
-        for (uint i=0;i<starting_set.dimension();i++) {
-            Float maximum_derivative = abs(dynamic_bounds[i]).upper();
-            // If the derivative is always zero, we ignore such dimension
-            if (maximum_derivative > 0) {
-                Float step = _settings->reference_enclosure_widths().at(location)[i] / maximum_derivative;
-                result = min(result,step);
-            }
-        }
-    }
+    Float result = _settings->fixed_maximum_step_size().at(location);
 
     if (_settings->enable_error_rate_enforcement()) {
 
@@ -146,13 +130,13 @@ _get_time_step(const SetModelType& starting_set,
             error_rates[i] = (target_widths[i] - starting_set.widths()[i])/remaining_time;
         }
 
-        cout << "Target error rates: " << error_rates << " (starting set widths: " << starting_set.widths() << ", remaining time " << remaining_time << ")" << endl;
-
         RealVectorFunction dynamic = get_directed_dynamic(_sys->dynamic_function(location),direction);
 
         const int MAXIMUM_BOUNDS_DIAMETER_FACTOR = 8;
         Float maximum_bounds_diameter=max(this->_settings->_reference_enclosure_widths.find(location)->second)*
                 MAXIMUM_BOUNDS_DIAMETER_FACTOR*this->_settings->maximum_enclosure_widths_ratio();
+
+        cout << "Target error rates: " << error_rates << endl;
 
         Vector<Float> previous_error_rates(starting_set.dimension(),std::numeric_limits<Float>::max());
         while(true) {
@@ -160,7 +144,7 @@ _get_time_step(const SetModelType& starting_set,
             TaylorSet flow_set = compute_flow_model_simplified(result, dynamic, maximum_bounds_diameter, starting_set);
             TaylorSet finishing_set = partial_evaluate(flow_set.models(),starting_set.argument_size(),1.0);
 
-            cout << "Finishing set width: " << finishing_set.widths() << endl;
+            //cout << "Finishing set width: " << finishing_set.widths() << endl;
 
             bool all_within_rate = true;
             bool not_improved = false;
@@ -179,7 +163,7 @@ _get_time_step(const SetModelType& starting_set,
                 previous_error_rates[j] = current_error_rate;
             }
 
-            //cout << "Error rates at step " << result << " : " << previous_error_rates << endl;
+            cout << "Error rates at step " << result << " : " << previous_error_rates << endl;
 
             if (not_improved || all_within_rate) {
                 if (worsened)
@@ -191,7 +175,7 @@ _get_time_step(const SetModelType& starting_set,
             result /= 2;
         }
 
-        cout << "Using step " << result << endl;
+        //cout << "Using step " << result << endl;
     }
 
     return result;
@@ -372,10 +356,6 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
 
     Float remaining_time = maximum_hybrid_time.continuous_time() - time_model.range().lower();
 
-    Float time_step = _get_time_step(set_model,location,direction,remaining_time);
-
-    _log_step_summary(working_sets,reach_sets,events_history,time_model,set_model,location,time_step);
-
     if (_settings->enable_reconditioning()) {
 
         bool has_reconditioned = false;
@@ -383,15 +363,13 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
     	Vector<Float> error_thresholds(set_model.dimension());
     	Vector<Float> reference_enclosure_widths = _settings->reference_enclosure_widths().at(location);
     	for (uint i = 0; i < reference_enclosure_widths.size(); ++i)
-    		error_thresholds[i] = reference_enclosure_widths[i]*time_step/maximum_hybrid_time.continuous_time();
+    		error_thresholds[i] = reference_enclosure_widths[i]/4;
 
-    	cout << "Set model widths before reconditioning: " << set_model.widths() << endl;
     	set_model.uniform_error_recondition(error_thresholds);
 
     	int argument_difference = set_model.argument_size() - time_model.argument_size();
     	if (argument_difference > 0) {
     	    has_reconditioned = true;
-    	    cout << "Set model widths after reconditioning: " << set_model.widths() << endl;
     		time_model = embed(time_model,argument_difference);
     	}
 
@@ -400,10 +378,11 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
     	    has_reconditioned = true;
     		time_model = recondition(time_model,discarded_parameters,set_model.dimension(),set_model.dimension());
     	}
-
-    	if (has_reconditioned)
-    	    time_step = _get_time_step(set_model,location,direction,remaining_time);
     }
+
+    Float time_step = _get_time_step(set_model,location,direction,remaining_time);
+
+    _log_step_summary(working_sets,reach_sets,events_history,time_model,set_model,location,time_step);
 
     // Extract information about the current location
     const RealVectorFunction dynamic=get_directed_dynamic(_sys->dynamic_function(location),direction);
@@ -1220,7 +1199,6 @@ ImageSetHybridEvolverSettings::ImageSetHybridEvolverSettings(const SystemType& s
 	set_fixed_maximum_step_size(1.0);
 	set_reference_enclosure_widths(getMinimumGridCellWidths(HybridGrid(sys.state_space()),0));
 	set_maximum_enclosure_widths_ratio(5.0);
-	set_enable_adaptive_maximum_step_size(false);
 	set_enable_error_rate_enforcement(false);
 	set_enable_reconditioning(false);
 	set_enable_subdivisions(false);
@@ -1290,15 +1268,6 @@ ImageSetHybridEvolverSettings::set_maximum_enclosure_widths_ratio(const Float& v
 }
 
 const bool&
-ImageSetHybridEvolverSettings::enable_adaptive_maximum_step_size() const {
-	return _enable_adaptive_maximum_step_size;
-}
-void
-ImageSetHybridEvolverSettings::set_enable_adaptive_maximum_step_size(const bool& value) {
-	_enable_adaptive_maximum_step_size = value;
-}
-
-const bool&
 ImageSetHybridEvolverSettings::enable_error_rate_enforcement() const {
     return _enable_error_rate_enforcement;
 }
@@ -1351,7 +1320,6 @@ operator<<(std::ostream& os, const ImageSetHybridEvolverSettings& s)
        << ",\n  maximum_step_size=" << s.fixed_maximum_step_size()
        << ",\n  reference_enclosure_widths=" << s.reference_enclosure_widths()
        << ",\n  maximum_enclosure_widths_ratio=" << s.maximum_enclosure_widths_ratio()
-	   << ",\n  enable_adaptive_step_size=" << s.enable_adaptive_maximum_step_size()
 	   << ",\n  enable_error_rate_enforcement=" << s.enable_error_rate_enforcement()
 	   << ",\n  enable_reconditioning=" << s.enable_reconditioning()
        << ",\n  enable_subdivisions=" << s.enable_subdivisions()

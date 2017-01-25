@@ -133,7 +133,7 @@ TaylorCalculus::
 TaylorCalculus()
     : _spacial_order(6),
       _temporal_order(6),
-      _sweep_threshold(1e-11),
+      _sweep_threshold(1e-10),
       _use_lipschitz(false),
       _spacial_accuracy_ptr(new AccuracyType(_sweep_threshold,_spacial_order))
 

@@ -58,7 +58,6 @@ int main(int argc, char* argv[])
     Vector<Float> enclosure_widths(2,0.1,MAX_ENCL_WIDTH);
     evolver.settings().set_reference_enclosure_widths(enclosure_widths);
     evolver.settings().set_maximum_enclosure_widths_ratio(2.0);
-    evolver.settings().set_enable_adaptive_maximum_step_size(false);
     evolver.settings().set_enable_reconditioning(false);
     evolver.settings().set_enable_error_rate_enforcement(true);
 

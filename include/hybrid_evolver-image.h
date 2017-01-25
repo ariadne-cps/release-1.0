@@ -336,10 +336,6 @@ class ImageSetHybridEvolverSettings {
     //! maximum_discretised_enclosure_widths themselves if not.
     Float _maximum_enclosure_widths_ratio;
 
-    //! \brief Use an adaptive maximum step size instead of a fixed one.
-    //! \details Ignores the _fixed_maximum_step_size value and instead changes the maximum step size in respect to the local dynamics.
-    bool _enable_adaptive_maximum_step_size;
-
     //! \brief Enforce the error rate on each step to be bound.
     //! \details Uses the _reference_enclosure_widths to identify a desired final error and, based on the evolution time, tries to
     //! keep the error-per-unit-time below the error/evolution_time ratio.
@@ -378,9 +374,6 @@ class ImageSetHybridEvolverSettings {
 
     const Float& maximum_enclosure_widths_ratio() const;
     void set_maximum_enclosure_widths_ratio(const Float&);
-
-    const bool& enable_adaptive_maximum_step_size() const;
-    void set_enable_adaptive_maximum_step_size(const bool&);
 
     const bool& enable_error_rate_enforcement() const;
     void set_enable_error_rate_enforcement(const bool&);

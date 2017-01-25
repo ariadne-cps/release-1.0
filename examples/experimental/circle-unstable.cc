@@ -58,7 +58,6 @@ int main(int argc, char* argv[])
     evolver.settings().set_fixed_maximum_step_size(FIXED_MAXIMUM_STEP_SIZE);
     evolver.settings().set_reference_enclosure_widths(SCALING);
     evolver.settings().set_maximum_enclosure_widths_ratio(MAX_ENCL_WIDTH_RATIO);
-    evolver.settings().set_enable_adaptive_maximum_step_size(true);
     evolver.settings().set_enable_reconditioning(true);
 
     Box initial_box(2, 0.0,0.0, 1.0,1.0);
