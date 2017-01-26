@@ -131,9 +131,10 @@ flow_bounds(VectorFunction const& vf,
 
 TaylorCalculus::
 TaylorCalculus()
-    : _spacial_order(6),
-      _temporal_order(6),
-      _sweep_threshold(1e-10),
+    : _spacial_order(20),
+      _temporal_order(20),
+      _sweep_threshold(1e-16),
+      _eps(1e-16),
       _use_lipschitz(false),
       _spacial_accuracy_ptr(new AccuracyType(_sweep_threshold,_spacial_order))
 
@@ -141,21 +142,22 @@ TaylorCalculus()
 }
 
 TaylorCalculus::
-TaylorCalculus(ushort spacial_order, ushort temporal_order, double sweep_threshold)
+TaylorCalculus(ushort spacial_order, ushort temporal_order, double sweep_threshold, double eps)
     : _spacial_order(spacial_order),
       _temporal_order(temporal_order),
       _sweep_threshold(sweep_threshold),
+      _eps(eps),
       _use_lipschitz(false),
       _spacial_accuracy_ptr(new AccuracyType(sweep_threshold,spacial_order))
-
 {
 }
 
 TaylorCalculus::
-TaylorCalculus(ushort spacial_order, ushort temporal_order, double sweep_threshold, bool use_lipschitz)
+TaylorCalculus(ushort spacial_order, ushort temporal_order, double sweep_threshold, double eps, bool use_lipschitz)
     : _spacial_order(spacial_order),
       _temporal_order(temporal_order),
       _sweep_threshold(sweep_threshold),
+      _eps(eps),
       _use_lipschitz(use_lipschitz),
       _spacial_accuracy_ptr(new AccuracyType(sweep_threshold,spacial_order))
 
@@ -168,6 +170,7 @@ TaylorCalculus(const TaylorCalculus& tc)
     : _spacial_order(tc._spacial_order),
       _temporal_order(tc._temporal_order),
       _sweep_threshold(tc._sweep_threshold),
+      _eps(tc._eps),
       _use_lipschitz(false),
       _spacial_accuracy_ptr(new AccuracyType(_sweep_threshold,_spacial_order))
 {
@@ -586,9 +589,8 @@ TaylorCalculus::flow_bounds(VectorFunction const& vf,
 
     // Expand initial domain slightly if interior is nonempty
 
-    static const Float EPS=1e-8;
     Vector<Interval> bx=r;
-    for(uint i=0; i!=bx.size(); ++i) { if(bx[i].lower()==bx[i].upper()) { bx[i]+=Interval(-EPS,+EPS); } }
+    for(uint i=0; i!=bx.size(); ++i) { if(bx[i].lower()==bx[i].upper()) { bx[i]+=Interval(-_eps,+_eps); } }
 
     return Ariadne::flow_bounds(vf,bx,hmax,this->_use_lipschitz);
 }
@@ -633,7 +635,7 @@ TaylorCalculus::flow_model(VectorFunction const& vf, Vector<Interval> const& ibx
     // We need the initial box to have nonempty interior to be a valid domain for a function model,
     // so we expand slightly if one of the components fails this test
     for(uint i=0; i!=bx.size(); ++i) {
-        static const Float EPS=1e-8;
+        static const Float EPS= this->_eps;
         if(bx[i].lower()==bx[i].upper()) {
             //std::cerr<<"Warning: expanding initial box "<<bx<<std::endl;
             bx[i]+=Interval(-EPS,+EPS); }

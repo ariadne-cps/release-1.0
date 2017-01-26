@@ -120,7 +120,7 @@ _get_time_step(const SetModelType& starting_set,
 		       ContinuousEvolutionDirection direction,
 		       const Float& remaining_time) const {
 
-    Float result = _settings->fixed_maximum_step_size().at(location);
+    Float result;
 
     if (_settings->enable_error_rate_enforcement()) {
 
@@ -131,6 +131,8 @@ _get_time_step(const SetModelType& starting_set,
         }
 
         RealVectorFunction dynamic = get_directed_dynamic(_sys->dynamic_function(location),direction);
+
+        result = 0.5/(norm(dynamic.jacobian(starting_set.bounding_box())).upper());
 
         const int MAXIMUM_BOUNDS_DIAMETER_FACTOR = 8;
         Float maximum_bounds_diameter=max(this->_settings->_reference_enclosure_widths.find(location)->second)*
@@ -176,6 +178,9 @@ _get_time_step(const SetModelType& starting_set,
         }
 
         //cout << "Using step " << result << endl;
+
+    } else {
+        result = _settings->fixed_maximum_step_size().at(location);
     }
 
     return result;

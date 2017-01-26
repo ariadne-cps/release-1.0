@@ -62,6 +62,7 @@ class TaylorCalculus
     ushort _spacial_order;
     ushort _temporal_order;
     double _sweep_threshold;
+    double _eps;
     bool _use_lipschitz;
 
     shared_ptr<TaylorModel::Accuracy> _spacial_accuracy_ptr;
@@ -95,10 +96,10 @@ class TaylorCalculus
     TaylorCalculus();
 
     //! \brief Constructor from accuracy fields.
-    TaylorCalculus(ushort spacial_order, ushort temporal_order, double sweep_threshold);
+    TaylorCalculus(ushort spacial_order, ushort temporal_order, double sweep_threshold, double eps);
 
     //! \brief Constructor from fields.
-    TaylorCalculus(ushort spacial_order, ushort temporal_order, double sweep_threshold, bool use_lipschitz);
+    TaylorCalculus(ushort spacial_order, ushort temporal_order, double sweep_threshold, double eps, bool use_lipschitz);
 
     //! \brief Copy contructor.
     TaylorCalculus(const TaylorCalculus& tc);
