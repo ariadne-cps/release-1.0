@@ -27,8 +27,12 @@
 using namespace Ariadne;
 
 
-int main()
+int main(int argc, char* argv[])
 {
+    int VERBOSITY = 1;
+    if (argc > 1)
+        VERBOSITY = atoi(argv[1]);
+
     /// Create a HybridAutomton object
     HybridIOAutomaton vanderpol("vanderpol");
 
@@ -62,11 +66,10 @@ int main()
     /// Set the evolution parameters
     evolver.settings().set_reference_enclosure_widths(1e-5);
     evolver.settings().set_maximum_enclosure_widths_ratio(1e+5);
-    evolver.settings().set_fixed_maximum_step_size(1.0);
+    evolver.settings().set_fixed_maximum_step_size(1.25e-1);
     evolver.settings().set_enable_reconditioning(false);
     evolver.settings().set_enable_error_rate_enforcement(true);
-    evolver.verbosity = 1;
-    std::cout <<  evolver.settings() << std::endl;
+    evolver.verbosity = VERBOSITY;
 
     // Declare the type to be used for the system evolution
     typedef HybridEvolver::EnclosureType HybridEnclosureType;
@@ -77,7 +80,7 @@ int main()
 
     HybridTime evolution_time(3.0,4);
 
-    std::cout << "Computing orbit... " << std::flush;
+    std::cout << "Computing orbit... " << std::flush << std::endl;
     OrbitType orbit = evolver.orbit(initial_enclosure,evolution_time,UPPER_SEMANTICS);
     std::cout << "done." << std::endl;
 
