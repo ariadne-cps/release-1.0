@@ -201,6 +201,7 @@ class ImageSetHybridEvolver
     Float _get_time_step(const SetModelType& set_model,
     				 	 const DiscreteLocation& location,
     				 	 ContinuousEvolutionDirection direction,
+    				 	 const Float& remaining_time,
     				 	 const Float& maximum_continuous_time) const;
 
     bool _is_enclosure_too_large(

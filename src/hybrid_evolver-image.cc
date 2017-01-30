@@ -118,90 +118,67 @@ ImageSetHybridEvolver::
 _get_time_step(const SetModelType& starting_set,
 		       const DiscreteLocation& location,
 		       ContinuousEvolutionDirection direction,
-		       const Float& remaining_time) const {
+		       const Float& remaining_time,
+		       const Float& total_time) const {
 
     Float result;
 
-    const Float eps = 1e-16;
-    const Float lipschitz_tolerance = 1.0/32;
+    Float lipschitz_tolerance = 1.0/8;
+    uint refinement_steps = 8;
 
     if (_settings->enable_error_rate_enforcement()) {
 
-        Vector<Float> error_rates(starting_set.dimension());
+        Vector<Float> adaptive_target_error(starting_set.dimension());
         Vector<Float> target_widths = this->_settings->_reference_enclosure_widths.find(location)->second;
-        for (int i = 0; i < error_rates.size(); ++i) {
-            error_rates[i] = (target_widths[i]/std::max(starting_set.widths()[i],eps))/remaining_time;
+        for (int i = 0; i < adaptive_target_error.size(); ++i) {
+            adaptive_target_error[i] = (target_widths[i] - starting_set.widths()[i])/2.0;
         }
 
         RealVectorFunction dynamic = get_directed_dynamic(_sys->dynamic_function(location),direction);
 
-        result = lipschitz_tolerance/(norm(dynamic.jacobian(starting_set.bounding_box())).upper());
+        Float L = log_norm(dynamic.jacobian(starting_set.bounding_box())).upper();
 
-        ARIADNE_LOG(2,"Enforcing error rates " << std::scientific << error_rates << " starting from step " << result);
+        result = lipschitz_tolerance/norm(dynamic.jacobian(starting_set.bounding_box())).upper();
 
         const int MAXIMUM_BOUNDS_DIAMETER_FACTOR = 8;
         Float maximum_bounds_diameter=max(this->_settings->_reference_enclosure_widths.find(location)->second)*
                 MAXIMUM_BOUNDS_DIAMETER_FACTOR*this->_settings->maximum_enclosure_widths_ratio();
 
-        Vector<Float> previous_previous_error_rates(starting_set.dimension(),std::numeric_limits<Float>::max());
-        Vector<Float> previous_error_rates(starting_set.dimension(),std::numeric_limits<Float>::max());
-        Vector<Float> current_error_rates(starting_set.dimension());
-        Vector<Float> used_error_rates;
-        while(true) {
+        while (true) {
 
             TaylorSet flow_set = compute_flow_model_simplified(result, dynamic, maximum_bounds_diameter, starting_set);
             TaylorSet finishing_set = partial_evaluate(flow_set.models(),starting_set.argument_size(),1.0);
 
-            bool all_within_rate = true;
-            bool not_improved_once = false;
-            bool not_improved_twice = false;
-            bool worsened_once = false;
-            bool worsened_twice = false;
-            for (uint j = 0; j < starting_set.size(); ++j) {
-                Float current_error_difference = finishing_set.widths()[j]/std::max(starting_set.widths()[j],eps);
-                current_error_rates[j] = current_error_difference/result;
-                if (current_error_rates[j]  > error_rates[j]) {
-                    all_within_rate = false;
-                    if (current_error_rates[j]  >= previous_error_rates[j]) {
-                        not_improved_once = true;
-                        if (current_error_rates[j]  >= previous_previous_error_rates[j]) {
-                             not_improved_twice = true;
-                             if (current_error_rates[j]  > previous_error_rates[j]) {
-                                 worsened_once = true;
-                                 if (current_error_rates[j]  > previous_previous_error_rates[j]) {
-                                     worsened_twice = true;
-                                 }
-                             }
-                        } else if (current_error_rates[j]  > previous_error_rates[j]) {
-                            worsened_once = true;
-                        }
-                    }
-                }
+            Vector<Float> error_ratios(starting_set.dimension());
+            for (int i = 0; i < error_ratios.size(); ++i) {
+                error_ratios[i] = target_widths[i]/2.0/(finishing_set.widths()[i] - starting_set.widths()[i]);
             }
+            Float right_hand_side = 1.0/L * log(L*max(error_ratios)/total_time*(1.0 - remaining_time/total_time)*result + 1.0);
+/*
+            Vector<Float> error_ratios(starting_set.dimension());
+            for (int i = 0; i < error_ratios.size(); ++i) {
+                error_ratios[i] = adaptive_target_error[i]/(finishing_set.widths()[i] - starting_set.widths()[i]);
+            }
+            Float right_hand_side = 1.0/L * log(L*max(error_ratios)/remaining_time*(1.0 - remaining_time/total_time)*result*result + 1.0);
+*/
+            std::cout << "Trying " << result << "<= " << right_hand_side << ": ";
 
-            ARIADNE_LOG(3, "Error rates at step " << result << " : " << std::scientific << previous_error_rates);
-
-            if (not_improved_twice || all_within_rate) {
-                used_error_rates = current_error_rates;
-                if (worsened_once) {
-                    result *= 2;
-                    used_error_rates = previous_error_rates;
-                    if (worsened_twice) {
-                        result *= 2;
-                        used_error_rates = previous_previous_error_rates;
-                    }
-                }
-
+            if (result <= right_hand_side) {
+                std::cout << "true, done." << std::endl;
                 break;
+            } else {
+                refinement_steps--;
+                std::cout << "false,";
+                if (refinement_steps == 0) {
+                    std::cout << " stopping since no further refinement is allowed." << std::endl;
+                    break;
+                } else {
+                    std::cout << "halving the step." << std::endl;
+                    result /= 2.0;
+                }
             }
-
-            previous_previous_error_rates = previous_error_rates;
-            previous_error_rates = current_error_rates;
-
-            result /= 2;
         }
 
-        ARIADNE_LOG(2, "Using step " << result << " yielding error rates " << used_error_rates);
 
     } else {
         result = _settings->fixed_maximum_step_size().at(location);
@@ -409,7 +386,7 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
     	}
     }
 
-    Float time_step = _get_time_step(set_model,location,direction,remaining_time);
+    Float time_step = _get_time_step(set_model,location,direction,remaining_time,maximum_hybrid_time.continuous_time());
 
     _log_step_summary(working_sets,reach_sets,events_history,time_model,set_model,location,time_step);
 
