@@ -265,6 +265,22 @@ template<class X> X norm(const Matrix<X>& A)
     return result;
 }
 
+template<class X> X log_norm(const Matrix<X>& A)
+{
+    ARIADNE_PRECONDITION(A.row_size()==A.column_size());
+    X r(-std::numeric_limits<double>::infinity());
+    for(uint i=0; i!=A.row_size(); ++i) {
+        X t=A[i][i];
+        for(uint j=0; j!=A.column_size(); ++j) {
+            if(j!=i) {
+                t+=mag(A[i][j]);
+            }
+        }
+        r=max(r,t);
+    }
+    return r;
+}
+
 template<class X> Matrix<X> transpose(const Matrix<X>& A)
 {
     Matrix<X> AT(A.column_size(),A.row_size());
