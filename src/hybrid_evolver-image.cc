@@ -149,11 +149,13 @@ _get_time_step(const SetModelType& starting_set,
             TaylorSet flow_set = compute_flow_model_simplified(result, dynamic, maximum_bounds_diameter, starting_set);
             TaylorSet finishing_set = partial_evaluate(flow_set.models(),starting_set.argument_size(),1.0);
 
+            Vector<Float> desired_errors = target_widths/2.0 * 2.0 /total_time*(1.0 - remaining_time/total_time);
+
             Vector<Float> error_ratios(starting_set.dimension());
             for (int i = 0; i < error_ratios.size(); ++i) {
-                error_ratios[i] = target_widths[i]/2.0/(finishing_set.widths()[i] - starting_set.widths()[i]);
+                error_ratios[i] = desired_errors[i]/(finishing_set.widths()[i] - starting_set.widths()[i]);
             }
-            Float right_hand_side = 1.0/L * log(L*max(error_ratios)/total_time*(1.0 - remaining_time/total_time)*result + 1.0);
+            Float right_hand_side = 1.0/L * log(L*max(error_ratios)*result + 1.0);
 /*
             Vector<Float> error_ratios(starting_set.dimension());
             for (int i = 0; i < error_ratios.size(); ++i) {
