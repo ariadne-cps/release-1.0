@@ -125,13 +125,14 @@ _get_time_step(const SetModelType& starting_set,
 
     Float lipschitz_tolerance = 1.0/8;
     uint refinement_steps = 8;
+    Float error_threshold_relative_tolerance = 0.01;
 
     if (_settings->enable_error_rate_enforcement()) {
 
-        Vector<Float> adaptive_target_error(starting_set.dimension());
+        Vector<Float> dynamic_target_errors(starting_set.dimension());
         Vector<Float> target_widths = this->_settings->_reference_enclosure_widths.find(location)->second;
-        for (int i = 0; i < adaptive_target_error.size(); ++i) {
-            adaptive_target_error[i] = (target_widths[i] - starting_set.widths()[i])/2.0;
+        for (int i = 0; i < dynamic_target_errors.size(); ++i) {
+            dynamic_target_errors[i] = (target_widths[i] - starting_set.widths()[i])/2.0;
         }
 
         RealVectorFunction dynamic = get_directed_dynamic(_sys->dynamic_function(location),direction);
@@ -144,26 +145,32 @@ _get_time_step(const SetModelType& starting_set,
         Float maximum_bounds_diameter=max(this->_settings->_reference_enclosure_widths.find(location)->second)*
                 MAXIMUM_BOUNDS_DIAMETER_FACTOR*this->_settings->maximum_enclosure_widths_ratio();
 
+        double previous_local_computed_errors_rate = std::numeric_limits<double>::infinity();
+        double local_computed_errors_rate = std::numeric_limits<double>::infinity();
         while (true) {
 
             TaylorSet flow_set = compute_flow_model_simplified(result, dynamic, maximum_bounds_diameter, starting_set);
             TaylorSet finishing_set = partial_evaluate(flow_set.models(),starting_set.argument_size(),1.0);
 
-            Vector<Float> desired_errors = target_widths/2.0 * 2.0 /total_time*(1.0 - remaining_time/total_time);
 
-            Vector<Float> error_ratios(starting_set.dimension());
-            for (int i = 0; i < error_ratios.size(); ++i) {
-                error_ratios[i] = desired_errors[i]/(finishing_set.widths()[i] - starting_set.widths()[i]);
+            Vector<Float> local_computed_errors = finishing_set.widths() - starting_set.widths();
+            Vector<Float> local_target_errors = dynamic_target_errors / remaining_time * result;
+
+            cout << "Local target errors: " << local_target_errors << endl;
+            cout << "Local computed errors: " << local_computed_errors << endl;
+            Float min_error_ratio = std::numeric_limits<double>::infinity();
+            for (int i = 0; i < local_target_errors.size(); ++i) {
+                if (local_computed_errors[i] > 0) {
+                    min_error_ratio = min(min_error_ratio,local_target_errors[i]/local_computed_errors[i]);
+                }
             }
-            Float right_hand_side = 1.0/L * log(L*max(error_ratios)*result + 1.0);
-/*
-            Vector<Float> error_ratios(starting_set.dimension());
-            for (int i = 0; i < error_ratios.size(); ++i) {
-                error_ratios[i] = adaptive_target_error[i]/(finishing_set.widths()[i] - starting_set.widths()[i]);
-            }
-            Float right_hand_side = 1.0/L * log(L*max(error_ratios)/remaining_time*(1.0 - remaining_time/total_time)*result*result + 1.0);
-*/
-            std::cout << "Trying " << result << "<= " << right_hand_side << ": ";
+            cout << "Minimum error ratio: " << min_error_ratio << endl;
+            Float right_hand_side = 1.0/L * log(L*min_error_ratio*result + 1.0);
+
+            double local_computed_errors_rate = sum(local_computed_errors)/result;
+            cout << "Local computed errors rate: " << local_computed_errors_rate << endl;
+
+            std::cout << "Trying " << result << " <= " << right_hand_side << "): ";
 
             if (result <= right_hand_side) {
                 std::cout << "true, done." << std::endl;
@@ -171,14 +178,19 @@ _get_time_step(const SetModelType& starting_set,
             } else {
                 refinement_steps--;
                 std::cout << "false,";
-                if (refinement_steps == 0) {
-                    std::cout << " stopping since no further refinement is allowed." << std::endl;
+                if (refinement_steps == 0 || local_computed_errors_rate >= previous_local_computed_errors_rate) {
+                    if (refinement_steps == 0)
+                        std::cout << " stopping since no further refinement is allowed." << std::endl;
+                    else if (local_computed_errors_rate >= previous_local_computed_errors_rate)
+                        std::cout << " stopping since no improvement on the flow model has been done." << std::endl;
                     break;
                 } else {
                     std::cout << "halving the step." << std::endl;
                     result /= 2.0;
                 }
             }
+
+            previous_local_computed_errors_rate = local_computed_errors_rate;
         }
 
 
