@@ -131,10 +131,10 @@ _get_time_step(const SetModelType& starting_set,
 
         Float dim = starting_set.dimension();
 
-        Vector<Float> final_target_width_ratios(dim);
+        Vector<Float> global_target_width_ratios(dim);
         Vector<Float> final_widths = this->_settings->_reference_enclosure_widths.find(location)->second;
         for (int i = 0; i < dim; ++i) {
-            final_target_width_ratios[i] = (final_widths[i]/starting_set.widths()[i]);
+            global_target_width_ratios[i] = (starting_set.widths()[i]/final_widths[i]);
         }
 
         RealVectorFunction dynamic = get_directed_dynamic(_sys->dynamic_function(location),direction);
@@ -148,24 +148,30 @@ _get_time_step(const SetModelType& starting_set,
         TaylorSet flow_set = compute_flow_model_simplified(result, dynamic, maximum_bounds_diameter, starting_set);
         TaylorSet finishing_set = partial_evaluate(flow_set.models(),starting_set.argument_size(),1.0);
 
-        Float initial_score = 0;
-        for (uint i = 0; i < dim; ++i)
-            initial_score += starting_set.widths()[i]/finishing_set.widths()[i];
-        initial_score /= dim;
-
-        Float previous_score = initial_score;
-
         Vector<Float> local_target_width_ratios(dim);
         for (uint i = 0; i < dim; ++i) {
             Float exponent = result/remaining_time;
-            local_target_width_ratios[i] = std::pow((Float)final_target_width_ratios[i],exponent);
+            local_target_width_ratios[i] = std::pow((Float)global_target_width_ratios[i],exponent);
         }
 
         Vector<Float> local_computed_width_ratios(dim);
         for (uint i = 0; i < dim; ++i)
-            local_computed_width_ratios[i] = finishing_set.widths()[i]/starting_set.widths()[i];
+            local_computed_width_ratios[i] = starting_set.widths()[i]/finishing_set.widths()[i];
+
+        Float target_score = 0;
+        for (uint i = 0; i < dim; ++i)
+            target_score += local_target_width_ratios[i];
+        target_score /= dim;
+
+        Float initial_score = 0;
+        for (uint i = 0; i < dim; ++i)
+            initial_score += local_computed_width_ratios[i];
+        initial_score /= dim;
+
+        Float previous_score = initial_score;
 
         cout << "Step " << result <<
+                ": target score " << target_score <<
                 ": initial score " << initial_score <<
                 ", target ratios " << local_target_width_ratios <<
                 ", computed ratios " << local_computed_width_ratios << endl;
@@ -180,39 +186,37 @@ _get_time_step(const SetModelType& starting_set,
 
             for (uint i = 0; i < dim; ++i) {
                 Float exponent = result/remaining_time;
-                local_target_width_ratios[i] = std::pow((Float)final_target_width_ratios[i],exponent);
+                local_target_width_ratios[i] = std::pow((Float)global_target_width_ratios[i],exponent);
             }
 
             flow_set = compute_flow_model_simplified(result, dynamic, maximum_bounds_diameter, starting_set);
             finishing_set = partial_evaluate(flow_set.models(),starting_set.argument_size(),1.0);
 
             for (uint i = 0; i < dim; ++i)
-                local_computed_width_ratios[i] = finishing_set.widths()[i]/starting_set.widths()[i];
+                local_computed_width_ratios[i] = starting_set.widths()[i]/finishing_set.widths()[i];
 
             Float current_score = 0;
             for (uint i = 0; i < dim; ++i)
-                current_score += starting_set.widths()[i]/finishing_set.widths()[i];
+                current_score += local_computed_width_ratios[i];
             current_score /= dim;
 
-            bool is_within = true;
-            for (uint i = 0; i < dim; ++i) {
-                if (local_computed_width_ratios[i] > local_target_width_ratios[i]) {
-                    is_within = false;
-                    break;
-                }
-            }
+            Float target_score = 0;
+            for (uint i = 0; i < dim; ++i)
+                target_score += local_target_width_ratios[i];
+            target_score /= dim;
 
             Float score_improvement = current_score - previous_score;
             Float score_relative_improvement = score_improvement/previous_score;
 
             cout << "Step " << result <<
+                    ": target score " << target_score <<
                     ": score " << current_score <<
                     ", score improvement: " << score_improvement <<
                     ", score_relative_improvement: " << score_relative_improvement <<
                     ", target ratios " << local_target_width_ratios <<
                     ", computed ratios " << local_computed_width_ratios << endl;
 
-            if (is_within) {
+            if (current_score >= target_score) {
                 cout << " success." << endl;
                 break;
             } else {
