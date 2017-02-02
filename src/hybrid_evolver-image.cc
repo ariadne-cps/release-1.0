@@ -973,7 +973,7 @@ _computeEvolutionForEvents(std::list<EvolutionData>& working_sets,
 				DiscreteLocation jump_location=_sys->target(location,event);
 				std::vector<DiscreteEvent> jump_events=events;
 				jump_events.push_back(event);
-				working_sets.push_back(EvolutionData(set_index,jump_location,time_step,jump_events,jump_set_model,final_time_model));
+				working_sets.push_back(EvolutionData(set_index,jump_location,std::numeric_limits<Float>::infinity(),jump_events,jump_set_model,final_time_model));
         	}
         }
     }
@@ -997,7 +997,7 @@ _computeEvolutionForEvents(std::list<EvolutionData>& working_sets,
 			DiscreteLocation jump_location=_sys->target(location,event);
 			std::vector<DiscreteEvent> jump_events=events;
 			jump_events.push_back(event);
-			working_sets.push_back(EvolutionData(set_index,jump_location,time_step,jump_events,jump_set_model,active_time_model));
+			working_sets.push_back(EvolutionData(set_index,jump_location,std::numeric_limits<Float>::infinity(),jump_events,jump_set_model,active_time_model));
 		}
     }
 }
