@@ -124,8 +124,8 @@ _get_time_step(const SetModelType& starting_set,
     Float result;
 
     Float lipschitz_tolerance = 1.0;
-    uint refinement_steps = 8;
-    Float score_minimum_relative_improvement = 0.01;
+    uint refinement_steps = 2;
+    Float score_minimum_relative_improvement = 0.10;
 
     if (_settings->enable_error_rate_enforcement()) {
 
@@ -139,7 +139,7 @@ _get_time_step(const SetModelType& starting_set,
 
         RealVectorFunction dynamic = get_directed_dynamic(_sys->dynamic_function(location),direction);
 
-        result = lipschitz_tolerance/norm(dynamic.jacobian(starting_set.bounding_box())).upper();
+        result = min(previous_step*(2<<refinement_steps),lipschitz_tolerance/norm(dynamic.jacobian(starting_set.bounding_box())).upper());
 
         const int MAXIMUM_BOUNDS_DIAMETER_FACTOR = 8;
         Float maximum_bounds_diameter=max(this->_settings->_reference_enclosure_widths.find(location)->second)*
