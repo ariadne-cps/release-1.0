@@ -170,7 +170,10 @@ _get_time_step(const SetModelType& starting_set,
                 ", target ratios " << local_target_width_ratios <<
                 ", computed ratios " << local_computed_width_ratios << endl;
 
-        result/= 2;
+        if (initial_score == 0)
+            result /= std::pow(2,refinement_steps);
+        else
+            result/= 2;
 
         uint k = 0;
         while (true) {
