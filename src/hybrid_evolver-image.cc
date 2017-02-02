@@ -123,21 +123,21 @@ _get_time_step(const SetModelType& starting_set,
 
     Float result;
 
-    Float lipschitz_tolerance = 1.0/8;
+    Float lipschitz_tolerance = 1.0/2;
     uint refinement_steps = 8;
-    Float error_threshold_relative_tolerance = 0.01;
+    Float score_minimum_relative_improvement = 0.1;
 
     if (_settings->enable_error_rate_enforcement()) {
 
-        Vector<Float> dynamic_target_errors(starting_set.dimension());
-        Vector<Float> target_widths = this->_settings->_reference_enclosure_widths.find(location)->second;
-        for (int i = 0; i < dynamic_target_errors.size(); ++i) {
-            dynamic_target_errors[i] = (target_widths[i] - starting_set.widths()[i])/2.0;
+        Float dim = starting_set.dimension();
+
+        Vector<Float> final_target_width_ratios(dim);
+        Vector<Float> final_widths = this->_settings->_reference_enclosure_widths.find(location)->second;
+        for (int i = 0; i < dim; ++i) {
+            final_target_width_ratios[i] = (final_widths[i]/starting_set.widths()[i]);
         }
 
         RealVectorFunction dynamic = get_directed_dynamic(_sys->dynamic_function(location),direction);
-
-        Float L = log_norm(dynamic.jacobian(starting_set.bounding_box())).upper();
 
         result = lipschitz_tolerance/norm(dynamic.jacobian(starting_set.bounding_box())).upper();
 
@@ -145,52 +145,74 @@ _get_time_step(const SetModelType& starting_set,
         Float maximum_bounds_diameter=max(this->_settings->_reference_enclosure_widths.find(location)->second)*
                 MAXIMUM_BOUNDS_DIAMETER_FACTOR*this->_settings->maximum_enclosure_widths_ratio();
 
-        double previous_local_computed_errors_rate = std::numeric_limits<double>::infinity();
-        double local_computed_errors_rate = std::numeric_limits<double>::infinity();
+        Float initial_score;
+        Float previous_score = -std::numeric_limits<Float>::infinity();
+        Float current_score;
+
+        uint k = 0;
         while (true) {
+
+            Vector<Float> local_target_width_ratios(dim);
+            for (uint i = 0; i < dim; ++i) {
+                Float exponent = result/remaining_time;
+                local_target_width_ratios[i] = std::pow((Float)final_target_width_ratios[i],exponent);
+            }
 
             TaylorSet flow_set = compute_flow_model_simplified(result, dynamic, maximum_bounds_diameter, starting_set);
             TaylorSet finishing_set = partial_evaluate(flow_set.models(),starting_set.argument_size(),1.0);
 
+            Vector<Float> local_computed_width_ratios(dim);
+            for (uint i = 0; i < dim; ++i)
+                local_computed_width_ratios[i] = finishing_set.widths()[i]/starting_set.widths()[i];
 
-            Vector<Float> local_computed_errors = finishing_set.widths() - starting_set.widths();
-            Vector<Float> local_target_errors = dynamic_target_errors / remaining_time * result;
+            for (uint i = 0; i < dim; ++i)
+                current_score += (starting_set.widths()[i] - finishing_set.widths()[i])/final_widths[i];
 
-            cout << "Local target errors: " << local_target_errors << endl;
-            cout << "Local computed errors: " << local_computed_errors << endl;
-            Float min_error_ratio = std::numeric_limits<double>::infinity();
-            for (int i = 0; i < local_target_errors.size(); ++i) {
-                if (local_computed_errors[i] > 0) {
-                    min_error_ratio = min(min_error_ratio,local_target_errors[i]/local_computed_errors[i]);
+            if (k==0)
+                initial_score = current_score;
+
+            bool is_within = true;
+            for (uint i = 0; i < dim; ++i) {
+                if (local_computed_width_ratios[i] > local_target_width_ratios[i]) {
+                    is_within = false;
+                    break;
                 }
             }
-            cout << "Minimum error ratio: " << min_error_ratio << endl;
-            Float right_hand_side = 1.0/L * log(L*min_error_ratio*result + 1.0);
 
-            double local_computed_errors_rate = sum(local_computed_errors)/result;
-            cout << "Local computed errors rate: " << local_computed_errors_rate << endl;
+            Float score_improvement = current_score - previous_score;
+            Float score_relative_improvement = score_improvement/abs(previous_score);
 
-            std::cout << "Trying " << result << " <= " << right_hand_side << "): ";
+            cout << "Step " << result <<
+                    ": score " << current_score <<
+                    ", score improvement: " << score_improvement <<
+                    ", score_relative_improvement: " << score_relative_improvement <<
+                    ", target ratios " << local_target_width_ratios <<
+                    ", computed ratios " << local_computed_width_ratios << endl;
 
-            if (result <= right_hand_side) {
-                std::cout << "true, done." << std::endl;
+            if (is_within) {
+                cout << " success." << endl;
                 break;
             } else {
-                refinement_steps--;
-                std::cout << "false,";
-                if (refinement_steps == 0 || local_computed_errors_rate >= previous_local_computed_errors_rate) {
-                    if (refinement_steps == 0)
-                        std::cout << " stopping since no further refinement is allowed." << std::endl;
-                    else if (local_computed_errors_rate >= previous_local_computed_errors_rate)
-                        std::cout << " stopping since no improvement on the flow model has been done." << std::endl;
+                cout << " failure";
+
+                if (k > 0 && (score_improvement<=0 || score_relative_improvement < score_minimum_relative_improvement)) {
+                    cout << ", current score has not improved " << (score_improvement<=0 ? "" : "enough") <<  ", using the previous step value" << endl;
+                    result *= 2;
                     break;
                 } else {
-                    std::cout << "halving the step." << std::endl;
-                    result /= 2.0;
+                    cout << ", current score has improved enough";
+                    if (k == refinement_steps) {
+                        cout << " but maximum number of refinements reached: stopping" << endl;
+                        break;
+                    } else {
+                        cout << ", refining" << endl;
+                    }
                 }
             }
 
-            previous_local_computed_errors_rate = local_computed_errors_rate;
+            k++;
+            result /= 2;
+            previous_score = current_score;
         }
 
 
