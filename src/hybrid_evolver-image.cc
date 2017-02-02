@@ -119,7 +119,7 @@ _get_time_step(const SetModelType& starting_set,
 		       const DiscreteLocation& location,
 		       ContinuousEvolutionDirection direction,
 		       const Float& remaining_time,
-		       const Float& total_time) const {
+		       const Float& previous_step) const {
 
     Float result;
 
@@ -265,7 +265,7 @@ _evolution(EnclosureListType& final_sets,
 
     ARIADNE_LOG(1,"Computing evolution up to "<<maximum_hybrid_time.continuous_time()<<" time units and "<<maximum_hybrid_time.discrete_time()<<" steps.");
 
-    std::list< pair<uint,HybridTimedSetType> > working_sets;
+    std::list<EvolutionData> working_sets;
     _evolution_add_initialSet(working_sets,initial_set,semantics);
     std::map<uint,Vector<Float> > initial_indexed_set_models_widths = _indexed_set_models_widths(working_sets);
 
@@ -276,15 +276,16 @@ _evolution(EnclosureListType& final_sets,
 			throw WorkingSetTooLargeException("too large");
 
 		// Get the least recent working set, pop it and update the corresponding size
-		pair<uint,HybridTimedSetType> current_set = working_sets.front();
+		EvolutionData current_set = working_sets.front();
 		working_sets.pop_front();
 
 		// Get the members of the current set
-		uint set_index = current_set.first;
-        DiscreteLocation loc=current_set.second.first;
-        EventListType events=current_set.second.second;
-		SetModelType set_model=current_set.second.third;
-		TimeModelType time_model=current_set.second.fourth;
+		uint set_index = current_set.set_index();
+        DiscreteLocation loc=current_set.location();
+        StepType previous_step=current_set.previous_step();
+        EventListType previous_events=current_set.previous_events();
+		SetModelType set_model=current_set.set_model();
+		TimeModelType time_model=current_set.time_model();
 
 		// Compute continuous evolution
 
@@ -293,12 +294,12 @@ _evolution(EnclosureListType& final_sets,
 		bool isEnclosureTooLarge = _is_enclosure_too_large(loc,set_model,initial_indexed_set_models_widths[set_index]);
 
 		if(time_model.range().lower()>=maximum_hybrid_time.continuous_time() ||
-		   events.size()>=uint(maximum_hybrid_time.discrete_time())) {
+		    previous_events.size()>=uint(maximum_hybrid_time.discrete_time())) {
             ARIADNE_LOG(2,"Final time reached, adjoining result to final sets.");
             final_sets.adjoin(loc,_toolbox->enclosure(set_model));
         } else if (semantics == UPPER_SEMANTICS && this->_settings->enable_subdivisions() && isEnclosureTooLarge) {
             ARIADNE_LOG(2,"Computed set range " << set_model.range() << " widths larger than allowed, subdividing.");
-            _add_models_subdivisions_autoselect(working_sets,set_index,set_model,time_model,loc,events,semantics);
+            _add_models_subdivisions_autoselect(working_sets,set_index,set_model,time_model,loc,previous_step,previous_events,semantics);
         } else if((semantics == LOWER_SEMANTICS || !this->_settings->enable_subdivisions()) &&
                   this->_settings->enable_premature_termination_on_enclosure_size() && isEnclosureTooLarge) {
             ARIADNE_LOG(2,"Terminating evolution at time " << time_model.value()
@@ -317,10 +318,10 @@ _evolution(EnclosureListType& final_sets,
 
 void
 ImageSetHybridEvolver::
-_evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
+_evolution_step(std::list<EvolutionData>& working_sets,
                 EnclosureListType& reach_sets,
                 EnclosureListType& intermediate_sets,
-                const pair<uint,HybridTimedSetType>& current_set,
+                const EvolutionData& current_set,
                 const TimeType& maximum_hybrid_time,
                 bool ignore_activations,
                 ContinuousEvolutionDirection direction,
@@ -415,13 +416,14 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
     const double SMALL_RELATIVE_TIME=1./16;
 
     // Extract information about the working set
-    DiscreteLocation location(0);
-    // IntegerType steps;
-    EventListType events_history;
-    SetModelType set_model;
-    TimeModelType time_model;
-    const uint& set_index = current_set.first;
-    make_ltuple(location,events_history,set_model,time_model)=current_set.second;
+    DiscreteLocation location = current_set.location();
+    StepType previous_step = current_set.previous_step();
+    EventListType events_history = current_set.previous_events();
+    SetModelType set_model = current_set.set_model();
+    TimeModelType time_model = current_set.time_model();
+    uint set_index = current_set.set_index();
+
+    _log_step_summary(working_sets,reach_sets,events_history,time_model,set_model,location,previous_step);
 
     Float remaining_time = maximum_hybrid_time.continuous_time() - time_model.range().lower();
 
@@ -449,9 +451,7 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
     	}
     }
 
-    Float time_step = _get_time_step(set_model,location,direction,remaining_time,maximum_hybrid_time.continuous_time());
-
-    _log_step_summary(working_sets,reach_sets,events_history,time_model,set_model,location,time_step);
+    Float time_step = _get_time_step(set_model,location,direction,remaining_time,previous_step);
 
     // Extract information about the current location
     const RealVectorFunction dynamic=get_directed_dynamic(_sys->dynamic_function(location),direction);
@@ -916,7 +916,7 @@ compute_activationTimes(std::map<DiscreteEvent,tuple<TimeModelType,TimeModelType
 
 void
 ImageSetHybridEvolver::
-_log_step_summary(const std::list<pair<uint,HybridTimedSetType> >& working_sets,
+_log_step_summary(const std::list<EvolutionData>& working_sets,
 					 const EnclosureListType& reach_sets,
 					 const EventListType& initial_events,
 					 const TimeModelType& initial_time_model,
@@ -927,8 +927,8 @@ _log_step_summary(const std::list<pair<uint,HybridTimedSetType> >& working_sets,
         ARIADNE_LOG(1,"#w="<<std::setw(4)<<working_sets.size()
                     <<"#r="<<std::setw(4)<<std::left<<reach_sets.size()
                     <<" s="<<std::setw(3)<<std::left<<initial_events.size()
+                    <<" ps="<<std::scientific<<std::setw(5)<<std::left<< time_step << std::fixed
                     <<" t="<<std::fixed<<initial_time_model.value()
-                    <<" ts="<<std::scientific<<std::setw(5)<<std::left<< time_step << std::fixed
                     <<" r="<<std::scientific<<std::setw(7)<<initial_set_model.radius()<<std::fixed
                     <<" l="<<std::setw(3)<<std::left<<initial_location
                     <<" c="<<initial_set_model.centre()
@@ -938,7 +938,7 @@ _log_step_summary(const std::list<pair<uint,HybridTimedSetType> >& working_sets,
 }
 
 void ImageSetHybridEvolver::
-_computeEvolutionForEvents(std::list< pair<uint,HybridTimedSetType> >& working_sets,
+_computeEvolutionForEvents(std::list<EvolutionData>& working_sets,
 						   EnclosureListType& intermediate_sets,
 						   const uint& set_index,
 						   const DiscreteLocation& location,
@@ -963,7 +963,7 @@ _computeEvolutionForEvents(std::list< pair<uint,HybridTimedSetType> >& working_s
         if(event==finishing_event) {
             // TODO: Better estimate to use smaller blocking time
             intermediate_sets.adjoin(make_pair(location,evolved_set_model));
-            working_sets.push_back(make_pair(set_index,make_tuple<DiscreteLocation, std::vector<DiscreteEvent>, TaylorSet, TaylorModel>(location,events,evolved_set_model,final_time_model)));
+            working_sets.push_back(EvolutionData(set_index,location,time_step,events,evolved_set_model,final_time_model));
         } else {
             EventKind kind = _sys->event_kind(location,event);
             bool is_transition = (kind == URGENT || kind == PERMISSIVE);
@@ -973,7 +973,7 @@ _computeEvolutionForEvents(std::list< pair<uint,HybridTimedSetType> >& working_s
 				DiscreteLocation jump_location=_sys->target(location,event);
 				std::vector<DiscreteEvent> jump_events=events;
 				jump_events.push_back(event);
-				working_sets.push_back(make_pair(set_index,make_tuple<DiscreteLocation, std::vector<DiscreteEvent>, TaylorSet, TaylorModel>(jump_location,jump_events,jump_set_model,final_time_model)));
+				working_sets.push_back(EvolutionData(set_index,jump_location,time_step,jump_events,jump_set_model,final_time_model));
         	}
         }
     }
@@ -997,7 +997,7 @@ _computeEvolutionForEvents(std::list< pair<uint,HybridTimedSetType> >& working_s
 			DiscreteLocation jump_location=_sys->target(location,event);
 			std::vector<DiscreteEvent> jump_events=events;
 			jump_events.push_back(event);
-			working_sets.push_back(make_pair(set_index,make_tuple<DiscreteLocation, std::vector<DiscreteEvent>, TaylorSet, TaylorModel>(jump_location,jump_events,jump_set_model,active_time_model)));
+			working_sets.push_back(EvolutionData(set_index,jump_location,time_step,jump_events,jump_set_model,active_time_model));
 		}
     }
 }
@@ -1128,7 +1128,7 @@ _logEvolutionStepInitialState(const EventListType& previous_events,
 void
 ImageSetHybridEvolver::
 _evolution_add_initialSet(
-		std::list< pair<uint,HybridTimedSetType> >& working_sets,
+		std::list<EvolutionData>& working_sets,
 		const EnclosureType& initial_set,
 		Semantics semantics) const
 {
@@ -1148,24 +1148,24 @@ _evolution_add_initialSet(
     ARIADNE_LOG(3,"initial_time_model = "<<initial_time_model);
     TimedSetModelType initial_timed_set_model=join(initial_set_model.models(),initial_time_model);
     ARIADNE_LOG(3,"initial_timed_set_model = "<<initial_timed_set_model);
-    working_sets.push_back(make_pair(working_sets.size(),make_tuple<DiscreteLocation, std::vector<DiscreteEvent>, TaylorSet, TaylorModel>(initial_location,EventListType(),initial_set_model,initial_time_model)));
+    working_sets.push_back(EvolutionData(working_sets.size(),initial_location,std::numeric_limits<Float>::infinity(),EventListType(),initial_set_model,initial_time_model));
 }
 
 std::map<uint,Vector<Float> >
 ImageSetHybridEvolver::
-_indexed_set_models_widths(std::list< pair<uint,HybridTimedSetType> >& working_sets) const
+_indexed_set_models_widths(std::list<EvolutionData>& working_sets) const
 {
 
 	std::map<uint,Vector<Float> > result;
 
-	for (std::list< pair<uint,HybridTimedSetType> >::const_iterator set_it = working_sets.begin(); set_it != working_sets.end(); ++set_it) {
-		const Vector<Interval> initial_set_model_range = set_it->second.third.range();
+	for (std::list<EvolutionData>::const_iterator set_it = working_sets.begin(); set_it != working_sets.end(); ++set_it) {
+		const Vector<Interval> initial_set_model_range = set_it->set_model().range();
 
 		Vector<Float> widths(initial_set_model_range.size());
 		for (uint j=0;j<initial_set_model_range.size();++j)
 			widths[j] = initial_set_model_range[j].width();
 
-		result.insert(make_pair(set_it->first,widths));
+		result.insert(make_pair(set_it->set_index(),widths));
 	}
 
 	return result;
@@ -1206,11 +1206,12 @@ _is_enclosure_too_large(
 
 void
 ImageSetHybridEvolver::
-_add_subdivisions(std::list< pair<uint,HybridTimedSetType> >& working_sets,
+_add_subdivisions(std::list<EvolutionData>& working_sets,
 				  const array< TimedSetModelType >& subdivisions,
 				  const uint& set_index,
 				  const DiscreteLocation& initial_location,
-				  const EventListType& initial_events,
+				  const Float& previous_step,
+				  const EventListType& previous_events,
 				  const uint dimension) const
 {
     ARIADNE_LOG(3,"subdivisions.size()="<<subdivisions.size());
@@ -1222,43 +1223,45 @@ _add_subdivisions(std::list< pair<uint,HybridTimedSetType> >& working_sets,
         ARIADNE_LOG(3,"subdivided_set_model.range()="<<subdivided_set_model.range());
         ARIADNE_LOG(3,"subdivided_set_model.radius()*10000="<<radius(subdivided_set_model.range())*10000);
         ARIADNE_LOG(3,"subdivided_time_model.range()="<<subdivided_time_model.range());
-        working_sets.push_back(make_pair(set_index,make_tuple<DiscreteLocation, std::vector<DiscreteEvent>, TaylorSet, TaylorModel>(initial_location,initial_events,subdivided_set_model,subdivided_time_model)));
+        working_sets.push_back(EvolutionData(set_index,initial_location,previous_step,previous_events,subdivided_set_model,subdivided_time_model));
     }
 }
 
 void
 ImageSetHybridEvolver::
 _add_models_subdivisions_autoselect(
-		std::list< pair<uint,HybridTimedSetType> >& working_sets,
+		std::list<EvolutionData>& working_sets,
 		const uint& set_index,
 		const SetModelType& set_model,
 		const TimeModelType& time_model,
 		const DiscreteLocation& location,
-		const EventListType& events,
+		const Float& previous_step,
+		const EventListType& previous_events,
 		Semantics semantics) const
 {
     uint nd=set_model.dimension();
     SetModelType timed_set_model=join(set_model.models(),time_model);
     array< TimedSetModelType > subdivisions=_toolbox->subdivide(timed_set_model);
-    _add_subdivisions(working_sets,subdivisions,set_index,location,events,nd);
+    _add_subdivisions(working_sets,subdivisions,set_index,location,previous_step,previous_events,nd);
 }
 
 
 void
 ImageSetHybridEvolver::
 _add_models_subdivisions_time(
-		std::list< pair<uint,HybridTimedSetType> >& working_sets,
+		std::list<EvolutionData>& working_sets,
 		const uint& set_index,
 		const SetModelType& set_model,
 		const TimeModelType& time_model,
 		const DiscreteLocation& location,
-		const EventListType& events,
+		const Float& previous_step,
+		const EventListType& previous_events,
 		Semantics semantics) const
 {
     uint nd=set_model.dimension();
     SetModelType timed_set_model=join(set_model.models(),time_model);
     array< TimedSetModelType > subdivisions=_toolbox->subdivide(timed_set_model,nd);
-    _add_subdivisions(working_sets,subdivisions,set_index,location,events,nd);
+    _add_subdivisions(working_sets,subdivisions,set_index,location,previous_step,previous_events,nd);
 }
 
 

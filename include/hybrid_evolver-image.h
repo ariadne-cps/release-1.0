@@ -57,6 +57,7 @@ template<class MDL> class CalculusInterface;
 class HybridTime;
 class DiscreteEvent;
 class ImageSetHybridEvolverSettings;
+class EvolutionData;
 
 /*! \brief A class for computing the evolution of a hybrid system.
  *
@@ -65,6 +66,8 @@ class ImageSetHybridEvolverSettings;
 class ImageSetHybridEvolver
     : public EvolverBase<HybridAutomatonInterface,LocalisedTaylorSet>
 {
+    friend class EvolutionData;
+
     typedef ScalarFunction ScalarFunctionType;
     typedef VectorFunction VectorFunctionType;
     typedef Vector<Interval> BoxType;
@@ -90,7 +93,7 @@ class ImageSetHybridEvolver
     typedef Orbit<EnclosureType> OrbitType;
     typedef ListSet<EnclosureType> EnclosureListType;
     typedef Float ContinuousTimeType;
-    typedef tuple<DiscreteLocation, EventListType, SetModelType, TimeModelType> HybridTimedSetType;
+    typedef Float StepType;
     typedef std::map< DiscreteEvent,tuple<TaylorModel,TaylorModel> > ActivationTimesType;
   public:
 
@@ -121,9 +124,9 @@ class ImageSetHybridEvolver
                             const EnclosureType& initial, const TimeType& time, bool ignore_activations,
                             ContinuousEvolutionDirection direction, Semantics semantics) const;
 
-    virtual void _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
+    virtual void _evolution_step(std::list<EvolutionData>& working_sets,
                                   EnclosureListType& reachable, EnclosureListType& intermediate,
-                                  const pair<uint,HybridTimedSetType>& current_set, const TimeType& time,
+                                  const EvolutionData& data, const TimeType& time,
                                   bool ignore_activations, ContinuousEvolutionDirection direction, Semantics semantics) const;
 
   protected:
@@ -189,7 +192,7 @@ class ImageSetHybridEvolver
 
   private:
 
-    std::map<uint,Vector<Float> > _indexed_set_models_widths(std::list< pair<uint,HybridTimedSetType> >& working_sets) const;
+    std::map<uint,Vector<Float> > _indexed_set_models_widths(std::list<EvolutionData>& working_sets) const;
 
     void _box_on_contraction(TaylorSet& set_model,
     					 TaylorModel& time_model,
@@ -202,41 +205,44 @@ class ImageSetHybridEvolver
     				 	 const DiscreteLocation& location,
     				 	 ContinuousEvolutionDirection direction,
     				 	 const Float& remaining_time,
-    				 	 const Float& maximum_continuous_time) const;
+    				 	 const Float& previous_step) const;
 
     bool _is_enclosure_too_large(
     		const DiscreteLocation& loc,
     		const SetModelType& set_model,
     		const Vector<Float>& initial_set_model_widths) const;
 
-    void _evolution_add_initialSet(std::list< pair<uint,HybridTimedSetType> >& working_sets,
+    void _evolution_add_initialSet(std::list<EvolutionData>& working_sets,
     							   const EnclosureType& initial_set,
     							   Semantics semantics) const;
 
-    void _add_models_subdivisions_autoselect(std::list< pair<uint,HybridTimedSetType> >& working_sets,
+    void _add_models_subdivisions_autoselect(std::list<EvolutionData>& working_sets,
     										 const uint& set_index,
     		  	  	  	  	  	  	  		 const SetModelType& set_model,
     		  	  	  	  	  	  	  		 const TimeModelType& time_model,
     		  	  	  	  	  	  	  		 const DiscreteLocation& location,
-    		  	  	  	  	  	  	  		 const EventListType& events,
+    		  	                             const Float& previous_step,
+    		  	  	  	  	  	  	  		 const EventListType& previous_events,
     		  	  	  	  	  	  	  		 Semantics semantics) const;
 
-    void _add_models_subdivisions_time(std::list< pair<uint,HybridTimedSetType> >& working_sets,
+    void _add_models_subdivisions_time(std::list<EvolutionData>& working_sets,
 			 	 	 	 	 	 	   const uint& set_index,
     		  	  	  	  	  	  	   const SetModelType& set_model,
     		  	  	  	  	  	  	   const TimeModelType& time_model,
     		  	  	  	  	  	  	   const DiscreteLocation& location,
-    		  	  	  	  	  	  	   const EventListType& events,
+    		  	                       const Float& previous_step,
+    		  	  	  	  	  	  	   const EventListType& previous_events,
     		  	  	  	  	  	  	   Semantics semantics) const;
 
-    void _add_subdivisions(std::list< pair<uint,HybridTimedSetType> >& working_sets,
+    void _add_subdivisions(std::list<EvolutionData>& working_sets,
     					   const array< TimedSetModelType >& subdivisions,
     					   const uint& set_index,
     					   const DiscreteLocation& location,
-    					   const EventListType& events,
+    					   const Float& previous_step,
+    					   const EventListType& previous_events,
     					   const uint dimension) const;
 
-    void _log_step_summary(const std::list< pair<uint,HybridTimedSetType> >& working_sets,
+    void _log_step_summary(const std::list<EvolutionData>& working_sets,
     					 const EnclosureListType& reach_sets,
     					 const EventListType& events,
     					 const TimeModelType& time_model,
@@ -244,7 +250,7 @@ class ImageSetHybridEvolver
     					 const DiscreteLocation& location,
     					 const Float& step_size) const;
 
-    void _computeEvolutionForEvents(std::list< pair<uint,HybridTimedSetType> >& working_sets,
+    void _computeEvolutionForEvents(std::list<EvolutionData>& working_sets,
 			   	   	   	   	   	    EnclosureListType& intermediate_sets,
 			   	   	   	   	   	    const uint& set_index,
 			   	   	   	   	   	    const DiscreteLocation& location,
@@ -390,6 +396,43 @@ class ImageSetHybridEvolverSettings {
 
     const unsigned int& maximum_number_of_working_sets() const;
     void set_maximum_number_of_working_sets(const unsigned int&);
+};
+
+struct EvolutionData {
+
+    typedef ImageSetHybridEvolver::EventListType EventListType;
+    typedef ImageSetHybridEvolver::SetModelType SetModelType;
+    typedef ImageSetHybridEvolver::TimeModelType TimeModelType;
+    typedef ImageSetHybridEvolver::StepType StepType;
+
+    EvolutionData(uint set_index,
+                  DiscreteLocation location,
+                  StepType previous_step,
+                  EventListType previous_events,
+                  SetModelType set_model,
+                  TimeModelType time_model) :
+                      _set_index(set_index),
+                      _location(location),
+                      _previous_step(previous_step),
+                      _previous_events(previous_events),
+                      _set_model(set_model),
+                      _time_model(time_model) { }
+
+    uint set_index() const { return _set_index; }
+    DiscreteLocation location() const { return _location; }
+    StepType previous_step() const { return _previous_step; }
+    EventListType previous_events() const { return _previous_events; }
+    SetModelType set_model() const { return _set_model; }
+    TimeModelType time_model() const { return _time_model; }
+
+  private:
+
+    uint _set_index;
+    DiscreteLocation _location;
+    StepType _previous_step;
+    EventListType _previous_events;
+    SetModelType _set_model;
+    TimeModelType _time_model;
 };
 
 
