@@ -123,9 +123,9 @@ _get_time_step(const SetModelType& starting_set,
 
     Float result;
 
-    Float lipschitz_tolerance = 1.0/2;
+    Float lipschitz_tolerance = 1.0;
     uint refinement_steps = 8;
-    Float score_minimum_relative_improvement = 0.1;
+    Float score_minimum_relative_improvement = 0.01;
 
     if (_settings->enable_error_rate_enforcement()) {
 
@@ -147,7 +147,6 @@ _get_time_step(const SetModelType& starting_set,
 
         Float initial_score;
         Float previous_score = -std::numeric_limits<Float>::infinity();
-        Float current_score;
 
         uint k = 0;
         while (true) {
@@ -165,8 +164,10 @@ _get_time_step(const SetModelType& starting_set,
             for (uint i = 0; i < dim; ++i)
                 local_computed_width_ratios[i] = finishing_set.widths()[i]/starting_set.widths()[i];
 
+            Float current_score = 0;
             for (uint i = 0; i < dim; ++i)
-                current_score += (starting_set.widths()[i] - finishing_set.widths()[i])/final_widths[i];
+                current_score += starting_set.widths()[i]/finishing_set.widths()[i];
+            current_score /= dim;
 
             if (k==0)
                 initial_score = current_score;
@@ -180,7 +181,7 @@ _get_time_step(const SetModelType& starting_set,
             }
 
             Float score_improvement = current_score - previous_score;
-            Float score_relative_improvement = score_improvement/abs(previous_score);
+            Float score_relative_improvement = score_improvement/previous_score;
 
             cout << "Step " << result <<
                     ": score " << current_score <<
@@ -465,13 +466,6 @@ _evolution_step(std::list< pair<uint,HybridTimedSetType> >& working_sets,
     compute_flow_model(location,flow_set_model,flow_bounds,time_step,dynamic,set_model,time_model,maximum_time);
     // Partial evaluation on flow set model to obtain final set must take scaled time equal to 1.0
     SetModelType finishing_set=partial_evaluate(flow_set_model.models(),set_model.argument_size(),1.0);
-
-    Vector<Float> rates(finishing_set.size());
-    for (uint i=0; i < finishing_set.size(); ++i) {
-        rates[i] = (finishing_set.widths()[i]/set_model.widths()[i])/time_step;
-    }
-
-    ARIADNE_LOG(2, "Error rates: " << std::scientific << rates);
 
     ARIADNE_LOG(2,"flow_bounds = "<<flow_bounds)
     ARIADNE_LOG(2,"time_step = "<<time_step)
