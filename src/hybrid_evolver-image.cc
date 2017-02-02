@@ -145,22 +145,44 @@ _get_time_step(const SetModelType& starting_set,
         Float maximum_bounds_diameter=max(this->_settings->_reference_enclosure_widths.find(location)->second)*
                 MAXIMUM_BOUNDS_DIAMETER_FACTOR*this->_settings->maximum_enclosure_widths_ratio();
 
-        Float initial_score;
-        Float previous_score = -std::numeric_limits<Float>::infinity();
+        TaylorSet flow_set = compute_flow_model_simplified(result, dynamic, maximum_bounds_diameter, starting_set);
+        TaylorSet finishing_set = partial_evaluate(flow_set.models(),starting_set.argument_size(),1.0);
+
+        Float initial_score = 0;
+        for (uint i = 0; i < dim; ++i)
+            initial_score += starting_set.widths()[i]/finishing_set.widths()[i];
+        initial_score /= dim;
+
+        Float previous_score = initial_score;
+
+        Vector<Float> local_target_width_ratios(dim);
+        for (uint i = 0; i < dim; ++i) {
+            Float exponent = result/remaining_time;
+            local_target_width_ratios[i] = std::pow((Float)final_target_width_ratios[i],exponent);
+        }
+
+        Vector<Float> local_computed_width_ratios(dim);
+        for (uint i = 0; i < dim; ++i)
+            local_computed_width_ratios[i] = finishing_set.widths()[i]/starting_set.widths()[i];
+
+        cout << "Step " << result <<
+                ": initial score " << initial_score <<
+                ", target ratios " << local_target_width_ratios <<
+                ", computed ratios " << local_computed_width_ratios << endl;
+
+        result/= 2;
 
         uint k = 0;
         while (true) {
 
-            Vector<Float> local_target_width_ratios(dim);
             for (uint i = 0; i < dim; ++i) {
                 Float exponent = result/remaining_time;
                 local_target_width_ratios[i] = std::pow((Float)final_target_width_ratios[i],exponent);
             }
 
-            TaylorSet flow_set = compute_flow_model_simplified(result, dynamic, maximum_bounds_diameter, starting_set);
-            TaylorSet finishing_set = partial_evaluate(flow_set.models(),starting_set.argument_size(),1.0);
+            flow_set = compute_flow_model_simplified(result, dynamic, maximum_bounds_diameter, starting_set);
+            finishing_set = partial_evaluate(flow_set.models(),starting_set.argument_size(),1.0);
 
-            Vector<Float> local_computed_width_ratios(dim);
             for (uint i = 0; i < dim; ++i)
                 local_computed_width_ratios[i] = finishing_set.widths()[i]/starting_set.widths()[i];
 
@@ -168,9 +190,6 @@ _get_time_step(const SetModelType& starting_set,
             for (uint i = 0; i < dim; ++i)
                 current_score += starting_set.widths()[i]/finishing_set.widths()[i];
             current_score /= dim;
-
-            if (k==0)
-                initial_score = current_score;
 
             bool is_within = true;
             for (uint i = 0; i < dim; ++i) {
