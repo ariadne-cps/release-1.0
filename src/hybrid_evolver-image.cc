@@ -413,11 +413,14 @@ _evolution_step(std::list<EvolutionData>& working_sets,
     	for (uint i = 0; i < reference_enclosure_widths.size(); ++i)
     		error_thresholds[i] = reference_enclosure_widths[i]/4;
 
+    	ARIADNE_LOG(1,"Original model: " << set_model);
+
     	set_model.uniform_error_recondition(error_thresholds);
 
     	int argument_difference = set_model.argument_size() - time_model.argument_size();
     	if (argument_difference > 0) {
     	    has_reconditioned = true;
+    	    ARIADNE_LOG(1,"Reconditioned model: " << set_model);
     		time_model = embed(time_model,argument_difference);
     	}
 
@@ -425,6 +428,12 @@ _evolution_step(std::list<EvolutionData>& working_sets,
     	if (!discarded_parameters.empty()) {
     	    has_reconditioned = true;
     		time_model = recondition(time_model,discarded_parameters,set_model.dimension(),set_model.dimension());
+    	}
+
+    	if (has_reconditioned) {
+    	    TaylorModel model = set_model.models()[0];
+    	    ARIADNE_LOG(1,"Reconditioned 0-th model after Kuhn: " << model << " (value " << model.value() << ")");
+    	    ARIADNE_LOG(1,"Reconditioned center: " << set_model.centre() << ", bounds: " << set_model.bounding_box() << ", widths: " << std::scientific << set_model.widths());
     	}
     }
 
@@ -902,7 +911,7 @@ _log_step_summary(const std::list<EvolutionData>& working_sets,
                     <<" l="<<std::setw(3)<<std::left<<initial_location
                     <<" c="<<initial_set_model.centre()
                     <<" as="<<initial_set_model.argument_size()
-					//<<" w="<<initial_set_model.widths()
+					<<" w="<<initial_set_model.widths()
                     <<" e="<<initial_events);
 }
 

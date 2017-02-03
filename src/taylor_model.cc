@@ -2645,7 +2645,7 @@ TaylorModel embed(uint as, const TaylorModel& x)
 std::ostream&
 operator<<(std::ostream& os, const TaylorModel& tv) {
     //os << "TaylorModel";
-    return os << "(" << tv.expansion() << "+/-" << tv.error() << ")";
+    return os << "(" << std::scientific << tv.expansion() << "+/-" << tv.error() << ")";
 }
 
 
@@ -3884,26 +3884,16 @@ TaylorModel recondition(const TaylorModel& tm, Array<uint>& discarded_variables,
     r.expansion().reserve(tm.number_of_nonzeros()+1u);
     MultiIndex ra(number_of_kept_variables+number_of_error_variables);
 
-    // Set the uniform error of the original model
-    // If index_of_error == number_of_error_variables, then the error is kept as a uniform error bound
-    double* error_ptr;
-    if(number_of_error_variables==index_of_error) {
-        error_ptr = &r.error();
-    } else {
-        ra[number_of_kept_variables+index_of_error]=1;
-        r.expansion().append(ra,reinterpret_cast<double const&>(tm.error()));
-        ra[number_of_kept_variables+index_of_error]=0;
-        error_ptr = reinterpret_cast<double*>(&r.begin()->data());
-    }
-    double& error=*error_ptr;
+    double coefficient = tm.error();
 
+    std::list<std::pair<MultiIndex,double> > vals;
     for(TaylorModel::const_iterator iter=tm.begin(); iter!=tm.end(); ++iter) {
         MultiIndex const& xa=iter->key();
         double const& xv=iter->data();
         bool keep=true;
         for(uint k=0; k!=number_of_discarded_variables; ++k) {
             if(xa[discarded_variables[k]]!=0) {
-                error += mag(xv);
+                coefficient += mag(xv);
                 keep=false;
                 break;
             }
@@ -3912,9 +3902,24 @@ TaylorModel recondition(const TaylorModel& tm, Array<uint>& discarded_variables,
             for(uint k=0; k!=number_of_kept_variables; ++k) {
                 ra[k]=xa[kept_variables[k]];
             }
-            r.expansion().append(ra,xv);
+            vals.push_back(make_pair(ra,xv));
         }
     }
+
+    while (vals.size() > 0) {
+        pair<MultiIndex,double> pair = vals.front();
+        vals.pop_front();
+        r.expansion().append(pair.first,pair.second);
+    }
+
+    if(number_of_error_variables==index_of_error) {
+        r.set_error(coefficient);
+    } else {
+        MultiIndex rf(number_of_kept_variables+number_of_error_variables);
+        rf[number_of_kept_variables+index_of_error]=1;
+        r.expansion().append(rf,coefficient);
+    }
+
     set_rounding_to_nearest();
 
     return r;
