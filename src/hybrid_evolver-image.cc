@@ -112,20 +112,41 @@ tune_settings(
 	ARIADNE_LOG(2, "Fixed maximum step size: " << this->_settings->fixed_maximum_step_size());
 }
 
-
-Float
+ContinuousStepResult
 ImageSetHybridEvolver::
-_get_time_step(const SetModelType& starting_set,
+compute_integration_step_result(const SetModelType& starting_set,
+               const DiscreteLocation& location,
+               ContinuousEvolutionDirection direction,
+               Float step) const {
+
+    RealVectorFunction dynamic = get_directed_dynamic(_sys->dynamic_function(location),direction);
+
+    const int MAXIMUM_BOUNDS_DIAMETER_FACTOR = 8;
+    Float maximum_bounds_diameter=max(this->_settings->_reference_enclosure_widths.find(location)->second)*
+            MAXIMUM_BOUNDS_DIAMETER_FACTOR*this->_settings->maximum_enclosure_widths_ratio();
+
+    SetModelType flow_model;
+    Float effective_step;
+    make_lpair(flow_model,effective_step) = compute_flow_and_effective_step(step, dynamic, maximum_bounds_diameter, starting_set);
+    TaylorSet finishing_set = partial_evaluate(flow_model.models(),starting_set.argument_size(),1.0);
+
+    return ContinuousStepResult(effective_step,flow_model,finishing_set);
+}
+
+ContinuousStepResult
+ImageSetHybridEvolver::
+_continuous_step(const SetModelType& starting_set,
 		       const DiscreteLocation& location,
 		       ContinuousEvolutionDirection direction,
 		       const Float& remaining_time,
 		       const Float& previous_step) const {
 
-    Float result;
-
     Float lipschitz_tolerance = 1.0;
-    uint refinement_steps = 2;
-    Float score_minimum_relative_improvement = 0.10;
+    uint refinement_steps = 7;
+    Float score_minimum_relative_improvement = 0.05;
+
+    uint k = 0;
+    std::vector<ContinuousStepResult> results;
 
     if (_settings->enable_error_rate_enforcement()) {
 
@@ -138,25 +159,23 @@ _get_time_step(const SetModelType& starting_set,
         }
 
         RealVectorFunction dynamic = get_directed_dynamic(_sys->dynamic_function(location),direction);
+        Float maximum_step = previous_step*(1<<(refinement_steps/2));
+        Float lipschitz_step = lipschitz_tolerance/norm(dynamic.jacobian(starting_set.bounding_box())).upper();
+        Float step = min(maximum_step,lipschitz_step);
 
-        result = min(previous_step*(2<<refinement_steps),lipschitz_tolerance/norm(dynamic.jacobian(starting_set.bounding_box())).upper());
+        ContinuousStepResult initial = compute_integration_step_result(starting_set,location,direction,step);
 
-        const int MAXIMUM_BOUNDS_DIAMETER_FACTOR = 8;
-        Float maximum_bounds_diameter=max(this->_settings->_reference_enclosure_widths.find(location)->second)*
-                MAXIMUM_BOUNDS_DIAMETER_FACTOR*this->_settings->maximum_enclosure_widths_ratio();
-
-        TaylorSet flow_set = compute_flow_model_simplified(result, dynamic, maximum_bounds_diameter, starting_set);
-        TaylorSet finishing_set = partial_evaluate(flow_set.models(),starting_set.argument_size(),1.0);
+        results.push_back(initial);
 
         Vector<Float> local_target_width_ratios(dim);
         for (uint i = 0; i < dim; ++i) {
-            Float exponent = result/remaining_time;
+            Float exponent = step/remaining_time;
             local_target_width_ratios[i] = std::pow((Float)global_target_width_ratios[i],exponent);
         }
 
         Vector<Float> local_computed_width_ratios(dim);
         for (uint i = 0; i < dim; ++i)
-            local_computed_width_ratios[i] = starting_set.widths()[i]/finishing_set.widths()[i];
+            local_computed_width_ratios[i] = starting_set.widths()[i]/initial.finishing_set_model().widths()[i];
 
         Float target_score = 0;
         for (uint i = 0; i < dim; ++i)
@@ -170,30 +189,31 @@ _get_time_step(const SetModelType& starting_set,
 
         Float previous_score = initial_score;
 
-        cout << "Step " << result <<
+        cout << "Step " << step <<
                 ": target score " << target_score <<
                 ": initial score " << initial_score <<
                 ", target ratios " << local_target_width_ratios <<
                 ", computed ratios " << local_computed_width_ratios << endl;
 
         if (initial_score == 0)
-            result /= std::pow(2,refinement_steps);
+            step /= std::pow(2,refinement_steps);
         else
-            result/= 2;
+            step/= 2;
 
-        uint k = 0;
+        k++;
         while (true) {
 
             for (uint i = 0; i < dim; ++i) {
-                Float exponent = result/remaining_time;
+                Float exponent = step/remaining_time;
                 local_target_width_ratios[i] = std::pow((Float)global_target_width_ratios[i],exponent);
             }
 
-            flow_set = compute_flow_model_simplified(result, dynamic, maximum_bounds_diameter, starting_set);
-            finishing_set = partial_evaluate(flow_set.models(),starting_set.argument_size(),1.0);
+            ContinuousStepResult current = compute_integration_step_result(starting_set,location,direction,step);
+
+            results.push_back(current);
 
             for (uint i = 0; i < dim; ++i)
-                local_computed_width_ratios[i] = starting_set.widths()[i]/finishing_set.widths()[i];
+                local_computed_width_ratios[i] = starting_set.widths()[i]/current.finishing_set_model().widths()[i];
 
             Float current_score = 0;
             for (uint i = 0; i < dim; ++i)
@@ -208,7 +228,7 @@ _get_time_step(const SetModelType& starting_set,
             Float score_improvement = current_score - previous_score;
             Float score_relative_improvement = score_improvement/previous_score;
 
-            cout << "Step " << result <<
+            cout << "Step " << step <<
                     ": target score " << target_score <<
                     ": score " << current_score <<
                     ", score improvement: " << score_improvement <<
@@ -222,13 +242,13 @@ _get_time_step(const SetModelType& starting_set,
             } else {
                 cout << " failure";
 
-                if (k > 0 && (score_improvement<=0 || score_relative_improvement < score_minimum_relative_improvement)) {
+                if (score_improvement<=0 || score_relative_improvement < score_minimum_relative_improvement) {
                     cout << ", current score has not improved " << (score_improvement<=0 ? "" : "enough") <<  ", using the previous step value" << endl;
-                    result *= 2;
+                    k--;
                     break;
                 } else {
                     cout << ", current score has improved enough";
-                    if (k == refinement_steps) {
+                    if (k > refinement_steps) {
                         cout << " but maximum number of refinements reached: stopping" << endl;
                         break;
                     } else {
@@ -238,16 +258,17 @@ _get_time_step(const SetModelType& starting_set,
             }
 
             k++;
-            result /= 2;
+            step /= 2;
             previous_score = current_score;
         }
 
-
     } else {
-        result = _settings->fixed_maximum_step_size().at(location);
+        Float step = _settings->fixed_maximum_step_size().at(location);
+        results.push_back(compute_integration_step_result(starting_set,location, direction,step));
     }
 
-    return result;
+    cout << "Returning result at index " << k << ": " << results.at(k).used_step() << std::endl;
+    return results.at(k);
 }
 
 void
@@ -451,8 +472,6 @@ _evolution_step(std::list<EvolutionData>& working_sets,
     	}
     }
 
-    Float time_step = _get_time_step(set_model,location,direction,remaining_time,previous_step);
-
     // Extract information about the current location
     const RealVectorFunction dynamic=get_directed_dynamic(_sys->dynamic_function(location),direction);
     Set<DiscreteEvent> available_events = _sys->events(location);
@@ -486,19 +505,13 @@ _evolution_step(std::list<EvolutionData>& working_sets,
     if (is_enclosure_to_be_discarded(set_model,urgent_guards,dynamic,semantics))
     	return;
 
-    // Compute continuous evolution
-    FlowSetModelType flow_set_model; BoxType flow_bounds; 
-    const Float maximum_time=maximum_hybrid_time.continuous_time();
-    compute_flow_model(location,flow_set_model,flow_bounds,time_step,dynamic,set_model,time_model,maximum_time);
-    // Partial evaluation on flow set model to obtain final set must take scaled time equal to 1.0
-    SetModelType finishing_set=partial_evaluate(flow_set_model.models(),set_model.argument_size(),1.0);
+    ContinuousStepResult continuous_step_result = _continuous_step(set_model,location, direction,remaining_time,previous_step);
+    SetModelType flow_set_model = continuous_step_result.flow_set_model();
+    Float time_step = continuous_step_result.used_step();
 
-    ARIADNE_LOG(2,"flow_bounds = "<<flow_bounds)
-    ARIADNE_LOG(2,"time_step = "<<time_step)
+    ARIADNE_LOG(2,"time_step = "<<time_step);
     ARIADNE_LOG(2,"flow_range = "<<flow_set_model.range());
-    ARIADNE_LOG(2,"starting_set_range = "<<set_model.range());
-    ARIADNE_LOG(2,"starting_set = "<<set_model);
-    ARIADNE_LOG(2,"finishing_set_range = "<<finishing_set.range())
+    ARIADNE_LOG(2,"finishing_set_range = "<<continuous_step_result.finishing_set_model().range());
 
     // Set special events and times; note that the time step is scaled to [0,1]
     TimeModelType zero_time_model = _toolbox->time_model(0.0,Box(time_model.argument_size()));
@@ -689,8 +702,8 @@ compute_flow_model(
     flow_set_model=unchecked_apply(flow_model,combine(starting_set_model.models(),identity_time_expression.model()));
 }
 
-ImageSetHybridEvolver::FlowSetModelType ImageSetHybridEvolver::
-compute_flow_model_simplified(
+std::pair<ImageSetHybridEvolver::FlowSetModelType,Float> ImageSetHybridEvolver::
+compute_flow_and_effective_step(
         Float& time_step,
         RealVectorFunction dynamic,
         Float& maximum_bounds_diameter,
@@ -702,7 +715,7 @@ compute_flow_model_simplified(
     make_lpair(effective_time_step,flow_bounds)=_toolbox->flow_bounds(dynamic,starting_set_bounding_box,time_step,maximum_bounds_diameter);
     TaylorCalculus::FlowModelType flow_model= _toolbox->flow_model(dynamic,starting_set_bounding_box,effective_time_step,flow_bounds);
     ScalarTaylorFunction identity_time_expression=ScalarTaylorFunction::variable(Box(1u,Interval(-effective_time_step,+effective_time_step)),0u);
-    return unchecked_apply(flow_model,combine(starting_set_model.models(),identity_time_expression.model()));
+    return std::make_pair(unchecked_apply(flow_model,combine(starting_set_model.models(),identity_time_expression.model())),effective_time_step);
 }
 
 
@@ -1398,6 +1411,17 @@ operator<<(std::ostream& os, const ImageSetHybridEvolverSettings& s)
        << ",\n  enable_premature_termination_on_enclosure_size=" << s.enable_premature_termination_on_enclosure_size()
 	   << ",\n  maximum_number_of_working_sets=" << s.maximum_number_of_working_sets()
        << "\n)\n";
+    return os;
+}
+
+std::ostream&
+operator<<(std::ostream& os, const ContinuousStepResult& r)
+{
+    os << "("
+       << "s=" << r.used_step()
+       << ", flow=" << r.flow_set_model()
+       << ", finishing=" << r.finishing_set_model()
+       << ")";
     return os;
 }
 

@@ -58,6 +58,7 @@ class HybridTime;
 class DiscreteEvent;
 class ImageSetHybridEvolverSettings;
 class EvolutionData;
+class ContinuousStepResult;
 
 /*! \brief A class for computing the evolution of a hybrid system.
  *
@@ -67,6 +68,7 @@ class ImageSetHybridEvolver
     : public EvolverBase<HybridAutomatonInterface,LocalisedTaylorSet>
 {
     friend class EvolutionData;
+    friend class ContinuousStepResult;
 
     typedef ScalarFunction ScalarFunctionType;
     typedef VectorFunction VectorFunctionType;
@@ -172,6 +174,19 @@ class ImageSetHybridEvolver
             Float&,
             const SetModelType&) const;
 
+    std::pair<FlowSetModelType,Float>
+    compute_flow_and_effective_step(
+            Float& time_step,
+            RealVectorFunction dynamic,
+            Float& maximum_bounds_diameter,
+            const SetModelType& starting_set_model) const;
+
+    ContinuousStepResult
+    compute_integration_step_result(const SetModelType& starting_set,
+                   const DiscreteLocation& location,
+                   ContinuousEvolutionDirection direction,
+                   Float step) const;
+
     void compute_eventBlockingTimes_and_nonTransverseEvents(
     		std::map<DiscreteEvent,TimeModelType>&,
     		std::set<DiscreteEvent>&,
@@ -201,11 +216,11 @@ class ImageSetHybridEvolver
     					 ContinuousEvolutionDirection direction,
     					 Semantics semantics) const;
 
-    Float _get_time_step(const SetModelType& set_model,
-    				 	 const DiscreteLocation& location,
-    				 	 ContinuousEvolutionDirection direction,
-    				 	 const Float& remaining_time,
-    				 	 const Float& previous_step) const;
+    ContinuousStepResult _continuous_step(const SetModelType& set_model,
+    				 	                   const DiscreteLocation& location,
+    				 	                   ContinuousEvolutionDirection direction,
+    				 	                   const Float& remaining_time,
+    				 	                   const Float& previous_step) const;
 
     bool _is_enclosure_too_large(
     		const DiscreteLocation& loc,
@@ -435,6 +450,27 @@ struct EvolutionData {
     TimeModelType _time_model;
 };
 
+struct ContinuousStepResult {
+
+    typedef ImageSetHybridEvolver::SetModelType SetModelType;
+
+    ContinuousStepResult(Float used_step, SetModelType flow_set_model, SetModelType finishing_set_model) :
+        _used_step(used_step),
+        _flow_set_model(flow_set_model),
+        _finishing_set_model(finishing_set_model) { }
+
+    Float used_step() const { return _used_step; }
+    SetModelType flow_set_model() const { return _flow_set_model; }
+    SetModelType finishing_set_model() const { return _finishing_set_model; }
+
+  private:
+
+    Float _used_step;
+    SetModelType _flow_set_model;
+    SetModelType _finishing_set_model;
+};
+
+std::ostream& operator<<(std::ostream& os, const ContinuousStepResult& r);
 
 std::ostream& operator<<(std::ostream& os, const ImageSetHybridEvolverSettings& s);
 
