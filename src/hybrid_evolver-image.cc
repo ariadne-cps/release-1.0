@@ -143,10 +143,9 @@ _continuous_step(const SetModelType& starting_set,
 
     Float lipschitz_tolerance = 1.0;
     uint refinement_steps = 7;
-    Float score_minimum_relative_improvement = 0.05;
+    Float relative_score_objective = 0.95;
 
     uint k = 0;
-    std::vector<ContinuousStepResult> results;
 
     if (_settings->enable_error_rate_enforcement()) {
 
@@ -163,112 +162,68 @@ _continuous_step(const SetModelType& starting_set,
         Float lipschitz_step = lipschitz_tolerance/norm(dynamic.jacobian(starting_set.bounding_box())).upper();
         Float step = min(maximum_step,lipschitz_step);
 
-        ContinuousStepResult initial = compute_integration_step_result(starting_set,location,direction,step);
-
-        results.push_back(initial);
-
-        Vector<Float> local_target_width_ratios(dim);
-        for (uint i = 0; i < dim; ++i) {
-            Float exponent = step/remaining_time;
-            local_target_width_ratios[i] = std::pow((Float)global_target_width_ratios[i],exponent);
+        if (starting_set.radius() == 0) {
+            step /= std::pow(2,refinement_steps);
+            refinement_steps = 1;
         }
 
-        Vector<Float> local_computed_width_ratios(dim);
-        for (uint i = 0; i < dim; ++i)
-            local_computed_width_ratios[i] = starting_set.widths()[i]/initial.finishing_set_model().widths()[i];
 
-        Float target_score = 0;
-        for (uint i = 0; i < dim; ++i)
-            target_score += local_target_width_ratios[i];
-        target_score /= dim;
+        std::list<std::pair<ContinuousStepResult,Float> > candidates;
 
-        Float initial_score = 0;
-        for (uint i = 0; i < dim; ++i)
-            initial_score += local_computed_width_ratios[i];
-        initial_score /= dim;
+        for (uint k = 0; k < refinement_steps; ++k) {
 
-        Float previous_score = initial_score;
-
-        cout << "Step " << step <<
-                ": target score " << target_score <<
-                ": initial score " << initial_score <<
-                ", target ratios " << local_target_width_ratios <<
-                ", computed ratios " << local_computed_width_ratios << endl;
-
-        if (initial_score == 0)
-            step /= std::pow(2,refinement_steps);
-        else
-            step/= 2;
-
-        k++;
-        while (true) {
-
+            Float exponent = step/remaining_time;
+            Vector<Float> local_target_width_ratios(dim);
             for (uint i = 0; i < dim; ++i) {
-                Float exponent = step/remaining_time;
                 local_target_width_ratios[i] = std::pow((Float)global_target_width_ratios[i],exponent);
             }
-
-            ContinuousStepResult current = compute_integration_step_result(starting_set,location,direction,step);
-
-            results.push_back(current);
-
-            for (uint i = 0; i < dim; ++i)
-                local_computed_width_ratios[i] = starting_set.widths()[i]/current.finishing_set_model().widths()[i];
-
-            Float current_score = 0;
-            for (uint i = 0; i < dim; ++i)
-                current_score += local_computed_width_ratios[i];
-            current_score /= dim;
-
             Float target_score = 0;
             for (uint i = 0; i < dim; ++i)
                 target_score += local_target_width_ratios[i];
             target_score /= dim;
 
-            Float score_improvement = current_score - previous_score;
-            Float score_relative_improvement = score_improvement/previous_score;
+            ContinuousStepResult current_integration = compute_integration_step_result(starting_set,location,direction,step);
 
-            cout << "Step " << step <<
+            Vector<Float> local_computed_width_ratios(dim);
+            for (uint i = 0; i < dim; ++i) {
+                local_computed_width_ratios[i] = starting_set.widths()[i]/current_integration.finishing_set_model().widths()[i];
+            }
+            Float current_score = 0;
+            for (uint i = 0; i < dim; ++i)
+                current_score += local_computed_width_ratios[i];
+            current_score /= dim;
+
+            candidates.push_back(make_pair(current_integration,current_score/target_score));
+
+            cout << "Step " << current_integration.used_step() <<
                     ": target score " << target_score <<
-                    ": score " << current_score <<
-                    ", score improvement: " << score_improvement <<
-                    ", score_relative_improvement: " << score_relative_improvement <<
+                    ": current score " << current_score <<
+                    ", relative score: " << current_score/target_score <<
                     ", target ratios " << local_target_width_ratios <<
                     ", computed ratios " << local_computed_width_ratios << endl;
 
-            if (current_score >= target_score) {
-                cout << " success." << endl;
-                break;
-            } else {
-                cout << " failure";
-
-                if (score_improvement<=0 || score_relative_improvement < score_minimum_relative_improvement) {
-                    cout << ", current score has not improved " << (score_improvement<=0 ? "" : "enough") <<  ", using the previous step value" << endl;
-                    k--;
-                    break;
-                } else {
-                    cout << ", current score has improved enough";
-                    if (k > refinement_steps) {
-                        cout << " but maximum number of refinements reached: stopping" << endl;
-                        break;
-                    } else {
-                        cout << ", refining" << endl;
-                    }
-                }
-            }
-
-            k++;
-            step /= 2;
-            previous_score = current_score;
+            step = current_integration.used_step()/2;
         }
+
+        std::list<std::pair<ContinuousStepResult,Float> >::const_iterator it = candidates.begin();
+        std::pair<ContinuousStepResult,Float> winner = *it;
+        for ( ; it != candidates.end(); ++it) {
+            if (it->second > relative_score_objective) {
+                winner = *it;
+                break;
+            } else if (it->second > winner.second) {
+                winner = *it;
+            }
+        }
+
+        cout << "Chosen candidate with step " << winner.first.used_step() << ", with relative score " << winner.second << endl;
+
+        return winner.first;
 
     } else {
         Float step = _settings->fixed_maximum_step_size().at(location);
-        results.push_back(compute_integration_step_result(starting_set,location, direction,step));
+        return compute_integration_step_result(starting_set,location, direction,step);
     }
-
-    cout << "Returning result at index " << k << ": " << results.at(k).used_step() << std::endl;
-    return results.at(k);
 }
 
 void
