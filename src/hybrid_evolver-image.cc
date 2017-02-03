@@ -151,10 +151,10 @@ _continuous_step(const SetModelType& starting_set,
 
         Float dim = starting_set.dimension();
 
-        Vector<Float> global_target_width_ratios(dim);
+        Vector<Float> global_target_score_terms(dim);
         Vector<Float> final_widths = this->_settings->_reference_enclosure_widths.find(location)->second;
         for (int i = 0; i < dim; ++i) {
-            global_target_width_ratios[i] = (starting_set.widths()[i]/final_widths[i]);
+            global_target_score_terms[i] = (starting_set.widths()[i]/final_widths[i]);
         }
 
         RealVectorFunction dynamic = get_directed_dynamic(_sys->dynamic_function(location),direction);
@@ -173,35 +173,35 @@ _continuous_step(const SetModelType& starting_set,
         for (uint k = 0; k < refinement_steps; ++k) {
 
             Float exponent = step/remaining_time;
-            Vector<Float> local_target_width_ratios(dim);
+            Vector<Float> target_score_terms(dim);
             for (uint i = 0; i < dim; ++i) {
-                local_target_width_ratios[i] = std::pow((Float)global_target_width_ratios[i],exponent);
+                target_score_terms[i] = std::pow((Float)global_target_score_terms[i],exponent);
             }
             Float target_score = 0;
             for (uint i = 0; i < dim; ++i)
-                target_score += local_target_width_ratios[i];
+                target_score += target_score_terms[i];
             target_score /= dim;
 
             ContinuousStepResult current_integration = compute_integration_step_result(starting_set,location,direction,step);
 
-            Vector<Float> local_computed_width_ratios(dim);
+            Vector<Float> current_score_terms(dim);
             for (uint i = 0; i < dim; ++i) {
-                local_computed_width_ratios[i] = starting_set.widths()[i]/current_integration.finishing_set_model().widths()[i];
+                current_score_terms[i] = starting_set.widths()[i]/current_integration.finishing_set_model().widths()[i];
             }
             Float current_score = 0;
             for (uint i = 0; i < dim; ++i)
-                current_score += local_computed_width_ratios[i];
+                current_score += current_score_terms[i];
             current_score /= dim;
 
             candidates.push_back(make_pair(current_integration,current_score/target_score));
-
+/*
             cout << "Step " << current_integration.used_step() <<
                     ": target score " << target_score <<
                     ": current score " << current_score <<
                     ", relative score: " << current_score/target_score <<
-                    ", target ratios " << local_target_width_ratios <<
-                    ", computed ratios " << local_computed_width_ratios << endl;
-
+                    ", target score terms " << target_score_terms <<
+                    ", current score terms " << current_score_terms << endl;
+*/
             step = current_integration.used_step()/2;
         }
 
@@ -216,7 +216,8 @@ _continuous_step(const SetModelType& starting_set,
             }
         }
 
-        cout << "Chosen candidate with step " << winner.first.used_step() << ", with relative score " << winner.second << endl;
+        if (winner.second > 1.0)
+            cout << "Chosen candidate with step " << winner.first.used_step() << ", with relative score " << winner.second << endl;
 
         return winner.first;
 
