@@ -162,7 +162,7 @@ _continuous_step(const SetModelType& starting_set,
         RealVectorFunction dynamic = get_directed_dynamic(_sys->dynamic_function(location),direction);
         Float maximum_step = previous_step*(1<<(refinement_steps/2));
         Float lipschitz_step = lipschitz_tolerance/norm(dynamic.jacobian(starting_set.bounding_box())).upper();
-        Float step = min(maximum_step,lipschitz_step);
+        Float step = min(min(maximum_step,lipschitz_step),remaining_time);
 
         if (starting_set.radius() == 0) {
             step /= std::pow(2,refinement_steps);
