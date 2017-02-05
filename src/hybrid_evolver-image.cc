@@ -142,7 +142,7 @@ _continuous_step(const SetModelType& starting_set,
 		       const Float& previous_step) const {
 
     Float lipschitz_tolerance = 1.0;
-    uint refinement_steps = 7;
+    uint refinement_radius = 2;
     Float relative_score_objective = 0.95;
 
     uint k = 0;
@@ -160,23 +160,44 @@ _continuous_step(const SetModelType& starting_set,
         }
 
         RealVectorFunction dynamic = get_directed_dynamic(_sys->dynamic_function(location),direction);
-        Float maximum_step = previous_step*(1<<(refinement_steps/2));
         Float lipschitz_step = lipschitz_tolerance/norm(dynamic.jacobian(starting_set.bounding_box())).upper();
-        Float step = min(min(maximum_step,lipschitz_step),remaining_time);
+        Float maximum_step = min(lipschitz_step,remaining_time);
 
+        Float resuming_step = min(previous_step,maximum_step);
+
+        std::list<Float> steps;
         if (starting_set.radius() == 0) {
-            step /= std::pow(2,refinement_steps);
-            refinement_steps = 1;
+            steps.push_back(resuming_step / std::pow(2,refinement_radius*2));
+        } else {
+            steps.push_back(resuming_step*3/4);
+            steps.push_back(resuming_step);
+
+            Float current = resuming_step*3/2;
+            if (current <= maximum_step)
+                steps.push_back(current);
+            current = resuming_step;
+            for (int i=0; i < refinement_radius; ++i) {
+                current *= 2;
+                if (current <= maximum_step)
+                    steps.push_back(current);
+            }
+            current = resuming_step;
+            for (int i=0; i < refinement_radius; ++i) {
+                steps.push_front(current /= 2);
+            }
         }
 
         std::list<std::pair<ContinuousStepResult,Float> > candidates;
 
-        for (uint k = 0; k < refinement_steps; ++k) {
+        for (std::list<Float>::const_iterator it = steps.begin(); it != steps.end(); ++it) {
+
+            Float step = *it;
 
             Float exponent = step/remaining_time;
             Vector<Float> target_widths_ratios(dim);
             for (uint i = 0; i < dim; ++i) {
                 target_widths_ratios[i] = std::pow((Float)global_target_widths_ratio_score_terms[i],exponent);
+                //target_widths_ratios[i] = global_target_widths_ratio_score_terms[i]/exponent;
             }
             Float target_widths_ratio_score = sum(target_widths_ratios)/dim;
 
@@ -221,9 +242,10 @@ _continuous_step(const SetModelType& starting_set,
                     ", target ser score " << target_scaled_error_rates_score <<
                     ", current ser score " << current_scaled_error_rates_score <<
                     ", relative ser score: " << relative_scaled_error_rates_score <<
+                    ", target ser: " << target_scaled_error_rates <<
+                    ", current ser: " << current_scaled_error_rates <<
                     endl;
 
-            step = current_integration.used_step()/2;
         }
 
         std::list<std::pair<ContinuousStepResult,Float> >::const_iterator it = candidates.begin();
@@ -237,11 +259,8 @@ _continuous_step(const SetModelType& starting_set,
             }
         }
 
-        //if (winner.second > 1.0)
-            //cout << "Chosen candidate with step " << winner.first.used_step() << ", with relative score " << winner.second << endl;
-
-        if (previous_step != winner.first.used_step())
-            cout << "Step: " << winner.first.used_step() << " at remaining time: " << remaining_time <<" with radius " << winner.first.finishing_set_model().radius() << endl;
+        //if (previous_step != winner.first.used_step())
+            //cout << "Step: " << winner.first.used_step() << " at remaining time: " << remaining_time <<" with radius " << winner.first.finishing_set_model().radius() << endl;
 
         return winner.first;
 
