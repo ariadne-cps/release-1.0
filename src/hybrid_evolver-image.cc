@@ -143,7 +143,7 @@ _continuous_step(const SetModelType& starting_set,
 
     Float lipschitz_tolerance = 1.0;
     uint refinement_radius = 2;
-    Float relative_score_objective = 0.95;
+    Float relative_score_objective = 1.0;
 
     uint k = 0;
 
@@ -169,21 +169,22 @@ _continuous_step(const SetModelType& starting_set,
         if (starting_set.radius() == 0) {
             steps.push_back(resuming_step / std::pow(2,refinement_radius*2));
         } else {
-            steps.push_back(resuming_step*3/4);
-            steps.push_back(resuming_step);
-
-            Float current = resuming_step*3/2;
-            if (current <= maximum_step)
-                steps.push_back(current);
-            current = resuming_step;
+            Float current = resuming_step;
             for (int i=0; i < refinement_radius; ++i) {
                 current *= 2;
                 if (current <= maximum_step)
-                    steps.push_back(current);
+                    steps.push_front(current);
             }
+            current = resuming_step*3/2;
+            if (current <= maximum_step)
+                steps.push_back(current);
+
+            steps.push_back(resuming_step);
+            steps.push_back(resuming_step*3/4);
+
             current = resuming_step;
             for (int i=0; i < refinement_radius; ++i) {
-                steps.push_front(current /= 2);
+                steps.push_back(current /= 2);
             }
         }
 
@@ -194,18 +195,17 @@ _continuous_step(const SetModelType& starting_set,
             Float step = *it;
 
             Float exponent = step/remaining_time;
-            Vector<Float> target_widths_ratios(dim);
+            Vector<Float> target_width_ratios(dim);
             for (uint i = 0; i < dim; ++i) {
-                target_widths_ratios[i] = std::pow((Float)global_target_widths_ratio_score_terms[i],exponent);
-                //target_widths_ratios[i] = global_target_widths_ratio_score_terms[i]/exponent;
+                target_width_ratios[i] = std::pow((Float)global_target_widths_ratio_score_terms[i],exponent);
             }
-            Float target_widths_ratio_score = sum(target_widths_ratios)/dim;
+            Float target_widths_ratio_score = sum(target_width_ratios)/dim;
 
             ContinuousStepResult current_integration = compute_integration_step_result(starting_set,location,direction,step);
 
             Vector<Float> target_scaled_error_rates(dim);
             for (uint i = 0; i < dim; ++i) {
-                target_scaled_error_rates[i] = (starting_set.widths()[i]/target_widths_ratios[i]-starting_set.widths()[i])/final_widths[i]/current_integration.used_step();
+                target_scaled_error_rates[i] = (starting_set.widths()[i]/target_width_ratios[i]-starting_set.widths()[i])/final_widths[i]/current_integration.used_step();
             }
             Float target_scaled_error_rates_score = 0;
             for (uint i = 0; i < dim; ++i) {
@@ -234,18 +234,20 @@ _continuous_step(const SetModelType& starting_set,
             Float relative_widths_ratio_score = current_widths_ratio_score/target_widths_ratio_score;
 
             candidates.push_back(make_pair(current_integration,relative_scaled_error_rates_score));
-
+/*
             cout << "Step " << current_integration.used_step() <<
-                    ": target wr score " << target_widths_ratio_score <<
-                    ": current wr score " << current_widths_ratio_score <<
-                    ", relative wr score: " << relative_widths_ratio_score <<
-                    ", target ser score " << target_scaled_error_rates_score <<
-                    ", current ser score " << current_scaled_error_rates_score <<
-                    ", relative ser score: " << relative_scaled_error_rates_score <<
-                    ", target ser: " << target_scaled_error_rates <<
-                    ", current ser: " << current_scaled_error_rates <<
+                    ": tgt wr $ " << target_widths_ratio_score <<
+                    ": crr wr $ " << current_widths_ratio_score <<
+                    ", rel wr $ " << relative_widths_ratio_score <<
+                    ", tgt ser $ " << target_scaled_error_rates_score <<
+                    ", crr ser $ " << current_scaled_error_rates_score <<
+                    ", rel ser $ " << relative_scaled_error_rates_score <<
+                    ", tgt wr: " << target_width_ratios <<
+                    ", crr wr: " << current_width_ratios <<
+                    ", tgt ser: " << target_scaled_error_rates <<
+                    ", crr ser: " << current_scaled_error_rates <<
                     endl;
-
+*/
         }
 
         std::list<std::pair<ContinuousStepResult,Float> >::const_iterator it = candidates.begin();
@@ -260,7 +262,7 @@ _continuous_step(const SetModelType& starting_set,
         }
 
         //if (previous_step != winner.first.used_step())
-            //cout << "Step: " << winner.first.used_step() << " at remaining time: " << remaining_time <<" with radius " << winner.first.finishing_set_model().radius() << endl;
+        //cout << "Step: " << winner.first.used_step() << " at remaining time: " << remaining_time <<" with radius " << winner.first.finishing_set_model().radius() << endl;
 
         return winner.first;
 

@@ -19,10 +19,10 @@ int main(int argc, char* argv[])
     double A = 2.0;
 
     /// Constants
-    float EVOL_TIME = 16;   /// Evolution time
-    float SCALING = 1e-4;   /// Scaling of both variables
+    float EVOL_TIME = 2;   /// Evolution time
+    float SCALING = 1e-10;   /// Scaling of both variables
     float MAX_ENCL_WIDTH_RATIO = 1e10; // Ratio for the maximum enclosure in respect to the scaling
-    float FIXED_MAXIMUM_STEP_SIZE = 1e-3;     /// Fixed maximum step size
+    float FIXED_MAXIMUM_STEP_SIZE = 1e-2;     /// Fixed maximum step size
     int VERBOSITY = 1;              /// Verbosity of the HybridEvolver
 	if (argc > 1)
 		VERBOSITY = atoi(argv[1]);
@@ -48,7 +48,6 @@ int main(int argc, char* argv[])
 	RealExpression dyn_y = x;
 	automaton.set_dynamics(work, y, dyn_y);
 
-
     /// Compute the system evolution
 
     /// Create a HybridEvolver object
@@ -59,8 +58,11 @@ int main(int argc, char* argv[])
     evolver.settings().set_reference_enclosure_widths(SCALING);
     evolver.settings().set_maximum_enclosure_widths_ratio(MAX_ENCL_WIDTH_RATIO);
     evolver.settings().set_enable_reconditioning(true);
+    evolver.settings().set_enable_error_rate_enforcement(true);
 
-    Box initial_box(2, 0.0,0.0, 1.0,1.0);
+    //Box initial_box(2, 0.0,0.0, 1.0,1.0);
+    double eps = 0;
+    Box initial_box(2, 0.0-eps,0.0+eps, 1.0-eps,1.0+eps);
     HybridEvolver::EnclosureType initial_enclosure(work,initial_box);
 
     HybridTime evolution_time(EVOL_TIME,1);
