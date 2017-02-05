@@ -253,17 +253,21 @@ _continuous_step(const SetModelType& starting_set,
         std::list<std::pair<ContinuousStepResult,Float> >::const_iterator it = candidates.begin();
         std::pair<ContinuousStepResult,Float> winner = *it;
         for ( ; it != candidates.end(); ++it) {
-            if (it->second > relative_score_objective) {
+           /* if (it->second >= relative_score_objective) {
                 winner = *it;
                 break;
-            } else if (it->second > winner.second) {
+            } else */
+            if (it->second > winner.second) {
                 winner = *it;
             }
         }
-
-        //if (previous_step != winner.first.used_step())
-        //cout << "Step: " << winner.first.used_step() << " at remaining time: " << remaining_time <<" with radius " << winner.first.finishing_set_model().radius() << endl;
-
+/*
+        for ( ; it != candidates.end(); ++it) {
+            if (it->first.used_step() > winner.first.used_step() && it->second/winner.second > winner.first.used_step()/it->first.used_step()) {
+                cout << it->first.used_step() << "," << it->second << " is better than " << winner.first.used_step() << "," << winner.second << endl;
+            }
+        }
+*/
         return winner.first;
 
     } else {
