@@ -19,8 +19,8 @@ int main(int argc, char* argv[])
     double A = 2.0;
 
     /// Constants
-    float EVOL_TIME = 2;   /// Evolution time
-    float SCALING = 1e-10;   /// Scaling of both variables
+    float EVOL_TIME = 6;   /// Evolution time
+    float SCALING = 1e-4;   /// Scaling of both variables
     float MAX_ENCL_WIDTH_RATIO = 1e10; // Ratio for the maximum enclosure in respect to the scaling
     float FIXED_MAXIMUM_STEP_SIZE = 1e-2;     /// Fixed maximum step size
     int VERBOSITY = 1;              /// Verbosity of the HybridEvolver

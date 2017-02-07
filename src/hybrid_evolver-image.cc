@@ -199,54 +199,24 @@ _continuous_step(const SetModelType& starting_set,
             for (uint i = 0; i < dim; ++i) {
                 target_width_ratios[i] = std::pow((Float)global_target_widths_ratio_score_terms[i],exponent);
             }
-            Float target_widths_ratio_score = sum(target_width_ratios)/dim;
 
             ContinuousStepResult current_integration = compute_integration_step_result(starting_set,location,direction,step);
 
-            Vector<Float> target_scaled_error_rates(dim);
+            Vector<Float> target_errors(dim);
             for (uint i = 0; i < dim; ++i) {
-                target_scaled_error_rates[i] = (starting_set.widths()[i]/target_width_ratios[i]-starting_set.widths()[i])/final_widths[i]/current_integration.used_step();
+                target_errors[i] = (starting_set.widths()[i]/target_width_ratios[i]-starting_set.widths()[i]);
             }
-            Float target_scaled_error_rates_score = 0;
+            Float target_error_score = sum(target_errors);
+
+            Vector<Float> current_errors(dim);
             for (uint i = 0; i < dim; ++i) {
-                target_scaled_error_rates_score += target_scaled_error_rates[i];
+                current_errors[i] = (current_integration.finishing_set_model().widths()[i]-starting_set.widths()[i]);
             }
-            target_scaled_error_rates_score/=dim;
+            Float current_error_score = sum(current_errors);
 
-            Vector<Float> current_scaled_error_rates(dim);
-            for (uint i = 0; i < dim; ++i) {
-                current_scaled_error_rates[i] = (current_integration.finishing_set_model().widths()[i]-starting_set.widths()[i])/final_widths[i]/current_integration.used_step();
-            }
-            Float current_scaled_error_rates_score = 0;
-            for (uint i = 0; i < dim; ++i) {
-                current_scaled_error_rates_score += current_scaled_error_rates[i];
-            }
-            current_scaled_error_rates_score/=dim;
+            Float relative_error_score = current_error_score/target_error_score;
 
-            Float relative_scaled_error_rates_score = current_scaled_error_rates_score/target_scaled_error_rates_score;
-
-            Vector<Float> current_width_ratios(dim);
-            for (uint i = 0; i < dim; ++i) {
-                current_width_ratios[i] = starting_set.widths()[i]/current_integration.finishing_set_model().widths()[i];
-            }
-            Float current_widths_ratio_score = sum(current_width_ratios)/dim;
-
-            Float relative_widths_ratio_score = current_widths_ratio_score/target_widths_ratio_score;
-
-            candidates.push_back(make_tuple(current_integration,target_scaled_error_rates_score,current_scaled_error_rates_score));
-
-            cout << "Step " << current_integration.used_step() <<
-                    ": tgt wr $ " << target_widths_ratio_score <<
-                    ": crr wr $ " << current_widths_ratio_score <<
-                    ", rel wr $ " << relative_widths_ratio_score <<
-                    ", tgt ser $ " << target_scaled_error_rates_score <<
-                    ", crr ser $ " << current_scaled_error_rates_score <<
-                    ", rel ser $ " << relative_scaled_error_rates_score <<
-                    ", tgt wr: " << target_width_ratios <<
-                    ", crr wr: " << current_width_ratios <<
-                    ", tgt ser: " << target_scaled_error_rates <<
-                    ", crr ser: " << current_scaled_error_rates <<
-            endl;
+            candidates.push_back(make_tuple(current_integration,target_error_score,current_error_score));
 
         }
 
@@ -309,7 +279,17 @@ _continuous_step(const SetModelType& starting_set,
             }
         }
 
-        cout << "Chosen " << winner.first.used_step() << " with target " << winner.second << " and actual " << winner.third << endl;
+        for (std::vector<tuple<ContinuousStepResult,Float,Float> >::const_iterator it = candidates.begin() ; it != candidates.end(); ++it) {
+            Float used_step = it->first.used_step();
+            Float target_error_score = it->second;
+            Float current_error_score = it->third;
+            cout << "Step " << used_step <<
+                    ", tgt $ " << target_error_score <<
+                    ", crr $ " << current_error_score <<
+                    ", rel $ " << current_error_score/target_error_score <<
+                    (winner.first.used_step() == used_step ? " <" : "") <<
+            endl;
+        }
 
         return winner.first;
 
