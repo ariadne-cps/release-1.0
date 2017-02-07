@@ -143,7 +143,7 @@ _continuous_step(const SetModelType& starting_set,
 
     Float lipschitz_tolerance = 1.0;
     uint refinement_radius = 2;
-    Float relative_score_objective = 1.0;
+    Float relative_score_maximum = 1.05;
 
     uint k = 0;
 
@@ -188,7 +188,7 @@ _continuous_step(const SetModelType& starting_set,
             }
         }
 
-        std::list<std::pair<ContinuousStepResult,Float> > candidates;
+        std::vector<tuple<ContinuousStepResult,Float,Float> > candidates;
 
         for (std::list<Float>::const_iterator it = steps.begin(); it != steps.end(); ++it) {
 
@@ -209,7 +209,7 @@ _continuous_step(const SetModelType& starting_set,
             }
             Float target_scaled_error_rates_score = 0;
             for (uint i = 0; i < dim; ++i) {
-                target_scaled_error_rates_score += 1.0/target_scaled_error_rates[i];
+                target_scaled_error_rates_score += target_scaled_error_rates[i];
             }
             target_scaled_error_rates_score/=dim;
 
@@ -219,7 +219,7 @@ _continuous_step(const SetModelType& starting_set,
             }
             Float current_scaled_error_rates_score = 0;
             for (uint i = 0; i < dim; ++i) {
-                current_scaled_error_rates_score += 1.0/current_scaled_error_rates[i];
+                current_scaled_error_rates_score += current_scaled_error_rates[i];
             }
             current_scaled_error_rates_score/=dim;
 
@@ -233,8 +233,8 @@ _continuous_step(const SetModelType& starting_set,
 
             Float relative_widths_ratio_score = current_widths_ratio_score/target_widths_ratio_score;
 
-            candidates.push_back(make_pair(current_integration,relative_scaled_error_rates_score));
-/*
+            candidates.push_back(make_tuple(current_integration,target_scaled_error_rates_score,current_scaled_error_rates_score));
+
             cout << "Step " << current_integration.used_step() <<
                     ": tgt wr $ " << target_widths_ratio_score <<
                     ": crr wr $ " << current_widths_ratio_score <<
@@ -246,28 +246,71 @@ _continuous_step(const SetModelType& starting_set,
                     ", crr wr: " << current_width_ratios <<
                     ", tgt ser: " << target_scaled_error_rates <<
                     ", crr ser: " << current_scaled_error_rates <<
-                    endl;
-*/
+            endl;
+
         }
 
-        std::list<std::pair<ContinuousStepResult,Float> >::const_iterator it = candidates.begin();
-        std::pair<ContinuousStepResult,Float> winner = *it;
+        std::vector<tuple<ContinuousStepResult,Float,Float> >::const_iterator it = candidates.begin();
+        tuple<ContinuousStepResult,Float,Float> winner = *it;
         for ( ; it != candidates.end(); ++it) {
-           /* if (it->second >= relative_score_objective) {
-                winner = *it;
-                break;
-            } else */
-            if (it->second > winner.second) {
-                winner = *it;
+            Float target_score = it->second;
+            Float current_score = it->third;
+            if (target_score > 0) {
+                if (current_score > 0) { // The remaining error is positive and we increase the error
+                    // We look for the largest step that improves on the target score
+                    if (current_score < target_score) {
+                        winner = *it;
+                        break;
+                    }
+                    if (current_score/target_score < winner.third/winner.second) {
+                        winner = *it;
+                    }
+
+                } else { // The remaining error is positive and we reduce the error
+                    winner = *it;
+                    break; // We are content using the largest step
+                }
+            } else {
+                if (current_score > 0) { // The remaining error is negative and we increase the error
+                    winner = *it;
+                    break; // We just give up and choose the largest step
+                } else { // The remaining error is negative and we reduce the error
+                    // We choose the best ratio
+                    if (current_score/target_score > winner.third/winner.second)
+                        winner = *it;
+                }
             }
         }
-/*
-        for ( ; it != candidates.end(); ++it) {
-            if (it->first.used_step() > winner.first.used_step() && it->second/winner.second > winner.first.used_step()/it->first.used_step()) {
-                cout << it->first.used_step() << "," << it->second << " is better than " << winner.first.used_step() << "," << winner.second << endl;
+
+        // If unable to improve on the local target but still within the global target, converge to the relative score maximum
+        if (winner.third > 0.0 && winner.third > winner.second) {
+            std::vector<tuple<ContinuousStepResult,Float,Float> >::const_iterator it = candidates.begin();
+            winner = *it;
+            for ( ; it != candidates.end(); ++it) {
+                Float target_score = it->second;
+                Float current_score = it->third;
+                if (current_score/target_score < relative_score_maximum)
+                    break;
+                if (current_score/target_score < winner.third/winner.second) {
+                    winner = *it;
+                }
+            }
+        } else if (winner.third < 0.0 && winner.third > winner.second) {
+            std::vector<tuple<ContinuousStepResult,Float,Float> >::const_iterator it = candidates.begin();
+            winner = *it;
+            for ( ; it != candidates.end(); ++it) {
+                Float target_score = it->second;
+                Float current_score = it->third;
+                if (current_score/target_score < 1/relative_score_maximum)
+                    break;
+                if (current_score/target_score > winner.third/winner.second) {
+                    winner = *it;
+                }
             }
         }
-*/
+
+        cout << "Chosen " << winner.first.used_step() << " with target " << winner.second << " and actual " << winner.third << endl;
+
         return winner.first;
 
     } else {
