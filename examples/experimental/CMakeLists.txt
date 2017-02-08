@@ -8,7 +8,6 @@ set(EXPERIMENTAL
 		 exponential
 		 double-exponential
 		 circle
-		 circle-unstable
 		 range-check
 		 sin
 		 composition

@@ -1,48 +1,76 @@
 /*****************************************************************************************************
- *            circle.cc
+ *            circle-unstable.cc
  *
  *  Copyright  2016  Luca Geretti
  *
- * Provides the behavior of a circle with proper resets to keep the trajectory stable.
+ * Provides the behavior of a circle.
  *
  *****************************************************************************************************/
 
 #include "ariadne.h"
-#include "circle.h"
 
 using namespace Ariadne;
 
 int main(int argc, char* argv[])
 {
+    /// Dynamics parameters
+    Vector<Float> dp(11);
+
+    double A = 2.0;
+
     /// Constants
-    int VERBOSITY = 1;
+    float EVOL_TIME = 6;   /// Evolution time
+    float SCALING = 1e-4;   /// Scaling of both variables
+    float MAX_ENCL_WIDTH_RATIO = 1e10; // Ratio for the maximum enclosure in respect to the scaling
+    float FIXED_MAXIMUM_STEP_SIZE = 0.1875;     /// Fixed maximum step size
+    int VERBOSITY = 1;              /// Verbosity of the HybridEvolver
 	if (argc > 1)
 		VERBOSITY = atoi(argv[1]);
 
     /// Build the Hybrid System
 
     /// Create a HybridAutomaton object
-    HybridIOAutomaton circle = getCircle();
+    HybridIOAutomaton automaton("circle");
 
-    Real R = circle.parameter_value("R");
-    Real w = circle.parameter_value("w");
+    /// Create the discrete states
+    DiscreteLocation work("work");
+
+    RealVariable x("x");
+    RealVariable y("y");
+
+    automaton.add_output_var(x);
+    automaton.add_output_var(y);
+
+	automaton.new_mode(work);
+
+	RealExpression dyn_x = - y;
+	automaton.set_dynamics(work, x, dyn_x);
+	RealExpression dyn_y = x;
+	automaton.set_dynamics(work, y, dyn_y);
+
+    /// Compute the system evolution
 
     /// Create a HybridEvolver object
-    HybridEvolver evolver(circle);
+    HybridEvolver evolver(automaton);
     evolver.verbosity = VERBOSITY;
 
-    evolver.settings().set_reference_enclosure_widths(2.0);
-    evolver.settings().set_fixed_maximum_step_size(0.01);
+    evolver.settings().set_fixed_maximum_step_size(FIXED_MAXIMUM_STEP_SIZE);
+    evolver.settings().set_reference_enclosure_widths(SCALING);
+    evolver.settings().set_maximum_enclosure_widths_ratio(MAX_ENCL_WIDTH_RATIO);
+    evolver.settings().set_enable_reconditioning(true);
+    evolver.settings().set_enable_error_rate_enforcement(true);
 
-    Box initial_box(2, R.lower(), R.upper(), 0.0,0.0);
-    HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("1"),initial_box);
+    //Box initial_box(2, 0.0,0.0, 1.0,1.0);
+    double eps = 1e-6;
+    Box initial_box(2, 0.0-eps,0.0+eps, 1.0-eps,1.0+eps);
+    HybridEvolver::EnclosureType initial_enclosure(work,initial_box);
 
-    HybridTime evolution_time(1*2.0*Ariadne::pi<Real>().upper()*w.upper(),4);
+    HybridTime evolution_time(EVOL_TIME,1);
 
     std::cout << "Computing orbit... " << std::flush;
     HybridEvolver::OrbitType orbit = evolver.orbit(initial_enclosure,evolution_time,UPPER_SEMANTICS);
     std::cout << "done." << std::endl;
 
-    PlotHelper plotter(circle.name());
+    PlotHelper plotter(automaton.name());
     plotter.plot(orbit.reach(),"reach");
 }

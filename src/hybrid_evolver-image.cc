@@ -228,20 +228,20 @@ _continuous_step(const SetModelType& starting_set,
             Float winner_step = winner.first.used_step();
             Float current_relative_score = actual_score/target_score;
             Float winner_relative_score = winner.third/winner.second;
+            Float improvement = (winner_relative_score - current_relative_score)/abs(winner_relative_score);
 
             // If we improve on the target score for the first time, we set the winner
             if (!target_hit && actual_score < target_score) {
                 target_hit = true;
                 winner = *it;
-                continue;
+            } else {
+                if (current_relative_score < winner_relative_score) {
+                    if (improvement > winner_step/current_step * improvement_percentage)
+                        winner = *it;
+                }
             }
 
-            if (current_relative_score < winner_relative_score) {
-                if ((winner_relative_score - current_relative_score)/abs(winner_relative_score) > winner_step/current_step * improvement_percentage)
-                    winner = *it;
-            }
-
-            Float improvement = (winner_relative_score - current_relative_score)/abs(winner_relative_score);
+            ;
             cout << "Step " << current_step <<
                     ", tgt $ " << target_score <<
                     ", act $ " << actual_score <<
