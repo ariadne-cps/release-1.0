@@ -142,8 +142,8 @@ _continuous_step(const SetModelType& starting_set,
 		       const Float& previous_step) const {
 
     Float lipschitz_tolerance = 1.0;
-    uint refinement_radius = 2;
-    Float relative_score_maximum = 1.05;
+    uint refinement_radius = 3;
+    Float improvement_percentage = 0.1;
 
     uint k = 0;
 
@@ -167,7 +167,7 @@ _continuous_step(const SetModelType& starting_set,
 
         std::list<Float> steps;
         if (starting_set.radius() == 0) {
-            steps.push_back(resuming_step / std::pow(2,refinement_radius*2));
+            steps.push_back(resuming_step / std::pow(2,refinement_radius*4));
         } else {
             Float current = resuming_step;
             for (int i=0; i < refinement_radius; ++i) {
@@ -200,95 +200,111 @@ _continuous_step(const SetModelType& starting_set,
                 target_width_ratios[i] = std::pow((Float)global_target_widths_ratio_score_terms[i],exponent);
             }
 
-            ContinuousStepResult current_integration = compute_integration_step_result(starting_set,location,direction,step);
+            ContinuousStepResult integration_step_result = compute_integration_step_result(starting_set,location,direction,step);
 
-            Vector<Float> target_errors(dim);
+            Vector<Float> target_scaled_errors(dim);
             for (uint i = 0; i < dim; ++i) {
-                target_errors[i] = (starting_set.widths()[i]/target_width_ratios[i]-starting_set.widths()[i]);
+                target_scaled_errors[i] = (starting_set.widths()[i]/target_width_ratios[i]-starting_set.widths()[i])/final_widths[i];
             }
-            Float target_error_score = sum(target_errors);
+            Float target_scaled_error_score = sum(target_scaled_errors);
 
-            Vector<Float> current_errors(dim);
+            Vector<Float> actual_scaled_errors(dim);
             for (uint i = 0; i < dim; ++i) {
-                current_errors[i] = (current_integration.finishing_set_model().widths()[i]-starting_set.widths()[i]);
+                actual_scaled_errors[i] = (integration_step_result.finishing_set_model().widths()[i]-starting_set.widths()[i])/final_widths[i];
             }
-            Float current_error_score = sum(current_errors);
+            Float actual_scaled_error_score = sum(actual_scaled_errors);
 
-            Float relative_error_score = current_error_score/target_error_score;
+            Float relative_scaled_error_score = actual_scaled_error_score/target_scaled_error_score;
 
-            candidates.push_back(make_tuple(current_integration,target_error_score,current_error_score));
+            candidates.push_back(make_tuple(integration_step_result,target_scaled_error_score,actual_scaled_error_score));
 
         }
 
         std::vector<tuple<ContinuousStepResult,Float,Float> >::const_iterator it = candidates.begin();
         tuple<ContinuousStepResult,Float,Float> winner = *it;
+        bool target_hit = false;
         for ( ; it != candidates.end(); ++it) {
             Float target_score = it->second;
-            Float current_score = it->third;
-            if (target_score > 0) {
-                if (current_score > 0) { // The remaining error is positive and we increase the error
-                    // We look for the largest step that improves on the target score
-                    if (current_score < target_score) {
-                        winner = *it;
-                        break;
-                    }
-                    if (current_score/target_score < winner.third/winner.second) {
-                        winner = *it;
-                    }
+            Float actual_score = it->third;
+            Float current_step = it->first.used_step();
+            Float winner_step = winner.first.used_step();
+            Float current_relative_score = actual_score/target_score;
+            Float winner_relative_score = winner.third/winner.second;
 
-                } else { // The remaining error is positive and we reduce the error
-                    winner = *it;
-                    break; // We are content using the largest step
+            // If we improve on the target score for the first time, we set the winner
+            if (actual_score < target_score && !target_hit) {
+                target_hit = true;
+                winner = *it;
+                continue;
+            }
+
+            if (target_score > 0) {
+
+                if (current_relative_score < winner_relative_score) {
+                    if ((winner_relative_score - current_relative_score)/abs(winner_relative_score) > current_step/winner_step * improvement_percentage)
+                        winner = *it;
                 }
+
             } else {
-                if (current_score > 0) { // The remaining error is negative and we increase the error
+                if (actual_score > 0) { // The remaining error is negative and we increase the error
                     winner = *it;
                     break; // We just give up and choose the largest step
                 } else { // The remaining error is negative and we reduce the error
-                    // We choose the best ratio
-                    if (current_score/target_score > winner.third/winner.second)
-                        winner = *it;
+                    if (current_relative_score < winner_relative_score) {
+                        if ((winner_relative_score - current_relative_score)/abs(winner_relative_score) > current_step/winner_step * improvement_percentage)
+                            winner = *it;
+                    }
                 }
             }
         }
 
+        /*
         // If unable to improve on the local target but still within the global target, converge to the relative score maximum
-        if (winner.third > 0.0 && winner.third > winner.second) {
+        if (winner.second > 0.0 && winner.third > winner.second) {
             std::vector<tuple<ContinuousStepResult,Float,Float> >::const_iterator it = candidates.begin();
             winner = *it;
             for ( ; it != candidates.end(); ++it) {
                 Float target_score = it->second;
                 Float current_score = it->third;
-                if (current_score/target_score < relative_score_maximum)
+
+                if (current_score/target_score < relative_score_maximum) {
+                    winner = *it;
                     break;
+                }
                 if (current_score/target_score < winner.third/winner.second) {
                     winner = *it;
                 }
             }
-        } else if (winner.third < 0.0 && winner.third > winner.second) {
+        } else if (winner.second < 0.0 && winner.third > winner.second) {
             std::vector<tuple<ContinuousStepResult,Float,Float> >::const_iterator it = candidates.begin();
             winner = *it;
             for ( ; it != candidates.end(); ++it) {
                 Float target_score = it->second;
                 Float current_score = it->third;
-                if (current_score/target_score < 1/relative_score_maximum)
+                if (current_score/target_score < 1/relative_score_maximum) {
+                    winner = *it;
                     break;
+                }
                 if (current_score/target_score > winner.third/winner.second) {
                     winner = *it;
                 }
             }
         }
-
+        */
+        std::vector<tuple<ContinuousStepResult,Float,Float> >::const_iterator prev_it = candidates.end();
         for (std::vector<tuple<ContinuousStepResult,Float,Float> >::const_iterator it = candidates.begin() ; it != candidates.end(); ++it) {
             Float used_step = it->first.used_step();
-            Float target_error_score = it->second;
-            Float current_error_score = it->third;
+            Float target_score = it->second;
+            Float current_score = it->third;
+            Float improvement = (prev_it == candidates.end() ? 0 : (prev_it->third/prev_it->second - current_score/target_score )/abs(prev_it->third/prev_it->second));
             cout << "Step " << used_step <<
-                    ", tgt $ " << target_error_score <<
-                    ", crr $ " << current_error_score <<
-                    ", rel $ " << current_error_score/target_error_score <<
+                    ", tgt $ " << target_score <<
+                    ", crr $ " << current_score <<
+                    ", rel $ " << current_score/target_score <<
+                    ", (" << improvement << " improv)" <<
                     (winner.first.used_step() == used_step ? " <" : "") <<
             endl;
+            prev_it = it;
         }
 
         return winner.first;
