@@ -142,7 +142,7 @@ _continuous_step(const SetModelType& starting_set,
 		       const Float& previous_step) const {
 
     Float lipschitz_tolerance = 0.5;
-    uint refinement_radius = 4;
+    uint refinement_radius = 3;
     Float improvement_percentage = 0.1;
 
     uint k = 0;
@@ -202,13 +202,15 @@ _continuous_step(const SetModelType& starting_set,
 
             Vector<Float> target_scaled_errors(dim);
             for (uint i = 0; i < dim; ++i) {
-                target_scaled_errors[i] = (starting_set.widths()[i]/target_width_ratios[i]-starting_set.widths()[i])/final_widths[i];
+                if (starting_set.widths()[i] > 0)
+                    target_scaled_errors[i] = (starting_set.widths()[i]/target_width_ratios[i]-starting_set.widths()[i])/final_widths[i];
             }
             Float target_scaled_error_score = sum(target_scaled_errors);
 
             Vector<Float> actual_scaled_errors(dim);
             for (uint i = 0; i < dim; ++i) {
-                actual_scaled_errors[i] = (integration_step_result.finishing_set_model().widths()[i]-starting_set.widths()[i])/final_widths[i];
+                if (starting_set.widths()[i] > 0)
+                    actual_scaled_errors[i] = (integration_step_result.finishing_set_model().widths()[i]-starting_set.widths()[i])/final_widths[i];
             }
             Float actual_scaled_error_score = sum(actual_scaled_errors);
 
@@ -249,40 +251,6 @@ _continuous_step(const SetModelType& starting_set,
                     (winner.first.used_step() == current_step ? " <" : "") <<
             endl;
         }
-
-        /*
-        // If unable to improve on the local target but still within the global target, converge to the relative score maximum
-        if (winner.second > 0.0 && winner.third > winner.second) {
-            std::vector<tuple<ContinuousStepResult,Float,Float> >::const_iterator it = candidates.begin();
-            winner = *it;
-            for ( ; it != candidates.end(); ++it) {
-                Float target_score = it->second;
-                Float current_score = it->third;
-
-                if (current_score/target_score < relative_score_maximum) {
-                    winner = *it;
-                    break;
-                }
-                if (current_score/target_score < winner.third/winner.second) {
-                    winner = *it;
-                }
-            }
-        } else if (winner.second < 0.0 && winner.third > winner.second) {
-            std::vector<tuple<ContinuousStepResult,Float,Float> >::const_iterator it = candidates.begin();
-            winner = *it;
-            for ( ; it != candidates.end(); ++it) {
-                Float target_score = it->second;
-                Float current_score = it->third;
-                if (current_score/target_score < 1/relative_score_maximum) {
-                    winner = *it;
-                    break;
-                }
-                if (current_score/target_score > winner.third/winner.second) {
-                    winner = *it;
-                }
-            }
-        }
-        */
 
         return winner.first;
 

@@ -131,9 +131,9 @@ flow_bounds(VectorFunction const& vf,
 
 TaylorCalculus::
 TaylorCalculus()
-    : _spacial_order(10),
-      _temporal_order(10),
-      _sweep_threshold(1e-16),
+    : _spacial_order(6),
+      _temporal_order(6),
+      _sweep_threshold(1e-12),
       _eps(1e-16),
       _use_lipschitz(false),
       _spacial_accuracy_ptr(new AccuracyType(_sweep_threshold,_spacial_order))
