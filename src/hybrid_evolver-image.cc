@@ -141,8 +141,8 @@ _continuous_step(const SetModelType& starting_set,
 		       const Float& remaining_time,
 		       const Float& previous_step) const {
 
-    Float lipschitz_tolerance = 1.0;
-    uint refinement_radius = 3;
+    Float lipschitz_tolerance = 0.5;
+    uint refinement_radius = 4;
     Float improvement_percentage = 0.1;
 
     uint k = 0;
@@ -241,7 +241,6 @@ _continuous_step(const SetModelType& starting_set,
                 }
             }
 
-            ;
             cout << "Step " << current_step <<
                     ", tgt $ " << target_score <<
                     ", act $ " << actual_score <<
