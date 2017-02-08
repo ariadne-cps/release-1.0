@@ -141,7 +141,7 @@ _continuous_step(const SetModelType& starting_set,
 		       const Float& remaining_time,
 		       const Float& previous_step) const {
 
-    Float lipschitz_tolerance = 0.5;
+    Float lipschitz_tolerance = 1.0;
     uint refinement_radius = 3;
     Float improvement_percentage = 0.1;
 
@@ -214,8 +214,6 @@ _continuous_step(const SetModelType& starting_set,
             }
             Float actual_scaled_error_score = sum(actual_scaled_errors);
 
-            Float relative_scaled_error_score = actual_scaled_error_score/target_scaled_error_score;
-
             candidates.push_back(make_tuple(integration_step_result,target_scaled_error_score,actual_scaled_error_score));
 
         }
@@ -228,12 +226,12 @@ _continuous_step(const SetModelType& starting_set,
             Float actual_score = it->third;
             Float current_step = it->first.used_step();
             Float winner_step = winner.first.used_step();
-            Float current_relative_score = actual_score/target_score;
-            Float winner_relative_score = winner.third/winner.second;
+            Float current_relative_score = (actual_score-target_score)/abs(target_score);
+            Float winner_relative_score = (winner.third-winner.second)/abs(winner.second);
             Float improvement = (winner_relative_score - current_relative_score)/abs(winner_relative_score);
 
             // If we improve on the target score for the first time, we set the winner
-            if (!target_hit && actual_score < target_score) {
+            if (!target_hit && current_relative_score<0) {
                 target_hit = true;
                 winner = *it;
             } else {
@@ -247,9 +245,10 @@ _continuous_step(const SetModelType& starting_set,
                     ", tgt $ " << target_score <<
                     ", act $ " << actual_score <<
                     ", rel $ " << current_relative_score <<
-                    ", (" << improvement << " improv)" <<
+                    " (" << improvement*100 << "% improv. for " << winner_step/current_step << "x finer step)" <<
                     (winner.first.used_step() == current_step ? " <" : "") <<
             endl;
+
         }
 
         return winner.first;
