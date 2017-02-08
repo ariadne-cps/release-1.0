@@ -192,15 +192,13 @@ _continuous_step(const SetModelType& starting_set,
 
         for (std::list<Float>::const_iterator it = steps.begin(); it != steps.end(); ++it) {
 
-            Float step = *it;
+            ContinuousStepResult integration_step_result = compute_integration_step_result(starting_set,location,direction,*it);
 
-            Float exponent = step/remaining_time;
+            Float exponent = integration_step_result.used_step()/remaining_time;
             Vector<Float> target_width_ratios(dim);
             for (uint i = 0; i < dim; ++i) {
                 target_width_ratios[i] = std::pow((Float)global_target_widths_ratio_score_terms[i],exponent);
             }
-
-            ContinuousStepResult integration_step_result = compute_integration_step_result(starting_set,location,direction,step);
 
             Vector<Float> target_scaled_errors(dim);
             for (uint i = 0; i < dim; ++i) {
@@ -232,30 +230,25 @@ _continuous_step(const SetModelType& starting_set,
             Float winner_relative_score = winner.third/winner.second;
 
             // If we improve on the target score for the first time, we set the winner
-            if (actual_score < target_score && !target_hit) {
+            if (!target_hit && actual_score < target_score) {
                 target_hit = true;
                 winner = *it;
                 continue;
             }
 
-            if (target_score > 0) {
-
-                if (current_relative_score < winner_relative_score) {
-                    if ((winner_relative_score - current_relative_score)/abs(winner_relative_score) > current_step/winner_step * improvement_percentage)
-                        winner = *it;
-                }
-
-            } else {
-                if (actual_score > 0) { // The remaining error is negative and we increase the error
+            if (current_relative_score < winner_relative_score) {
+                if ((winner_relative_score - current_relative_score)/abs(winner_relative_score) > current_step/winner_step * improvement_percentage)
                     winner = *it;
-                    break; // We just give up and choose the largest step
-                } else { // The remaining error is negative and we reduce the error
-                    if (current_relative_score < winner_relative_score) {
-                        if ((winner_relative_score - current_relative_score)/abs(winner_relative_score) > current_step/winner_step * improvement_percentage)
-                            winner = *it;
-                    }
-                }
             }
+
+            Float improvement = (winner_relative_score - current_relative_score)/abs(winner_relative_score);
+            cout << "Step " << current_step <<
+                    ", tgt $ " << target_score <<
+                    ", act $ " << actual_score <<
+                    ", rel $ " << current_relative_score <<
+                    ", (" << improvement << " improv)" <<
+                    (winner.first.used_step() == current_step ? " <" : "") <<
+            endl;
         }
 
         /*
@@ -291,21 +284,6 @@ _continuous_step(const SetModelType& starting_set,
             }
         }
         */
-        std::vector<tuple<ContinuousStepResult,Float,Float> >::const_iterator prev_it = candidates.end();
-        for (std::vector<tuple<ContinuousStepResult,Float,Float> >::const_iterator it = candidates.begin() ; it != candidates.end(); ++it) {
-            Float used_step = it->first.used_step();
-            Float target_score = it->second;
-            Float current_score = it->third;
-            Float improvement = (prev_it == candidates.end() ? 0 : (prev_it->third/prev_it->second - current_score/target_score )/abs(prev_it->third/prev_it->second));
-            cout << "Step " << used_step <<
-                    ", tgt $ " << target_score <<
-                    ", crr $ " << current_score <<
-                    ", rel $ " << current_score/target_score <<
-                    ", (" << improvement << " improv)" <<
-                    (winner.first.used_step() == used_step ? " <" : "") <<
-            endl;
-            prev_it = it;
-        }
 
         return winner.first;
 
