@@ -237,7 +237,7 @@ _continuous_step(const SetModelType& starting_set,
             }
 
             if (current_relative_score < winner_relative_score) {
-                if ((winner_relative_score - current_relative_score)/abs(winner_relative_score) > current_step/winner_step * improvement_percentage)
+                if ((winner_relative_score - current_relative_score)/abs(winner_relative_score) > winner_step/current_step * improvement_percentage)
                     winner = *it;
             }
 
