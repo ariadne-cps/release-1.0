@@ -141,7 +141,7 @@ _continuous_step(const SetModelType& starting_set,
 		       const Float& remaining_time,
 		       const Float& previous_step) const {
 
-    Float lipschitz_tolerance = 1.0;
+    Float lipschitz_tolerance = 1000.0;
     uint refinement_radius = 3;
     Float improvement_percentage = 0.1;
 
@@ -160,14 +160,14 @@ _continuous_step(const SetModelType& starting_set,
         }
 
         RealVectorFunction dynamic = get_directed_dynamic(_sys->dynamic_function(location),direction);
-        Float lipschitz_step = lipschitz_tolerance/norm(dynamic.jacobian(starting_set.bounding_box())).upper();
-        Float maximum_step = min(lipschitz_step,remaining_time);
+        std::pair<Float,Vector<Interval> > step_and_bounds = _toolbox->flow_bounds(dynamic,starting_set.bounding_box(),remaining_time,false);
+        Float maximum_step = step_and_bounds.first;
 
         Float resuming_step = min(previous_step,maximum_step);
 
         std::list<Float> steps;
         if (starting_set.radius() == 0) {
-            steps.push_back(resuming_step / std::pow(2,refinement_radius*4));
+            steps.push_back(resuming_step / std::pow(2,refinement_radius*10));
         } else {
             Float current = resuming_step;
             for (int i=0; i < refinement_radius; ++i) {
