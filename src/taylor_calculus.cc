@@ -68,7 +68,7 @@ flow_bounds(VectorFunction const& vf,
     const double BOX_RADIUS_MULTIPLIER=1.03125;
     const uint EXPANSION_STEPS=8;
     const uint REDUCTION_STEPS=8;
-    const uint REFINEMENT_STEPS=4;
+    const uint REFINEMENT_STEPS=8;
     const double LIPSCHITZ_TOLERANCE = 0.5;
 
     Vector<Interval> delta=(d-midpoint(d))*(BOX_RADIUS_MULTIPLIER-1);
@@ -82,13 +82,17 @@ flow_bounds(VectorFunction const& vf,
     bool success=false;
     Vector<Interval> b,nb,df;
     Interval ih(0,h);
+    int u = 0;
     while(!success) {
         ARIADNE_ASSERT_MSG(h>hmin," h="<<h<<", hmin="<<hmin);
         b=d+INITIAL_MULTIPLIER*ih*vf.evaluate(d)+delta;
         for(uint i=0; i!=EXPANSION_STEPS; ++i) {
             df=vf.evaluate(b);
             nb=d+delta+ih*df;
-            if(subset(nb,b)) {
+            if (!Box(nb).bounded()) {
+                success=false;
+                break;
+            } else if(subset(nb,b)) {
                 success=true;
                 break;
             } else {
