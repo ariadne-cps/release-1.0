@@ -312,7 +312,7 @@ _evolution(EnclosureListType& final_sets,
         } else if((semantics == LOWER_SEMANTICS || !this->_settings->enable_subdivisions()) &&
                   this->_settings->enable_premature_termination_on_enclosure_size() && isEnclosureTooLarge) {
             ARIADNE_LOG(2,"Terminating evolution at time " << time_model.value()
-                        << " and set " << set_model.centre() << " due to maximum enclosure bounds being exceeded.");
+                        << " and set " << set_model.centre() << " (widths " << set_model.widths() << ") due to maximum enclosure bounds being exceeded.");
             if(semantics == UPPER_SEMANTICS)
                 final_sets.adjoin(loc,_toolbox->enclosure(set_model));
         } else {
