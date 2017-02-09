@@ -67,7 +67,7 @@ flow_bounds(VectorFunction const& vf,
     const double MULTIPLIER=1.125;
     const double BOX_RADIUS_MULTIPLIER=1.03125;
     const uint EXPANSION_STEPS=8;
-    const uint REDUCTION_STEPS=8;
+    const uint REDUCTION_STEPS=16;
     const uint REFINEMENT_STEPS=8;
     const double LIPSCHITZ_TOLERANCE = 0.5;
 
