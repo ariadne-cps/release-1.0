@@ -216,11 +216,15 @@ class ImageSetHybridEvolver
     					 ContinuousEvolutionDirection direction,
     					 Semantics semantics) const;
 
-    ContinuousStepResult _continuous_step(const SetModelType& set_model,
-    				 	                   const DiscreteLocation& location,
-    				 	                   ContinuousEvolutionDirection direction,
-    				 	                   const Float& remaining_time,
-    				 	                   const Float& previous_step) const;
+    ContinuousStepResult _adaptive_step_and_flow(const SetModelType& set_model,
+                                                 const Float& previous_step,
+                                                 const DiscreteLocation& location,
+                                                 ContinuousEvolutionDirection direction,
+                                                 const Float& remaining_time,
+                                                 const Float& maximum_step,
+                                                 const SetModelType& maximum_flow_model,
+                                                 const SetModelType& maximum_finishing_model
+    				 	                         ) const;
 
     bool _is_enclosure_too_large(
     		const DiscreteLocation& loc,

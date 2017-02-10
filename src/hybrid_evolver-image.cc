@@ -135,128 +135,124 @@ compute_integration_step_result(const SetModelType& starting_set,
 
 ContinuousStepResult
 ImageSetHybridEvolver::
-_continuous_step(const SetModelType& starting_set,
-		       const DiscreteLocation& location,
-		       ContinuousEvolutionDirection direction,
-		       const Float& remaining_time,
-		       const Float& previous_step) const {
+_adaptive_step_and_flow(const SetModelType& starting_set,
+                        const Float& previous_step,
+                        const DiscreteLocation& location,
+                        ContinuousEvolutionDirection direction,
+                        const Float& remaining_time,
+                        const Float& maximum_step,
+                        const SetModelType& maximum_flow_model,
+                        const SetModelType& maximum_finishing_model) const {
 
-    Float lipschitz_tolerance = 1000.0;
-    uint refinement_radius = 3;
+    uint refinement_radius = 8;
     Float improvement_percentage = 0.1;
 
-    uint k = 0;
+    Float dim = starting_set.dimension();
 
-    if (_settings->enable_error_rate_enforcement()) {
-
-        Float dim = starting_set.dimension();
-
-        Vector<Float> global_target_widths_ratio_score_terms(dim);
-        Vector<Float> global_target_scaled_error_rates(dim);
-        Vector<Float> final_widths = this->_settings->_reference_enclosure_widths.find(location)->second;
-        for (int i = 0; i < dim; ++i) {
-            global_target_widths_ratio_score_terms[i] = (starting_set.widths()[i]/final_widths[i]);
-            global_target_scaled_error_rates[i] = (final_widths[i]-starting_set.widths()[i])/final_widths[i]/remaining_time;
-        }
-
-        RealVectorFunction dynamic = get_directed_dynamic(_sys->dynamic_function(location),direction);
-        std::pair<Float,Vector<Interval> > step_and_bounds = _toolbox->flow_bounds(dynamic,starting_set.bounding_box(),remaining_time,false);
-        Float maximum_step = step_and_bounds.first;
-
-        Float resuming_step = min(previous_step,maximum_step);
-
-        std::list<Float> steps;
-        if (starting_set.radius() == 0) {
-            steps.push_back(resuming_step / std::pow(2,refinement_radius*10));
-        } else {
-            Float current = resuming_step;
-            for (int i=0; i < refinement_radius; ++i) {
-                current *= 2;
-                if (current <= maximum_step)
-                    steps.push_front(current);
-            }
-            current = resuming_step*3/2;
-            if (current <= maximum_step)
-                steps.push_back(current);
-
-            steps.push_back(resuming_step);
-            steps.push_back(resuming_step*3/4);
-
-            current = resuming_step;
-            for (int i=0; i < refinement_radius; ++i) {
-                steps.push_back(current /= 2);
-            }
-        }
-
-        std::vector<tuple<ContinuousStepResult,Float,Float> > candidates;
-
-        for (std::list<Float>::const_iterator it = steps.begin(); it != steps.end(); ++it) {
-
-            ContinuousStepResult integration_step_result = compute_integration_step_result(starting_set,location,direction,*it);
-
-            Float exponent = integration_step_result.used_step()/remaining_time;
-            Vector<Float> target_width_ratios(dim);
-            for (uint i = 0; i < dim; ++i) {
-                target_width_ratios[i] = std::pow((Float)global_target_widths_ratio_score_terms[i],exponent);
-            }
-
-            Vector<Float> target_scaled_errors(dim);
-            for (uint i = 0; i < dim; ++i) {
-                if (starting_set.widths()[i] > 0)
-                    target_scaled_errors[i] = (starting_set.widths()[i]/target_width_ratios[i]-starting_set.widths()[i])/final_widths[i];
-            }
-            Float target_scaled_error_score = sum(target_scaled_errors);
-
-            Vector<Float> actual_scaled_errors(dim);
-            for (uint i = 0; i < dim; ++i) {
-                if (starting_set.widths()[i] > 0)
-                    actual_scaled_errors[i] = (integration_step_result.finishing_set_model().widths()[i]-starting_set.widths()[i])/final_widths[i];
-            }
-            Float actual_scaled_error_score = sum(actual_scaled_errors);
-
-            candidates.push_back(make_tuple(integration_step_result,target_scaled_error_score,actual_scaled_error_score));
-
-        }
-
-        std::vector<tuple<ContinuousStepResult,Float,Float> >::const_iterator it = candidates.begin();
-        tuple<ContinuousStepResult,Float,Float> winner = *it;
-        bool target_hit = false;
-        for ( ; it != candidates.end(); ++it) {
-            Float target_score = it->second;
-            Float actual_score = it->third;
-            Float current_step = it->first.used_step();
-            Float winner_step = winner.first.used_step();
-            Float current_relative_score = (actual_score-target_score)/abs(target_score);
-            Float winner_relative_score = (winner.third-winner.second)/abs(winner.second);
-            Float improvement = (winner_relative_score - current_relative_score)/abs(winner_relative_score);
-
-            // If we improve on the target score for the first time, we set the winner
-            if (!target_hit && current_relative_score<0) {
-                target_hit = true;
-                winner = *it;
-            } else {
-                if (current_relative_score < winner_relative_score) {
-                    if (improvement > winner_step/current_step * improvement_percentage)
-                        winner = *it;
-                }
-            }
-
-            cout << "Step " << current_step <<
-                    ", tgt $ " << target_score <<
-                    ", act $ " << actual_score <<
-                    ", rel $ " << current_relative_score <<
-                    " (" << improvement*100 << "% improv. for " << winner_step/current_step << "x finer step)" <<
-                    (winner.first.used_step() == current_step ? " <" : "") <<
-            endl;
-
-        }
-
-        return winner.first;
-
-    } else {
-        Float step = _settings->fixed_maximum_step_size().at(location);
-        return compute_integration_step_result(starting_set,location, direction,step);
+    Vector<Float> global_target_widths_ratio_score_terms(dim);
+    Vector<Float> global_target_scaled_error_rates(dim);
+    Vector<Float> final_widths = this->_settings->_reference_enclosure_widths.find(location)->second;
+    for (int i = 0; i < dim; ++i) {
+        global_target_widths_ratio_score_terms[i] = (starting_set.widths()[i]/final_widths[i]);
+        global_target_scaled_error_rates[i] = (final_widths[i]-starting_set.widths()[i])/final_widths[i]/remaining_time;
     }
+
+    Float resuming_step = min(previous_step,maximum_step);
+
+    std::list<Float> steps;
+
+    if (starting_set.radius() == 0) {
+        steps.push_back(resuming_step / std::pow(2,refinement_radius*10));
+    } else {
+        Float current = resuming_step;
+        for (int i=0; i < refinement_radius; ++i) {
+            current *= 2;
+            if (current <= maximum_step)
+                steps.push_front(current);
+            else {
+                steps.push_front(maximum_step);
+            }
+        }
+        current = resuming_step*3/2;
+        if (current <= maximum_step)
+            steps.push_back(current);
+        else if (2*resuming_step <= maximum_step)
+            steps.push_back(maximum_step);
+
+        steps.push_back(resuming_step);
+        steps.push_back(resuming_step*3/4);
+
+        current = resuming_step;
+        for (int i=0; i < refinement_radius; ++i) {
+            steps.push_back(current /= 2);
+        }
+    }
+
+    std::vector<tuple<ContinuousStepResult,Float,Float> > candidates;
+
+    for (std::list<Float>::const_iterator it = steps.begin(); it != steps.end(); ++it) {
+
+        ContinuousStepResult integration_step_result = (*it == maximum_step ?
+                                                        ContinuousStepResult(*it,maximum_flow_model,maximum_finishing_model) :
+                                                        compute_integration_step_result(starting_set,location,direction,*it));
+
+        Float exponent = integration_step_result.used_step()/remaining_time;
+        Vector<Float> target_width_ratios(dim);
+        for (uint i = 0; i < dim; ++i) {
+            target_width_ratios[i] = std::pow((Float)global_target_widths_ratio_score_terms[i],exponent);
+        }
+
+        Vector<Float> target_scaled_errors(dim);
+        for (uint i = 0; i < dim; ++i) {
+            if (starting_set.widths()[i] > 0)
+                target_scaled_errors[i] = (starting_set.widths()[i]/target_width_ratios[i]-starting_set.widths()[i])/final_widths[i];
+        }
+        Float target_scaled_error_score = sum(target_scaled_errors);
+
+        Vector<Float> actual_scaled_errors(dim);
+        for (uint i = 0; i < dim; ++i) {
+            if (starting_set.widths()[i] > 0)
+                actual_scaled_errors[i] = (integration_step_result.finishing_set_model().widths()[i]-starting_set.widths()[i])/final_widths[i];
+        }
+        Float actual_scaled_error_score = sum(actual_scaled_errors);
+
+        candidates.push_back(make_tuple(integration_step_result,target_scaled_error_score,actual_scaled_error_score));
+    }
+
+    std::vector<tuple<ContinuousStepResult,Float,Float> >::const_iterator it = candidates.begin();
+    tuple<ContinuousStepResult,Float,Float> winner = *it;
+    bool target_hit = false;
+    for ( ; it != candidates.end(); ++it) {
+        Float target_score = it->second;
+        Float actual_score = it->third;
+        Float current_step = it->first.used_step();
+        Float winner_step = winner.first.used_step();
+        Float current_relative_score = (actual_score-target_score)/abs(target_score);
+        Float winner_relative_score = (winner.third-winner.second)/abs(winner.second);
+        Float improvement = (winner_relative_score - current_relative_score)/abs(winner_relative_score);
+
+        // If we improve on the target score for the first time, we set the winner
+        if (!target_hit && current_relative_score<0) {
+            target_hit = true;
+            winner = *it;
+        } else {
+            if (current_relative_score < winner_relative_score) {
+                if (improvement > winner_step/current_step * improvement_percentage)
+                    winner = *it;
+            }
+        }
+
+        cout << "Step " << current_step <<
+                ", tgt $ " << target_score <<
+                ", act $ " << actual_score <<
+                ", rel $ " << current_relative_score <<
+                " (" << improvement*100 << "% improv. for " << winner_step/current_step << "x finer step)" <<
+                (winner.first.used_step() == current_step ? " <" : "") <<
+        endl;
+
+    }
+
+    return winner.first;
 }
 
 void
@@ -463,8 +459,13 @@ _evolution_step(std::list<EvolutionData>& working_sets,
     	}
     }
 
-    // Extract information about the current location
-    const RealVectorFunction dynamic=get_directed_dynamic(_sys->dynamic_function(location),direction);
+    // Gets the maximum acceptable step along with the related flow model
+    Float initial_maximum_step = (_settings->enable_error_rate_enforcement() ? remaining_time : _settings->fixed_maximum_step_size().at(location));
+    ContinuousStepResult maximum_step_and_flow = compute_integration_step_result(set_model,location,direction,remaining_time);
+    Float effective_step = maximum_step_and_flow.used_step();
+    SetModelType flow_set_model = maximum_step_and_flow.flow_set_model();
+    SetModelType finishing_set_model = maximum_step_and_flow.finishing_set_model();
+
     Set<DiscreteEvent> available_events = _sys->events(location);
     std::map<DiscreteEvent,RealScalarFunction> urgent_guards, permissive_guards, invariants;
 
@@ -488,21 +489,17 @@ _evolution_step(std::list<EvolutionData>& working_sets,
     }
 
     // Check to make sure dimensions are correct
+
+    const RealVectorFunction dynamic=get_directed_dynamic(_sys->dynamic_function(location),direction);
+
     ARIADNE_ASSERT(set_model.argument_size()==time_model.argument_size());
     ARIADNE_ASSERT_MSG(set_model.result_size()==_sys->dimension(location),"set_model="<<set_model<<", location="<<location.name());
 
     _logEvolutionStepInitialState(events_history,time_model,location,set_model,dynamic,invariants,urgent_guards,permissive_guards);
 
-    if (is_enclosure_to_be_discarded(set_model,urgent_guards,dynamic,semantics))
-    	return;
-
-    ContinuousStepResult continuous_step_result = _continuous_step(set_model,location, direction,remaining_time,previous_step);
-    SetModelType flow_set_model = continuous_step_result.flow_set_model();
-    Float time_step = continuous_step_result.used_step();
-
-    ARIADNE_LOG(2,"time_step = "<<time_step);
+    ARIADNE_LOG(2,"time_step = "<<effective_step);
     ARIADNE_LOG(2,"flow_range = "<<flow_set_model.range());
-    ARIADNE_LOG(2,"finishing_set_range = "<<continuous_step_result.finishing_set_model().range());
+    ARIADNE_LOG(2,"finishing_set_range = "<<maximum_step_and_flow.finishing_set_model().range());
 
     // Set special events and times; note that the time step is scaled to [0,1]
     TimeModelType zero_time_model = _toolbox->time_model(0.0,Box(time_model.argument_size()));
@@ -513,6 +510,20 @@ _evolution_step(std::list<EvolutionData>& working_sets,
     std::set<DiscreteEvent> non_transverse_events;
     _compute_blocking_info(non_transverse_events,blocking_events,blocking_time_model,
     				  time_step_model,flow_set_model,urgent_guards,SMALL_RELATIVE_TIME,semantics);
+
+    if (blocking_time_model.range().upper() < 1.0) {
+        effective_step = (blocking_time_model * effective_step).range().upper();
+        flow_set_model = compute_integration_step_result(set_model,location,direction,effective_step).flow_set_model();
+    }
+
+    if (_settings->enable_error_rate_enforcement()) {
+        ContinuousStepResult continuous_step_result = _adaptive_step_and_flow(set_model, previous_step, location, direction, remaining_time, effective_step, flow_set_model,finishing_set_model);
+        flow_set_model = continuous_step_result.flow_set_model();
+        effective_step = continuous_step_result.used_step();
+    }
+
+    if (is_enclosure_to_be_discarded(set_model,urgent_guards,dynamic,semantics))
+        return;
 
     ActivationTimesType activation_times;
     if (!ignore_activations) {
@@ -525,7 +536,7 @@ _evolution_step(std::list<EvolutionData>& working_sets,
 
     if(semantics!=LOWER_SEMANTICS || blocking_events.size()==1)
     	_computeEvolutionForEvents(working_sets,intermediate_sets,set_index,location,blocking_events,events_history,
-    								activation_times,flow_set_model,time_model,blocking_time_model,time_step,ignore_activations,semantics);
+    								activation_times,flow_set_model,time_model,blocking_time_model,effective_step,ignore_activations,semantics);
 }
 
 
