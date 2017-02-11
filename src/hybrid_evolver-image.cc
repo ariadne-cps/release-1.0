@@ -455,9 +455,9 @@ _evolution_step(std::list<EvolutionData>& working_sets,
     }
 
     // Gets the maximum acceptable step along with the related flow model
-    Float initial_maximum_step = min(remaining_time, _settings->fixed_maximum_step_size().at(location));
-    ContinuousStepResult maximum_step_and_flow = compute_integration_step_result(set_model,location,direction,initial_maximum_step);
-    Float effective_step = maximum_step_and_flow.used_step();
+    Float proposed_maximum_step = min(remaining_time, _settings->fixed_maximum_step_size().at(location));
+    ContinuousStepResult maximum_step_and_flow = compute_integration_step_result(set_model,location,direction,proposed_maximum_step);
+    Float effective_maximum_step = maximum_step_and_flow.used_step();
     SetModelType flow_set_model = maximum_step_and_flow.flow_set_model();
     SetModelType finishing_set_model = maximum_step_and_flow.finishing_set_model();
 
@@ -492,7 +492,7 @@ _evolution_step(std::list<EvolutionData>& working_sets,
 
     _logEvolutionStepInitialState(events_history,time_model,location,set_model,dynamic,invariants,urgent_guards,permissive_guards);
 
-    ARIADNE_LOG(2,"effective_time_step = "<<effective_step);
+    ARIADNE_LOG(2,"effective_time_step = "<<effective_maximum_step);
     ARIADNE_LOG(2,"flow_range = "<<flow_set_model.range());
     ARIADNE_LOG(2,"finishing_set_range = "<<maximum_step_and_flow.finishing_set_model().range());
 
@@ -506,22 +506,24 @@ _evolution_step(std::list<EvolutionData>& working_sets,
     _compute_blocking_info(non_transverse_events,blocking_events,blocking_time_model,
     				  time_step_model,flow_set_model,urgent_guards,SMALL_RELATIVE_TIME,semantics);
 
-    Float event_reduced_step = effective_step;
+    Float event_reduced_maximum_step = effective_maximum_step;
 
     if (blocking_time_model.range().upper() < 0.5) {
-        event_reduced_step = 1.5*(blocking_time_model * effective_step).range().upper();
-        ContinuousStepResult new_flow_and_step = compute_integration_step_result(set_model,location,direction,event_reduced_step);
+        event_reduced_maximum_step = 1.5*(blocking_time_model * effective_maximum_step).range().upper();
+        ContinuousStepResult new_flow_and_step = compute_integration_step_result(set_model,location,direction,event_reduced_maximum_step);
         flow_set_model = new_flow_and_step.flow_set_model();
-        event_reduced_step = new_flow_and_step.used_step();
+        event_reduced_maximum_step = new_flow_and_step.used_step();
     }
+
+    Float step = event_reduced_maximum_step;
 
     if (_settings->enable_error_rate_enforcement()) {
-        ContinuousStepResult continuous_step_result = _adaptive_step_and_flow(set_model, previous_step, location, direction, remaining_time, event_reduced_step, flow_set_model,finishing_set_model);
+        ContinuousStepResult continuous_step_result = _adaptive_step_and_flow(set_model, previous_step, location, direction, remaining_time, event_reduced_maximum_step, flow_set_model,finishing_set_model);
         flow_set_model = continuous_step_result.flow_set_model();
-        event_reduced_step = continuous_step_result.used_step();
+        step = continuous_step_result.used_step();
     }
 
-    if (event_reduced_step < effective_step) {
+    if (step < effective_maximum_step) {
         blocking_events.clear();
         non_transverse_events.clear();
         _compute_blocking_info(non_transverse_events,blocking_events,blocking_time_model,
@@ -542,7 +544,7 @@ _evolution_step(std::list<EvolutionData>& working_sets,
 
     if(semantics!=LOWER_SEMANTICS || blocking_events.size()==1)
     	_computeEvolutionForEvents(working_sets,intermediate_sets,set_index,location,blocking_events,events_history,
-    								activation_times,flow_set_model,time_model,blocking_time_model,event_reduced_step,ignore_activations,semantics);
+    								activation_times,flow_set_model,time_model,blocking_time_model,step,ignore_activations,semantics);
 }
 
 
