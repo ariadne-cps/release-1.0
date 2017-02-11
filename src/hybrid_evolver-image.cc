@@ -144,7 +144,7 @@ _adaptive_step_and_flow(const SetModelType& starting_set,
                         const SetModelType& maximum_flow_model,
                         const SetModelType& maximum_finishing_model) const {
 
-    uint refinement_radius = 8;
+    uint refinement_radius = 3;
     Float improvement_percentage = 0.1;
 
     Float dim = starting_set.dimension();
@@ -162,22 +162,20 @@ _adaptive_step_and_flow(const SetModelType& starting_set,
     std::list<Float> steps;
 
     if (starting_set.radius() == 0) {
-        steps.push_back(resuming_step / std::pow(2,refinement_radius*10));
+        steps.push_back(resuming_step / std::pow(2,refinement_radius*4));
     } else {
         Float current = resuming_step;
         for (int i=0; i < refinement_radius; ++i) {
             current *= 2;
-            if (current <= maximum_step)
+            if (current < maximum_step)
                 steps.push_front(current);
             else {
-                steps.push_front(maximum_step);
+                break;
             }
         }
         current = resuming_step*3/2;
-        if (current <= maximum_step)
+        if (current < maximum_step)
             steps.push_back(current);
-        else if (2*resuming_step <= maximum_step)
-            steps.push_back(maximum_step);
 
         steps.push_back(resuming_step);
         steps.push_back(resuming_step*3/4);
@@ -441,14 +439,11 @@ _evolution_step(std::list<EvolutionData>& working_sets,
     	for (uint i = 0; i < reference_enclosure_widths.size(); ++i)
     		error_thresholds[i] = reference_enclosure_widths[i]/4;
 
-    	//ARIADNE_LOG(1,"Original model: " << set_model);
-
     	set_model.uniform_error_recondition(error_thresholds);
 
     	int argument_difference = set_model.argument_size() - time_model.argument_size();
     	if (argument_difference > 0) {
     	    has_reconditioned = true;
-    	    //ARIADNE_LOG(1,"Reconditioned model: " << set_model);
     		time_model = embed(time_model,argument_difference);
     	}
 
@@ -497,7 +492,7 @@ _evolution_step(std::list<EvolutionData>& working_sets,
 
     _logEvolutionStepInitialState(events_history,time_model,location,set_model,dynamic,invariants,urgent_guards,permissive_guards);
 
-    ARIADNE_LOG(2,"time_step = "<<effective_step);
+    ARIADNE_LOG(2,"effective_time_step = "<<effective_step);
     ARIADNE_LOG(2,"flow_range = "<<flow_set_model.range());
     ARIADNE_LOG(2,"finishing_set_range = "<<maximum_step_and_flow.finishing_set_model().range());
 
@@ -511,15 +506,26 @@ _evolution_step(std::list<EvolutionData>& working_sets,
     _compute_blocking_info(non_transverse_events,blocking_events,blocking_time_model,
     				  time_step_model,flow_set_model,urgent_guards,SMALL_RELATIVE_TIME,semantics);
 
-    if (blocking_time_model.range().upper() < 1.0) {
-        effective_step = (blocking_time_model * effective_step).range().upper();
-        flow_set_model = compute_integration_step_result(set_model,location,direction,effective_step).flow_set_model();
+    Float event_reduced_step = effective_step;
+
+    if (blocking_time_model.range().upper() < 0.5) {
+        event_reduced_step = 1.5*(blocking_time_model * effective_step).range().upper();
+        ContinuousStepResult new_flow_and_step = compute_integration_step_result(set_model,location,direction,event_reduced_step);
+        flow_set_model = new_flow_and_step.flow_set_model();
+        event_reduced_step = new_flow_and_step.used_step();
     }
 
     if (_settings->enable_error_rate_enforcement()) {
-        ContinuousStepResult continuous_step_result = _adaptive_step_and_flow(set_model, previous_step, location, direction, remaining_time, effective_step, flow_set_model,finishing_set_model);
+        ContinuousStepResult continuous_step_result = _adaptive_step_and_flow(set_model, previous_step, location, direction, remaining_time, event_reduced_step, flow_set_model,finishing_set_model);
         flow_set_model = continuous_step_result.flow_set_model();
-        effective_step = continuous_step_result.used_step();
+        event_reduced_step = continuous_step_result.used_step();
+    }
+
+    if (event_reduced_step < effective_step) {
+        blocking_events.clear();
+        non_transverse_events.clear();
+        _compute_blocking_info(non_transverse_events,blocking_events,blocking_time_model,
+                          time_step_model,flow_set_model,urgent_guards,SMALL_RELATIVE_TIME,semantics);
     }
 
     if (is_enclosure_to_be_discarded(set_model,urgent_guards,dynamic,semantics))
@@ -536,7 +542,7 @@ _evolution_step(std::list<EvolutionData>& working_sets,
 
     if(semantics!=LOWER_SEMANTICS || blocking_events.size()==1)
     	_computeEvolutionForEvents(working_sets,intermediate_sets,set_index,location,blocking_events,events_history,
-    								activation_times,flow_set_model,time_model,blocking_time_model,effective_step,ignore_activations,semantics);
+    								activation_times,flow_set_model,time_model,blocking_time_model,event_reduced_step,ignore_activations,semantics);
 }
 
 
