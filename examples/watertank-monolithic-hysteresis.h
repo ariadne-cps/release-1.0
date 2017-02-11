@@ -34,11 +34,11 @@ HybridAutomaton getWatertankMonolithicHysteresis()
 
     /// Set the system parameters
 	RealParameter a("a",0.02);
-	RealParameter b("b",Interval(0.3,0.32863));
+	RealParameter b("b",Interval(0.3,0.3));
 	RealParameter T("T",4.0);
 	RealParameter hmin("hmin",5.75);
 	RealParameter hmax("hmax",7.75);
-	RealParameter Delta("Delta",0.1);
+	RealParameter Delta("Delta",0.05);
 
     /// Create four discrete states
     DiscreteLocation opened("opened");

@@ -53,9 +53,11 @@ int main(int argc, char* argv[])
     evolver.verbosity = VERBOSITY;
 
     Vector<Float> enclosure_widths(6,0.01,0.01,0.01,0.00001,0.00001,1e-8);
-    evolver.settings().set_reference_enclosure_widths(enclosure_widths*420);
-    evolver.settings().set_fixed_maximum_step_size(0.01);
+    evolver.settings().set_reference_enclosure_widths(enclosure_widths);
+    evolver.settings().set_maximum_step_size(0.01);
     evolver.settings().set_maximum_enclosure_widths_ratio(10000.0);
+    evolver.settings().set_enable_reconditioning(true);
+    evolver.settings().set_enable_error_rate_enforcement(true);
 
     Box initial_box(6,
 			/*s*/ 0.0,0.0,

@@ -23,7 +23,7 @@ int main(int argc, char* argv[])
     evolver.verbosity = verb;
 
     evolver.settings().set_reference_enclosure_widths(1.0);
-    evolver.settings().set_fixed_maximum_step_size(1.0);
+    evolver.settings().set_maximum_step_size(1.0);
 
     Real day_len = system.parameter_value("day_len");
     Real Te_max = system.parameter_value("Te_max");

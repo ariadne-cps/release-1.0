@@ -66,19 +66,20 @@ int main(int argc, char* argv[])
     /// Set the evolution parameters
     evolver.settings().set_reference_enclosure_widths(1e-5);
     evolver.settings().set_maximum_enclosure_widths_ratio(1e+5);
-    evolver.settings().set_fixed_maximum_step_size(1.25e-2);
+    evolver.settings().set_maximum_step_size(1.25e-2);
     evolver.settings().set_enable_reconditioning(true);
-    evolver.settings().set_enable_error_rate_enforcement(true);
+    evolver.settings().set_enable_error_rate_enforcement(false);
     evolver.verbosity = VERBOSITY;
 
     // Declare the type to be used for the system evolution
     typedef HybridEvolver::EnclosureType HybridEnclosureType;
     typedef HybridEvolver::OrbitType OrbitType;
 
-    Box initial_box(2, 2.0,2.0, 0.0,0.0);
+    Float eps = 0;
+    Box initial_box(2, 2.0-eps,2.0+eps, 0.0-eps,0.0+eps);
     HybridEnclosureType initial_enclosure(loc,initial_box);
 
-    HybridTime evolution_time(5.0,4);
+    HybridTime evolution_time(8.0,4);
 
     std::cout << "Computing orbit... " << std::flush << std::endl;
     OrbitType orbit = evolver.orbit(initial_enclosure,evolution_time,UPPER_SEMANTICS);

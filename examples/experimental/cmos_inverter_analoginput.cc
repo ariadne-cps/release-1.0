@@ -339,7 +339,7 @@ int main()
     HybridEvolver evolver(inverter);
     evolver.verbosity = VERBOSITY;
 
-    evolver.settings().set_fixed_maximum_step_size(MAX_STEP_SIZE);
+    evolver.settings().set_maximum_step_size(MAX_STEP_SIZE);
     evolver.settings().set_reference_enclosure_widths(MAX_ENCL_WIDTH);
 
     // Declare the type to be used for the system evolution

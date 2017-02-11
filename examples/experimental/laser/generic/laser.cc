@@ -35,8 +35,9 @@ int main(int argc, char* argv[])
 
     HybridIOAutomaton timer_traj = compose("timer-traj",timer,laser_trajectory,DiscreteLocation("work"),DiscreteLocation("scanning"));
     HybridIOAutomaton timer_traj_exp = compose("timer_traj_exposure",timer_traj,exposure,DiscreteLocation("work,scanning"),DiscreteLocation("far"));
-    HybridIOAutomaton timer_traj_exp_temp = compose("timer_traj_exp_temp",timer_traj_exp,skin_temperature,DiscreteLocation("work,scanning,far"),DiscreteLocation("varying"));
-    HybridIOAutomaton system = compose("laser",timer_traj_exp_temp,cutting_depth,DiscreteLocation("work,scanning,far,varying"),DiscreteLocation("idle"));
+    //HybridIOAutomaton timer_traj_exp_temp = compose("timer_traj_exp_temp",timer_traj_exp,skin_temperature,DiscreteLocation("work,scanning,far"),DiscreteLocation("varying"));
+    //HybridIOAutomaton system = compose("laser",timer_traj_exp_temp,cutting_depth,DiscreteLocation("work,scanning,far,varying"),DiscreteLocation("idle"));
+    HybridIOAutomaton system = compose("laser",timer_traj_exp,skin_temperature,DiscreteLocation("work,scanning,far"),DiscreteLocation("varying"));
 
     Real pass_period = 0.191;
 
@@ -61,12 +62,18 @@ int main(int argc, char* argv[])
     HybridEvolver evolver(system);
     evolver.verbosity = VERBOSITY;
 
-    evolver.settings().set_reference_enclosure_widths(0.5);
-    evolver.settings().set_fixed_maximum_step_size(0.0002);
+    //Vector<Float> reference_enclosure_widths(7,1e-1, 1e-3, 1e-2, 1e-3, 1e-6, 1e-8, 1e-8);
+    Vector<Float> reference_enclosure_widths(5,1e-1, 1e-3, 1e-2, 1e-3, 1e-6);
+    evolver.settings().set_reference_enclosure_widths(reference_enclosure_widths);
+    evolver.settings().set_maximum_enclosure_widths_ratio(1e3);
+    evolver.settings().set_maximum_step_size(0.00002);
     evolver.settings().set_enable_reconditioning(true);
+    evolver.settings().set_enable_error_rate_enforcement(false);
 
-    Box initial_box(7, /*T*/ T0.lower(),T0.upper(), /*p*/ 0.0,0.0, /*t*/ 0.0,0.0, /*vx*/ vx_i.lower(),vx_i.upper(), /*x*/ x_i.lower(),x_i.upper(), /*z*/ 0.0,0.0, /*zi*/ 0.0,0.0);
-    HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("work,scanning,far,varying,idle"),initial_box);
+    //Box initial_box(7, /*T*/ T0.lower(),T0.upper(), /*p*/ 0.0,0.0, /*t*/ 0.0,0.0, /*vx*/ vx_i.lower(),vx_i.upper(), /*x*/ x_i.lower(),x_i.upper(), /*z*/ 0.0,0.0, /*zi*/ 0.0,0.0);
+    //HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("work,scanning,far,varying,idle"),initial_box);
+    Box initial_box(5, /*T*/ T0.lower(),T0.upper(), /*p*/ 0.0,0.0, /*t*/ 0.0,0.0, /*vx*/ vx_i.lower(),vx_i.upper(), /*x*/ x_i.lower(),x_i.upper());
+    HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("work,scanning,far,varying"),initial_box);
 
     int num_half_cycles = 1;
     double evol_time = -8.0*exposure.parameter_value("L")/vx_i.upper();
@@ -82,10 +89,10 @@ int main(int argc, char* argv[])
     PlotHelper plotter(system.name());
     plotter.plot(orbit.reach(),"reach");
 
-    std::cout << "Final z : " << 2.0*orbit.final().bounding_box()[5] << std::endl;
+    //std::cout << "Final z : " << 2.0*orbit.final().bounding_box()[5] << std::endl;
 
-    double depth = orbit.reach().bounding_box()[5].upper();
-    std::cout << "Depth of cut : " << depth << std::endl;
-    std::cout << "Maximum value of zi : " << orbit.reach().bounding_box()[6].upper() << std::endl;
-    std::cout << "Carbonization occurred? " << (orbit.reach().bounding_box()[6].upper() > cutting_depth.parameter_value("z_thr").upper() ? "yes" : "no") << std::endl;
+    //double depth = orbit.reach().bounding_box()[5].upper();
+    //std::cout << "Depth of cut : " << depth << std::endl;
+    //std::cout << "Maximum value of zi : " << orbit.reach().bounding_box()[6].upper() << std::endl;
+    //std::cout << "Carbonization occurred? " << (orbit.reach().bounding_box()[6].upper() > cutting_depth.parameter_value("z_thr").upper() ? "yes" : "no") << std::endl;
 }

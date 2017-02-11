@@ -39,7 +39,7 @@ int main(int argc,char *argv[])
     evolver.verbosity = verb;
 
     evolver.settings().set_reference_enclosure_widths(0.004);
-    evolver.settings().set_fixed_maximum_step_size(0.0005);
+    evolver.settings().set_maximum_step_size(0.0005);
 
     cout << system << endl;
 

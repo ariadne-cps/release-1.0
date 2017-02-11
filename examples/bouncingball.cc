@@ -78,7 +78,7 @@ int main()
 
     /// Set the evolution parameters
     evolver.settings().set_reference_enclosure_widths(0.05);
-    evolver.settings().set_fixed_maximum_step_size(1.0/64);
+    evolver.settings().set_maximum_step_size(1.0/64);
     evolver.verbosity = 1;
     std::cout <<  evolver.settings() << std::endl;
 

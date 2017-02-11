@@ -378,7 +378,7 @@ int main(int argc, char** argv)
     HybridEvolver evolver(system);
     evolver.verbosity = 1;
 
-    evolver.settings().set_fixed_maximum_step_size(step_size);
+    evolver.settings().set_maximum_step_size(step_size);
     evolver.settings().set_reference_enclosure_widths(enclosure_cell);
     evolver.settings().set_enable_premature_termination_on_enclosure_size(true);
 

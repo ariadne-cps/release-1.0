@@ -108,8 +108,8 @@ tune_settings(
     ARIADNE_LOG(1, "Tuning settings for evolution...");
 	this->_settings->_reference_enclosure_widths = getMinimumGridCellWidths(grid,accuracy);
 	ARIADNE_LOG(2, "Reference enclosure widths: " << this->_settings->_reference_enclosure_widths);
-	this->_settings->set_fixed_maximum_step_size(getHybridMaximumStepSize(hmad,grid,accuracy));
-	ARIADNE_LOG(2, "Fixed maximum step size: " << this->_settings->fixed_maximum_step_size());
+	this->_settings->set_maximum_step_size(getHybridMaximumStepSize(hmad,grid,accuracy));
+	ARIADNE_LOG(2, "Fixed maximum step size: " << this->_settings->maximum_step_size());
 }
 
 ContinuousStepResult
@@ -455,7 +455,7 @@ _evolution_step(std::list<EvolutionData>& working_sets,
     }
 
     // Gets the maximum acceptable step along with the related flow model
-    Float proposed_maximum_step = min(remaining_time, _settings->fixed_maximum_step_size().at(location));
+    Float proposed_maximum_step = min(remaining_time, _settings->maximum_step_size().at(location));
     ContinuousStepResult maximum_step_and_flow = compute_integration_step_result(set_model,location,direction,proposed_maximum_step);
     Float effective_maximum_step = maximum_step_and_flow.used_step();
     SetModelType flow_set_model = maximum_step_and_flow.flow_set_model();
@@ -508,7 +508,10 @@ _evolution_step(std::list<EvolutionData>& working_sets,
 
     Float event_reduced_maximum_step = effective_maximum_step;
 
-    if (blocking_time_model.range().upper() < 0.5) {
+
+    // Only if the proposed step if at least twice larger, and if the blocking time is positive (thus excluding sets outside the invariants)
+    if (blocking_time_model.range().upper() < 0.5 && blocking_time_model.range().upper() > 0) {
+
         event_reduced_maximum_step = 1.5*(blocking_time_model * effective_maximum_step).range().upper();
         ContinuousStepResult new_flow_and_step = compute_integration_step_result(set_model,location,direction,event_reduced_maximum_step);
         flow_set_model = new_flow_and_step.flow_set_model();
@@ -1291,7 +1294,7 @@ _add_models_subdivisions_time(
 ImageSetHybridEvolverSettings::ImageSetHybridEvolverSettings(const SystemType& sys)
     : _sys(sys)
 {
-	set_fixed_maximum_step_size(std::numeric_limits<Float>::infinity());
+	set_maximum_step_size(std::numeric_limits<Float>::infinity());
 	set_reference_enclosure_widths(getMinimumGridCellWidths(HybridGrid(sys.state_space()),0));
 	set_maximum_enclosure_widths_ratio(5.0);
 	set_enable_error_rate_enforcement(false);
@@ -1302,28 +1305,28 @@ ImageSetHybridEvolverSettings::ImageSetHybridEvolverSettings(const SystemType& s
 }
 
 const std::map<DiscreteLocation,Float>&
-ImageSetHybridEvolverSettings::fixed_maximum_step_size() const {
-	return _fixed_maximum_step_size;
+ImageSetHybridEvolverSettings::maximum_step_size() const {
+	return _maximum_step_size;
 }
 
 void
-ImageSetHybridEvolverSettings::set_fixed_maximum_step_size(const Float& value) {
+ImageSetHybridEvolverSettings::set_maximum_step_size(const Float& value) {
 	ARIADNE_ASSERT_MSG(value > 0, "Error: the maximum step size must be greater than zero.");
 
     HybridSpace hspace(_sys.state_space());
     for (HybridSpace::const_iterator hs_it = hspace.begin(); hs_it != hspace.end(); ++hs_it) {
-        _fixed_maximum_step_size[hs_it->first] = value;
+        _maximum_step_size[hs_it->first] = value;
     }
 }
 
 void
-ImageSetHybridEvolverSettings::set_fixed_maximum_step_size(const std::map<DiscreteLocation,Float>& value) {
+ImageSetHybridEvolverSettings::set_maximum_step_size(const std::map<DiscreteLocation,Float>& value) {
 
 	for (std::map<DiscreteLocation,Float>::const_iterator it = value.begin(); it != value.end(); ++it) {
 	    ARIADNE_ASSERT_MSG(it->second > 0, "Error: the maximum step size for location " << it->first.name() << " is zero.");
 	}
 
-	_fixed_maximum_step_size = value;
+	_maximum_step_size = value;
 }
 
 const HybridFloatVector&
@@ -1412,7 +1415,7 @@ std::ostream&
 operator<<(std::ostream& os, const ImageSetHybridEvolverSettings& s)
 {
     os << "ImageSetHybridEvolverSettings"
-       << ",\n  maximum_step_size=" << s.fixed_maximum_step_size()
+       << ",\n  maximum_step_size=" << s.maximum_step_size()
        << ",\n  reference_enclosure_widths=" << s.reference_enclosure_widths()
        << ",\n  maximum_enclosure_widths_ratio=" << s.maximum_enclosure_widths_ratio()
 	   << ",\n  enable_error_rate_enforcement=" << s.enable_error_rate_enforcement()

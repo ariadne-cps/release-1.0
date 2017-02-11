@@ -349,7 +349,7 @@ class ImageSetHybridEvolverSettings {
     //! \brief A fixed value for the maximum allowable step size for integration, different for each location.
     //! \details Decreasing the values increases the accuracy of the computation. The actual step size may be lower,
     //! if higher than a fixed threshold value related to the dynamics of the system.
-    std::map<DiscreteLocation,Float> _fixed_maximum_step_size;
+    std::map<DiscreteLocation,Float> _maximum_step_size;
 
     //! \brief The reference enclosure widths that a discretised enclosure would have.
     //! \details If an enclosure starts evolution with widths strictly lesser than these, premature termination is performed
@@ -389,9 +389,9 @@ class ImageSetHybridEvolverSettings {
 
     // Accessors
 
-    const std::map<DiscreteLocation,Float>& fixed_maximum_step_size() const;
-    void set_fixed_maximum_step_size(const Float&);
-    void set_fixed_maximum_step_size(const std::map<DiscreteLocation,Float>&);
+    const std::map<DiscreteLocation,Float>& maximum_step_size() const;
+    void set_maximum_step_size(const Float&);
+    void set_maximum_step_size(const std::map<DiscreteLocation,Float>&);
 
     const HybridFloatVector& reference_enclosure_widths() const;
     void set_reference_enclosure_widths(const Float&);
