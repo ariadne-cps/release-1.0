@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
     evolver.settings().set_maximum_enclosure_widths_ratio(1e+5);
     evolver.settings().set_maximum_step_size(1.25e-2);
     evolver.settings().set_enable_reconditioning(true);
-    evolver.settings().set_enable_error_rate_enforcement(false);
+    evolver.settings().set_enable_error_rate_enforcement(true);
     evolver.verbosity = VERBOSITY;
 
     // Declare the type to be used for the system evolution

@@ -218,6 +218,7 @@ class ImageSetHybridEvolver
 
     ContinuousStepResult _adaptive_step_and_flow(const SetModelType& set_model,
                                                  const Float& previous_step,
+                                                 const uint& refinement_width,
                                                  const DiscreteLocation& location,
                                                  ContinuousEvolutionDirection direction,
                                                  const Float& remaining_time,
@@ -280,6 +281,7 @@ class ImageSetHybridEvolver
 			   	   	   	   	   	    const TimeModelType& time_model,
 			   	   	   	   	   	    const TimeModelType& blocking_time_model,
 			   	   	   	   	   	    const Float& time_step,
+			   	   	   	   	   	    const uint& next_refinement_width,
 			   	   	   	   	   	    bool ignore_activations,
 			   	   	   	   	   	    Semantics semantics) const;
 
@@ -429,13 +431,15 @@ struct EvolutionData {
                   StepType previous_step,
                   EventListType previous_events,
                   SetModelType set_model,
-                  TimeModelType time_model) :
+                  TimeModelType time_model,
+                  uint refinement_width) :
                       _set_index(set_index),
                       _location(location),
                       _previous_step(previous_step),
                       _previous_events(previous_events),
                       _set_model(set_model),
-                      _time_model(time_model) { }
+                      _time_model(time_model),
+                      _refinement_width(refinement_width){ }
 
     uint set_index() const { return _set_index; }
     DiscreteLocation location() const { return _location; }
@@ -443,6 +447,7 @@ struct EvolutionData {
     EventListType previous_events() const { return _previous_events; }
     SetModelType set_model() const { return _set_model; }
     TimeModelType time_model() const { return _time_model; }
+    uint refinement_width() const { return _refinement_width; }
 
   private:
 
@@ -452,6 +457,7 @@ struct EvolutionData {
     EventListType _previous_events;
     SetModelType _set_model;
     TimeModelType _time_model;
+    uint _refinement_width;
 };
 
 struct ContinuousStepResult {

@@ -137,6 +137,7 @@ ContinuousStepResult
 ImageSetHybridEvolver::
 _adaptive_step_and_flow(const SetModelType& starting_set,
                         const Float& previous_step,
+                        const uint& refinement_width,
                         const DiscreteLocation& location,
                         ContinuousEvolutionDirection direction,
                         const Float& remaining_time,
@@ -144,7 +145,6 @@ _adaptive_step_and_flow(const SetModelType& starting_set,
                         const SetModelType& maximum_flow_model,
                         const SetModelType& maximum_finishing_model) const {
 
-    uint refinement_radius = 3;
     Float improvement_percentage = 0.1;
 
     Float dim = starting_set.dimension();
@@ -162,10 +162,10 @@ _adaptive_step_and_flow(const SetModelType& starting_set,
     std::list<Float> steps;
 
     if (starting_set.radius() == 0) {
-        steps.push_back(resuming_step / std::pow(2,refinement_radius*4));
+        steps.push_back(resuming_step / std::pow(2,refinement_width));
     } else {
         Float current = resuming_step;
-        for (int i=0; i < refinement_radius; ++i) {
+        for (int i=0; i < refinement_width; ++i) {
             current *= 2;
             if (current < maximum_step)
                 steps.push_front(current);
@@ -181,7 +181,7 @@ _adaptive_step_and_flow(const SetModelType& starting_set,
         steps.push_back(resuming_step*3/4);
 
         current = resuming_step;
-        for (int i=0; i < refinement_radius; ++i) {
+        for (int i=0; i < refinement_width; ++i) {
             steps.push_back(current /= 2);
         }
     }
@@ -425,6 +425,7 @@ _evolution_step(std::list<EvolutionData>& working_sets,
     SetModelType set_model = current_set.set_model();
     TimeModelType time_model = current_set.time_model();
     uint set_index = current_set.set_index();
+    uint refinement_width = current_set.refinement_width();
 
     _log_step_summary(working_sets,reach_sets,events_history,time_model,set_model,location,previous_step);
 
@@ -520,10 +521,18 @@ _evolution_step(std::list<EvolutionData>& working_sets,
 
     Float step = event_reduced_maximum_step;
 
+
+    uint next_refinement_width = 1;
+
     if (_settings->enable_error_rate_enforcement()) {
-        ContinuousStepResult continuous_step_result = _adaptive_step_and_flow(set_model, previous_step, location, direction, remaining_time, event_reduced_maximum_step, flow_set_model,finishing_set_model);
+        ContinuousStepResult continuous_step_result = _adaptive_step_and_flow(set_model, previous_step, refinement_width, location, direction, remaining_time, event_reduced_maximum_step, flow_set_model,finishing_set_model);
         flow_set_model = continuous_step_result.flow_set_model();
         step = continuous_step_result.used_step();
+        if (step <= 2.0*previous_step && step >= 0.5*previous_step) {
+            next_refinement_width = max(1,refinement_width-1);
+        } else if (step >= previous_step*(1<<refinement_width) || step <= previous_step/(1<<refinement_width)) {
+            next_refinement_width = max(8,refinement_width+1);
+        }
     }
 
     if (step < effective_maximum_step) {
@@ -547,7 +556,7 @@ _evolution_step(std::list<EvolutionData>& working_sets,
 
     if(semantics!=LOWER_SEMANTICS || blocking_events.size()==1)
     	_computeEvolutionForEvents(working_sets,intermediate_sets,set_index,location,blocking_events,events_history,
-    								activation_times,flow_set_model,time_model,blocking_time_model,step,ignore_activations,semantics);
+    								activation_times,flow_set_model,time_model,blocking_time_model,step,next_refinement_width,ignore_activations,semantics);
 }
 
 
@@ -975,6 +984,7 @@ _computeEvolutionForEvents(std::list<EvolutionData>& working_sets,
 						   const TimeModelType& time_model,
 						   const TimeModelType& blocking_time_model,
 						   const Float& time_step,
+						   const uint& next_refinement_width,
 						   bool ignore_activations,
 						   Semantics semantics) const
 {
@@ -989,7 +999,7 @@ _computeEvolutionForEvents(std::list<EvolutionData>& working_sets,
         if(event==finishing_event) {
             // TODO: Better estimate to use smaller blocking time
             intermediate_sets.adjoin(make_pair(location,evolved_set_model));
-            working_sets.push_back(EvolutionData(set_index,location,time_step,events,evolved_set_model,final_time_model));
+            working_sets.push_back(EvolutionData(set_index,location,time_step,events,evolved_set_model,final_time_model,next_refinement_width));
         } else {
             EventKind kind = _sys->event_kind(location,event);
             bool is_transition = (kind == URGENT || kind == PERMISSIVE);
@@ -999,7 +1009,7 @@ _computeEvolutionForEvents(std::list<EvolutionData>& working_sets,
 				DiscreteLocation jump_location=_sys->target(location,event);
 				std::vector<DiscreteEvent> jump_events=events;
 				jump_events.push_back(event);
-				working_sets.push_back(EvolutionData(set_index,jump_location,std::numeric_limits<Float>::infinity(),jump_events,jump_set_model,final_time_model));
+				working_sets.push_back(EvolutionData(set_index,jump_location,std::numeric_limits<Float>::infinity(),jump_events,jump_set_model,final_time_model,8));
         	}
         }
     }
@@ -1023,7 +1033,7 @@ _computeEvolutionForEvents(std::list<EvolutionData>& working_sets,
 			DiscreteLocation jump_location=_sys->target(location,event);
 			std::vector<DiscreteEvent> jump_events=events;
 			jump_events.push_back(event);
-			working_sets.push_back(EvolutionData(set_index,jump_location,std::numeric_limits<Float>::infinity(),jump_events,jump_set_model,active_time_model));
+			working_sets.push_back(EvolutionData(set_index,jump_location,std::numeric_limits<Float>::infinity(),jump_events,jump_set_model,active_time_model,8));
 		}
     }
 }
@@ -1174,7 +1184,7 @@ _evolution_add_initialSet(
     ARIADNE_LOG(3,"initial_time_model = "<<initial_time_model);
     TimedSetModelType initial_timed_set_model=join(initial_set_model.models(),initial_time_model);
     ARIADNE_LOG(3,"initial_timed_set_model = "<<initial_timed_set_model);
-    working_sets.push_back(EvolutionData(working_sets.size(),initial_location,std::numeric_limits<Float>::infinity(),EventListType(),initial_set_model,initial_time_model));
+    working_sets.push_back(EvolutionData(working_sets.size(),initial_location,std::numeric_limits<Float>::infinity(),EventListType(),initial_set_model,initial_time_model,8));
 }
 
 std::map<uint,Vector<Float> >
@@ -1249,7 +1259,7 @@ _add_subdivisions(std::list<EvolutionData>& working_sets,
         ARIADNE_LOG(3,"subdivided_set_model.range()="<<subdivided_set_model.range());
         ARIADNE_LOG(3,"subdivided_set_model.radius()*10000="<<radius(subdivided_set_model.range())*10000);
         ARIADNE_LOG(3,"subdivided_time_model.range()="<<subdivided_time_model.range());
-        working_sets.push_back(EvolutionData(set_index,initial_location,previous_step,previous_events,subdivided_set_model,subdivided_time_model));
+        working_sets.push_back(EvolutionData(set_index,initial_location,previous_step,previous_events,subdivided_set_model,subdivided_time_model,8));
     }
 }
 
