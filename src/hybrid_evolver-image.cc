@@ -455,8 +455,8 @@ _evolution_step(std::list<EvolutionData>& working_sets,
     }
 
     // Gets the maximum acceptable step along with the related flow model
-    Float initial_maximum_step = (_settings->enable_error_rate_enforcement() ? remaining_time : _settings->fixed_maximum_step_size().at(location));
-    ContinuousStepResult maximum_step_and_flow = compute_integration_step_result(set_model,location,direction,remaining_time);
+    Float initial_maximum_step = min(remaining_time, _settings->fixed_maximum_step_size().at(location));
+    ContinuousStepResult maximum_step_and_flow = compute_integration_step_result(set_model,location,direction,initial_maximum_step);
     Float effective_step = maximum_step_and_flow.used_step();
     SetModelType flow_set_model = maximum_step_and_flow.flow_set_model();
     SetModelType finishing_set_model = maximum_step_and_flow.finishing_set_model();
@@ -1289,7 +1289,7 @@ _add_models_subdivisions_time(
 ImageSetHybridEvolverSettings::ImageSetHybridEvolverSettings(const SystemType& sys)
     : _sys(sys)
 {
-	set_fixed_maximum_step_size(1.0);
+	set_fixed_maximum_step_size(std::numeric_limits<Float>::infinity());
 	set_reference_enclosure_widths(getMinimumGridCellWidths(HybridGrid(sys.state_space()),0));
 	set_maximum_enclosure_widths_ratio(5.0);
 	set_enable_error_rate_enforcement(false);
