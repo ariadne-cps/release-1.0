@@ -12,6 +12,7 @@ set(EXPERIMENTAL
 		 sin
 		 composition
          vanderpol
+         set_splitting
 )
 
 foreach(experiment ${EXPERIMENTAL})
