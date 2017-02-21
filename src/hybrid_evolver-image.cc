@@ -203,14 +203,14 @@ _adaptive_step_and_flow(const SetModelType& starting_set,
         Vector<Float> target_scaled_errors(dim);
         for (uint i = 0; i < dim; ++i) {
             if (starting_set.widths()[i] > 0)
-                target_scaled_errors[i] = (starting_set.widths()[i]/target_width_ratios[i]-starting_set.widths()[i])/final_widths[i];
+                target_scaled_errors[i] = (starting_set.widths()[i]-starting_set.widths()[i]/target_width_ratios[i])/final_widths[i];
         }
         Float target_scaled_error_score = sum(target_scaled_errors);
 
         Vector<Float> actual_scaled_errors(dim);
         for (uint i = 0; i < dim; ++i) {
             if (starting_set.widths()[i] > 0)
-                actual_scaled_errors[i] = (integration_step_result.finishing_set_model().widths()[i]-starting_set.widths()[i])/final_widths[i];
+                actual_scaled_errors[i] = (starting_set.widths()[i]-integration_step_result.finishing_set_model().widths()[i])/final_widths[i];
         }
         Float actual_scaled_error_score = sum(actual_scaled_errors);
 
@@ -225,16 +225,16 @@ _adaptive_step_and_flow(const SetModelType& starting_set,
         Float actual_score = it->third;
         Float current_step = it->first.used_step();
         Float winner_step = winner.first.used_step();
-        Float current_relative_score = (actual_score-target_score)/abs(target_score);
-        Float winner_relative_score = (winner.third-winner.second)/abs(winner.second);
-        Float improvement = (winner_relative_score - current_relative_score)/abs(winner_relative_score);
+        Float current_relative_score = (actual_score-target_score)/current_step;//abs(target_score);
+        Float winner_relative_score = (winner.third-winner.second)/winner_step;//abs(winner.second);
+        Float improvement = (current_relative_score-winner_relative_score)/abs(winner_relative_score);
 
         // If we improve on the target score for the first time, we set the winner
-        if (!target_hit && current_relative_score<0) {
+        if (!target_hit && current_relative_score>=0) {
             target_hit = true;
             winner = *it;
         } else {
-            if (current_relative_score < winner_relative_score) {
+            if (current_relative_score > winner_relative_score) {
                 if (improvement > winner_step/current_step * improvement_percentage)
                     winner = *it;
             }
