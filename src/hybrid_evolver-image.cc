@@ -145,7 +145,7 @@ _adaptive_step_and_flow(const SetModelType& starting_set,
                         const SetModelType& maximum_flow_model,
                         const SetModelType& maximum_finishing_model) const {
 
-    Float improvement_percentage = 1.0;
+    Float improvement_percentage = 0.3;
 
     Float dim = starting_set.dimension();
 
@@ -205,7 +205,7 @@ _adaptive_step_and_flow(const SetModelType& starting_set,
         for (uint i = 0; i < dim; ++i) {
             if (starting_set.widths()[i] > 0)
                 score_terms[i] = (starting_set.widths()[i]*target_width_ratios[i] - integration_step_result.finishing_set_model().widths()[i])/
-                                  starting_set.widths()[i]*target_width_ratios[i] + integration_step_result.finishing_set_model().widths()[i]/
+                                  (integration_step_result.finishing_set_model().widths()[i])/
                                   final_widths[i];
             else
                 N--;
