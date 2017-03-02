@@ -145,7 +145,7 @@ _adaptive_step_and_flow(const SetModelType& starting_set,
                         const SetModelType& maximum_flow_model,
                         const SetModelType& maximum_finishing_model) const {
 
-    Float improvement_percentage = 0.5;
+    Float improvement_percentage = 1.0;
 
     Float dim = starting_set.dimension();
 
@@ -225,7 +225,8 @@ _adaptive_step_and_flow(const SetModelType& starting_set,
 
         Float current_step = it->first.used_step();
         Float winner_step = winner.first.used_step();
-        Float improvement = (current_score-winner_score)/abs(current_score);
+
+        Float ratio = 0;
 
         // If we improve on the target score for the first time, we set the winner
         if (!target_hit && current_score>=0) {
@@ -233,14 +234,16 @@ _adaptive_step_and_flow(const SetModelType& starting_set,
             winner = *it;
         } else {
             if (current_score > winner_score) {
-                if (improvement > winner_step/current_step * improvement_percentage)
+                ratio = (winner_score < 0 ? winner_score/current_score : current_score/winner_score);
+
+                if (ratio > winner_step/current_step * improvement_percentage)
                     winner = *it;
             }
         }
 
         cout << "Step " << current_step <<
                 ", $ " << current_score <<
-                " (" << improvement*100 << "% improv. for " << winner_step/current_step << "x finer step)" <<
+                " (" << ratio << " ratio for " << winner_step/current_step << "x finer step)" <<
                 (winner.first.used_step() == current_step ? " <" : "") <<
         endl;
 
