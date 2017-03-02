@@ -159,7 +159,7 @@ _adaptive_step_and_flow(const SetModelType& starting_set,
 
     std::list<Float> steps;
 
-    Float new_refinement_width = 8;//refinement_width;
+    Float new_refinement_width = refinement_width;
 
     if (starting_set.radius() == 0) {
         steps.push_back(resuming_step / std::pow(2,new_refinement_width));
@@ -200,47 +200,46 @@ _adaptive_step_and_flow(const SetModelType& starting_set,
             target_width_ratios[i] = std::pow((Float)global_target_widths_ratio_score_terms[i],exponent);
         }
 
-        Vector<Float> score_terms(dim);
+        Vector<Float> cost_terms(dim);
         int N = dim;
         for (uint i = 0; i < dim; ++i) {
             if (starting_set.widths()[i] > 0)
-                score_terms[i] = (starting_set.widths()[i]*target_width_ratios[i] - integration_step_result.finishing_set_model().widths()[i])/
-                                  //(integration_step_result.finishing_set_model().widths()[i])/
+                cost_terms[i] = (integration_step_result.finishing_set_model().widths()[i] - starting_set.widths()[i]*target_width_ratios[i])/
                                   final_widths[i];
             else
                 N--;
         }
 
-        Float score = sum(score_terms)/N;
+        Float cost = sum(cost_terms)/N;
 
-        candidates.push_back(make_tuple(integration_step_result,score));
+        candidates.push_back(make_tuple(integration_step_result,cost));
     }
 
     std::vector<tuple<ContinuousStepResult,Float> >::const_iterator it = candidates.begin();
     tuple<ContinuousStepResult,Float > winner = *it;
     bool target_hit = false;
     for ( ; it != candidates.end(); ++it) {
-        Float current_score = it->second;
-        Float winner_score = winner.second;
+        Float current_cost = it->second;
+        Float winner_cost = winner.second;
 
         Float current_step = it->first.used_step();
         Float winner_step = winner.first.used_step();
 
-        Float ratio = (winner_score < 0 ? winner_score/current_score : current_score/winner_score);
+        Float ratio = (winner_cost > 0 ? winner_cost/current_cost : current_cost/winner_cost);
 
-        // If we improve on the target score for the first time, we set the winner
-        if (!target_hit && current_score>=0) {
+        // If we improve on the target cost for the first time, we set the winner
+        if (!target_hit && current_cost<=0) {
             target_hit = true;
             winner = *it;
         } else {
-            if (current_score > winner_score) {
+            if (current_cost < winner_cost) {
                 if (ratio > winner_step/current_step * improvement_percentage)
                     winner = *it;
             }
         }
 
         cout << "Step " << current_step <<
-                ", $ " << current_score <<
+                ", $ " << current_cost <<
                 " (" << ratio << " ratio for " << winner_step/current_step << "x finer step)" <<
                 (winner.first.used_step() == current_step ? " <" : "") <<
         endl;
