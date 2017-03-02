@@ -145,7 +145,7 @@ _adaptive_step_and_flow(const SetModelType& starting_set,
                         const SetModelType& maximum_flow_model,
                         const SetModelType& maximum_finishing_model) const {
 
-    Float improvement_percentage = 1.0;
+    Float improvement_percentage = 1.1;
 
     Float dim = starting_set.dimension();
 
@@ -159,7 +159,7 @@ _adaptive_step_and_flow(const SetModelType& starting_set,
 
     std::list<Float> steps;
 
-    Float new_refinement_width = refinement_width;
+    Float new_refinement_width = 8;//refinement_width;
 
     if (starting_set.radius() == 0) {
         steps.push_back(resuming_step / std::pow(2,new_refinement_width));
@@ -961,7 +961,7 @@ _log_step_summary(const std::list<EvolutionData>& working_sets,
                     <<" s="<<std::setw(3)<<std::left<<initial_events.size()
                     <<" ps="<<std::scientific<<std::setw(5)<<std::left<< time_step << std::fixed
                     <<" t="<<std::fixed<<initial_time_model.value()
-                    <<" r="<<std::scientific<<std::setw(7)<<initial_set_model.radius()<<std::fixed
+                    <<" d="<<std::scientific<<std::setw(7)<<2*initial_set_model.radius()<<std::fixed
                     <<" l="<<std::setw(3)<<std::left<<initial_location
                     <<" c="<<initial_set_model.centre()
                     <<" as="<<initial_set_model.argument_size()
@@ -1148,7 +1148,7 @@ _logEvolutionStepInitialState(const EventListType& previous_events,
     ARIADNE_LOG(2,"location = "<<location);
     ARIADNE_LOG(2,"box = "<<set_model.range());
     ARIADNE_LOG(2,"generators = "<<set_model.argument_size());
-    ARIADNE_LOG(2,"radius = "<<radius(set_model.range())<<"\n");
+    ARIADNE_LOG(2,"diameter = "<<2*radius(set_model.range())<<"\n");
 
     ARIADNE_LOG(2,"dynamic = "<<dynamic);
     ARIADNE_LOG(2,"invariants = "<<invariants);
