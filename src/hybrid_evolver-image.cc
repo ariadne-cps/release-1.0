@@ -205,7 +205,7 @@ _adaptive_step_and_flow(const SetModelType& starting_set,
         for (uint i = 0; i < dim; ++i) {
             if (starting_set.widths()[i] > 0)
                 score_terms[i] = (starting_set.widths()[i]*target_width_ratios[i] - integration_step_result.finishing_set_model().widths()[i])/
-                                  (integration_step_result.finishing_set_model().widths()[i])/
+                                  //(integration_step_result.finishing_set_model().widths()[i])/
                                   final_widths[i];
             else
                 N--;
@@ -226,7 +226,7 @@ _adaptive_step_and_flow(const SetModelType& starting_set,
         Float current_step = it->first.used_step();
         Float winner_step = winner.first.used_step();
 
-        Float ratio = 0;
+        Float ratio = (winner_score < 0 ? winner_score/current_score : current_score/winner_score);
 
         // If we improve on the target score for the first time, we set the winner
         if (!target_hit && current_score>=0) {
@@ -234,8 +234,6 @@ _adaptive_step_and_flow(const SetModelType& starting_set,
             winner = *it;
         } else {
             if (current_score > winner_score) {
-                ratio = (winner_score < 0 ? winner_score/current_score : current_score/winner_score);
-
                 if (ratio > winner_step/current_step * improvement_percentage)
                     winner = *it;
             }
