@@ -173,12 +173,10 @@ _adaptive_step_and_flow(const SetModelType& starting_set,
                 break;
             }
         }
-        current = resuming_step*3/2;
         if (current < maximum_step)
             steps.push_back(current);
 
         steps.push_back(resuming_step);
-        steps.push_back(resuming_step*3/4);
 
         current = resuming_step;
         for (int i=0; i < new_refinement_width; ++i) {
@@ -429,24 +427,16 @@ _evolution_step(std::list<EvolutionData>& working_sets,
 
     if (_settings->enable_reconditioning()) {
 
-        bool has_reconditioned = false;
-
-    	Vector<Float> error_thresholds(set_model.dimension());
-    	Vector<Float> reference_enclosure_widths = _settings->reference_enclosure_widths().at(location);
-    	for (uint i = 0; i < reference_enclosure_widths.size(); ++i)
-    		error_thresholds[i] = reference_enclosure_widths[i]/4;
-
+    	Vector<Float> error_thresholds = _settings->reference_enclosure_widths().at(location)/4;
     	set_model.uniform_error_recondition(error_thresholds);
 
     	int argument_difference = set_model.argument_size() - time_model.argument_size();
     	if (argument_difference > 0) {
-    	    has_reconditioned = true;
     		time_model = embed(time_model,argument_difference);
     	}
 
     	Array<uint> discarded_parameters = set_model.kuhn_recondition();
     	if (!discarded_parameters.empty()) {
-    	    has_reconditioned = true;
     		time_model = recondition(time_model,discarded_parameters,set_model.dimension(),set_model.dimension());
     	}
     }
