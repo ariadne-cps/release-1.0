@@ -188,11 +188,19 @@ _adaptive_step_and_flow(const SetModelType& starting_set,
 
     for (std::list<Float>::const_iterator it = steps.begin(); it != steps.end(); ++it) {
 
-        ContinuousStepResult integration_step_result = (*it == maximum_step ?
+        ContinuousStepResult unreconditioned_step_result = (*it == maximum_step ?
                                                         ContinuousStepResult(*it,maximum_flow_model,maximum_finishing_model) :
                                                         compute_integration_step_result(starting_set,location,direction,*it));
 
-        Float exponent = integration_step_result.used_step()/remaining_time;
+        SetModelType finishing_set = unreconditioned_step_result.finishing_set_model();
+        if (_settings->enable_reconditioning())
+            finishing_set.uniform_error_recondition(final_widths/4);
+
+        ContinuousStepResult step_result(unreconditioned_step_result.used_step(),
+                                         unreconditioned_step_result.flow_set_model(),
+                                         finishing_set);
+
+        Float exponent = step_result.used_step()/remaining_time;
         Vector<Float> target_width_ratios(dim);
         for (uint i = 0; i < dim; ++i) {
             target_width_ratios[i] = std::pow((Float)global_target_widths_ratio_score_terms[i],exponent);
@@ -202,7 +210,7 @@ _adaptive_step_and_flow(const SetModelType& starting_set,
         int N = dim;
         for (uint i = 0; i < dim; ++i) {
             if (starting_set.widths()[i] > 0)
-                cost_terms[i] = (integration_step_result.finishing_set_model().widths()[i] - starting_set.widths()[i]*target_width_ratios[i])/
+                cost_terms[i] = (step_result.finishing_set_model().widths()[i] - starting_set.widths()[i]*target_width_ratios[i])/
                                   final_widths[i];
             else
                 N--;
@@ -210,7 +218,7 @@ _adaptive_step_and_flow(const SetModelType& starting_set,
 
         Float cost = sum(cost_terms)/N;
 
-        candidates.push_back(make_tuple(integration_step_result,cost));
+        candidates.push_back(make_tuple(step_result,cost));
     }
 
     std::vector<tuple<ContinuousStepResult,Float> >::const_iterator it = candidates.begin();
