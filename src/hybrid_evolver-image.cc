@@ -425,22 +425,6 @@ _evolution_step(std::list<EvolutionData>& working_sets,
 
     Float remaining_time = maximum_hybrid_time.continuous_time() - time_model.range().lower();
 
-    if (_settings->enable_reconditioning()) {
-
-    	Vector<Float> error_thresholds = _settings->reference_enclosure_widths().at(location)/4;
-    	set_model.uniform_error_recondition(error_thresholds);
-
-    	int argument_difference = set_model.argument_size() - time_model.argument_size();
-    	if (argument_difference > 0) {
-    		time_model = embed(time_model,argument_difference);
-    	}
-
-    	Array<uint> discarded_parameters = set_model.kuhn_recondition();
-    	if (!discarded_parameters.empty()) {
-    		time_model = recondition(time_model,discarded_parameters,set_model.dimension(),set_model.dimension());
-    	}
-    }
-
     // Gets the maximum acceptable step along with the related flow model
     Float proposed_maximum_step = min(remaining_time, _settings->maximum_step_size().at(location));
     ContinuousStepResult maximum_step_and_flow = compute_integration_step_result(set_model,location,direction,proposed_maximum_step);
@@ -494,7 +478,6 @@ _evolution_step(std::list<EvolutionData>& working_sets,
     				  time_step_model,flow_set_model,urgent_guards,SMALL_RELATIVE_TIME,semantics);
 
     Float event_reduced_maximum_step = effective_maximum_step;
-
 
     // Only if the proposed step if at least twice larger, and if the blocking time is positive (thus excluding sets outside the invariants)
     if (blocking_time_model.range().upper() < 0.5 && blocking_time_model.range().upper() > 0) {
@@ -974,9 +957,27 @@ _computeEvolutionForEvents(std::list<EvolutionData>& working_sets,
 						   bool ignore_activations,
 						   Semantics semantics) const
 {
+    SetModelType evolved_set_model=_toolbox->integration_step(flow_set_model,blocking_time_model);
+
     TimeModelType final_time_model=time_model+blocking_time_model*time_step;
     ARIADNE_LOG(2,"final_time_range="<<final_time_model.range());
-    SetModelType evolved_set_model=_toolbox->integration_step(flow_set_model,blocking_time_model);
+
+    if (_settings->enable_reconditioning()) {
+
+        Vector<Float> error_thresholds = _settings->reference_enclosure_widths().at(location)/4;
+        evolved_set_model.uniform_error_recondition(error_thresholds);
+
+        int argument_difference = evolved_set_model.argument_size() - final_time_model.argument_size();
+        if (argument_difference > 0) {
+            final_time_model = embed(final_time_model,argument_difference);
+        }
+
+        Array<uint> discarded_parameters = evolved_set_model.kuhn_recondition();
+        if (!discarded_parameters.empty()) {
+            final_time_model = recondition(final_time_model,discarded_parameters,evolved_set_model.dimension(),evolved_set_model.dimension());
+        }
+    }
+
     ARIADNE_LOG(2,"evolved_set_model.argument_size()="<<evolved_set_model.argument_size());
     ARIADNE_LOG(2,"evolved_set_range="<<evolved_set_model.range());
     // Compute evolution for blocking events
