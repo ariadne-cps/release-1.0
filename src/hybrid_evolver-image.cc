@@ -173,8 +173,6 @@ _adaptive_step_and_flow(const SetModelType& starting_set,
                 break;
             }
         }
-        if (current < maximum_step)
-            steps.push_back(current);
 
         steps.push_back(resuming_step);
 
