@@ -248,6 +248,8 @@ _adaptive_step_and_flow(const SetModelType& starting_set,
                 (winner.first.used_step() == current_step ? " <" : "") <<
         endl;
 
+        if (target_hit)
+            break;
     }
 
     return winner.first;
