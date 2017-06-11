@@ -17,7 +17,7 @@ $ cd build
 
 #### Dependencies
 
-The library dependencies of ARIADNE are the following:
+The library dependencies of Ariadne are the following:
 
 ##### Ubuntu
 Aptitude packages required: `git cmake libboost-system-dev libboost-serialization-dev libboost-thread-dev libgtk2.0-dev libcairo2-dev libbdd-dev`
@@ -81,4 +81,4 @@ To find the installed library under Ubuntu, you may need to set the LD_LIBRARY_P
 export LD_LIBRARY_PATH=/usr/local/lib
 ```
 
-To test the correct installation, you may build the tutorial/ example, which relies on ariadne being correctly installed.
+To test the correct installation, you may build the `tutorial/` example, which relies on Ariadne being present within system library and include directories.
