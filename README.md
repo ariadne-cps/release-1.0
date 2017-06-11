@@ -1,14 +1,14 @@
 This is the *stable* release of the Ariadne C++ library.
 
-We are in the process of producing a first official release. As such, documentation is not completed yet. In the end, a tutorial on the definition of hybrid automata and their analysis/verification will be available.
+We are in the process of producing a first official release. As such, documentation is not complete yet. In the end, a tutorial on the definition of hybrid automata and their analysis/verification will be available.
 
 ### Installation ###
 
-These installation instructions have been tested on Ubuntu 16.04 and OSX 10.11.
+These installation instructions have been tested on Ubuntu 16.04 and macOS 10.12.
 
-For the Ubuntu installation, we will refer to packages available on Aptitude. The OSX installation instead will assume you are using the Brew package manager.
+For the Ubuntu installation, we will refer to packages available on Aptitude. The macOS installation instead will assume you are using the Brew package manager.
 
-The build system is CMake. The compiler we tested the library under Ubuntu is g++, while for OSX is clang. To build the library in a clean way, it is preferable that you set up a build subdirectory:
+The build system is CMake. The compiler we tested the library under Ubuntu is g++, while for macOS is clang. To build the library in a clean way, it is preferable that you set up a build subdirectory:
 
 ```
 $ mkdir build
@@ -22,7 +22,7 @@ The library dependencies of Ariadne are the following:
 ##### Ubuntu
 Aptitude packages required: `git cmake libboost-system-dev libboost-serialization-dev libboost-thread-dev libgtk2.0-dev libcairo2-dev libbdd-dev`
 
-##### OSX
+##### macOS
 1. Install the Command Line Developer Tools (will also be asked when installing Homebrew) from the Apple Store
 
 2. Install Homebrew from http://brew.sh/
@@ -76,7 +76,7 @@ To install the library globally, you must do
 $ make install
 ```
 
-To find the installed library under Ubuntu, you may need to set the LD_LIBRARY_PATH in the .bashrc file:
+To find the installed library under Ubuntu, you may need to set the `LD_LIBRARY_PATH` variable in the .bashrc file:
 ```
 export LD_LIBRARY_PATH=/usr/local/lib
 ```
