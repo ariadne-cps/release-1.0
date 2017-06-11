@@ -80,3 +80,5 @@ To find the installed library under Ubuntu, you may need to set the LD_LIBRARY_P
 ```
 export LD_LIBRARY_PATH=/usr/local/lib
 ```
+
+To test the correct installation, you may build the tutorial/ example, which relies on ariadne being correctly installed.
