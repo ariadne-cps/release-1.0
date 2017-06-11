@@ -35,50 +35,6 @@ int main(int argc,char *argv[])
 	// The system
 	HybridAutomaton system = Ariadne::getWatertankMonolithicHysteresis();
 
-
-    HybridEvolver evolver(system);
-    evolver.verbosity = verb;
-
-    evolver.settings().set_reference_enclosure_widths(Vector<Float>(2,1e-1,1e-2));
-    evolver.settings().set_maximum_step_size(1e0);
-    evolver.settings().set_maximum_enclosure_widths_ratio(1e5);
-    evolver.settings().set_enable_reconditioning(false);
-    evolver.settings().set_enable_error_rate_enforcement(true);
-
-    HybridEvolver::EnclosureType initial_enclosure(DiscreteLocation("opened"),Box(2, 6.5,6.5, 1.0,1.0));
-
-    HybridTime evol_limits(32.0,5);
-
-    HybridEvolver::OrbitType orbit = evolver.orbit(initial_enclosure,evol_limits,UPPER_SEMANTICS);
-
-    PlotHelper plotter(system.name());
-    plotter.plot(orbit.reach(),"reach");
-
-/*
-	// The initial values
-	HybridBoundedConstraintSet initial_set(system.state_space());
-	initial_set[DiscreteLocation("opened")] = Box(2, 6.5,6.5, 1.0,1.0);
-
-	// The domain
-	HybridBoxes domain(system.state_space(),Box(2,4.5,9.0,0.0,1.0));
-
-    int accuracy = 6;
-
-    HybridReachabilityAnalyser analyser(system,domain,accuracy);
-    analyser.verbosity = verb;
-
-    HybridTime evol_limits(320.0,20);
-    bool plot_results = true;
-
-    HybridDenotableSet reach = analyser.upper_reach(initial_set,evol_limits);
-    //HybridDenotableSet reach = analyser.outer_chain_reach(initial_set);
-
-    if (plot_results) {
-        PlotHelper plotter(system.name());
-        plotter.plot(reach,"reach",accuracy);
-    }
-    */
-/*
 	// The domain
 	HybridBoxes domain(system.state_space(),Box(2,4.5,9.0,0.0,1.0));
 
@@ -98,7 +54,7 @@ int main(int argc,char *argv[])
 	List<RealExpression> consexpr;
 	consexpr.append(expr);
 	VectorFunction cons_f(consexpr,varlist);
-	Box codomain(1,5.3,8.2);
+	Box codomain(1,5.52,8.25);
 	HybridConstraintSet safety_constraint(system.state_space(),ConstraintSet(cons_f,codomain));
 
 	// The parameters
@@ -119,5 +75,4 @@ int main(int argc,char *argv[])
 	//verifier.safety(verInput);
 	std::list<ParametricOutcome> results = verifier.parametric_safety(verInput, parameters);
 	draw(system.name(),results);
-*/
 }
