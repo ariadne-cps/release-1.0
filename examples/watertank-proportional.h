@@ -96,8 +96,6 @@ HybridIOAutomaton getWatertankProportional()
 		// Invariants
 	    RealExpression a_geq_zero = -a;   // a >= 0
 	    RealExpression a_leq_one = a-1.0;   // a <= 1
-	    //controller.new_invariant(stabilising,a_geq_zero);
-	    //controller.new_invariant(stabilising,a_leq_one);
 
 	    // Create the guards
 	    RealExpression x_lesser_ref_minus_delta = -x-delta+ref; // x <= ref - Delta
@@ -112,7 +110,7 @@ HybridIOAutomaton getWatertankProportional()
 	    controller.new_forced_transition(open,stabilising,opening,x_lesser_ref_kp_minus_delta);
 
 	/// Composition
-	HybridIOAutomaton system = compose("watertank-pr",controller,tank,stabilising,flow);
+	HybridIOAutomaton system = compose("watertank-pr",tank,controller,flow,stabilising);
 
 	return system;
 }

@@ -39,16 +39,16 @@ int main(int argc,char *argv[])
 
 	// The initial values
 	HybridBoundedConstraintSet initial_hy(system_hy.state_space());
-	initial_hy[DiscreteLocation("opened")] = Box(2, 6.0,7.5, 1.0,1.0);
-	initial_hy[DiscreteLocation("closed")] = Box(2, 6.0,7.5, 0.0,0.0);
+	initial_hy[DiscreteLocation("flow,idle,rising")] = Box(2, 1.0,1.0, 6.0,7.5);
+	initial_hy[DiscreteLocation("flow,idle,falling")] = Box(2, 0.0,0.0, 6.0,7.5);
 	HybridBoundedConstraintSet initial_pr(system_pr.state_space());
-	initial_pr[DiscreteLocation(3)] = Box(2, 6.75,6.75, 0.0,1.0);
-	initial_pr[DiscreteLocation(2)] = Box(2, 6.75,6.75, 0.0,1.0);
-	initial_pr[DiscreteLocation(1)] = Box(2, 6.75,6.75, 0.0,1.0);
+	initial_pr[DiscreteLocation("flow,stabilising")] = Box(2, 0.0,1.0, 6.75,6.75);
+	initial_pr[DiscreteLocation("flow,opening")] = Box(2, 0.0,1.0, 6.75,6.75);
+	initial_pr[DiscreteLocation("flow,closing")] = Box(2, 0.0,1.0, 6.75,6.75);
 
 	// The domains
-	HybridBoxes domain_hy(system_hy.state_space(),Box(2,4.5,9.0,0.0,1.0));
-	HybridBoxes domain_pr(system_pr.state_space(),Box(2,2.0,10.0,0.0,1.0));
+	HybridBoxes domain_hy(system_hy.state_space(),Box(2,0.0,1.0,4.5,9.0));
+	HybridBoxes domain_pr(system_pr.state_space(),Box(2,0.0,1.0,2.0,10.0));
 
 	// The projections
 	Vector<uint> projection_hy(1,0);
@@ -70,5 +70,5 @@ int main(int argc,char *argv[])
 	parameters.insert(RealParameter("ref",Interval(5.25,8.25)));
 
 	std::list<ParametricOutcome> results = verifier.parametric_dominance(proportional, hysteresis, parameters);
-	draw("watertank-mono-dominance",results);
+	draw("watertank-dominance",results);
 }

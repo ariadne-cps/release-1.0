@@ -101,7 +101,7 @@ private:
  
 	void _start()
 	{
-		const uint concurrency = 1;//boost::thread::hardware_concurrency() - FREE_CORES;
+		const uint concurrency = boost::thread::hardware_concurrency() - FREE_CORES;
 
 		for (uint i=0;i<concurrency;i++)
 	        _m_threads.push_back(boost::shared_ptr<boost::thread>(new boost::thread(boost::bind(&UpperReachEvolveWorker::_compute, this))));
