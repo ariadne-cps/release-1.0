@@ -210,11 +210,11 @@ class ImageSetHybridEvolver
     std::map<uint,Vector<Float> > _indexed_set_models_widths(std::list<EvolutionData>& working_sets) const;
 
     void _box_on_contraction(TaylorSet& set_model,
-    					 TaylorModel& time_model,
-    					 const DiscreteLocation& loc,
-    					 const TimeType& maximum_hybrid_time,
-    					 ContinuousEvolutionDirection direction,
-    					 Semantics semantics) const;
+        					 TaylorModel& time_model,
+        					 const DiscreteLocation& loc,
+        					 const TimeType& maximum_hybrid_time,
+        					 ContinuousEvolutionDirection direction,
+        					 Semantics semantics) const;
 
     ContinuousStepResult _adaptive_step_and_flow(const SetModelType& set_model,
                                                  const Float& previous_step,
@@ -369,6 +369,11 @@ class ImageSetHybridEvolverSettings {
     //! keep the error-per-unit-time below the error/evolution_time ratio.
     bool _enable_error_rate_enforcement;
 
+    //! \brief Boxes the enclosure if the dynamics is contractive (true by default).
+    //! \details In order to reduce the error, it overapproximates the enclosure with a box. In such a way, the error (which is
+    //! now affected by the dynamics) would be reduced if the set is shrinked. This operation is hence performed only if the local dynamics is contractive.
+    bool _enable_boxing_on_contraction;
+
     //! \brief Recondition sets to handle the increase in the error terms.
     bool _enable_reconditioning;
 
@@ -378,11 +383,6 @@ class ImageSetHybridEvolverSettings {
     //! \brief Terminate evolution if basic sets became too large (true by default).
     //! \details In the case of upper semantics, if true and no subdivisions are present, the set is put into the final sets. In the case of lower semantics, the set is discarded.
     bool _enable_premature_termination_on_enclosure_size;
-
-    //! \brief Boxes the enclosure if the dynamics is contractive (true by default).
-    //! \details In order to reduce the error, it overapproximates the enclosure with a box. In such a way, the error (which is
-    //! now affected by the dynamics) would be reduced if the set is shrinked. This operation is hence performed only if the local dynamics is contractive.
-    bool _enable_boxing_on_contraction;
 
     //! \brief Terminate evolution if too many working sets are present (0 by default, hence disabled).
     unsigned int _maximum_number_of_working_sets;
@@ -405,6 +405,9 @@ class ImageSetHybridEvolverSettings {
 
     const bool& enable_error_rate_enforcement() const;
     void set_enable_error_rate_enforcement(const bool&);
+
+    const bool& enable_boxing_on_contraction() const;
+    void set_enable_boxing_on_contraction(const bool&);
 
     const bool& enable_reconditioning() const;
     void set_enable_reconditioning(const bool&);
