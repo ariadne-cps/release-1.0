@@ -30,46 +30,40 @@ using namespace Ariadne;
 int main()
 {
     /// Set the system parameters
-    double a = 0.5;
-    double g = 9.8;
-
-    double A[4]={0,1.0,0,0};
-    double b[2]={0,-g};
+    RealParameter a("a",0.5); // coefficient of absorption
+    RealParameter g("g",9.81); // gravity constant
 
     /// Build the Hybrid System
 
-    /// Create a HybridAutomton object
-    HybridAutomaton ball;
+    HybridIOAutomaton ball("ball");
 
-    /// Create four discrete states
-    DiscreteLocation l1(1);
+    DiscreteLocation freefall("freefall");
 
     /// Create the discrete events
-    DiscreteEvent e11(11);
+    DiscreteEvent bounce("bounce");
 
-    /// Create the dynamics
-    VectorAffineFunction dynamic(Matrix<Float>(2,2,A),Vector<Float>(2,b));
-
-    cout << "dynamic = " << dynamic << endl << endl;
-
-    /// Create the resets
-    VectorAffineFunction reset(Matrix<Float>(2,2,1.0,0.0,0.0,-a),Vector<Float>(2,0.0,0.0));
-    cout << "reset=" << reset << endl << endl;
-
-    /// Create the guards.
-    /// Guards are true when f(x) = Ax + b > 0
-    VectorAffineFunction guard(Matrix<Float>(1,2,-1.0,0.0),Vector<Float>(1,0.0));
-    cout << "guard=" << guard << endl << endl;
-
+    RealVariable x("x"), vx("vx");
 
     /// Build the automaton
-    ball.new_mode(l1,dynamic);
+    ball.add_internal_var(x);
+    ball.add_internal_var(vx);
 
-    ball.new_forced_transition(e11,l1,l1,reset,guard);
+    RealExpression x_d = vx;
+    RealExpression vx_d = -g;
 
-    /// Finished building the automaton
+    ball.new_mode(freefall);
+    ball.set_dynamics(freefall,x,x_d);
+    ball.set_dynamics(freefall,vx,vx_d);
 
-    cout << "Automaton = " << ball << endl << endl;
+    RealExpression guard = -x; // x <= 0
+
+    std::map<RealVariable,RealExpression> reset;
+    reset[x] = x;
+    reset[vx] = -a * vx;
+
+    ball.new_forced_transition(bounce,freefall,freefall,reset,guard);
+
+    cout << "Automaton = " << ball << endl;
 
     /// Compute the system evolution
 
@@ -86,11 +80,9 @@ int main()
     typedef HybridEvolver::EnclosureType HybridEnclosureType;
     typedef HybridEvolver::OrbitType OrbitType;
 
-    std::cout << "Computing evolution starting from location l1, x = 2.0, v = 0.0" << std::endl;
-
-    Box initial_box(2, 1.999,2.0, 0.0,0.001);
-    HybridEnclosureType initial_enclosure(l1,initial_box);
-    Box bounding_box(2, -0.1,2.1, -10.1,10.1);
+    Box initial_box(2, 0.0,0.001, 1.999,2.0);
+    HybridEnclosureType initial_enclosure(freefall,initial_box);
+    Box bounding_box(2, -10.1,10.1, -0.1,2.1);
 
     HybridTime evolution_time(4.0,4);
 
@@ -98,7 +90,5 @@ int main()
     OrbitType orbit = evolver.orbit(initial_enclosure,evolution_time,UPPER_SEMANTICS);
     std::cout << "done." << std::endl;
 
-    std::cout << "Orbit="<<orbit<<std::endl;
-    plot("ball-orbit",bounding_box, Colour(0.0,0.5,1.0), orbit);
-
+    plot("ball_vx-x",bounding_box, Colour(0.0,0.5,1.0), orbit);
 }
