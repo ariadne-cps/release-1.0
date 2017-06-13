@@ -11,7 +11,6 @@ set(EXPERIMENTAL
 		 range-check
 		 sin
 		 composition
-         vanderpol
          set_splitting
 )
 

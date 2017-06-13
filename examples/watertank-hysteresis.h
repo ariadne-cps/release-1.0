@@ -28,7 +28,7 @@
 
 namespace Ariadne {
 
-HybridIOAutomaton getWatertankCompositionalHysteresis()
+HybridIOAutomaton getWatertankHysteresis()
 {
     /// Set the system parameters
 	RealParameter alpha("alpha",0.02);

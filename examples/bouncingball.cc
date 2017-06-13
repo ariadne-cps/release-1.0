@@ -99,49 +99,6 @@ int main()
     std::cout << "done." << std::endl;
 
     std::cout << "Orbit="<<orbit<<std::endl;
-    //plot("tutorial-orbit",bounding_box, Colour(0.0,0.5,1.0), orbit.initial());
     plot("ball-orbit",bounding_box, Colour(0.0,0.5,1.0), orbit);
-    
-    // textplot("ball-orbit.txt",orbit);
-    
-/*
-    std::cout << "Computing reach set using HybridEvolver... " << std::flush;
-    EnclosureListType reach = evolver.reach(initial_enclosure,evolution_time);
-    std::cout << "done." << std::endl;
-
-    std::cout << "Reach="<<reach<<std::endl;
-    //plot("tutorial-orbit",bounding_box, Colour(0.0,0.5,1.0), orbit.initial());
-    plot("ball-reach-evolver",bounding_box, Colour(0.0,0.5,1.0), reach);
-
-    /// Create a ReachabilityAnalyser object
-    HybridReachabilityAnalyser analyser(ball);
-    analyser.verbosity = 6;
-    analyser.parameters().lock_to_grid_time = 32.0;
-    analyser.parameters().maximum_grid_depth= 10;
-    std::cout <<  analyser.parameters() << std::endl;
-
-    HybridImageSet initial_set;
-    initial_set[l1]=initial_box;
-
-    HybridTime reach_time(4.0,2);
-
-    plot("ball-initial_set1",bounding_box, Colour(0.0,0.5,1.0), initial_set);
-
-    // Compute evolved sets (i.e. at the evolution time) and reach sets (i.e. up to the evolution time) using lower semantics.
-    // These functions run a bunch of simulations with bounded approximation errors and combines the results.
-    // If the desired evolution time can not be attained without exceeding the error bounds, then the run discarded (without warning)
-    std::cout << "Computing lower reach set... " << std::flush;
-    HybridGridTreeSet* lower_reach_set_ptr = analyser.lower_reach(initial_set,reach_time);
-    std::cout << "done." << std::endl;
-    plot("ball-lower_reach",bounding_box, Colour(0.0,0.5,1.0), *lower_reach_set_ptr);
-
-    // Compute evolved sets and reach sets using upper semantics.
-    // These functions compute over-approximations to the evolved and reachabe sets. Subdivision is used
-    // as necessary to keep the local errors reasonable. The accumulated global error may be very large.
-    std::cout << "Computing upper reach set... " << std::flush;
-    HybridGridTreeSet* upper_reach_set_ptr = analyser.upper_reach(initial_set,reach_time);
-    std::cout << "done." << std::endl;
-    plot("ball-upper_reach",bounding_box, Colour(0.0,0.5,1.0), *upper_reach_set_ptr);
-*/
 
 }

@@ -1,13 +1,10 @@
 set(EXAMPLES
-		 watertank-monolithic-hysteresis 
-		 watertank-compositional-hysteresis 
-	 	 watertank-proportional 
-		 watertank-nonlinear-monolithic-hysteresis 
-		 watertank-nonlinear-monolithic-proportional
-		 watertank-monolithic-dominance 
-		 watertank-nonlinear-monolithic-dominance 
+		 watertank-hysteresis 
+	 	 watertank-proportional
+		 watertank-dominance
 		 bouncingball
 		 springs
+		 vanderpol
 		 boost-converter
 		 home
 )

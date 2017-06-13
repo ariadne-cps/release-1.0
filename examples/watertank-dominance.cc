@@ -1,5 +1,5 @@
 /***************************************************************************
- *            watertank-nonlinear-monolithic-dominance.cc
+ *            watertank-monolithic-dominance.cc
  *
  *  Copyright  2011  Luca Geretti
  *
@@ -22,8 +22,8 @@
  */
 
 #include "ariadne.h"
-#include "watertank-nonlinear-monolithic-proportional.h"
-#include "watertank-nonlinear-monolithic-hysteresis.h"
+#include "watertank-proportional.h"
+#include "watertank-hysteresis.h"
 
 using namespace Ariadne;
 
@@ -34,17 +34,17 @@ int main(int argc,char *argv[])
 		verb = atoi(argv[1]);
 
 	// The systems
-	HybridAutomaton system_hy = Ariadne::getWatertankNonlinearMonolithicHysteresis();
-	HybridAutomaton system_pr = Ariadne::getWatertankNonlinearMonolithicProportional();
+	HybridIOAutomaton system_hy = Ariadne::getWatertankHysteresis();
+	HybridIOAutomaton system_pr = Ariadne::getWatertankProportional();
 
 	// The initial values
 	HybridBoundedConstraintSet initial_hy(system_hy.state_space());
 	initial_hy[DiscreteLocation("opened")] = Box(2, 6.0,7.5, 1.0,1.0);
 	initial_hy[DiscreteLocation("closed")] = Box(2, 6.0,7.5, 0.0,0.0);
 	HybridBoundedConstraintSet initial_pr(system_pr.state_space());
-	initial_pr[DiscreteLocation(1)] = Box(2, 6.75,6.75, 0.0,1.0);
-	initial_pr[DiscreteLocation(2)] = Box(2, 6.75,6.75, 0.0,1.0);
 	initial_pr[DiscreteLocation(3)] = Box(2, 6.75,6.75, 0.0,1.0);
+	initial_pr[DiscreteLocation(2)] = Box(2, 6.75,6.75, 0.0,1.0);
+	initial_pr[DiscreteLocation(1)] = Box(2, 6.75,6.75, 0.0,1.0);
 
 	// The domains
 	HybridBoxes domain_hy(system_hy.state_space(),Box(2,4.5,9.0,0.0,1.0));
@@ -58,12 +58,11 @@ int main(int argc,char *argv[])
 	DominanceVerificationInput hysteresis(system_hy,initial_hy,domain_hy,projection_hy);
 	DominanceVerificationInput proportional(system_pr,initial_pr,domain_pr,projection_pr);
 
-	// Verification
 	Verifier verifier;
 	verifier.verbosity = verb;
-	verifier.ttl = 600;
+	verifier.ttl = 300;
 	verifier.settings().maximum_parameter_depth = 5;
-    verifier.settings().plot_results = false;
+	verifier.settings().plot_results = false;
 
 	// The parametric dominance parameters
 	RealParameterSet parameters;
@@ -71,5 +70,5 @@ int main(int argc,char *argv[])
 	parameters.insert(RealParameter("ref",Interval(5.25,8.25)));
 
 	std::list<ParametricOutcome> results = verifier.parametric_dominance(proportional, hysteresis, parameters);
-	draw("watertank-nl-mono-dominance",results);
+	draw("watertank-mono-dominance",results);
 }

@@ -33,10 +33,8 @@ int main(int argc, char* argv[])
     if (argc > 1)
         VERBOSITY = atoi(argv[1]);
 
-    /// Create a HybridAutomton object
     HybridIOAutomaton vanderpol("vanderpol");
 
-    /// Create four discrete states
     DiscreteLocation loc("loc");
 
     RealParameter mu("mu",1.0);
@@ -54,12 +52,6 @@ int main(int argc, char* argv[])
     vanderpol.set_dynamics(loc,x,x_d);
     vanderpol.set_dynamics(loc,y,y_d);
 
-    /// Finished building the automaton
-
-    cout << "Automaton = " << vanderpol << endl << endl;
-
-    /// Compute the system evolution
-
     /// Create a HybridEvolver object
     HybridEvolver evolver(vanderpol);
 
@@ -67,8 +59,6 @@ int main(int argc, char* argv[])
     evolver.settings().set_reference_enclosure_widths(1.1e0);
     evolver.settings().set_maximum_enclosure_widths_ratio(1e+5);
     evolver.settings().set_maximum_step_size(0.01);
-    evolver.settings().set_enable_reconditioning(true);
-    evolver.settings().set_enable_error_rate_enforcement(false);
     evolver.verbosity = VERBOSITY;
 
     // Declare the type to be used for the system evolution
