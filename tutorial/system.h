@@ -1,7 +1,14 @@
 /***************************************************************************
- *            watertank.h
+ *            system.h
  *
- *  Copyright  2016  Luca Geretti
+ *  This file provides the system definition.
+ *  Specifically, this is watertank system in which a tank with a hole in the
+ *  bottom receives an input water flow. Such input flow can
+ *  be modulated between zero and its maximum by controlling a valve. The
+ *  described controller aims at keeping the water level between an upper threshold
+ *  and a lower threshold.
+ *
+ *  Copyright  2017  Luca Geretti
  *
  ****************************************************************************/
 
@@ -21,8 +28,8 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef WATERTANK_H_
-#define WATERTANK_H_
+#ifndef TUTORIAL_SYSTEM_H_
+#define TUTORIAL_SYSTEM_H_
 
 #include "ariadne.h"
 
@@ -165,7 +172,7 @@ HybridIOAutomaton getSystem()
     /// Composition
 
     HybridIOAutomaton tank_valve = compose("tank,valve",tank,valve,flow,idle);
-    HybridIOAutomaton system = compose("compositional",tank_valve,controller,DiscreteLocation("flow,idle"),rising);
+    HybridIOAutomaton system = compose("tutorial",tank_valve,controller,DiscreteLocation("flow,idle"),rising);
 
     return system;
 }
@@ -173,4 +180,4 @@ HybridIOAutomaton getSystem()
 
 }
 
-#endif /* WATERTANK_H_ */
+#endif /* TUTORIAL_SYSTEM_H_ */

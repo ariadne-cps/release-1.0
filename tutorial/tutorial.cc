@@ -1,7 +1,9 @@
 /***************************************************************************
  *            tutorial.cc
  *
- *  Copyright  2016  Luca Geretti
+ *  Provides a documented tutorial of system definition and analysis.
+ *
+ *  Copyright  2017  Luca Geretti
  *
  ****************************************************************************/
 
@@ -21,25 +23,32 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <ariadne.h>
-#include "analysis.h"
-#include "watertank.h"
+#include <ariadne.h> // Library header
+#include "system.h" // System definition
+#include "analysis.h" // Custom analysis routines to be run
 
+// Specifies that classes from the Ariadne library can be used without the Ariadne:: prefix
 using namespace Ariadne;
 
 int main(int argc,char *argv[])
 {
+	// This snippet reads, from the first argument of the executable, the verbosity value to be used
 	int verb = 1;
 	if (argc > 1)
 		verb = atoi(argv[1]);
 
+	// Instruct not to produce any plot results.
+	// Set this to true to create plots within a folder named 'tutorial-png' in the current working director
     bool plot_results = false;
 
+    // Load the system from the system.h file
     HybridIOAutomaton system = Ariadne::getSystem();
 
+    // Construct an initial state, in particular from two different locations of the system
     HybridBoundedConstraintSet initial_set(system.state_space());
     initial_set[DiscreteLocation("flow,idle,rising")] = Box(2, 1.0,1.0, 6.0,7.5);
     initial_set[DiscreteLocation("flow,idle,falling")] = Box(2, 0.0,0.0, 6.0,7.5);
 
+    // Run the analysis routines set in the analysis.h file
     analyse(system,initial_set,verb,plot_results);
 }
