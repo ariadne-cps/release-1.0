@@ -37,18 +37,23 @@ int main(int argc,char *argv[])
 	if (argc > 1)
 		verb = atoi(argv[1]);
 
-	// Instruct not to produce any plot results.
+	// Instructs not to produce any plot results.
 	// Set this to true to create plots within a folder named 'tutorial-png' in the current working director
     bool plot_results = false;
 
-    // Load the system from the system.h file
+    // Loads the system from the system.h file
     HybridIOAutomaton system = Ariadne::getSystem();
 
-    // Construct an initial state, in particular from two different locations of the system
+    // Outputs the system
+    cout << system << endl;
+
+    // Constructs an initial state, in particular from two different locations of the system
+    // Please note how the system variables are ordered alphabetically: this is important to
+    // understand this when we specify sets, in order to avoid dimension mismatches.
     HybridBoundedConstraintSet initial_set(system.state_space());
     initial_set[DiscreteLocation("flow,idle,rising")] = Box(2, 1.0,1.0, 6.0,7.5);
     initial_set[DiscreteLocation("flow,idle,falling")] = Box(2, 0.0,0.0, 6.0,7.5);
 
-    // Run the analysis routines set in the analysis.h file
+    // Runs the analysis routines set in the analysis.h file
     analyse(system,initial_set,verb,plot_results);
 }

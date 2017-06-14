@@ -35,141 +35,199 @@
 
 namespace Ariadne {
 
+/*
+ * Construction of an automaton takes major six steps:
+ *
+ * 1. Creation of an automaton
+ * 2. Registration of variable on the automaton
+ * 3. Registration of events on the automaton
+ * 4. Registration of locations as modes of the automaton
+ * 5. Registration of dynamics for each mode
+ * 6. Registration of transitions from one mode to another mode
+ *
+ * As a 0-th step, we also need to create (valued) labels: system variables, parameters and events
+ *
+ * The creation of labels was numbered 0 since they may be shared between multiple automata, and we clearly
+ * need to define them only once in the given context, before any usage.
+ *
+ * While it may be convenient to define all the components of a system on the same context,
+ * for sufficiently complex automata it becomes preferable to separate automata within
+ * dedicated (header) files. In that case, shared labels must be redefined within each context.
+ *
+ * Finally, a system is obtained by automated composition of its components.
+ */
+
 HybridIOAutomaton getSystem()
 {
-    // System variables
-    RealVariable a("a"); // Valve aperture
-    RealVariable x("x"); // Water level
+    // 0: System variables
+
+		RealVariable a("a"); // Valve aperture
+		RealVariable x("x"); // Water level
 
     /// Tank automaton
 
-    // Containing automaton
-    HybridIOAutomaton tank("tank");
+		// 0: Parameters
 
-    // Parameters to be used in the automaton definition
-    RealParameter alpha("alpha",0.02);
-    RealParameter bfp("bfp",Interval(0.3,0.32863));
+			RealParameter alpha("alpha",0.02); // The coefficient for output flow
+			RealParameter bfp("bfp",Interval(0.3,0.31)); // The coefficient for input flow, defined as an interval, meaning that all the values are considered
 
-    // Locations for discrete states
-    DiscreteLocation flow("flow");
+		// 1. Automaton
 
-    // Registration of the input/output variables
-    tank.add_input_var(a);
-    tank.add_output_var(x);
+			HybridIOAutomaton tank("tank");
 
-    // Registration of the locations
-    tank.new_mode(flow);
+		// 2. Registration of the input/output variables
 
-    // Input/output variables
-    tank.add_input_var(a);
-    tank.add_output_var(x);
+			tank.add_input_var(a);
+			tank.add_output_var(x);
 
-    // Dynamics
-    RealExpression dyn = - alpha * sqrt(x) + bfp * a;
+		// 4. Registration of the locations
 
-    // Registration of the dynamics
-    tank.set_dynamics(flow, x, dyn);
+			DiscreteLocation flow("flow");
+
+			tank.new_mode(flow);
+
+		/// 5. Registration of the dynamics
+
+			RealExpression dyn = - alpha * sqrt(x) + bfp * a;
+
+			tank.set_dynamics(flow, x, dyn);
 
     /// Valve automaton
 
-    // Containing automaton
-    HybridIOAutomaton valve("valve");
+		// 0. Parameters
 
-    // Parameters to be used in the automaton definition
-    RealParameter T("T",4.0);
+			RealParameter T("T",4.0); // Time constant for opening/closing the valve
 
-    // Locations for discrete states
-    DiscreteLocation idle("idle");
-    DiscreteLocation opening("opening");
-    DiscreteLocation closing("closing");
+		// 1. Automaton
 
-    // Registration of the input/output variables
-    valve.add_output_var(a);
+			HybridIOAutomaton valve("valve");
 
-    // Discrete events for transitions
-    DiscreteEvent e_open("open");
-    DiscreteEvent e_close("close");
-    DiscreteEvent e_idle("idle");
+		// 2. Registration of the input/output variables
 
-    // Registration of the input/internal events
-    valve.add_input_event(e_open);
-    valve.add_input_event(e_close);
-    valve.add_internal_event(e_idle);
+			valve.add_output_var(a);
 
-    // Dynamics
-    RealExpression dynidle = 0.0;
-    RealExpression dynopening = 1.0/T;
-    RealExpression dynclosing = -1.0/T;
+		// 3 Registration of the input/internal events
 
-    // Registration of the locations
-    valve.new_mode(idle);
-    valve.new_mode(opening);
-    valve.new_mode(closing);
+			DiscreteEvent e_open("open");
+			DiscreteEvent e_close("close");
+			DiscreteEvent e_idle("idle");
 
-    // Registration of the dynamics for each location
-    valve.set_dynamics(idle, a, dynidle);
-    valve.set_dynamics(opening, a, dynopening);
-    valve.set_dynamics(closing, a, dynclosing);
+			valve.add_input_event(e_open);
+			valve.add_input_event(e_close);
+			valve.add_internal_event(e_idle);
 
-    // Transitions
+		// 4. Registration of the locations
 
-	valve.new_unforced_transition(e_open, idle, opening);
-	valve.new_unforced_transition(e_open, opening, opening);
-	valve.new_unforced_transition(e_close, idle, closing);
-	valve.new_unforced_transition(e_close, closing, closing);
-	// when the valve is fully opened go from opening to idle
-	RealExpression a_geq_one = a - 1.0;
-	std::map<RealVariable,RealExpression> reset_a_one;
-	reset_a_one[a] = 1.0;
-	valve.new_forced_transition(e_idle, opening, idle, reset_a_one, a_geq_one);
-	// when the valve is fully closed go from closing to idle
-	RealExpression a_leq_zero = - a;
-	std::map<RealVariable,RealExpression> reset_a_zero;
-	reset_a_zero[a] = 0.0;
-	valve.new_forced_transition(e_idle, closing, idle, reset_a_zero, a_leq_zero);
+			DiscreteLocation idle("idle");
+			DiscreteLocation opening("opening");
+			DiscreteLocation closing("closing");
+
+			valve.new_mode(idle);
+			valve.new_mode(opening);
+			valve.new_mode(closing);
+
+		// 5. Registration of the dynamics for each location
+
+			RealExpression dynidle = 0.0;
+			RealExpression dynopening = 1.0/T;
+			RealExpression dynclosing = -1.0/T;
+
+			valve.set_dynamics(idle, a, dynidle);
+			valve.set_dynamics(opening, a, dynopening);
+			valve.set_dynamics(closing, a, dynclosing);
+
+		/// 6. Transitions
+
+			// Guards
+			// The library assumes that given a guard g, the relation g >= 0 must hold in the current mode to have a transition
+			RealExpression a_geq_one = a - 1.0; // a >= 1
+			RealExpression a_leq_zero = - a; // a >= 0
+
+			// Resets
+			// We need to define a reset for each output variable of the automaton
+			std::map<RealVariable,RealExpression> reset_a_one;
+			reset_a_one[a] = 1.0; // a = 1
+			std::map<RealVariable,RealExpression> reset_a_zero;
+			reset_a_zero[a] = 0.0; // a = 0
+
+			// Forced transitions: transitions which implicitly have complementary guards and consequently
+			// force the transition to be taken immediately
+
+			// When the valve is fully opened, go from opening to idle
+			valve.new_forced_transition(e_idle, opening, idle, reset_a_one, a_geq_one);
+			// When the valve is fully closed go from closing to idle
+			valve.new_forced_transition(e_idle, closing, idle, reset_a_zero, a_leq_zero);
+
+			// Unforced transitions: transitions which do not have complementary guards hence do not
+			// necessarily force an immediate transition
+
+			// Transitions that depend on input events must be unforced and with no guard or reset
+			valve.new_unforced_transition(e_open, idle, opening);
+			valve.new_unforced_transition(e_open, opening, opening);
+			valve.new_unforced_transition(e_close, idle, closing);
+			valve.new_unforced_transition(e_close, closing, closing);
 
     /// Controller automaton
 
-    // Containing automaton
-    HybridIOAutomaton controller("controller");
+		// 0. Parameters
 
-    // Parameters to be used in the automaton definition
-    RealParameter hmin("hmin",5.75);
-    RealParameter hmax("hmax",7.75);
-    RealParameter delta("delta",0.1);
+			RealParameter hmin("hmin",5.75); // Lower threshold
+			RealParameter hmax("hmax",7.75); // Upper threshold
+			RealParameter delta("delta",0.1); // Indetermination constant
 
-    // Locations for discrete states
-    DiscreteLocation rising("rising");
-    DiscreteLocation falling("falling");
+		// 1. Automaton
 
-    // Registration of the input/output variables
-    controller.add_input_var(x);
+			HybridIOAutomaton controller("controller");
 
-    // Two output events (open and close)
-    controller.add_output_event(e_open);
-    controller.add_output_event(e_close);
+		// 2. Registration of the input/output variables
 
-    // Registration of the locations
-    controller.new_mode(rising);
-    controller.new_mode(falling);
+			controller.add_input_var(x);
 
-    // Invariants
-    RealExpression x_leq_hmax = x - hmax - delta;
-    RealExpression x_geq_hmin = hmin - delta - x;
+		// 3. Registration of the events
 
-    // Registration of the invariants for each location
-    controller.new_invariant(rising, x_leq_hmax);
-    controller.new_invariant(falling, x_geq_hmin);
+			controller.add_output_event(e_open);
+			controller.add_output_event(e_close);
 
-    // Guards
-    RealExpression x_geq_hmax = x - hmax + delta;
-    RealExpression x_leq_hmin = hmin + delta - x;
+		// 4. Registration of the locations
 
-    // Transitions
-    controller.new_unforced_transition(e_close, rising, falling, x_geq_hmax);
-    controller.new_unforced_transition(e_open, falling, rising, x_leq_hmin);
+			DiscreteLocation rising("rising");
+			DiscreteLocation falling("falling");
+
+			controller.new_mode(rising);
+			controller.new_mode(falling);
+
+		// 5. Transitions
+
+			// Invariants
+			// The library assumes that given an invariant i, the relation i <= 0 must hold in the current mode to allow evolution
+			RealExpression x_leq_hmax = x - hmax - delta; // x <= hmax + delta
+			RealExpression x_geq_hmin = hmin - delta - x; // x >= hmin - delta
+
+			// Registration of the invariants for each location
+			controller.new_invariant(rising, x_leq_hmax);
+			controller.new_invariant(falling, x_geq_hmin);
+
+			// Guards
+			RealExpression x_geq_hmax = x - hmax + delta; // x >= hmax + delta
+			RealExpression x_leq_hmin = hmin + delta - x; // x <= hmin + delta
+
+			// Unforced transitions: here they are used paired with invariants to limit the region of activation of the guard
+			controller.new_unforced_transition(e_close, rising, falling, x_geq_hmax);
+			controller.new_unforced_transition(e_open, falling, rising, x_leq_hmin);
 	
     /// Composition
+
+	/* Composition is obtained by progressively composing two automata. The first argument is the name of
+	 * the resulting composition. Please note that the name is actually relevant only for the complete system
+	 *
+	 * The second and this arguments are the components.
+	 *
+	 * Then in the fourth and fifth argument we must define an initial location for each component,
+	 * in order to have a compact composition which excludes states that would not be reachable from such initial location.
+     * Pay attention, during iterative composition, on ordering the initial state correctly in respect
+     * to the provided fourth and fifth arguments; discrete location names for composite locations are
+	 * created by simply using the comma character between the location names of their components.
+     */
 
     HybridIOAutomaton tank_valve = compose("tank,valve",tank,valve,flow,idle);
     HybridIOAutomaton system = compose("tutorial",tank_valve,controller,DiscreteLocation("flow,idle"),rising);
