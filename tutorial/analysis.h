@@ -59,9 +59,12 @@ void analyse(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initi
 // Performs finite time evolution, using upper semantics.
 void finite_time_upper_evolution(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results) {
 
+	// Creates an evolver
     HybridEvolver evolver(system);
     evolver.verbosity = verbosity;
 
+    // Creates an initial enclosure from the initial set.
+    // This operation is only necessary since we provided a common initial set expressed as a constraint set
     HybridEvolver::EnclosureType initial_enclosure;
     HybridBoxes initial_set_domain = initial_set.domain();
     for (std::map<DiscreteLocation,Box>::const_iterator it = initial_set_domain.locations_begin(); it != initial_set_domain.locations_end(); ++it) {
@@ -71,10 +74,15 @@ void finite_time_upper_evolution(HybridAutomatonInterface& system, HybridBounded
     	}
     }
   
+    // The maximum evolution time, expressed as a continuous time limit along with a maximum number of events
+    // The evolution stops for each trajectory as soon as one of the two limits are reached
     HybridTime evol_limits(30.0,8);
  
+    // Performs the evolution, saving the "orbit", which contains che reached set,
+    // the final set and all intermediate sets.
     HybridEvolver::OrbitType orbit = evolver.orbit(initial_enclosure,evol_limits,UPPER_SEMANTICS);
 
+    // Plots the reached set specifically
     if (plot_results) {
         PlotHelper plotter(system.name());
         plotter.plot(orbit.reach(),"reach");
@@ -84,15 +92,20 @@ void finite_time_upper_evolution(HybridAutomatonInterface& system, HybridBounded
 // Performs infinite time outer evolution
 void infinite_time_outer_evolution(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results) {
 
+	// The accuracy of computation in terms of discretization; the larger, the smaller the grid cells used
     int accuracy = 5;
 
+	// Creates the domain, necessary to guarantee termination for infinite-time evolution
     HybridBoxes domain(system.state_space(),Box(2,0.0,1.0,4.5,9.0));
 
+    // Creates an analyser with the required arguments
     HybridReachabilityAnalyser analyser(system,domain,accuracy);
     analyser.verbosity = verbosity;
 
+    // Performs the outer reach
     HybridDenotableSet outer_reach = analyser.outer_chain_reach(initial_set);
 
+    // Plots the reached region
     if (plot_results) {
         PlotHelper plotter(system.name());
         plotter.plot(outer_reach,"outer",accuracy);
@@ -102,17 +115,22 @@ void infinite_time_outer_evolution(HybridAutomatonInterface& system, HybridBound
 // Performs infinite time epsilon-lower evolution
 void infinite_time_lower_evolution(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results) {
 
+	// The accuracy of computation in terms of discretization; the larger, the smaller the grid cells used
     int accuracy = 5;
 
+	// Creates the domain, necessary to guarantee termination for infinite-time evolution
     HybridBoxes domain(system.state_space(),Box(2,0.0,1.0,4.5,9.0));
 
+    // Creates an analyser with the required arguments
     HybridReachabilityAnalyser analyser(system,domain,accuracy);
     analyser.verbosity = verbosity;
 
+    // Performs the lower reach, also outputting the obtained epsilon
     HybridDenotableSet lower_reach;
     HybridFloatVector epsilon;
     make_lpair<HybridDenotableSet,HybridFloatVector>(lower_reach,epsilon) = analyser.lower_chain_reach_and_epsilon(initial_set);
 
+    // Plots the reached region
     if (plot_results) {
         PlotHelper plotter(system.name());
         plotter.plot(lower_reach,"lower",accuracy);
@@ -122,7 +140,7 @@ void infinite_time_lower_evolution(HybridAutomatonInterface& system, HybridBound
 // Performs verification in respect to a safety specification expresses as a set
 void safety_verification(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results) {
 
-	// Creates the domain, necessary to guarantee termination for outer evolution
+	// Creates the domain, necessary to guarantee termination for infinite-time evolution
     HybridBoxes domain(system.state_space(),Box(2,0.0,1.0,4.5,9.0));
     // Creates the safety constraint
     HybridConstraintSet safety_constraint = getSafetyConstraint(system);
@@ -147,7 +165,7 @@ void safety_verification(HybridAutomatonInterface& system, HybridBoundedConstrai
 // a collection of boxes where to perform the safety verification individually.
 void parametric_safety_verification(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results) {
 
-	// Creates the domain, necessary to guarantee termination for outer evolution
+	// Creates the domain, necessary to guarantee termination for infinite-time evolution
     HybridBoxes domain(system.state_space(),Box(2,0.0,1.0,4.5,9.0));
     // Creates the safety constraint
     HybridConstraintSet safety_constraint = getSafetyConstraint(system);
