@@ -45,7 +45,7 @@ HybridConstraintSet getSafetyConstraint(HybridAutomatonInterface& system);
 void analyse(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results)
 {
     cout << "1/5: Finite time (upper) evolution... " << endl << flush;
-    finite_time_upper_evolution(system,initial_set,verbosity,plot_results);
+    //finite_time_upper_evolution(system,initial_set,verbosity,plot_results);
     cout << "2/5: Infinite time outer evolution... " << endl << flush; 
     infinite_time_outer_evolution(system,initial_set,verbosity,plot_results);
     cout << "3/5: Infinite time lower evolution... " << endl << flush; 

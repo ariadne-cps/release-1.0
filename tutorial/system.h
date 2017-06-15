@@ -69,7 +69,7 @@ HybridIOAutomaton getSystem()
 		// 0: Parameters
 
 			RealParameter alpha("alpha",0.02); // The coefficient for output flow
-			RealParameter bfp("bfp",Interval(0.3,0.31)); // The coefficient for input flow, defined as an interval, meaning that all the values are considered
+			RealParameter bfp("bfp",Interval(0.3,0.32863)); // The coefficient for input flow, defined as an interval, meaning that all the values are considered
 
 		// 1. Automaton
 
@@ -88,7 +88,7 @@ HybridIOAutomaton getSystem()
 
 		/// 5. Registration of the dynamics
 
-			RealExpression dyn = - alpha * sqrt(x) + bfp * a;
+			RealExpression dyn = - alpha * x + bfp * a;
 
 			tank.set_dynamics(flow, x, dyn);
 
@@ -208,7 +208,7 @@ HybridIOAutomaton getSystem()
 			controller.new_invariant(falling, x_geq_hmin);
 
 			// Guards
-			RealExpression x_geq_hmax = x - hmax + delta; // x >= hmax + delta
+			RealExpression x_geq_hmax = x - hmax + delta; // x >= hmax - delta
 			RealExpression x_leq_hmin = hmin + delta - x; // x <= hmin + delta
 
 			// Unforced transitions: here they are used paired with invariants to limit the region of activation of the guard
