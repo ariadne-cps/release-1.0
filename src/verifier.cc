@@ -705,7 +705,7 @@ VerifierSettings::VerifierSettings() :
         maximum_parameter_depth(3),
         use_param_midpoints_for_proving(false),
         use_param_midpoints_for_disproving(true),
-        enable_backward_refinement_for_safety_proving(true)
+        enable_backward_refinement_for_safety_proving(false)
 { }
 
 std::ostream&
