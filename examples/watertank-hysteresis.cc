@@ -39,17 +39,17 @@ int main(int argc,char *argv[])
 
 	// The initial values
 	HybridBoundedConstraintSet initial_set(system.state_space());
-	initial_set[DiscreteLocation("flow,idle,rising")] = Box(2, 6.0,7.5, 1.0,1.0);
-	initial_set[DiscreteLocation("flow,idle,falling")] = Box(2, 6.0,7.5, 0.0,0.0);
+	initial_set[DiscreteLocation("flow,idle,rising")] = Box(2, 1.0,1.0, 6.0,7.5);
+	initial_set[DiscreteLocation("flow,idle,falling")] = Box(2, 0.0,0.0, 6.0,7.5);
 
-	HybridBoxes domain(system.state_space(),Box(2,4.5,9.0,0.0,1.0));
+	HybridBoxes domain(system.state_space(),Box(2,0.0,1.0,4.5,9.0));
 
 	// The safety constraint
 	List<RealVariable> varlist;
 	RealVariable x("x");
-	RealVariable y("y");
+	RealVariable a("a");
 	varlist.append(x);
-	varlist.append(y);
+	varlist.append(a);
 	RealExpression expr = x;
 	List<RealExpression> consexpr;
 	consexpr.append(expr);
@@ -71,7 +71,6 @@ int main(int argc,char *argv[])
 
 	SafetyVerificationInput verInfo(system, initial_set, domain, safety_constraint);
 
-	cout << verifier.safety(verInfo);
-	//std::list<ParametricOutcome> results = verifier.parametric_safety(verInfo, parameters);
-	//draw(system.name(),results);
+	std::list<ParametricOutcome> results = verifier.parametric_safety(verInfo, parameters);
+	draw(system.name(),results);
 }
