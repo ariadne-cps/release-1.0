@@ -46,15 +46,15 @@ int main(int argc,char *argv[])
 
 	// The safety constraint
 	List<RealVariable> varlist;
-	RealVariable x("x");
 	RealVariable a("a");
-	varlist.append(x);
+	RealVariable x("x");
 	varlist.append(a);
+	varlist.append(x);
 	RealExpression expr = x;
 	List<RealExpression> consexpr;
 	consexpr.append(expr);
 	VectorFunction cons_f(consexpr,varlist);
-	Box codomain(1,5.75,7.75);
+	Box codomain(1,5.0,8.75);
 	HybridConstraintSet safety_constraint(system.state_space(),ConstraintSet(cons_f,codomain));
 
 	/// Verification
@@ -66,8 +66,8 @@ int main(int argc,char *argv[])
 	verifier.settings().plot_results = true;
 
 	RealParameterSet parameters;
-	parameters.insert(RealParameter("hmin",Interval(5.0,6.0)));
-	parameters.insert(RealParameter("hmax",Interval(7.5,8.5)));
+	parameters.insert(RealParameter("hmin",Interval(5.5,5.75)));
+	parameters.insert(RealParameter("hmax",Interval(7.0,7.25)));
 
 	SafetyVerificationInput verInfo(system, initial_set, domain, safety_constraint);
 

@@ -207,11 +207,11 @@ HybridConstraintSet getSafetyConstraint(HybridAutomatonInterface& system) {
 	// large generality when defining the constraint set.
 
 	// Constructs the variable list, required by the vector function
-    RealVariable x("x");
     RealVariable a("a");
+    RealVariable x("x");
     List<RealVariable> varlist;
-    varlist.append(x);
     varlist.append(a);
+    varlist.append(x);
     // Constructs the expression
     RealExpression expr = x;
     List<RealExpression> consexpr;
