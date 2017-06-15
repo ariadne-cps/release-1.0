@@ -173,8 +173,8 @@ void parametric_safety_verification(HybridAutomatonInterface& system, HybridBoun
 
     // The parameters which will be split into disjoint sets
     RealParameterSet parameters;
-    parameters.insert(RealParameter("hmin",Interval(5.0,6.0)));
-    parameters.insert(RealParameter("hmax",Interval(7.5,8.5)));
+	parameters.insert(RealParameter("hmin",Interval(5.0,6.0)));
+	parameters.insert(RealParameter("hmax",Interval(7.5,8.5)));
 
     // Initialization of the verifier
     Verifier verifier;
@@ -202,7 +202,7 @@ void parametric_safety_verification(HybridAutomatonInterface& system, HybridBoun
 // Constructs the safety constraint for (parametric) safety verification
 HybridConstraintSet getSafetyConstraint(HybridAutomatonInterface& system) {
 
-	// The desired constraint is 5.52 <= x <= 8.25 for all locations
+	// The desired constraint is 5.25 <= x <= 8.25 for all locations
 	// The construction below may seem convoluted, however it allows for
 	// large generality when defining the constraint set.
 
@@ -210,6 +210,8 @@ HybridConstraintSet getSafetyConstraint(HybridAutomatonInterface& system) {
     RealVariable a("a");
     RealVariable x("x");
     List<RealVariable> varlist;
+    // The variables MUST be appended in the same order as the one used internally by the system,
+    // i.e., in alphabetical order
     varlist.append(a);
     varlist.append(x);
     // Constructs the expression
@@ -218,7 +220,7 @@ HybridConstraintSet getSafetyConstraint(HybridAutomatonInterface& system) {
     consexpr.append(expr);
     VectorFunction cons_f(consexpr,varlist);
     // Constructs the codomain for the expression
-    Box codomain(1,5.52,8.25);
+    Box codomain(1,5.25,8.25);
 
     // Constructs a costraint set and then applies it to each location of the system
     return HybridConstraintSet(system.state_space(),ConstraintSet(cons_f,codomain));
