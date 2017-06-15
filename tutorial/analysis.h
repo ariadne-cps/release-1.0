@@ -62,6 +62,7 @@ void finite_time_upper_evolution(HybridAutomatonInterface& system, HybridBounded
 	// Creates an evolver
     HybridEvolver evolver(system);
     evolver.verbosity = verbosity;
+    evolver.settings().set_maximum_step_size(0.3); // The time step size to be used
 
     // Creates an initial enclosure from the initial set.
     // This operation is only necessary since we provided a common initial set expressed as a constraint set
