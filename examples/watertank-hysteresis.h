@@ -1,5 +1,5 @@
 /***************************************************************************
- *            watertank-compositional-hysteresis.h
+ *            watertank-hysteresis.h
  *
  *  Copyright  2011  Luca Geretti
  *
@@ -21,14 +21,15 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef WATERTANK_COMPOSITIONAL_HYSTERESIS_H_
-#define WATERTANK_COMPOSITIONAL_HYSTERESIS_H_
+#ifndef WATERTANK_HYSTERESIS_H_
+#define WATERTANK_HYSTERESIS_H_
 
 #include "ariadne.h"
 
 namespace Ariadne {
 
 HybridIOAutomaton getWatertankHysteresis()
+
 {
     /// Set the system parameters
 	RealParameter alpha("alpha",0.02);
@@ -156,4 +157,4 @@ HybridIOAutomaton getWatertankHysteresis()
 
 }
 
-#endif /* WATERTANK_COMPOSITIONAL_HYSTERESIS_H_ */
+#endif /* WATERTANK_HYSTERESIS_H_ */
