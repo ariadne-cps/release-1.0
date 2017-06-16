@@ -55,7 +55,7 @@ HybridIOAutomaton getWatertankHysteresis()
     	tank.add_output_var(x);
 
 		// Only one state with no transitions and no invariants
-		RealExpression dyn = - alpha * x + bfp * a;
+		RealExpression dyn = - alpha * sqrt(x) + bfp * a;
 		tank.new_mode(flow);
 		tank.set_dynamics(flow, x, dyn);
 
