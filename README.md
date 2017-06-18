@@ -1,7 +1,5 @@
 This is the *stable* release of the Ariadne C++ library.
 
-We are in the process of producing a first official release. As such, documentation is not complete yet. In the end, a tutorial on the definition of hybrid automata and their analysis/verification will be available.
-
 ### Installation ###
 
 These installation instructions have been tested on Ubuntu 16.04 and macOS 10.12.
