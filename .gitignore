@@ -1,6 +1,7 @@
-build/
+*build*
 *~
 .project
 .settings/
 .cproject
+.idea
 .DS_Store
