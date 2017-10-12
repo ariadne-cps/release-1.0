@@ -1,5 +1,5 @@
 This is a tutorial of Ariadne usage, written as a simple self contained example (SSCE).
-To compile the tutorial, use the same procedure as compilation of the library: 
+To compile the tutorial, use the same procedure as for the compilation of the library: 
 
 1. make build
 2. cd build
@@ -8,6 +8,6 @@ To compile the tutorial, use the same procedure as compilation of the library:
 
 Then you can run the tutorial with:
 
-./tutorial <VERBOSITY>
+./tutorial VERBOSITY
 
-where the (optional) verbosity value shall be positive. 
+where the (optional) VERBOSITY value shall be positive. 
