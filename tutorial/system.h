@@ -157,9 +157,7 @@ HybridIOAutomaton getSystem()
 
 			// Transitions that depend on input events must be unforced and with no guard or reset
 			valve.new_unforced_transition(e_open, idle, opening);
-			valve.new_unforced_transition(e_open, opening, opening);
 			valve.new_unforced_transition(e_close, idle, closing);
-			valve.new_unforced_transition(e_close, closing, closing);
 
     /// Controller automaton
 
