@@ -88,9 +88,7 @@ HybridIOAutomaton getSystem()
 
 		/// 5. Registration of the dynamics
 
-			RealExpression dyn = - alpha * x + bfp * a;
-
-			tank.set_dynamics(flow, x, dyn);
+			tank.set_dynamics(flow, x, - alpha * x + bfp * a);
 
     /// Valve automaton
 
@@ -128,13 +126,9 @@ HybridIOAutomaton getSystem()
 
 		// 5. Registration of the dynamics for each location
 
-			RealExpression dynidle = 0.0;
-			RealExpression dynopening = 1.0/T;
-			RealExpression dynclosing = -1.0/T;
-
-			valve.set_dynamics(idle, a, dynidle);
-			valve.set_dynamics(opening, a, dynopening);
-			valve.set_dynamics(closing, a, dynclosing);
+			valve.set_dynamics(idle, a, 0.0);
+			valve.set_dynamics(opening, a, 1.0/T);
+			valve.set_dynamics(closing, a, -1.0/T);
 
 		/// 6. Transitions
 
