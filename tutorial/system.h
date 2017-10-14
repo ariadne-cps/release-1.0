@@ -69,7 +69,7 @@ HybridIOAutomaton getSystem()
 		// 0: Parameters
 
 			RealParameter alpha("alpha",0.02); // The coefficient for output flow
-			RealParameter bfp("bfp",Interval(0.3,0.32863)); // The coefficient for input flow, defined as an interval, meaning that all the values are considered
+			RealParameter beta("bfp",Interval(0.3,0.32863)); // The coefficient for input flow, defined as an interval, meaning that all the values are considered
 
 		// 1. Automaton
 
@@ -88,7 +88,7 @@ HybridIOAutomaton getSystem()
 
 		/// 5. Registration of the dynamics
 
-			tank.set_dynamics(flow, x, - alpha * x + bfp * a);
+			tank.set_dynamics(flow, x, - alpha * x + beta * a);
 
     /// Valve automaton
 
