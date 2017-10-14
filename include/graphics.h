@@ -259,7 +259,7 @@ void plot(const string& foldername, const string& filename, const SET& set)
 				fig.set_bounding_box(graphics_box);
 
 				// Appends the set, with the desired fill color
-				fig.set_fill_colour(Colour(1.0,0.75,0.0));
+				fig.set_fill_colour(Colour(1.0,0.75,0.5));
 				draw(fig,set);
 
 				// If there are more than two variables, prints the variable numbers
@@ -281,7 +281,7 @@ void plot(const string& foldername, const string& filename, const SET& set)
 						fig.set_bounding_box(graphics_box);
 
 						// Appends the set, with the desired fill color
-						fig.set_fill_colour(Colour(1.0,0.75,0.0));
+						fig.set_fill_colour(Colour(1.0,0.75,0.5));
 						draw(fig,set[loc_it->first]);
 
 						// If there are more than two variables, prints the variable numbers
@@ -329,7 +329,7 @@ void plot_list(const string& foldername, const string& filename, const ListSet<C
 				fig.set_bounding_box(graphics_box);
 
 				// Appends the set, with the desired fill color
-				fig.set_fill_colour(Colour(1.0,0.75,0.0));
+				fig.set_fill_colour(Colour(1.0,0.75,0.5));
 				draw(fig,set);
 
 				// If there are more than two variables, prints the variable numbers
