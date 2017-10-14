@@ -39,7 +39,7 @@ int main(int argc,char *argv[])
 
 	// Instructs not to produce any plot results.
 	// Set this to true to create plots within a folder named 'tutorial-png' in the current working director
-    bool plot_results = false;
+    bool plot_results = true;
 
     // Loads the system from the system.h file
     HybridIOAutomaton system = Ariadne::getSystem();
