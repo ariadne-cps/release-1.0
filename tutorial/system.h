@@ -139,18 +139,18 @@ HybridIOAutomaton getSystem()
 
 			// Resets
 			// We need to define a reset for each output variable of the automaton
-			std::map<RealVariable,RealExpression> reset_a_one;
-			reset_a_one[a] = 1.0; // a = 1
-			std::map<RealVariable,RealExpression> reset_a_zero;
-			reset_a_zero[a] = 0.0; // a = 0
+			std::map<RealVariable,RealExpression> rst_a_one;
+			rst_a_one[a] = 1.0; // a = 1
+			std::map<RealVariable,RealExpression> rst_a_zero;
+			rst_a_zero[a] = 0.0; // a = 0
 
 			// Forced transitions: transitions which implicitly have complementary guards and consequently
 			// force the transition to be taken immediately
 
 			// When the valve is fully opened, go from opening to idle
-			valve.new_forced_transition(e_idle, opening, idle, reset_a_one, a_geq_one);
+			valve.new_forced_transition(e_idle, opening, idle, rst_a_one, a_geq_one);
 			// When the valve is fully closed go from closing to idle
-			valve.new_forced_transition(e_idle, closing, idle, reset_a_zero, a_leq_zero);
+			valve.new_forced_transition(e_idle, closing, idle, rst_a_zero, a_leq_zero);
 
 			// Unforced transitions: transitions which do not have complementary guards hence do not
 			// necessarily force an immediate transition
