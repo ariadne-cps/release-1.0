@@ -31,7 +31,7 @@
 #ifndef TUTORIAL_SYSTEM_H_
 #define TUTORIAL_SYSTEM_H_
 
-#include "ariadne.h"
+#include <ariadne.h>
 
 namespace Ariadne {
 
