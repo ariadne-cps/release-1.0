@@ -30,7 +30,7 @@
 int main(int argc,char *argv[])
 {
     // This snippet reads, from the first argument of the executable, the verbosity value to be used
-    int verb = 1;
+    int verb = 0;
     if (argc > 1)
         verb = atoi(argv[1]);
 
