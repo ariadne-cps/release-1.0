@@ -27,18 +27,15 @@
 #include "system.h" // System definition
 #include "analysis.h" // Custom analysis routines to be run
 
-// Specifies that classes from the Ariadne library can be used without the Ariadne:: prefix
-using namespace Ariadne;
-
 int main(int argc,char *argv[])
 {
-	// This snippet reads, from the first argument of the executable, the verbosity value to be used
-	int verb = 1;
-	if (argc > 1)
-		verb = atoi(argv[1]);
+    // This snippet reads, from the first argument of the executable, the verbosity value to be used
+    int verb = 1;
+    if (argc > 1)
+        verb = atoi(argv[1]);
 
-	// Instructs not to produce any plot results.
-	// Set this to true to create plots within a folder named 'tutorial-png' in the current working director
+    // Instructs not to produce any plot results.
+    // Set this to true to create plots within a folder named 'tutorial-png' in the current working director
     bool plot_results = true;
 
     // Loads the system from the system.h file
