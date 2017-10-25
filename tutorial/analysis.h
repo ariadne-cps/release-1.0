@@ -80,15 +80,10 @@ void finite_time_evolution(HybridAutomatonInterface& system, HybridBoundedConstr
  
     // Performs the evolution, saving only the reached set of the orbit
     HybridEvolver::EnclosureListType upper_reach, lower_reach;
-    for (HybridEvolver::EnclosureListType::const_iterator it =
-            initial_enclosures.begin();
-         it != initial_enclosures.end();
-         ++it) {
-        HybridEvolver::OrbitType upper_orbit = evolver.orbit(*it, evol_limits,
-                                                             UPPER_SEMANTICS);
+    for (HybridEvolver::EnclosureListType::const_iterator it = initial_enclosures.begin(); it != initial_enclosures.end(); ++it) {
+        HybridEvolver::OrbitType upper_orbit = evolver.orbit(*it, evol_limits, UPPER_SEMANTICS);
         upper_reach.adjoin(upper_orbit.reach());
-        HybridEvolver::OrbitType lower_orbit = evolver.orbit(*it, evol_limits,
-                                                             LOWER_SEMANTICS);
+        HybridEvolver::OrbitType lower_orbit = evolver.orbit(*it, evol_limits, LOWER_SEMANTICS);
         lower_reach.adjoin(lower_orbit.reach());
     }
 
