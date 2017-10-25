@@ -32,7 +32,7 @@
 using namespace Ariadne;
 
 /// Forward declarations, used only to properly organize the source file
-void finite_time_upper_evolution(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results);
+void finite_time_evolution(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results);
 void infinite_time_outer_evolution(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results);
 void infinite_time_lower_evolution(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results);
 void safety_verification(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results);
@@ -44,8 +44,8 @@ HybridConstraintSet getSafetyConstraint(HybridAutomatonInterface& system);
 // to focus on specific ones.
 void analyse(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results)
 {
-    cout << "1/5: Finite time (upper) evolution... " << endl << flush;
-    finite_time_upper_evolution(system,initial_set,verbosity,plot_results);
+    cout << "1/5: Finite time evolution... " << endl << flush;
+    finite_time_evolution(system,initial_set,verbosity,plot_results);
     cout << "2/5: Infinite time outer evolution... " << endl << flush; 
     infinite_time_outer_evolution(system,initial_set,verbosity,plot_results);
     cout << "3/5: Infinite time lower evolution... " << endl << flush; 
@@ -56,22 +56,21 @@ void analyse(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initi
     parametric_safety_verification(system,initial_set,verbosity,plot_results);
 }
 
-// Performs finite time evolution, using upper semantics.
-void finite_time_upper_evolution(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results) {
+// Performs finite time evolution.
+void finite_time_evolution(HybridAutomatonInterface& system, HybridBoundedConstraintSet& initial_set, int verbosity, bool plot_results) {
 
 	// Creates an evolver
     HybridEvolver evolver(system);
     evolver.verbosity = verbosity;
     evolver.settings().set_maximum_step_size(0.3); // The time step size to be used
 
-    // Creates an initial enclosure from the initial set.
-    // This operation is only necessary since we provided a common initial set expressed as a constraint set
-    HybridEvolver::EnclosureType initial_enclosure;
+    // Creates a list of initial enclosures from the initial set.
+    // This operation is only necessary since we provided an initial set expressed as a constraint set
+    HybridEvolver::EnclosureListType initial_enclosures;
     HybridBoxes initial_set_domain = initial_set.domain();
-    for (std::map<DiscreteLocation,Box>::const_iterator it = initial_set_domain.locations_begin(); it != initial_set_domain.locations_end(); ++it) {
+    for (HybridBoxes::const_iterator it = initial_set_domain.locations_begin(); it != initial_set_domain.locations_end(); ++it) {
     	if (!it->second.empty()) {
-    		initial_enclosure = HybridEvolver::EnclosureType(it->first,Box(it->second.centre()));
-    		break;
+    		initial_enclosures.adjoin(HybridEvolver::EnclosureType(it->first,Box(it->second.centre())));
     	}
     }
   
@@ -79,14 +78,25 @@ void finite_time_upper_evolution(HybridAutomatonInterface& system, HybridBounded
     // The evolution stops for each trajectory as soon as one of the two limits are reached
     HybridTime evol_limits(30.0,8);
  
-    // Performs the evolution, saving the "orbit", which contains che reached set,
-    // the final set and all intermediate sets.
-    HybridEvolver::OrbitType orbit = evolver.orbit(initial_enclosure,evol_limits,UPPER_SEMANTICS);
+    // Performs the evolution, saving only the reached set of the orbit
+    HybridEvolver::EnclosureListType upper_reach, lower_reach;
+    for (HybridEvolver::EnclosureListType::const_iterator it =
+            initial_enclosures.begin();
+         it != initial_enclosures.end();
+         ++it) {
+        HybridEvolver::OrbitType upper_orbit = evolver.orbit(*it, evol_limits,
+                                                             UPPER_SEMANTICS);
+        upper_reach.adjoin(upper_orbit.reach());
+        HybridEvolver::OrbitType lower_orbit = evolver.orbit(*it, evol_limits,
+                                                             LOWER_SEMANTICS);
+        lower_reach.adjoin(lower_orbit.reach());
+    }
 
     // Plots the reached set specifically
     if (plot_results) {
         PlotHelper plotter(system.name());
-        plotter.plot(orbit.reach(),"reach");
+        plotter.plot(upper_reach,"upper_reach");
+        plotter.plot(lower_reach,"lower_reach");
     }
 }
 
