@@ -355,13 +355,13 @@ class ImageSetHybridEvolverSettings {
 
     //! \brief The reference enclosure widths that a discretised enclosure would have.
     //! \details If an enclosure starts evolution with widths strictly lesser than these, premature termination is performed
-    //! when the widths are maximum_enclosure_widths_ratio times the minimum_discretised_enclosure_widths. If not,
-    //! premature termination is performed when the widths are maximum_enclosure_widths_ratio times the initial enclosure widths.
+    //! when the widths are _maximum_enclosure_widths_ratio times the _reference_enclosure_widths. If not,
+    //! premature termination is performed when the widths are _maximum_enclosure_widths_ratio times the initial enclosure widths.
     HybridFloatVector _reference_enclosure_widths;
 
     //! \brief The maximum ratio between enclosure widths and reference widths.
-    //! \details Reference widths are the initial ones, if larger than maximum_discretised_enclosure_widths, or
-    //! maximum_discretised_enclosure_widths themselves if not.
+    //! \details Reference widths are the initial ones, if larger than _reference_enclosure_widths, or
+    //! _reference_enclosure_widths themselves if not.
     Float _maximum_enclosure_widths_ratio;
 
     //! \brief Enforce the error rate on each step to be bound.
