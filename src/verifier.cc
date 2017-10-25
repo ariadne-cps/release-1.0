@@ -290,7 +290,7 @@ _safety_disproving_once(
 
 		SetApproximationType reach;
 		HybridFloatVector epsilon;
-		make_lpair<SetApproximationType,HybridFloatVector>(reach,epsilon) = analyser->lower_chain_reach_and_epsilon(initial_set);
+		make_lpair<SetApproximationType,HybridFloatVector>(reach,epsilon) = analyser->epsilon_lower_chain_reach(initial_set);
 
 		if (_settings->plot_results)
 			_plotter_ptr->plot(reach,"lower",_safety_restriction->accuracy());
@@ -559,7 +559,7 @@ _dominance_flattened_lower_reach_and_epsilon(
 
 	SetApproximationType reach;
 	HybridFloatVector epsilon;
-	make_lpair<SetApproximationType,HybridFloatVector>(reach,epsilon) = analyser->lower_chain_reach_and_epsilon(verInput.getInitialSet());
+	make_lpair<SetApproximationType,HybridFloatVector>(reach,epsilon) = analyser->epsilon_lower_chain_reach(verInput.getInitialSet());
 
     if (_settings->plot_results)
         _plot_dominance(reach,dominanceSystem,restriction->accuracy(),LOWER_SEMANTICS);

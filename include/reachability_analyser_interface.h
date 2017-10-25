@@ -106,7 +106,7 @@ template<class SYS> class ReachabilityAnalyserInterface
 
     /*! \brief Compute the epsilon lower bounds of \a system starting in \a initial_set.
      * \return The reach and the epsilon values. */
-    virtual std::pair<SetApproximationType,HybridFloatVector> lower_chain_reach_and_epsilon(
+    virtual std::pair<SetApproximationType,HybridFloatVector> epsilon_lower_chain_reach(
             const HybridBoundedConstraintSet& initial_set) const = 0;
 
     //@}

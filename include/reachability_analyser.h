@@ -161,7 +161,7 @@ class HybridReachabilityAnalyser
 
     /*! \brief Compute the epsilon lower bounds of \a system starting in \a initial_set.
      * \return The reach and the epsilon values. */
-    virtual std::pair<SetApproximationType,HybridFloatVector> lower_chain_reach_and_epsilon(
+    virtual std::pair<SetApproximationType,HybridFloatVector> epsilon_lower_chain_reach(
             const HybridBoundedConstraintSet& initial_set) const;
 
     //@}
@@ -216,14 +216,14 @@ class HybridReachabilityAnalyser
     /*! \brief Gets the lower reach and the epsilon for the \a system.
      * \details The \a constraint_set is checked: if not empty and its epsilon relaxation is not satisfied
      * for the current lower reach, an exception is raised. */
-    std::pair<SetApproximationType,HybridFloatVector> _lower_chain_reach_and_epsilon(
+    std::pair<SetApproximationType,HybridFloatVector> _epsilon_lower_chain_reach(
     		const SystemType& system,
     		const HybridBoundedConstraintSet& initial_set) const;
 
     /*! \brief Checks whether \a reach with \a epsilon satisfies the constraint.
      * \details Throws ReachUnsatisfiesConstraintException if it doesn't.
      */
-    void _lower_chain_reach_and_epsilon_constraint_check(
+    void _epsilon_lower_chain_reach_constraint_check(
     		const SystemType& system,
     		const HDS& reach,
     		const HybridFloatVector& epsilon) const;

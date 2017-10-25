@@ -494,7 +494,7 @@ _outer_chain_reach_splitted(
 
 std::pair<HybridDenotableSet,HybridFloatVector>
 HybridReachabilityAnalyser::
-lower_chain_reach_and_epsilon(const HybridBoundedConstraintSet& initial_set) const
+epsilon_lower_chain_reach(const HybridBoundedConstraintSet& initial_set) const
 {
 	_reset_start_time();
 
@@ -528,7 +528,7 @@ lower_chain_reach_and_epsilon(const HybridBoundedConstraintSet& initial_set) con
 			SetApproximationType local_reach(grid);
 			HybridFloatVector local_epsilon;
 			make_lpair<SetApproximationType,HybridFloatVector>(local_reach,local_epsilon) =
-					_lower_chain_reach_and_epsilon(*_system,initial_set);
+					_epsilon_lower_chain_reach(*_system,initial_set);
 
 			reach.adjoin(local_reach);
 			epsilon = max_elementwise(epsilon,local_epsilon);
@@ -547,7 +547,7 @@ lower_chain_reach_and_epsilon(const HybridBoundedConstraintSet& initial_set) con
 
 std::pair<HybridDenotableSet,HybridFloatVector>
 HybridReachabilityAnalyser::
-_lower_chain_reach_and_epsilon(
+_epsilon_lower_chain_reach(
 		const SystemType& system,
 		const HybridBoundedConstraintSet& initial_set) const
 {
@@ -600,7 +600,7 @@ _lower_chain_reach_and_epsilon(
 
 		_restriction->apply_to(local_reach);
 
-		_lower_chain_reach_and_epsilon_constraint_check(system,local_reach,local_epsilon);
+		_epsilon_lower_chain_reach_constraint_check(system,local_reach,local_epsilon);
 
 		ARIADNE_LOG(3,"Reach size before removal = " << local_reach.size());
 
@@ -627,7 +627,7 @@ _lower_chain_reach_and_epsilon(
 
 
 void HybridReachabilityAnalyser::
-_lower_chain_reach_and_epsilon_constraint_check(
+_epsilon_lower_chain_reach_constraint_check(
 		const SystemType& system,
 		const HDS& reach,
 		const HybridFloatVector& epsilon) const
