@@ -132,12 +132,12 @@ void infinite_time_outer_evolution(HybridAutomatonInterface& system, HybridBound
     analyser.verbosity = verbosity;
 
     // Performs the outer reach
-    HybridDenotableSet outer_reach = analyser.outer_chain_reach(initial_set);
+    HybridDenotableSet reach = analyser.outer_chain_reach(initial_set);
 
     // Plots the reached region
     if (plot_results) {
         PlotHelper plotter(system.name());
-        plotter.plot(outer_reach,"outer",accuracy);
+        plotter.plot(reach,"outer",accuracy);
     }
 }
 
@@ -155,14 +155,14 @@ void infinite_time_epsilon_lower_evolution(HybridAutomatonInterface& system, Hyb
     analyser.verbosity = verbosity;
 
     // Performs the lower reach, also outputting the obtained epsilon
-    HybridDenotableSet lower_reach;
+    HybridDenotableSet reach;
     HybridFloatVector epsilon;
-    make_lpair<HybridDenotableSet,HybridFloatVector>(lower_reach,epsilon) = analyser.epsilon_lower_chain_reach(initial_set);
+    make_lpair<HybridDenotableSet,HybridFloatVector>(reach,epsilon) = analyser.epsilon_lower_chain_reach(initial_set);
 
     // Plots the reached region
     if (plot_results) {
         PlotHelper plotter(system.name());
-        plotter.plot(lower_reach,"lower",accuracy);
+        plotter.plot(reach,"lower",accuracy);
     }
 }
 
