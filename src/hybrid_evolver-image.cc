@@ -1344,7 +1344,7 @@ ImageSetHybridEvolverSettings::ImageSetHybridEvolverSettings(const SystemType& s
 	set_reference_enclosure_widths(getMinimumGridCellWidths(HybridGrid(sys.state_space()),0));
 	set_maximum_enclosure_widths_ratio(5.0);
 	set_enable_error_rate_enforcement(false);
-	set_enable_boxing_on_contraction(true);
+	set_enable_boxing_on_contraction(false);
 	set_enable_reconditioning(false);
 	set_enable_subdivisions(false);
 	set_enable_premature_termination_on_enclosure_size(true);
