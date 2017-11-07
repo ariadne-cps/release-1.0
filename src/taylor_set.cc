@@ -561,12 +561,8 @@ TaylorSet::kuhn_recondition() {
     }
     std::sort(column_max_dependencies.begin(),column_max_dependencies.end(),std::greater< Pair<double,uint> >());
 
-
-    Array<uint> kept_parameters(number_of_kept_parameters);
     Array<uint> discarded_parameters(number_of_discarded_parameters);
-    for(uint j=0; j!=number_of_kept_parameters; ++j) { kept_parameters[j]=column_max_dependencies[j].second; }
     for(uint j=0; j!=number_of_discarded_parameters; ++j) { discarded_parameters[j]=column_max_dependencies[number_of_kept_parameters+j].second; }
-    std::sort(kept_parameters.begin(),kept_parameters.end());
     std::sort(discarded_parameters.begin(),discarded_parameters.end());
 
     Vector<TaylorModel> new_models(_models.size(),TaylorModel(number_of_kept_parameters+number_of_error_parameters,this->accuracy_ptr()));

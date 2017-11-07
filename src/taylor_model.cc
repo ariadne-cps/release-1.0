@@ -3879,6 +3879,8 @@ TaylorModel recondition(const TaylorModel& tm, Array<uint>& discarded_variables,
     // Make an Array of the variables to be kept
     Array<uint> kept_variables=complement(number_of_variables,discarded_variables);
 
+    //std::cout << kept_variables << std::endl;
+
     // Construct result and reserve memory
     TaylorModel r(number_of_kept_variables+number_of_error_variables,tm.accuracy_ptr());
     r.expansion().reserve(tm.number_of_nonzeros()+1u);
@@ -3890,29 +3892,44 @@ TaylorModel recondition(const TaylorModel& tm, Array<uint>& discarded_variables,
     if(number_of_error_variables==index_of_error) {
         error_ptr = &r.error();
     } else {
+        //std::cout << ra << std::endl;
         ra[number_of_kept_variables+index_of_error]=1;
+        //std::cout << ra << std::endl;
         r.expansion().append(ra,reinterpret_cast<double const&>(tm.error()));
         ra[number_of_kept_variables+index_of_error]=0;
+        //std::cout << ra << std::endl;
         error_ptr = reinterpret_cast<double*>(&r.begin()->data());
     }
     double& error=*error_ptr;
 
+    //std::cout << error << std::endl;
+
+    TaylorModel tm_cpy(tm.argument_size(),tm.accuracy_ptr());
     for(TaylorModel::const_iterator iter=tm.begin(); iter!=tm.end(); ++iter) {
+        tm_cpy.expansion().prepend(iter->key(), iter->data());
+    }
+    //std::cout << tm_cpy << std::endl;
+
+    for(TaylorModel::const_iterator iter=tm_cpy.begin(); iter!=tm_cpy.end(); ++iter) {
         MultiIndex const& xa=iter->key();
+        //std::cout << *iter << std::endl;
         double const& xv=iter->data();
         bool keep=true;
         for(uint k=0; k!=number_of_discarded_variables; ++k) {
             if(xa[discarded_variables[k]]!=0) {
                 error += mag(xv);
+                //std::cout << error << std::endl;
                 keep=false;
                 break;
             }
         }
         if(keep) {
             for(uint k=0; k!=number_of_kept_variables; ++k) {
+                //std::cout << xa[kept_variables[k]] << std::endl;
                 ra[k]=xa[kept_variables[k]];
+                //std::cout << ra << std::endl;
             }
-            r.expansion().append(ra,xv);
+            r.expansion().prepend(ra,xv);
         }
     }
     set_rounding_to_nearest();

@@ -67,6 +67,7 @@ class TestTaylorModel
     void test_flow();
     void test_solve();
     void test_implicit();
+    void test_recondition();
 };
 
 
@@ -90,6 +91,7 @@ void TestTaylorModel::test()
     ARIADNE_TEST_CALL(test_flow());
     ARIADNE_TEST_CALL(test_solve());
     ARIADNE_TEST_CALL(test_implicit());
+    ARIADNE_TEST_CALL(test_recondition());
 }
 
 
@@ -373,6 +375,20 @@ void TestTaylorModel::test_flow()
     ARIADNE_TEST_BINARY_PREDICATE(operator<,(norm(Ariadne::range(phi-next_phi))),0.1);
 
 
+}
+
+void TestTaylorModel::test_recondition()
+{
+    TaylorModel tm1(E(4,4, 0,0,0,0,2.0, 1,0,0,0,3.0, 0,0,0,1,4.0, 0,1,0,0,5.0),0.5);
+    TaylorModel tm2(E(5,6, 0,0,0,0,0,2.0, 1,0,0,0,0,3.0, 0,1,0,0,0,5.0, 0,0,1,0,0,4.0, 0,0,0,1,0,6.0, 0,0,0,0,1,7.0),0.0);
+
+    Array<uint> discarded(1);
+    discarded[0] = 2;
+    TaylorModel tm3 = Ariadne::recondition(tm1,discarded,1,0);
+
+    ARIADNE_TEST_PRINT(tm1);
+    ARIADNE_TEST_PRINT(tm2);
+    ARIADNE_TEST_PRINT(tm3);
 }
 
 
