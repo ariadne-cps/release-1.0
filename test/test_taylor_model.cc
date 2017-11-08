@@ -380,19 +380,37 @@ void TestTaylorModel::test_flow()
 void TestTaylorModel::test_recondition()
 {
     TaylorModel tm1(E(4,4, 0,0,0,0,2.0, 1,0,0,0,3.0, 0,0,0,1,4.0, 0,1,0,0,5.0),0.5);
-    TaylorModel tm2(E(3,3, 0,0,0,2.0, 1,0,0,3.0, 0,1,0,5.0),4.5);
-    TaylorModel tm3(E(4,4, 0,0,0,0,2.0, 1,0,0,0,3.0, 0,1,0,0,5.0, 0,0,0,1,4.5),0.0);
+    TaylorModel tm1re_v(E(3,3, 0,0,0,2.0, 1,0,0,3.0, 0,1,0,5.0),4.5);
+    TaylorModel tm1rp_v(E(4,4, 0,0,0,0,2.0, 1,0,0,0,3.0, 0,1,0,0,5.0, 0,0,0,1,4.5),0.0);
 
-    Array<uint> discarded(1);
-    discarded[0] = 3;
-    TaylorModel tm1re = Ariadne::recondition(tm1,discarded,0,0);
-    TaylorModel tm1rp = Ariadne::recondition(tm1,discarded,1,0);
+    TaylorModel tm2(E(3,5, 0,0,0,5.808612, 0,0,1,-1.421246e-02, 0,0,2,1.739506e-05, 0,0,3,-1.419351e-08, 0,0,4,8.708096e-12 ),7.089995e-12);
+    TaylorModel tm2rp_v(E(4,6, 0,0,0,0,5.808612, 0,1,0,0,-1.421246e-02, 0,0,0,1,7.089995e-12, 0,2,0,0,1.739506e-05, 0,3,0,0,-1.419351e-08, 0,4,0,0,8.708096e-12 ),0.0);
+
+    ARIADNE_TEST_PRINT(tm);
+
+    Array<uint> discarded_variables(1);
+    discarded_variables[0] = 1;
+
+
+
+    Array<uint> discarded1(1);
+    discarded1[0] = 3;
+    TaylorModel tm1re = Ariadne::recondition(tm1,discarded1,0,0);
+    TaylorModel tm1rp = Ariadne::recondition(tm1,discarded1,1,0);
 
     ARIADNE_TEST_PRINT(tm1);
+    ARIADNE_TEST_PRINT(tm1re_v);
+    ARIADNE_TEST_PRINT(tm1rp_v);
+    ARIADNE_TEST_EQUAL(tm1re.expansion(),tm1re_v.expansion());
+    ARIADNE_TEST_EQUAL(tm1rp.expansion(),tm1rp_v.expansion());
+
+    Array<uint> discarded2(1);
+    discarded2[0] = 1;
+    TaylorModel tm2rp = Ariadne::recondition(tm2,discarded2,2,1);
+
     ARIADNE_TEST_PRINT(tm2);
-    ARIADNE_TEST_PRINT(tm3);
-    ARIADNE_TEST_EQUAL(tm1re.expansion(),tm2.expansion());
-    ARIADNE_TEST_EQUAL(tm1rp.expansion(),tm3.expansion());
+    ARIADNE_TEST_PRINT(tm2rp_v);
+    ARIADNE_TEST_EQUAL(tm2rp.expansion(),tm2rp_v.expansion());
 }
 
 

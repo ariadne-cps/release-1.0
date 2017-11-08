@@ -532,7 +532,7 @@ inline void _add2(TaylorModel& r, const TaylorModel& x, const TaylorModel& y)
 inline void _add(TaylorModel& r, const TaylorModel& x, const TaylorModel& y)
 {
     _add2(r,x,y);
-    ARIADNE_ASSERT(r.error()>=0);
+    ARIADNE_ASSERT_MSG(r.error()>=0,r.error());
 }
 
 inline void _acc(TaylorModel& r, const TaylorModel& x)
@@ -3060,14 +3060,26 @@ jacobian_value(const Vector<TaylorModel>& f)
 Matrix<Float>
 jacobian2_value(const Vector<TaylorModel>& f)
 {
+    std::cout << "jacobian2_value" << std::endl;
     const uint rs=f.size();
     const uint fas=f[0].argument_size();
     const uint has=fas-rs;
+
+    std::cout << "rs = " << rs << ", fas = " << fas << std::endl;
+    std::cout << "f = " << f << std::endl;
+
+    for (TaylorModel::const_iterator it = f[0].begin(); it !=  f[0].end(); ++it) {
+        std::cout << it->key() << ": " << it->data() << "(" << f[0][it->key()] << ")" << std::endl;
+    }
+
     Matrix<Float> J(rs,rs);
     MultiIndex a(fas);
     for(uint i=0; i!=rs; ++i) {
         for(uint j=0; j!=rs; ++j) {
-            a[has+j]=1; const double x=f[i][a]; J[i][j]=x; a[has+j]=0;
+            a[has+j]=1;
+            const double x=f[i][a];
+            std::cout << "a: " << a << ", x: " << x << std::endl;
+            J[i][j]=x; a[has+j]=0;
         }
     }
     return J;
@@ -3500,6 +3512,8 @@ Vector<TaylorModel> _implicit5(const Vector<TaylorModel>& f, uint n)
     Vector<TaylorModel> h=TaylorModel::constants(has,domain_h);
     Vector<TaylorModel> idh=join(id,h);
 
+    std::cout << "Implicit5-1" << std::endl;
+
     // Compute the Jacobian of f with respect to the second arguments at the centre of the domain
     Matrix<Float> D2f=jacobian2_value(f);
 
@@ -3510,17 +3524,24 @@ Vector<TaylorModel> _implicit5(const Vector<TaylorModel>& f, uint n)
             g[i][MultiIndex::unit(fas,j)]=0;
         }
     }
+
+    std::cout << "Implicit5-2, D2f = " << D2f << " size: " << D2f.size1() << "," << D2f.size2() << std::endl;
+
     Matrix<Float> J;
     try {
         J=inverse(D2f);
     } catch(const SingularMatrixException& e) {
         ARIADNE_FAIL_MSG("SingularMatrixException");
     }
+
+    std::cout << "Implicit5-3, J = " << J << std::endl;
     
     g=prod(J,g);
     for(uint i=0; i!=rs; ++i) {
         g[i].clean();
     }
+
+    std::cout << "Implicit5-4" << std::endl;
 
     // Iterate h'=h(g(x,h(x)))
     Vector<TaylorModel> h_new;
@@ -3863,6 +3884,19 @@ Array<uint> complement(uint nmax, Array<uint> vars) {
     return cmpl;
 }
 
+    struct ExpansionValuePair {
+
+        ExpansionValuePair(const MultiIndex& mi, double v) { this->mi = mi; this->v = v; }
+        MultiIndex mi;
+        double v;
+
+
+    };
+
+    std::ostream& operator<<(std::ostream& os, const ExpansionValuePair& evp) {
+        return os << evp.mi << " " << evp.v;
+    }
+
 TaylorModel recondition(const TaylorModel& tm, Array<uint>& discarded_variables, uint number_of_error_variables, uint index_of_error)
 {
     for(uint i=0; i!=discarded_variables.size()-1; ++i) {
@@ -3875,37 +3909,30 @@ TaylorModel recondition(const TaylorModel& tm, Array<uint>& discarded_variables,
     const uint number_of_discarded_variables = discarded_variables.size();
     const uint number_of_kept_variables = number_of_variables - number_of_discarded_variables;
 
-
     // Make an Array of the variables to be kept
     Array<uint> kept_variables=complement(number_of_variables,discarded_variables);
 
     // Construct result and reserve memory
     TaylorModel r(number_of_kept_variables+number_of_error_variables,tm.accuracy_ptr());
-    r.expansion().reserve(tm.number_of_nonzeros()+1u);
+    r.expansion().reserve(tm.argument_size()+1u);
     MultiIndex ra(number_of_kept_variables+number_of_error_variables);
+    MultiIndex ra_error(number_of_kept_variables+number_of_error_variables);
 
     // Set the uniform error of the original model
     // If index_of_error == number_of_error_variables, then the error is kept as a uniform error bound
-    double* error_ptr;
-    if(number_of_error_variables==index_of_error) {
-        error_ptr = &r.error();
-    } else {
-        ra[number_of_kept_variables+index_of_error]=1;
-        r.expansion().append(ra,0);
-        ra[number_of_kept_variables+index_of_error]=0;
-        error_ptr = reinterpret_cast<double*>(&r.begin()->data());
+    double error = tm.error();
+    if(number_of_error_variables!=index_of_error) {
+        ra_error[number_of_kept_variables+index_of_error]=1;
     }
-    double& error=*error_ptr;
-    error += tm.error();
 
-    TaylorModel tm_cpy(tm.argument_size(),tm.accuracy_ptr());
+    std::list<ExpansionValuePair> reordered_original, reordered_final;
     for(TaylorModel::const_iterator iter=tm.begin(); iter!=tm.end(); ++iter) {
-        tm_cpy.expansion().prepend(iter->key(), iter->data());
+        reordered_original.push_front(ExpansionValuePair(iter->key(), iter->data()));
     }
 
-    for(TaylorModel::const_iterator iter=tm_cpy.begin(); iter!=tm_cpy.end(); ++iter) {
-        MultiIndex const& xa=iter->key();
-        double const& xv=iter->data();
+    for(std::list<ExpansionValuePair>::const_iterator iter=reordered_original.begin(); iter!=reordered_original.end(); ++iter) {
+        MultiIndex const& xa=iter->mi;
+        double xv=iter->v;
         bool keep=true;
         for(uint k=0; k!=number_of_discarded_variables; ++k) {
             if(xa[discarded_variables[k]]!=0) {
@@ -3918,15 +3945,55 @@ TaylorModel recondition(const TaylorModel& tm, Array<uint>& discarded_variables,
             for(uint k=0; k!=number_of_kept_variables; ++k) {
                 ra[k]=xa[kept_variables[k]];
             }
-            r.expansion().prepend(ra,xv);
+            reordered_final.push_front(ExpansionValuePair(ra,xv));
         }
     }
+
+    bool added = false;
+    if (number_of_error_variables==index_of_error) {
+        r.set_error(error);
+        added = true;
+    }
+
+    for(std::list<ExpansionValuePair>::const_iterator iter=reordered_final.begin(); iter!=reordered_final.end(); ) {
+        if (!added && (iter->mi.degree() > 1) && number_of_error_variables!=index_of_error) {
+            r.expansion().append(ra_error,error);
+            added = true;
+        }
+        r.expansion().append(iter->mi,iter->v);
+
+        ++iter;
+        if (iter==reordered_final.end() && !added) {
+            r.expansion().append(ra_error,error);
+        }
+    }
+
     set_rounding_to_nearest();
 
     return r;
 }
 
+void print_coefficients(const TaylorModel& tm) {
+        for (TaylorModel::const_iterator it2 = tm.begin(); it2 !=  tm.end(); ++it2) {
+            std::cout << it2->key() << ": " << it2->data() << "(" << tm[it2->key()] << ")" << std::endl;
+        }
+}
 
+void check_coefficients(const TaylorModel& tm) {
+    bool error = false;
+    for (TaylorModel::const_iterator it2 = tm.begin(); it2 !=  tm.end(); ++it2) {
+        if (it2->data() != tm[it2->key()]) {
+            error = true;
+            break;
+        }
+    }
+
+    if (error) {
+        print_coefficients(tm);
+        ARIADNE_ERROR("Mismatched data");
+        exit(1);
+    }
+}
 
 } //namespace Ariadne
 

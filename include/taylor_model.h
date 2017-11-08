@@ -680,6 +680,8 @@ struct FlowBoundsException : public std::runtime_error {
     FlowBoundsException(const std::string& what) : std::runtime_error(what) { }
 };
 
+void print_coefficients(const TaylorModel& tm);
+void check_coefficients(const TaylorModel& tm);
 
 } // namespace Ariadne
 
