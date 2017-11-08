@@ -145,7 +145,12 @@ struct ExpansionValue {
   public:
     size_type _n; size_type _nw; word_type* _p;
     static const size_type _ds=sizeof(X)/sizeof(word_type);
+
 };
+
+template<class X> bool operator==(const ExpansionValue<X>& e1, const ExpansionValue<X>& e2) {
+    return e1.key()==e2.key() && e1.data()==e2.data();
+}
 
 
 template<class X> struct key_less<ExpansionValue<X>,MultiIndex> {
@@ -278,8 +283,8 @@ class Expansion
         std::swap(this->_argument_size,p._argument_size);
         std::swap(this->_coefficients,p._coefficients); }
 
-    bool operator==(const Expansion<X>& p) const { return this->_coefficients == p._coefficients; }
-    bool operator!=(const Expansion<X>& p) const { return this->_coefficients != p._coefficients; }
+    bool operator==(const Expansion<X>& other) const;
+    bool operator!=(const Expansion<X>& other) const { return !(*this=other); }
 
     unsigned int argument_size() const { return this->_argument_size; }
     unsigned int number_of_nonzeros() const { return _coefficients.size()/_element_size(); }
@@ -475,7 +480,28 @@ template<class X> Expansion<X> Expansion<X>::variable(unsigned int n, unsigned i
 }
 
 
+template<class X> bool
+Expansion<X>::operator==(const Expansion<X> &other) const {
+    Expansion<X>::const_iterator iter1=this->begin();
+    Expansion<X>::const_iterator iter2=other.begin();
+    Expansion<X>::const_iterator end1=this->end();
+    Expansion<X>::const_iterator end2=other.end();
 
+    if(this->size()!=other.size()) { return false; }
+
+    if(this->argument_size()!=other.argument_size()) { return false; }
+
+    while(true) {
+        if(iter1!=end1 && iter2!=end2) {
+            if(!(*iter1 == *iter2)) { return false; }
+            ++iter1; ++iter2;
+        } else if (iter1==end1 && iter2==end2) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
 
 template<class X, class Y>
 Y evaluate(const Expansion<X>& x, const Vector<Y>& y)
