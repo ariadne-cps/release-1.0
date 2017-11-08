@@ -1345,7 +1345,7 @@ ImageSetHybridEvolverSettings::ImageSetHybridEvolverSettings(const SystemType& s
 	set_maximum_enclosure_widths_ratio(5.0);
 	set_enable_error_rate_enforcement(false);
 	set_enable_boxing_on_contraction(false);
-	set_enable_reconditioning(false);
+	set_enable_reconditioning(true);
 	set_enable_subdivisions(false);
 	set_enable_premature_termination_on_enclosure_size(true);
 	set_maximum_number_of_working_sets(0);
