@@ -805,12 +805,9 @@ template Matrix<Float> inverse(const Matrix<Float>&);
 template Matrix<Float> solve(const Matrix<Float>&, const Matrix<Float>&);
 template Vector<Float> solve(const Matrix<Float>&, const Vector<Float>&);
 template class Matrix<Interval>;
-template Matrix<Interval> inverse(const Matrix<Interval>&);
 template Matrix<Interval> lu_inverse(const Matrix<Interval>&);
 template Matrix<Interval> gs_inverse(const Matrix<Interval>&);
-template Matrix<Interval> solve(const Matrix<Interval>&, const Matrix<Interval>&);
 template Matrix<Interval> lu_solve(const Matrix<Interval>&, const Matrix<Interval>&);
-template Matrix<Interval> gs_solve(const Matrix<Interval>&, const Matrix<Interval>&);
 template Vector<Interval> solve(const Matrix<Interval>&, const Vector<Interval>&);
 #ifdef HAVE_RATIONAL
 template class Matrix<Rational>;

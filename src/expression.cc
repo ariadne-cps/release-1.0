@@ -443,7 +443,6 @@ template class Expression<Boolean>;
 template class Expression<Tribool>;
 template class Expression<String>;
 template class Expression<Integer>;
-template class Expression<Real>;
 
 
 
