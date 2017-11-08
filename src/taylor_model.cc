@@ -3060,17 +3060,9 @@ jacobian_value(const Vector<TaylorModel>& f)
 Matrix<Float>
 jacobian2_value(const Vector<TaylorModel>& f)
 {
-    std::cout << "jacobian2_value" << std::endl;
     const uint rs=f.size();
     const uint fas=f[0].argument_size();
     const uint has=fas-rs;
-
-    std::cout << "rs = " << rs << ", fas = " << fas << std::endl;
-    std::cout << "f = " << f << std::endl;
-
-    for (TaylorModel::const_iterator it = f[0].begin(); it !=  f[0].end(); ++it) {
-        std::cout << it->key() << ": " << it->data() << "(" << f[0][it->key()] << ")" << std::endl;
-    }
 
     Matrix<Float> J(rs,rs);
     MultiIndex a(fas);
@@ -3078,7 +3070,6 @@ jacobian2_value(const Vector<TaylorModel>& f)
         for(uint j=0; j!=rs; ++j) {
             a[has+j]=1;
             const double x=f[i][a];
-            std::cout << "a: " << a << ", x: " << x << std::endl;
             J[i][j]=x; a[has+j]=0;
         }
     }
@@ -3512,8 +3503,6 @@ Vector<TaylorModel> _implicit5(const Vector<TaylorModel>& f, uint n)
     Vector<TaylorModel> h=TaylorModel::constants(has,domain_h);
     Vector<TaylorModel> idh=join(id,h);
 
-    std::cout << "Implicit5-1" << std::endl;
-
     // Compute the Jacobian of f with respect to the second arguments at the centre of the domain
     Matrix<Float> D2f=jacobian2_value(f);
 
@@ -3524,24 +3513,17 @@ Vector<TaylorModel> _implicit5(const Vector<TaylorModel>& f, uint n)
             g[i][MultiIndex::unit(fas,j)]=0;
         }
     }
-
-    std::cout << "Implicit5-2, D2f = " << D2f << " size: " << D2f.size1() << "," << D2f.size2() << std::endl;
-
     Matrix<Float> J;
     try {
         J=inverse(D2f);
     } catch(const SingularMatrixException& e) {
         ARIADNE_FAIL_MSG("SingularMatrixException");
     }
-
-    std::cout << "Implicit5-3, J = " << J << std::endl;
     
     g=prod(J,g);
     for(uint i=0; i!=rs; ++i) {
         g[i].clean();
     }
-
-    std::cout << "Implicit5-4" << std::endl;
 
     // Iterate h'=h(g(x,h(x)))
     Vector<TaylorModel> h_new;
@@ -3971,28 +3953,6 @@ TaylorModel recondition(const TaylorModel& tm, Array<uint>& discarded_variables,
     set_rounding_to_nearest();
 
     return r;
-}
-
-void print_coefficients(const TaylorModel& tm) {
-        for (TaylorModel::const_iterator it2 = tm.begin(); it2 !=  tm.end(); ++it2) {
-            std::cout << it2->key() << ": " << it2->data() << "(" << tm[it2->key()] << ")" << std::endl;
-        }
-}
-
-void check_coefficients(const TaylorModel& tm) {
-    bool error = false;
-    for (TaylorModel::const_iterator it2 = tm.begin(); it2 !=  tm.end(); ++it2) {
-        if (it2->data() != tm[it2->key()]) {
-            error = true;
-            break;
-        }
-    }
-
-    if (error) {
-        print_coefficients(tm);
-        ARIADNE_ERROR("Mismatched data");
-        exit(1);
-    }
 }
 
 } //namespace Ariadne
