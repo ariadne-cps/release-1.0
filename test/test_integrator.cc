@@ -54,13 +54,34 @@ class TestIntegrator {
     const IntegratorInterface& integrator;
     ScalarFunction o,x,y,x0,y0,t;
 private:
+    void test_bounds();
     void test_constant_derivative();
 };
 
 void
 TestIntegrator::test()
 {
+    ARIADNE_TEST_CALL(test_bounds());
     ARIADNE_TEST_CALL(test_constant_derivative());
+}
+
+void TestIntegrator::test_bounds() {
+    VectorFunction f=join(o,o*2);
+    ARIADNE_TEST_PRINT(f);
+
+    Box initial(2, 0.0,1.0, -0.5,1.5);
+    float h=1.0;
+
+    Pair<float,Box> step_and_bounds = integrator.flow_bounds(f, initial, h);
+    float actual_step = step_and_bounds.first;
+    Box computed_bounds = step_and_bounds.second;
+
+    Box expected_bounds(2, 0.0,2.0, -0.5,3.5);
+
+    ARIADNE_TEST_PRINT(step_and_bounds);
+
+    ARIADNE_TEST_EQUAL(actual_step,h);
+    ARIADNE_TEST_ASSERT(computed_bounds.superset(expected_bounds));
 }
 
 void TestIntegrator::test_constant_derivative() {
