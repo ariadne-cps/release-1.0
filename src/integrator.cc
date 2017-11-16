@@ -114,7 +114,7 @@ IntegratorBase::flow_bounds(const VectorFunction& vf, const IVector& dx, const F
 VectorTaylorFunction
 IntegratorBase::flow_at_step(const VectorFunction& vf, const IVector& dx, const Float& h) const
 {
-    const unsigned long it=dx.size(); // Index of the time variable
+    const uint it=dx.size(); // Index of the time variable
     VectorTaylorFunction flow=this->flow(vf,dx,h);
     Float hu=flow.domain()[it].upper();
     ARIADNE_ASSERT_MSG(hu==h,"Actual time step "<<hu<<" is less then requested time step "<<h);
