@@ -1,7 +1,7 @@
 /***************************************************************************
- *            test_taylor_set.cc
+ *            test_integrator.cc
  *
- *  Copyright 2008  Pieter Collins
+ *  Copyright 2017  Luca Geretti
  *
  ****************************************************************************/
 
@@ -28,102 +28,57 @@
 #include "zonotope.h"
 #include "taylor_set.h"
 #include "graphics.h"
+#include "integrator.h"
 
 #include "test.h"
 using namespace std;
 using namespace Ariadne;
 
-class TestTaylorSet {
+class TestIntegrator {
   public:
+    TestIntegrator(const IntegratorInterface& i)
+            : integrator(i)
+    {
+        o=ScalarFunction::constant(2,1);
+        x=ScalarFunction::coordinate(2,0);
+        y=ScalarFunction::coordinate(2,1);
+        x0=ScalarFunction::coordinate(3,0);
+        y0=ScalarFunction::coordinate(3,1);
+        t=ScalarFunction::coordinate(3,2);
+    }
+
     void test();
   private:
-    void test_linearise();
-    void test_split();
-    void test_subsume();
+    const IntegratorInterface& integrator;
+    ScalarFunction o,x,y,x0,y0,t;
+private:
+    void test_constant_derivative();
 };
 
 void
-TestTaylorSet::test()
+TestIntegrator::test()
 {
-    ARIADNE_TEST_CALL(test_linearise());
-    ARIADNE_TEST_CALL(test_split());
-    ARIADNE_TEST_CALL(test_subsume());
+    ARIADNE_TEST_CALL(test_constant_derivative());
 }
 
-
-void
-TestTaylorSet::test_subsume()
-{
-    TaylorSet ts1=TaylorSet(2,2,2, 0.0,1.0,0.5,0.0,0.0,0.0, 0.25, 0.0,0.5,1.0,1.0,0.0,0.0, 0.375);
-    TaylorSet cts1=TaylorSet(2,4,2, 0.0, 1.0,0.5,0.25,0.0,  0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,  0.0,
-                                    0.0, 0.5,1.0,0.0,0.375, 1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,  0.0);
-    ARIADNE_TEST_EQUAL(ts1.subsume(),cts1);
-
-    TaylorSet ts2=TaylorSet(2,2,2, 0.0,1.0,0.5,0.0,0.0,0.0, 0.0, 0.0,0.5,1.0,1.0,0.0,0.0, 0.375);
-    TaylorSet cts2=TaylorSet(2,3,2, 0.0, 1.0,0.5,0.0,  0.0,0.0,0.0,0.0,0.0,0.0,  0.0,
-                                    0.0, 0.5,1.0,0.375, 1.0,0.0,0.0,0.0,0.0,0.0,  0.0);
-    ARIADNE_TEST_EQUAL(ts2.subsume(),cts2);
-}
-
-
-void
-TestTaylorSet::test_linearise()
-{
-    TaylorSet ts(2,2,2, 0.0,1.0,0.25,0.0,0.0,0.0, 0.0, 0.0,0.5,1.0,1.0,0.0,0.0, 0.0);
-
-    Zonotope z=zonotope(ts);
-    Box b=ts.bounding_box();
-
-    ARIADNE_TEST_EQUAL(ts.linearise(),TaylorSet(2,2,1, 0.0,1.0,0.25, 0.0, 0.0,0.5,1.0, 1.0));
-
-    Box bounding_box=ts.bounding_box()+Vector<Interval>(2,Interval(-1,1));
-    plot("test_taylor_set-linearise",PlanarProjectionMap(2,0,1),bounding_box,
-         Colour(1,0,0),b,Colour(1,0,1),z,Colour(0,0,1),ts);
-}
-
-void plot(const char* filename, const TaylorSet& set) {
-    Figure fig;
-    fig.set_bounding_box(set.bounding_box());
-    fig.set_line_width(0.0);
-    draw(fig,set);
-    fig.write(filename);
-}
-
-
-void
-TestTaylorSet::test_split()
-{
-    TaylorSet ts(2,2,2, 0.0,1.0,0.25,0.0,0.0,0.0, 0.0, 0.0,0.5,1.0,1.0,0.0,0.0, 0.0);
-
-    TaylorSet ts1,ts2,ts3,ts4,ts5,ts6;
-    make_lpair(ts1,ts2)=ts.split();
-    make_lpair(ts3,ts4)=ts2.split();
-    make_lpair(ts5,ts6)=ts4.split();
-
-    ARIADNE_TEST_EQUAL(ts.split().first,
-        TaylorSet(2,2,2, -0.5,0.5,0.25,0.0,0.0,0.0, 0.0, +0.0,-0.25,1.0,0.25,0.0,0.0, 0.0));
-    ARIADNE_TEST_EQUAL(ts.split().second,
-        TaylorSet(2,2,2, +0.5,0.5,0.25,0.0,0.0,0.0, 0.0, +0.5,+0.75,1.0,0.25,0.0,0.0, 0.0));
-
-    Box bounding_box=ts.bounding_box()+Vector<Interval>(2,Interval(-1,1));
-    plot("test_taylor_set-split",bounding_box,
-         Colour(0,0.0,1),ts1,
-         Colour(0,0.4,1),ts3,
-         Colour(0,0.8,1),ts5,
-         Colour(0,0.9,1),ts6);
-
-    // Test split with an error term
-    ts=TaylorSet(2,2,2, 0.5,1.0,0.25,0.0,0.0,0.0, 2.5, 0.0,0.5,1.0,1.0,0.0,0.0, 1.0);
-    ARIADNE_TEST_EQUAL(ts.split().first,
-        TaylorSet(2,2,2, -0.75,1.0,0.25,0.0,0.0,0.0, 1.25, 0.0,0.5,1.0,1.0,0.0,0.0, 1.0));
-    ARIADNE_TEST_EQUAL(ts.split().second,
-        TaylorSet(2,2,2, 1.75,1.0,0.25,0.0,0.0,0.0, 1.25, 0.0,0.5,1.0,1.0,0.0,0.0, 1.0));
-    
-
+void TestIntegrator::test_constant_derivative() {
+    /*VectorFunction f={o*2,o*3};
+    ARIADNE_TEST_PRINT(f);
+    ExactBoxType d={ExactIntervalType(0.0,1.0),ExactIntervalType(-0.5,1.5)};
+    FloatDP h=0.25;
+    ValidatedVectorFunctionModelDP flow=integrator_ptr->flow_step(f,d,h);
+    EffectiveVectorFunction expected_flow={x0+2*t,y0+3*t};
+    ARIADNE_TEST_PRINT(flow);
+    ARIADNE_TEST_PRINT(expected_flow);
+    ARIADNE_TEST_PRINT(flow.errors());
+    ARIADNE_TEST_BINARY_PREDICATE(operator<,norm(flow-expected_flow),1e-8);
+     */
 }
 
 
 int main() {
-    TestTaylorSet().test();
+
+    TaylorIntegrator integrator(1);
+    TestIntegrator(integrator).test();
     return ARIADNE_TEST_FAILURES;
 }
