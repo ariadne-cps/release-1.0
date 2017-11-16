@@ -1453,16 +1453,6 @@ flow(const VectorTaylorFunction& vf, const Vector<Interval>& d, const Interval& 
     return unchecked_flow(vf,d,h,o);
 }
 
-
-template<class X> inline Vector<X> join(const Vector<X>& v1, const Vector<X>& v2, const X& s3) {
-    Vector<X> r(v1.size()+v2.size()+1u);
-    for(uint i=0; i!=v1.size(); ++i) { r[i]=v1[i]; }
-    for(uint i=0; i!=v2.size(); ++i) { r[v1.size()+i]=v2[i]; }
-    r[v1.size()+v2.size()]=s3;
-    return r;
-}
-
-
 VectorTaylorFunction
 parameterised_flow(const VectorTaylorFunction& vf, const Vector<Interval>& d, const Float& h, const uint o)
 {

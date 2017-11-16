@@ -37,15 +37,6 @@
 
 namespace Ariadne {
 
-template<class X> Vector<X> join(const Vector<X>& v1, const Vector<X>& v2, const X& s3) {
-    Vector<X> r(v1.size()+v2.size()+1u);
-    for(uint i=0; i!=v1.size(); ++i) { r[i]=v1[i]; }
-    for(uint i=0; i!=v2.size(); ++i) { r[v1.size()+i]=v2[i]; }
-    r[v1.size()+v2.size()]=s3;
-    return r;
-}
-
-
 typedef Vector<Interval> IVector;
 
 Pair<Float,IVector>
@@ -57,7 +48,6 @@ IntegratorBase::flow_bounds(const VectorFunction& vf, const IVector& dp, const I
     ARIADNE_ASSERT(hmax>0);
 
     // Set up constants of the method.
-    // TODO: Better estimates of constants
     const double INITIAL_MULTIPLIER=2;
     const double MULTIPLIER=1.125;
     const double BOX_RADIUS_MULTIPLIER=1.03125;
@@ -65,12 +55,12 @@ IntegratorBase::flow_bounds(const VectorFunction& vf, const IVector& dp, const I
     const uint REDUCTION_STEPS=8;
     const uint REFINEMENT_STEPS=4;
 
-    Vector<Interval> delta=(dx-midpoint(dx))*(BOX_RADIUS_MULTIPLIER-1);
+    IVector delta=(dx-midpoint(dx))*(BOX_RADIUS_MULTIPLIER-1);
 
     Float h=hmax;
     Float hmin=hmax/(1<<REDUCTION_STEPS);
     bool success=false;
-    Vector<Interval> bx,nbx,df;
+    IVector bx,nbx,df;
     Interval ih(0,h);
 
     while(!success) {
@@ -94,7 +84,7 @@ IntegratorBase::flow_bounds(const VectorFunction& vf, const IVector& dp, const I
 
     ARIADNE_ASSERT(subset(nbx,bx));
 
-    Vector<Interval> vfbx;
+    IVector vfbx;
     vfbx=vf.evaluate(join(dp,bx));
 
     for(uint i=0; i!=REFINEMENT_STEPS; ++i) {
@@ -110,7 +100,6 @@ IntegratorBase::flow_bounds(const VectorFunction& vf, const IVector& dp, const I
     ARIADNE_ASSERT(subset(nbx,bx));
 
     bx=nbx;
-
 
     ARIADNE_ASSERT(subset(dx,bx));
 
@@ -136,10 +125,10 @@ IntegratorBase::time_step(const VectorFunction& vf, const IVector& dp, const IVe
 
 VectorTaylorFunction
 IntegratorBase::flow(const VectorFunction& vf,
-                     const Vector<Interval>& dx,
+                     const IVector& dx,
                      const Float& h) const
 {
-    Vector<Interval> dp(0);
+    IVector dp(0);
     return this->flow(vf,dp,dx,h);
 }
 
@@ -160,12 +149,6 @@ TaylorIntegrator::flow(const VectorFunction& f, const IVector& dp, const IVector
     IVector dom=join(dp,dx,Interval(-h,h));
     ARIADNE_LOG(3,"dom="<<dom<<"\n");
 
-/*
-    VectorTaylorFunction phi0(VectorTaylorFunction(nx,ScalarTaylorFunction(dom)));
-    for(uint i=0; i!=nx; ++i) { phi0[i]=ScalarTaylorFunction::variable(dom,i); }
-    ARIADNE_LOG(0,"phi0="<<phi0<<"\n");
-*/
-
     VectorTaylorFunction phi0(nx,ScalarTaylorFunction(dom));
     for(uint i=0; i!=nx; ++i) { phi0[i]=ScalarTaylorFunction::variable(dom,np+i); }
     ARIADNE_LOG(3,"phi0="<<phi0<<"\n");
@@ -173,14 +156,6 @@ TaylorIntegrator::flow(const VectorFunction& f, const IVector& dp, const IVector
     VectorTaylorFunction phi(np+nx,ScalarTaylorFunction(dom));
     for(uint i=0; i!=np; ++i) { phi[i]=ScalarTaylorFunction::variable(dom,i); }
     for(uint i=0; i!=nx; ++i) { phi[np+i]=ScalarTaylorFunction::constant(dom,bx[i]); }
-
-    /*
-    for(uint k=0; k!=this->_temporal_order; ++k) {
-        for(uint i=0; i!=nx; ++i) {
-            phi[np+i]=antiderivative(compose(vf[i],phi),np+nx)+phi0[i];
-        }
-    }
-    */
 
     ARIADNE_LOG(4,"phi="<<phi<<"\n");
     for(uint k=0; k!=this->_temporal_order; ++k) {
