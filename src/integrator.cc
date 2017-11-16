@@ -112,9 +112,9 @@ IntegratorBase::flow_bounds(const VectorFunction& vf, const IVector& dx, const F
 
 
 VectorTaylorFunction
-IntegratorBase::time_step(const VectorFunction& vf, const IVector& dx, const Float& h) const
+IntegratorBase::flow_at_step(const VectorFunction& vf, const IVector& dx, const Float& h) const
 {
-    const uint it=dx.size(); // Index of the time variable
+    const unsigned long it=dx.size(); // Index of the time variable
     VectorTaylorFunction flow=this->flow(vf,dx,h);
     Float hu=flow.domain()[it].upper();
     ARIADNE_ASSERT_MSG(hu==h,"Actual time step "<<hu<<" is less then requested time step "<<h);
@@ -125,28 +125,28 @@ IntegratorBase::time_step(const VectorFunction& vf, const IVector& dx, const Flo
 VectorTaylorFunction
 TaylorIntegrator::flow(const VectorFunction& f, const IVector& dx, const Float& hmax) const
 {
-    ARIADNE_LOG(2,"f="<<f<<" dx="<<dx<<" hmax="<<hmax<<"\n");
+    ARIADNE_LOG(1,"TaylorIntegrator::flow, f="<<f<<" dx="<<dx<<" hmax="<<hmax<<"\n");
     const uint nx=dx.size();
 
     IVector bx(nx);
     Float h;
     make_lpair(h,bx)=this->flow_bounds(f,dx,hmax);
-    ARIADNE_LOG(3,"h="<<h<<" bx="<<bx<<"\n");
+    ARIADNE_LOG(2,"h="<<h<<" bx="<<bx<<"\n");
 
     IVector dom=join(dx,Interval(-h,h));
-    ARIADNE_LOG(3,"dom="<<dom<<"\n");
+    ARIADNE_LOG(2,"dom="<<dom<<"\n");
 
     VectorTaylorFunction phi0(nx,ScalarTaylorFunction(dom));
     for(uint i=0; i!=nx; ++i) { phi0[i]=ScalarTaylorFunction::variable(dom,i); }
-    ARIADNE_LOG(3,"phi0="<<phi0<<"\n");
+    ARIADNE_LOG(2,"phi0="<<phi0<<"\n");
 
     VectorTaylorFunction phi(nx,ScalarTaylorFunction(dom));
     for(uint i=0; i!=nx; ++i) { phi[i]=ScalarTaylorFunction::constant(dom,bx[i]); }
 
-    ARIADNE_LOG(4,"phi="<<phi<<"\n");
+    ARIADNE_LOG(2,"phi="<<phi<<"\n");
     for(uint k=0; k!=this->_temporal_order; ++k) {
         VectorTaylorFunction fphi=compose(f,phi);
-        ARIADNE_LOG(4,"fphi="<<fphi<<"\n");
+        ARIADNE_LOG(3,"fphi="<<fphi<<"\n");
         for(uint i=0; i!=nx; ++i) {
             phi[i]=antiderivative(fphi[i],nx)+phi0[i];
         }
@@ -155,7 +155,7 @@ TaylorIntegrator::flow(const VectorFunction& f, const IVector& dx, const Float& 
 
     VectorTaylorFunction res(nx,ScalarTaylorFunction(dom));
     for(uint i=0; i!=nx; ++i) { res[i]=phi[i]; }
-    ARIADNE_LOG(3,"res="<<res<<"\n");
+    ARIADNE_LOG(2,"res="<<res<<"\n");
     return res;
 
 }
