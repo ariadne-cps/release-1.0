@@ -829,6 +829,8 @@ VectorTaylorFunction combine(const VectorTaylorFunction& f, const ScalarTaylorFu
 VectorTaylorFunction combine(const ScalarTaylorFunction& f, const VectorTaylorFunction& g);
 VectorTaylorFunction combine(const ScalarTaylorFunction& f, const ScalarTaylorFunction& g);
 
+Float norm(const VectorTaylorFunction& f);
+
 std::ostream& operator<<(std::ostream&, const VectorTaylorFunction&);
 
 

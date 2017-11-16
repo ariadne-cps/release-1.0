@@ -834,8 +834,6 @@ VectorTaylorFunction::range() const
     return result;
 }
 
-
-
 const Vector<TaylorModel>&
 VectorTaylorFunction::models() const
 {
@@ -1580,6 +1578,16 @@ VectorTaylorFunction::write(std::ostream& os) const
 }
 
 
+Float
+norm(const VectorTaylorFunction& f)
+{
+    Float result = 0;
+    for(uint i=0; i!=f.result_size(); ++i) {
+        result = max(result,f.range()[i].width());
+    }
+
+    return result;
+}
 
 std::ostream&
 operator<<(std::ostream& os, const VectorTaylorFunction& p)
