@@ -57,6 +57,7 @@ private:
     void test_bounds();
     void test_constant_derivative();
     void test_flow_at_step();
+    void test_continuous_step();
 };
 
 void
@@ -65,6 +66,7 @@ TestIntegrator::test()
     ARIADNE_TEST_CALL(test_bounds());
     ARIADNE_TEST_CALL(test_constant_derivative());
     ARIADNE_TEST_CALL(test_flow_at_step());
+    ARIADNE_TEST_CALL(test_continuous_step());
 }
 
 void TestIntegrator::test_bounds() {
@@ -91,7 +93,7 @@ void TestIntegrator::test_constant_derivative() {
     ARIADNE_TEST_PRINT(f);
 
     Box d(2, 0.0,1.0, -0.5,1.5);
-    float h=0.25;
+    float h=1.0;
     VectorTaylorFunction flow=integrator.flow(f,d,h);
     VectorTaylorFunction expected_flow(flow.domain(),join(x0+2*t,y0+3*t));
 
@@ -113,6 +115,42 @@ void TestIntegrator::test_flow_at_step() {
     ARIADNE_TEST_PRINT(flow_at_step);
     ARIADNE_TEST_PRINT(expected_flow_at_step);
     ARIADNE_TEST_BINARY_PREDICATE(operator<,norm(flow_at_step - expected_flow_at_step),1e-10);
+}
+
+void TestIntegrator::test_continuous_step() {
+    VectorFunction f=join(o*2,o*3);
+    ARIADNE_TEST_PRINT(f);
+
+    Vector<TaylorModel> models(2);
+    models[0] = TaylorModel(Expansion<Real>(3,3, 0,0,0,0.5, 1,0,0,0.375, 0,1,0,0.125),0.0);
+    models[1] = TaylorModel(Expansion<Real>(3,4, 0,0,0,0.5, 1,0,0,0.25, 0,1,0,0.625, 0,0,1,0.125),0.0);
+    TaylorSet starting_set(models);
+
+    ARIADNE_TEST_PRINT(starting_set);
+
+    float h=1.0;
+    VectorTaylorFunction flow = integrator.flow(f,starting_set.bounding_box(),h);
+
+    ARIADNE_TEST_PRINT(flow);
+
+    VectorTaylorFunction flow_at_step = partial_evaluate(flow,f.result_size(),h);
+    VectorTaylorFunction flow_at_deltat = partial_evaluate(flow,f.result_size(),Interval(0,h));
+
+    TaylorSet finishing_set = apply(flow_at_step, starting_set);
+
+    Box expected_finishing_set_bounds(2, 2.0,3.0, 2.5,4.5);
+
+    ARIADNE_TEST_PRINT(finishing_set);
+    ARIADNE_TEST_PRINT(finishing_set.bounding_box());
+    ARIADNE_TEST_ASSERT(finishing_set.bounding_box().superset(expected_finishing_set_bounds));
+
+    TaylorSet reached_set = apply(flow_at_deltat, starting_set);
+
+    Box expected_flow_set_bounds(2, 0.0,3.0, -0.5,4.5);
+
+    ARIADNE_TEST_PRINT(reached_set);
+    ARIADNE_TEST_PRINT(reached_set.bounding_box());
+    ARIADNE_TEST_ASSERT(reached_set.bounding_box().superset(expected_flow_set_bounds));
 }
 
 int main() {
