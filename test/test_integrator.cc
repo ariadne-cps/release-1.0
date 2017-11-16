@@ -27,10 +27,12 @@
 #include "taylor_model.h"
 #include "zonotope.h"
 #include "taylor_set.h"
+#include "taylor_function.h"
 #include "graphics.h"
 #include "integrator.h"
 
 #include "test.h"
+
 using namespace std;
 using namespace Ariadne;
 
@@ -62,17 +64,17 @@ TestIntegrator::test()
 }
 
 void TestIntegrator::test_constant_derivative() {
-    /*VectorFunction f={o*2,o*3};
+    VectorFunction f=join(o*2,o*3);
     ARIADNE_TEST_PRINT(f);
-    ExactBoxType d={ExactIntervalType(0.0,1.0),ExactIntervalType(-0.5,1.5)};
-    FloatDP h=0.25;
-    ValidatedVectorFunctionModelDP flow=integrator_ptr->flow_step(f,d,h);
-    EffectiveVectorFunction expected_flow={x0+2*t,y0+3*t};
+
+    Box d(2, 0.0,1.0, -0.5,1.5);
+    float h=0.25;
+    VectorTaylorFunction flow=integrator.flow(f,d,h);
+    VectorTaylorFunction expected_flow(flow.domain(),join(x0+2*t,y0+3*t));
+
     ARIADNE_TEST_PRINT(flow);
     ARIADNE_TEST_PRINT(expected_flow);
-    ARIADNE_TEST_PRINT(flow.errors());
-    ARIADNE_TEST_BINARY_PREDICATE(operator<,norm(flow-expected_flow),1e-8);
-     */
+    ARIADNE_TEST_BINARY_PREDICATE(operator<,norm(flow - expected_flow),1e-10);
 }
 
 
