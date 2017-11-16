@@ -52,7 +52,6 @@ class IntegratorInterface
 
     //! \brief Solve \f$f(x)=0\f$, starting in the interval point \a pt.
     virtual Pair<Float,IVector> flow_bounds(const VectorFunction& vector_field,
-                                            const IVector& parameter_domain,
                                             const IVector& state_domain,
                                             const Float& suggested_time_step) const = 0;
 
@@ -61,16 +60,8 @@ class IntegratorInterface
                                 const IVector& state_domain,
                                 const Float& time_domain) const = 0;
 
-
-    //! \brief Solve \f$\dot{\phi}(a,x,t)=f(a,\phi(a,x,t))\f$.
-    virtual VectorTaylorFunction flow(const VectorFunction& vector_field,
-                                              const IVector& parameter_domain,
-                                              const IVector& state_domain,
-                                              const Float& time_domain) const = 0;
-
-    //! \brief Compute \f$\phi(a,x,h)\f$, where \f$\dot{\phi}(a,x,t)=f(a,\phi(a,x,t))\f$.
+    //! \brief Compute \f$\phi(x,h)\f$.
     virtual VectorTaylorFunction time_step(const VectorFunction& vector_field,
-                                     const IVector& parameter_domain,
                                      const IVector& state_domain,
                                      const Float& time_domain) const = 0;
 
