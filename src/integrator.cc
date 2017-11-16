@@ -109,19 +109,6 @@ IntegratorBase::flow_bounds(const VectorFunction& vf, const IVector& dx, const F
 }
 
 
-
-
-VectorTaylorFunction
-IntegratorBase::flow_at_step(const VectorFunction& vf, const IVector& dx, const Float& h) const
-{
-    const uint it=dx.size(); // Index of the time variable
-    VectorTaylorFunction flow=this->flow(vf,dx,h);
-    Float hu=flow.domain()[it].upper();
-    ARIADNE_ASSERT_MSG(hu==h,"Actual time step "<<hu<<" is less then requested time step "<<h);
-    return partial_evaluate(flow,it,h);
-}
-
-
 VectorTaylorFunction
 TaylorIntegrator::flow(const VectorFunction& f, const IVector& dx, const Float& hmax) const
 {

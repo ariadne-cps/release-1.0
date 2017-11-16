@@ -50,10 +50,6 @@ class IntegratorBase
     virtual Pair<Float,IVector> flow_bounds(const VectorFunction& vector_field,
                                             const IVector& state_domain,
                                             const Float& suggested_time_step) const;
-
-    virtual VectorTaylorFunction flow_at_step(const VectorFunction& vector_field,
-                                              const IVector& state_domain,
-                                              const Float& suggested_time_step) const;
 };
 
 

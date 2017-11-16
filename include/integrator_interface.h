@@ -60,11 +60,6 @@ class IntegratorInterface
                                 const IVector& state_domain,
                                 const Float& time_domain) const = 0;
 
-    //! \brief Compute \f$\phi(x,h)\f$.
-    virtual VectorTaylorFunction flow_at_step(const VectorFunction& vector_field,
-                                              const IVector& state_domain,
-                                              const Float& time_domain) const = 0;
-
 };
 
 

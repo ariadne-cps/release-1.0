@@ -56,7 +56,7 @@ class TestIntegrator {
 private:
     void test_bounds();
     void test_constant_derivative();
-    void test_flow_at_step();
+    void test_partial_evaluate();
     void test_continuous_step();
 };
 
@@ -65,7 +65,7 @@ TestIntegrator::test()
 {
     ARIADNE_TEST_CALL(test_bounds());
     ARIADNE_TEST_CALL(test_constant_derivative());
-    ARIADNE_TEST_CALL(test_flow_at_step());
+    ARIADNE_TEST_CALL(test_partial_evaluate());
     ARIADNE_TEST_CALL(test_continuous_step());
 }
 
@@ -103,13 +103,16 @@ void TestIntegrator::test_constant_derivative() {
 }
 
 
-void TestIntegrator::test_flow_at_step() {
+void TestIntegrator::test_partial_evaluate() {
     VectorFunction f=join(o*2,o*3);
     ARIADNE_TEST_PRINT(f);
 
     Box d(2, 0.0,1.0, -0.5,1.5);
     float h=1.0;
-    VectorTaylorFunction flow_at_step = integrator.flow_at_step(f,d,h);
+    VectorTaylorFunction flow = integrator.flow(f,d,h);
+
+    VectorTaylorFunction flow_at_step = partial_evaluate(flow,f.result_size(),0.5*h);
+
     VectorTaylorFunction expected_flow_at_step(d,join(x+2,y+3));
 
     ARIADNE_TEST_PRINT(flow_at_step);
