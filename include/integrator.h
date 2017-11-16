@@ -61,18 +61,14 @@ class TaylorIntegrator
     : public IntegratorBase
 {
   public:
-    TaylorIntegrator(uint to) : _spacial_order(1), _temporal_order(to), _error(1e-16) { }
-
-    uint temporal_order() const { return this->_temporal_order; }
+    TaylorIntegrator(uint to) : _temporal_order(to) { }
 
     virtual VectorTaylorFunction flow(const VectorFunction& vector_field,
                                 const Vector<Interval>& state_domain,
                                 const Float& suggested_time_step) const;
 
   private:
-    uint _spacial_order;
     uint _temporal_order;
-    double _error;
 };
 
 
