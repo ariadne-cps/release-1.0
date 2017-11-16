@@ -386,13 +386,6 @@ void TestTaylorModel::test_recondition()
     TaylorModel tm2(E(3,5, 0,0,0,5.808612, 0,0,1,-1.421246e-02, 0,0,2,1.739506e-05, 0,0,3,-1.419351e-08, 0,0,4,8.708096e-12 ),7.089995e-12);
     TaylorModel tm2rp_v(E(4,6, 0,0,0,0,5.808612, 0,1,0,0,-1.421246e-02, 0,0,0,1,7.089995e-12, 0,2,0,0,1.739506e-05, 0,3,0,0,-1.419351e-08, 0,4,0,0,8.708096e-12 ),0.0);
 
-    ARIADNE_TEST_PRINT(tm);
-
-    Array<uint> discarded_variables(1);
-    discarded_variables[0] = 1;
-
-
-
     Array<uint> discarded1(1);
     discarded1[0] = 3;
     TaylorModel tm1re = Ariadne::recondition(tm1,discarded1,0,0);
