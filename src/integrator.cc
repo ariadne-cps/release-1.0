@@ -32,6 +32,7 @@
 #include "matrix.h"
 #include "function.h"
 #include "taylor_function.h"
+#include "box.h"
 
 #include "polynomial.h"
 
@@ -68,7 +69,10 @@ IntegratorBase::flow_bounds(const VectorFunction& vf, const IVector& dx, const F
         for(uint i=0; i!=EXPANSION_STEPS; ++i) {
             df=vf.evaluate(bx);
             nbx=dx+delta+ih*df;
-            if(subset(nbx,bx)) {
+            if (!Box(nbx).bounded()) {
+                success = false;
+                break;
+            } else if(subset(nbx,bx)) {
                 success=true;
                 break;
             } else {
