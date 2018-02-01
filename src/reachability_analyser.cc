@@ -165,7 +165,8 @@ _plot_reach(
 	char mgd_char[10];
 	sprintf(mgd_char,"%i",_accuracy());
 	name_prefix.append(mgd_char);
-	plot(plot_dirpath,name_prefix,reach);
+	PlotHelper helper(*this->_system);
+	helper.plot(plot_dirpath,name_prefix,reach);
 }
 
 

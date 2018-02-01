@@ -71,7 +71,7 @@ _safety_nosplitting(
 	SystemType& system = verInput.getSystem();
 
 	if (_settings->plot_results)
-		_plotter_ptr.reset(new PlotHelper(system.name()));
+		_plotter_ptr.reset(new PlotHelper(system,_settings->projections_to_plot));
 
 	_init_safety_restriction(verInput);
 
@@ -414,7 +414,7 @@ Verifier::_dominance(
 	_reset_start_time();
 
 	if (_settings->plot_results)
-		_plotter_ptr.reset(new PlotHelper(dominating.getSystem().name() + "+" + dominated.getSystem().name()));
+		_plotter_ptr.reset(new PlotHelper(dominating.getSystem()));
 
 	_init_dominance_restriction(dominating,DOMINATING_SYSTEM);
 	_init_dominance_restriction(dominated,DOMINATED_SYSTEM);
@@ -699,9 +699,9 @@ _plot_dominance(
     _plotter_ptr->plot(reach,filename,accuracy);
 }
 
-
 VerifierSettings::VerifierSettings() :
         plot_results(false),
+        projections_to_plot(List<PlotProjection>()),
         maximum_parameter_depth(3),
         use_param_midpoints_for_proving(false),
         use_param_midpoints_for_disproving(true),
@@ -713,6 +713,7 @@ operator<<(std::ostream& os, const VerifierSettings& s)
 {
     os << "VerificationSettings"
        << "(\n  plot_results=" << s.plot_results
+       << ",\n  projections_to_plot=" << s.projections_to_plot
        << ",\n  maximum_parameter_depth=" << s.maximum_parameter_depth
        << ",\n  use_param_midpoints_for_proving=" << s.use_param_midpoints_for_proving
        << ",\n  use_param_midpoints_for_disproving=" << s.use_param_midpoints_for_disproving

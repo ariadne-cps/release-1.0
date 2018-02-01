@@ -581,7 +581,31 @@ const Colour yellow=Colour("yellow",1.0,1.0,0.0);
 const Colour cyan=Colour("cyan",0.0,1.0,1.0);
 const Colour magenta=Colour("magenta",1.0,0.0,1.0);
 
-PlotHelper::PlotHelper(const string& name) : _name(name) {
+PlotProjection::PlotProjection(uint x_index, Interval x_range, uint y_index, Interval y_range, List<DiscreteLocation> locations) :
+        x_index(x_index), x_range(x_range), y_index(y_index), y_range(y_range), locations(locations) { }
+
+std::ostream&
+operator<<(std::ostream& os, const PlotProjection& p)
+{
+    std::ostringstream oss;
+    if (p.locations.size() > 0) {
+        oss << " at {";
+        for (int i=0; i < p.locations.size()-1; ++i)
+            oss << p.locations[i].name() << " ";
+        oss << p.locations[p.locations.size()-1].name() << "}";
+    }
+
+    os << "(xi=" << p.x_index
+       << "[" << p.x_range.lower() << "," << p.x_range.upper() << "],"
+       << " yi=" << p.y_index
+       << "[" << p.y_range.lower() << "," << p.y_range.upper() << "]"
+       << oss.str() << ")";
+
+    return os;
+}
+
+PlotHelper::PlotHelper(const SystemType& system, const List<PlotProjection>& plot_projections) :
+        _system(system), _plot_projections(plot_projections) {
     reset();
 }
 
@@ -589,7 +613,7 @@ void
 PlotHelper::reset() {
 	time_t mytime;
 	time(&mytime);
-	string foldername = this->_name +"-png";
+	string foldername = this->_system.name() +"-png";
 
 	mkdir(foldername.c_str(),0777);
 	string timestring = asctime(localtime(&mytime));
@@ -598,6 +622,15 @@ PlotHelper::reset() {
 	mkdir(foldername.c_str(),0777);
 
 	_plot_dirpath = foldername;
+}
+
+void
+PlotHelper::plot(const std::list<ParametricOutcome>& outcomes, int accuracy) const {
+    char mgd_char[10];
+    sprintf(mgd_char,"%i",accuracy);
+    string base_filename = "parametric-";
+    base_filename.append(mgd_char);
+    Ariadne::draw(_plot_dirpath+"/"+base_filename,outcomes);
 }
 
 

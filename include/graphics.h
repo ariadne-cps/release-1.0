@@ -40,6 +40,8 @@
 #include "parametric.h"
 #include "box.h"
 #include "list_set.h"
+#include "hybrid_automaton_interface.h"
+
 
 typedef unsigned int uint;
 
@@ -201,103 +203,6 @@ void plot(const char* filename, const PlanarProjectionMap& pr, const Box& bbox,
     g.write(filename); 
 }
 
-//! \brief Plots figures for each couple of coordinates, with graphic box automatically chosen as the bounding box of the set. Also, saves the figures on a given folder under the current path.
-template<class SET>
-void plot(const string& foldername, const string& filename, const SET& set)
-{
-	// If a set exists
-	if (set.size()>0) {
-		// Gets the bounds of the set
-		std::map<DiscreteLocation,Box> set_bounds = set.bounding_box();
-
-		// Gets the number of variables (NOTE: assumed equal for each mode)
-		uint numvar = set_bounds.begin()->second.dimension();
-
-		// For each variable (last excluded)
-		for (uint x=0;x<numvar-1;x++) {
-			// For each following variable
-			for (uint y=x+1;y<numvar;y++) {
-				// Initializes the iterator to the first non-empty box
-				std::map<DiscreteLocation,Box>::const_iterator it = set_bounds.begin();
-				while (it->second.empty())
-					++it;
-
-				// Sets the initial value for the graphics box
-				Box graphics_box(2);
-				graphics_box[0] = it->second[x];
-				graphics_box[1] = it->second[y];
-
-				// For each other location
-				while (++it != set_bounds.end()) {
-					if (!it->second.empty()) {
-						// Gets the bounding box for the location
-						Box evaluation_box(2);
-						evaluation_box[0] = it->second[x];
-						evaluation_box[1] = it->second[y];
-
-						// Enlarges the graphics box
-
-						// For each axis
-						for (uint u=0;u<2;u++) {
-							// If the evaluated box has higher upper bound, extends the graphics box
-							if (evaluation_box[u].upper() > graphics_box[u].upper())
-								graphics_box[u].set_upper(evaluation_box[u].upper());
-							// If the evaluated box has lower lower bound, extends the graphics box
-							if (evaluation_box[u].lower() < graphics_box[u].lower())
-								graphics_box[u].set_lower(evaluation_box[u].lower());
-						}
-					}
-				}
-
-				// Plots the global result
-
-				// Assigns local variables
-				Figure fig;
-				array<uint> xy(2,x,y);
-
-				fig.set_projection_map(ProjectionFunction(xy,numvar));
-				fig.set_bounding_box(graphics_box);
-
-				// Appends the set, with the desired fill color
-				fig.set_fill_colour(Colour(1.0,0.75,0.5));
-				draw(fig,set);
-
-				// If there are more than two variables, prints the variable numbers
-				char num_char[7] = "";
-				if (numvar>2)
-					sprintf(num_char,"[%u,%u]",x,y);
-				// Writes the figure file
-				fig.write((foldername+"/"+filename+num_char).c_str());
-
-				// Plot the result for each location, using the global bounds
-				for (std::map<DiscreteLocation,Box>::const_iterator loc_it = set_bounds.begin(); loc_it != set_bounds.end(); loc_it++) {
-					// If the set is non-empty
-					if (set[loc_it->first].size() > 0) {
-						// Assigns local variables
-						Figure fig;
-						array<uint> xy(2,x,y);
-
-						fig.set_projection_map(ProjectionFunction(xy,numvar));
-						fig.set_bounding_box(graphics_box);
-
-						// Appends the set, with the desired fill color
-						fig.set_fill_colour(Colour(1.0,0.75,0.5));
-						draw(fig,set[loc_it->first]);
-
-						// If there are more than two variables, prints the variable numbers
-						char num_char[7] = "";
-						if (numvar>2)
-							sprintf(num_char,"-[%u,%u]",x,y);
-						// Writes the figure file
-						fig.write((foldername+"/"+filename+"-"+loc_it->first.name()+num_char).c_str());
-					}
-				}
-			}
-		} 
-	}
-	else
-		ARIADNE_WARN("Empty set, no plotting produced.");
-}
 
 template<class CLS>
 void plot_list(const string& foldername, const string& filename, const ListSet<CLS>& set)
@@ -346,36 +251,211 @@ void plot_list(const string& foldername, const string& filename, const ListSet<C
 }
 
 
+//! \brief A structure for providing explicit projection of a set for plotting
+struct PlotProjection {
+
+	// The abscissa variable index
+	uint x_index;
+	// The range for the abscissa
+	Interval x_range;
+	// The ordinate
+    uint y_index;
+	// The range for the ordinate
+	Interval y_range;
+	// The locations to use. The plot result will be the union of the sets for each location
+    // If empty, it makes the union of all locations in the set
+	List<DiscreteLocation> locations;
+
+	PlotProjection(uint, Interval, uint, Interval, List<DiscreteLocation>);
+};
+
+std::ostream& operator<<(std::ostream& os, const PlotProjection& p);
+
 class PlotHelper {
     public:
         typedef HybridAutomatonInterface SystemType;
     private:
         string _plot_dirpath;
-        const string& _name;
+        const SystemType& _system;
+        const List<PlotProjection>& _plot_projections;
     public:
-        PlotHelper(const string& name);
+        PlotHelper(const SystemType& system, const List<PlotProjection>& plot_projections = List<PlotProjection>());
+
         void reset();
-	    template <class SET> void plot(const SET& set, string base_filename, int accuracy) const {
-	        char mgd_char[10];
-	        sprintf(mgd_char,"%i",accuracy);
-	        base_filename.append(mgd_char);
-	        Ariadne::plot(_plot_dirpath,base_filename,set);
-        }
 
-        template <class CLS>
-        void plot(const ListSet<CLS> listset, string base_filename) const {
-            Ariadne::plot_list(_plot_dirpath,base_filename,listset);
-        }
-
-        void plot(const std::list<ParametricOutcome>& outcomes, int accuracy) const {
-	        char mgd_char[10];
-	        sprintf(mgd_char,"%i",accuracy);
-            string base_filename = "parametric-";
-	        base_filename.append(mgd_char);
-            Ariadne::draw(_plot_dirpath+"/"+base_filename,outcomes);
-        }
+        template<class SET> void plot(const string& foldername, const string& filename, const SET& set) const;
+        template<class SET> void plot_all(const string& foldername, const string& filename, const SET& set) const;
+	    template <class SET> void plot(const SET& set, string base_filename, int accuracy) const;
+        template <class CLS> void plot(const ListSet<CLS> listset, string base_filename) const;
+        void plot(const std::list<ParametricOutcome>& outcomes, int accuracy) const;
 };
 
+//! \brief Plots figures for each couple of coordinates, with graphic box automatically chosen as the bounding box of the set. Also, saves the figures on a given folder under the current path.
+template<class SET>
+void PlotHelper::plot(const string& foldername, const string& filename, const SET& set) const
+{
+    if (_plot_projections.empty())
+        plot_all(foldername,filename,set);
+    else {
+        // If a set exists
+        if (set.size()>0) {
+
+            for (List<PlotProjection>::const_iterator pp = _plot_projections.begin(); pp != _plot_projections.end(); ++pp) {
+
+                // Sets the graphics box
+                Box graphics_box(2);
+                graphics_box[0] = pp->x_range;
+                graphics_box[1] = pp->y_range;
+
+                // Gets the number of variables (NOTE: assumed equal for each mode)
+                uint numvar = _system.dimension(set.begin()->first);
+
+                // Assigns local variables
+                Figure fig;
+                array<uint> xy(2,pp->x_index,pp->y_index);
+
+                fig.set_projection_map(ProjectionFunction(xy,numvar));
+                fig.set_bounding_box(graphics_box);
+
+                // Sets the desired fill color
+                fig.set_fill_colour(Colour(1.0,0.75,0.5));
+
+                if (pp->locations.empty()) {
+                    draw(fig, set);
+                } else {
+                    for (List<DiscreteLocation>::const_iterator loc = pp->locations.begin();
+                         loc != pp->locations.end(); ++loc) {
+                        // If the set is non-empty
+                        if (set[*loc].size() > 0) {
+                            draw(fig, set[*loc]);
+                        }
+                    }
+                }
+
+                char num_char[7] = "";
+                if (numvar>2)
+                    sprintf(num_char,"[%u,%u]",pp->x_index,pp->y_index);
+                fig.write((foldername+"/"+filename+num_char).c_str());
+            }
+        }
+        else
+        ARIADNE_WARN("Empty set, no plotting produced.");
+    }
+}
+
+//! \brief Plots figures for each couple of coordinates, with graphic box automatically chosen as the bounding box of the set. Also, saves the figures on a given folder under the current path.
+template<class SET>
+void PlotHelper::plot_all(const string& foldername, const string& filename, const SET& set) const
+{
+    // If a set exists
+    if (set.size()>0) {
+        // Gets the bounds of the set
+        std::map<DiscreteLocation,Box> set_bounds = set.bounding_box();
+
+        // Gets the number of variables (NOTE: assumed equal for each mode)
+        uint numvar = set_bounds.begin()->second.dimension();
+
+        // For each variable (last excluded)
+        for (uint x=0;x<numvar-1;x++) {
+            // For each following variable
+            for (uint y=x+1;y<numvar;y++) {
+                // Initializes the iterator to the first non-empty box
+                std::map<DiscreteLocation,Box>::const_iterator it = set_bounds.begin();
+                while (it->second.empty())
+                    ++it;
+
+                // Sets the initial value for the graphics box
+                Box graphics_box(2);
+                graphics_box[0] = it->second[x];
+                graphics_box[1] = it->second[y];
+
+                // For each other location
+                while (++it != set_bounds.end()) {
+                    if (!it->second.empty()) {
+                        // Gets the bounding box for the location
+                        Box evaluation_box(2);
+                        evaluation_box[0] = it->second[x];
+                        evaluation_box[1] = it->second[y];
+
+                        // Enlarges the graphics box
+
+                        // For each axis
+                        for (uint u=0;u<2;u++) {
+                            // If the evaluated box has higher upper bound, extends the graphics box
+                            if (evaluation_box[u].upper() > graphics_box[u].upper())
+                                graphics_box[u].set_upper(evaluation_box[u].upper());
+                            // If the evaluated box has lower lower bound, extends the graphics box
+                            if (evaluation_box[u].lower() < graphics_box[u].lower())
+                                graphics_box[u].set_lower(evaluation_box[u].lower());
+                        }
+                    }
+                }
+
+                // Plots the global result
+
+                // Assigns local variables
+                Figure fig;
+                array<uint> xy(2,x,y);
+
+                fig.set_projection_map(ProjectionFunction(xy,numvar));
+                fig.set_bounding_box(graphics_box);
+
+                // Appends the set, with the desired fill color
+                fig.set_fill_colour(Colour(1.0,0.75,0.5));
+                draw(fig,set);
+
+                // If there are more than two variables, prints the variable numbers
+                char num_char[7] = "";
+                if (numvar>2)
+                    sprintf(num_char,"[%u,%u]",x,y);
+                // Writes the figure file
+                fig.write((foldername+"/"+filename+num_char).c_str());
+
+                // Plot the result for each location, using the global bounds
+                for (std::map<DiscreteLocation,Box>::const_iterator loc_it = set_bounds.begin(); loc_it != set_bounds.end(); loc_it++) {
+                    // If the set is non-empty
+                    if (set[loc_it->first].size() > 0) {
+                        // Assigns local variables
+                        Figure fig;
+                        array<uint> xy(2,x,y);
+
+                        fig.set_projection_map(ProjectionFunction(xy,numvar));
+                        fig.set_bounding_box(graphics_box);
+
+                        // Appends the set, with the desired fill color
+                        fig.set_fill_colour(Colour(1.0,0.75,0.5));
+                        draw(fig,set[loc_it->first]);
+
+                        // If there are more than two variables, prints the variable numbers
+                        char num_char[7] = "";
+                        if (numvar>2)
+                            sprintf(num_char,"-[%u,%u]",x,y);
+                        // Writes the figure file
+                        fig.write((foldername+"/"+filename+"-"+loc_it->first.name()+num_char).c_str());
+                    }
+                }
+            }
+        }
+    }
+    else
+    ARIADNE_WARN("Empty set, no plotting produced.");
+}
+
+template <class SET>
+void
+PlotHelper::plot(const SET& set, string base_filename, int accuracy) const {
+    char mgd_char[10];
+    sprintf(mgd_char,"%i",accuracy);
+    base_filename.append(mgd_char);
+
+    plot(_plot_dirpath,base_filename,set);
+}
+
+template <class CLS>
+void
+PlotHelper::plot(const ListSet<CLS> listset, string base_filename) const {
+    Ariadne::plot_list(_plot_dirpath,base_filename,listset);
+}
 
 } // namespace Ariadne
 

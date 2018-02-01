@@ -274,7 +274,6 @@ class Verifier
 
 };
 
-
 //! \brief Settings for controlling the verification flow.
 class VerifierSettings {
 
@@ -293,6 +292,9 @@ class VerifierSettings {
   public:
     /*! \brief Whether the analysis results must be plotted. */
     bool plot_results;
+
+    /*! \brief The list of projections to plot. If empty, all couples of variables will be plotted for each and all locations. */
+    List<PlotProjection> projections_to_plot;
 
     /*! \brief The maximum depth of parameter range splitting.
      * \details A value of zero means that the parameter space is not splitted at all. The total verification time
