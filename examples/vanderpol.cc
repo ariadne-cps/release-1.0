@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
 
     DiscreteLocation loc("loc");
 
-    RealParameter mu("mu",1.0);
+    RealParameter mu("mu",Interval(1.0,1.0));
 
     RealVariable x("x"), y("y");
 
@@ -75,6 +75,6 @@ int main(int argc, char* argv[])
     OrbitType orbit = evolver.orbit(initial_enclosure,evolution_time,UPPER_SEMANTICS);
     std::cout << "done." << std::endl;
 
-    PlotHelper plotter(vanderpol.name());
+    PlotHelper plotter(vanderpol);
     plotter.plot(orbit.reach(),"reach");
 }

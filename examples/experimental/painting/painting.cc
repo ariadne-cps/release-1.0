@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
 
     std::cout << "Final range for deposition: " << orbit.final().bounding_box()[5] << std::flush << std::endl;
 
-    PlotHelper plotter(system.name());
+    PlotHelper plotter(system);
     plotter.plot(orbit.reach(),"reach");
 
 }

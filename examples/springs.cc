@@ -41,6 +41,6 @@ int main(int argc, char* argv[])
     HybridTime evolution_time(EVOL_TIME,EVOL_TRANS);
     HybridEvolver::OrbitType orbit = evolver.orbit(initial_enclosure,evolution_time,UPPER_SEMANTICS);
 
-    PlotHelper plotter(system.name());
+    PlotHelper plotter(system);
     plotter.plot(orbit.reach(),"reach");
 }

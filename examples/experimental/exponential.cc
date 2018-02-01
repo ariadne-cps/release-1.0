@@ -70,6 +70,6 @@ int main(int argc, char* argv[])
     HybridEvolver::OrbitType orbit = evolver.orbit(initial_enclosure,evolution_time,UPPER_SEMANTICS);
     std::cout << "done." << std::endl;
 
-    PlotHelper plotter(automaton.name());
+    PlotHelper plotter(automaton);
     plotter.plot(orbit.reach(),"reach");
 }

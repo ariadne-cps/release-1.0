@@ -49,6 +49,6 @@ int main(int argc,char *argv[])
 
     HybridEvolver::OrbitType orbit = evolver.orbit(initial_enclosure,evol_limits,UPPER_SEMANTICS);
 
-    PlotHelper plotter(system.name());
+    PlotHelper plotter(system);
     plotter.plot(orbit.reach(),"reach");
 }

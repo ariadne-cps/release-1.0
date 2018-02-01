@@ -86,7 +86,7 @@ int main(int argc, char* argv[])
     HybridEvolver::OrbitType orbit = evolver.orbit(initial_enclosure,evolution_time,UPPER_SEMANTICS);
     std::cout << "done." << std::endl;
 
-    PlotHelper plotter(system.name());
+    PlotHelper plotter(system);
     plotter.plot(orbit.reach(),"reach");
 
     //std::cout << "Final z : " << 2.0*orbit.final().bounding_box()[5] << std::endl;

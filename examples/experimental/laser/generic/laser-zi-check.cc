@@ -69,7 +69,7 @@ analysis_result compute_z(HybridIOAutomaton system, double x0, double pass_perio
     std::cout << "Maximum value of zi : " << std::setprecision(8) << result.zi << std::endl;
 
     if (plot_results) {
-    	PlotHelper plotter(system.name());
+    	PlotHelper plotter(system);
     	plotter.plot(orbit.reach(),"reach");
     }
 

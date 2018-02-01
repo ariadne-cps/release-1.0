@@ -8,10 +8,8 @@ set(EXPERIMENTAL
 		 exponential
 		 double-exponential
 		 circle
-		 range-check
 		 sin
 		 composition
-         set_splitting
 )
 
 foreach(experiment ${EXPERIMENTAL})

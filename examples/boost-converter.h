@@ -89,7 +89,7 @@ HybridIOAutomaton getBoostConverter()
     /// Transitions
 
     // Guards
-    RealExpression iL_leq_zero = -iL;     // iL <= 0
+    RealExpression iL_leq_zero = min(-iL,iL);     // iL <= 0
 
     converter.new_unforced_transition(turn_off,incr,decr);
     converter.new_unforced_transition(turn_on,zero,incr);
