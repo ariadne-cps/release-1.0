@@ -48,6 +48,8 @@ void VerificationInput::_check_fields() const
 	HybridSpace hspace = _system.state_space();
 	ARIADNE_ASSERT_MSG(hspace == _initial_set.space(), "The initial set space and the system space do not match.");
 
+    ARIADNE_ASSERT_MSG(_domain.empty(), "The domain is empty.");
+
 	for (HybridSpace::const_iterator hspace_it = hspace.begin(); hspace_it != hspace.end(); ++hspace_it) {
 		HybridBoxes::const_iterator domain_it = _domain.find(hspace_it->first);
 		ARIADNE_ASSERT_MSG(domain_it != _domain.end(),
@@ -58,7 +60,7 @@ void VerificationInput::_check_fields() const
 
 	}
 
-    ARIADNE_ASSERT_MSG(_initial_set.domain().inside(_domain), "The initial set is not inside the domain");
+    ARIADNE_ASSERT_MSG(_initial_set.domain().inside(_domain), "The initial set is not inside the domain.");
 }
 
 
