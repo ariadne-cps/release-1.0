@@ -54,7 +54,11 @@ void VerificationInput::_check_fields() const
 						   "The location " << hspace_it->first.name() << "is not present into the domain.");
 		ARIADNE_ASSERT_MSG(hspace_it->second == domain_it->second.dimension(),
 						   "The dimension of the continuous space in the domain for location " << hspace_it->first.name() << " does not match the system space");
+
+
 	}
+
+    ARIADNE_ASSERT_MSG(_initial_set.domain().inside(_domain), "The initial set is not inside the domain");
 }
 
 
@@ -82,8 +86,23 @@ void SafetyVerificationInput::_check_fields() const
 {
 	VerificationInput::_check_fields();
 
-	ARIADNE_ASSERT_MSG(_system.state_space() == _safety_constraint.space(),
+    HybridSpace hspace = _system.state_space();
+
+	ARIADNE_ASSERT_MSG(hspace == _safety_constraint.space(),
 			"The system space and the constraint space do not match.");
+
+    for (HybridSpace::const_iterator hspace_it = hspace.begin(); hspace_it != hspace.end(); ++hspace_it) {
+        HybridBoxes::const_iterator domain_it = getDomain().find(hspace_it->first);
+        HybridBoundedConstraintSet::const_iterator initial_it = getInitialSet().find(hspace_it->first);
+        HybridConstraintSet::const_iterator safe_it = _safety_constraint.find(hspace_it->first);
+
+        ARIADNE_ASSERT_MSG(!definitely(_safety_constraint.disjoint(LocalisedBox(domain_it->first,domain_it->second))),
+                           "The safety constraint is disjoint from the domain: the system will always be unsafe");
+
+        if (initial_it != getInitialSet().end())
+            ARIADNE_ASSERT_MSG(definitely(safe_it->second.covers(initial_it->second.domain())),
+                           "The initial set is not covered by the safety constraint: the system will always be unsafe");
+    }
 }
 
 
