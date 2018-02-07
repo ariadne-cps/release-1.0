@@ -48,7 +48,7 @@ void VerificationInput::_check_fields() const
 	HybridSpace hspace = _system.state_space();
 	ARIADNE_ASSERT_MSG(hspace == _initial_set.space(), "The initial set space and the system space do not match.");
 
-    ARIADNE_ASSERT_MSG(_domain.empty(), "The domain is empty.");
+    ARIADNE_ASSERT_MSG(!_domain.empty(), "The domain is empty.");
 
 	for (HybridSpace::const_iterator hspace_it = hspace.begin(); hspace_it != hspace.end(); ++hspace_it) {
 		HybridBoxes::const_iterator domain_it = _domain.find(hspace_it->first);
@@ -101,9 +101,10 @@ void SafetyVerificationInput::_check_fields() const
         ARIADNE_ASSERT_MSG(!definitely(_safety_constraint.disjoint(LocalisedBox(domain_it->first,domain_it->second))),
                            "The safety constraint is disjoint from the domain: the system will always be unsafe");
 
-        if (initial_it != getInitialSet().end())
+        if (initial_it != getInitialSet().end()) {
             ARIADNE_ASSERT_MSG(definitely(safe_it->second.covers(initial_it->second.domain())),
                            "The initial set is not covered by the safety constraint: the system will always be unsafe");
+        }
     }
 }
 
