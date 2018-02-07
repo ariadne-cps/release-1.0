@@ -115,6 +115,11 @@ class Box
         return meas;
     }
 
+    //! \brief Test if the box has interior.
+    bool has_interior() const {
+        return Ariadne::has_interior(*this);
+    }
+
     //! \brief Test if the box is empty.
     bool empty() const {
         return Ariadne::empty(*this);

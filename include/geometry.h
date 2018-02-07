@@ -100,7 +100,7 @@ disjoint(const Box& d, const F& f, const Box& b, const Float& eps)
         return true;
     } else if(inside(fc,b)) {
         return false;
-    } else if(d.radius()<eps) {
+    } else if(eps == 0 || d.radius()<eps) {
         return indeterminate;
     } else {
         uint i=irmax(d);

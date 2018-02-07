@@ -341,6 +341,7 @@ bool disjoint(const Vector<Interval>& v1, const Vector<Interval>& v2);
 bool overlap(const Vector<Interval>& v1, const Vector<Interval>& v2);
 bool inside(const Vector<Interval>& v1, const Vector<Interval>& v2);
 bool covers(const Vector<Interval>& v1, const Vector<Interval>& v2);
+bool has_interior(const Vector<Interval>& v);
 bool empty(const Vector<Interval>& v);
 
 tribool approximate_disjoint(const Vector<Interval>& v1, const Vector<Interval>& v2);

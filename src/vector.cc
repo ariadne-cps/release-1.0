@@ -198,6 +198,15 @@ tribool approximate_inside(const Vector<Interval>& v1, const Vector<Interval>& v
 }
 
 
+bool has_interior(const Vector<Interval>& v)
+{
+    for(size_t i=0; i!=v.size(); ++i) {
+        if(v[i].empty() || v[i].radius() == 0) { return false; }
+    }
+    return true;
+}
+
+
 bool empty(const Vector<Interval>& v)
 {
     for(size_t i=0; i!=v.size(); ++i) {

@@ -331,10 +331,10 @@ void PlotHelper::plot(const string& foldername, const string& filename, const SE
                         }
                     }
                 }
-
                 char num_char[7] = "";
                 if (numvar>2)
                     sprintf(num_char,"[%u,%u]",pp->x_index,pp->y_index);
+
                 fig.write((foldername+"/"+filename+num_char).c_str());
             }
         }
