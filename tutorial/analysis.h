@@ -100,7 +100,7 @@ void finite_time_upper_evolution(HybridAutomatonInterface& system, HybridBounded
 
     // Plots the reached set specifically
     if (plot_results) {
-        PlotHelper plotter(system.name());
+        PlotHelper plotter(system);
         plotter.plot(reach,"upper_reach");
     }
 }
@@ -113,7 +113,7 @@ void finite_time_lower_evolution(HybridAutomatonInterface& system, HybridBounded
 
     // Plots the reached set specifically
     if (plot_results) {
-        PlotHelper plotter(system.name());
+        PlotHelper plotter(system);
         plotter.plot(reach,"lower_reach");
     }
 }
@@ -136,7 +136,7 @@ void infinite_time_outer_evolution(HybridAutomatonInterface& system, HybridBound
 
     // Plots the reached region
     if (plot_results) {
-        PlotHelper plotter(system.name());
+        PlotHelper plotter(system);
         plotter.plot(reach,"outer",accuracy);
     }
 }
@@ -161,7 +161,7 @@ void infinite_time_epsilon_lower_evolution(HybridAutomatonInterface& system, Hyb
 
     // Plots the reached region
     if (plot_results) {
-        PlotHelper plotter(system.name());
+        PlotHelper plotter(system);
         plotter.plot(reach,"lower",accuracy);
     }
 }
@@ -222,7 +222,7 @@ void parametric_safety_verification(HybridAutomatonInterface& system, HybridBoun
 
     // Plots the list in a 2d mesh
     if (plot_results) {
-        PlotHelper plotter(system.name());
+        PlotHelper plotter(system);
         plotter.plot(results,verifier.settings().maximum_parameter_depth);
     }
 }
