@@ -980,13 +980,13 @@ _log_step_summary(const std::list<EvolutionData>& working_sets,
         ARIADNE_LOG(1,"#w="<<std::setw(4)<<working_sets.size()
                     <<"#r="<<std::setw(4)<<std::left<<reach_sets.size()
                     <<" s="<<std::setw(3)<<std::left<<initial_events.size()
-                    <<" ps="<<std::scientific<<std::setw(5)<<std::left<< time_step << std::defaultfloat
+                    <<" ps="<<std::scientific<<std::setw(5)<<std::left<< time_step << std::fixed
                     <<" t="<<std::fixed<<initial_time_model.value()
-                    <<" d="<<std::scientific<<std::setw(7)<<2*initial_set_model.radius()<<std::defaultfloat
+                    <<" d="<<std::scientific<<std::setw(7)<<2*initial_set_model.radius()<<std::fixed
                     <<" l="<<std::setw(3)<<std::left<<initial_location
                     <<" c="<<initial_set_model.centre()
                     <<" as="<<initial_set_model.argument_size()
-					<<" w="<<initial_set_model.widths()
+					<<" w="<<std::scientific<<std::setw(7)<<initial_set_model.widths()<<std::fixed
                     <<" e="<<initial_events);
 }
 

@@ -2645,7 +2645,7 @@ TaylorModel embed(uint as, const TaylorModel& x)
 std::ostream&
 operator<<(std::ostream& os, const TaylorModel& tv) {
     //os << "TaylorModel";
-    return os << "(" << std::scientific << tv.expansion() << "+/-" << tv.error() << std::defaultfloat << ")";
+    return os << "(" << std::scientific << tv.expansion() << "+/-" << tv.error() << std::fixed << ")";
 }
 
 
