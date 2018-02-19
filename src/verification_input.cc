@@ -50,6 +50,8 @@ void VerificationInput::_check_fields() const
 
 	for (HybridSpace::const_iterator hspace_it = hspace.begin(); hspace_it != hspace.end(); ++hspace_it) {
 		HybridBoxes::const_iterator domain_it = _domain.find(hspace_it->first);
+        HybridBoundedConstraintSet::const_iterator initial_it = _initial_set.find(hspace_it->first);
+
 		ARIADNE_ASSERT_MSG(domain_it != _domain.end(),
 						   "The location " << hspace_it->first.name() << "is not present into the domain.");
 		ARIADNE_ASSERT_MSG(hspace_it->second == domain_it->second.dimension(),
@@ -57,10 +59,13 @@ void VerificationInput::_check_fields() const
         ARIADNE_ASSERT_MSG(definitely(domain_it->second.has_interior()),
                             "The domain for location " << hspace_it->first.name() << " has empty interior.");
 
+        Box widened_domain = domain_it->second;
+        widened_domain.widen();
 
+        if (initial_it != _initial_set.end()) {
+            ARIADNE_ASSERT_MSG(widened_domain.covers(initial_it->second.domain()),"The initial set is not within the domain.");
+        }
 	}
-
-    ARIADNE_ASSERT_MSG(_initial_set.domain().inside(_domain), "The initial set is not inside the domain.");
 }
 
 
