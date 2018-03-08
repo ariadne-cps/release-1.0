@@ -1707,11 +1707,11 @@ operator<<(std::ostream& os, const HybridIOAutomaton& ha)
 {
     return os << "HybridIOAutomaton( name=" << ha.name() << 
         ", input vars=" << ha.input_vars() << ", output vars=" << ha.output_vars() <<
-        ", internal vars=" << ha.internal_vars() <<
+        ", internal vars=" << ha.internal_vars() << std::endl <<
         ", input events=" << ha.input_events() << ", output events=" << ha.output_events() <<
-        ", internal events=" << ha.internal_events() <<
-        ", parameters" << ha.parameters() <<
-        ", modes=" << ha.modes() << ", transitions=" << ha.transitions() << ")";
+        ", internal events=" << ha.internal_events() << std::endl <<
+        ", parameters" << ha.parameters() << std::endl <<
+        ", modes=" << ha.modes() << std::endl << ", transitions=" << ha.transitions() << ")";
 }
 
 void 
