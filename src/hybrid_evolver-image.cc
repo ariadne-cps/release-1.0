@@ -490,6 +490,9 @@ _evolution_step(std::list<EvolutionData>& working_sets,
 
     Float event_reduced_maximum_step = effective_maximum_step;
 
+    /*
+     * Does not work well if two events happen at the same time
+     *
     // Only if the proposed step if at least twice larger, and if the blocking time is positive (thus excluding sets outside the invariants)
     if (blocking_time_model.range().upper() < 0.5 && blocking_time_model.range().upper() > 0) {
 
@@ -499,9 +502,11 @@ _evolution_step(std::list<EvolutionData>& working_sets,
         event_reduced_maximum_step = new_flow_and_step.used_step();
     }
 
+    ARIADNE_LOG(2,"event_reduced_maximum_step = "<<event_reduced_maximum_step);
+     */
+
     Float step = event_reduced_maximum_step;
-
-
+    
     uint next_refinement_width = 1;
 
     if (_settings->enable_error_rate_enforcement()) {
@@ -514,6 +519,8 @@ _evolution_step(std::list<EvolutionData>& working_sets,
             next_refinement_width = max(8,refinement_width+1);
         }
     }
+
+    ARIADNE_LOG(2,"used_step = "<<step);
 
     if (step < effective_maximum_step) {
         blocking_events.clear();
