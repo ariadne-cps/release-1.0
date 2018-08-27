@@ -1,5 +1,4 @@
 #/bin/sh
-brew update
 brew install boost gtk cairo zlib
 wget https://sourceforge.net/projects/buddy/files/latest/download
 tar xvzf download
