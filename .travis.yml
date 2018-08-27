@@ -47,7 +47,7 @@ matrix:
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi 
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew uninstall --force oclint; fi 
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew cask uninstall --force oclint; fi 
   - eval "${MATRIX_EVAL}"
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./install-macos-deps.sh; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libboost-system-dev libboost-serialization-dev libboost-thread-dev libgtk2.0-dev libcairo2-dev libbdd-dev; fi
