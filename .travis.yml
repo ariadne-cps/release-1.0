@@ -1,0 +1,58 @@
+language: cpp
+
+sudo: enabled
+
+branches:
+  only:
+  - master
+
+matrix:
+  include:
+
+    - name: macOS clang 
+      os: osx
+      compiler: clang
+      env:
+        - MATRIX_EVAL=""
+
+    - name: macOS gcc 
+      os: osx
+      osx_image: xcode8
+      env:
+        - MATRIX_EVAL="brew install gcc && CC=gcc-8 && CXX=g++-8"
+
+    - name: Linux clang
+      os: linux
+      compiler: clang
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-trusty-5.0
+          packages:
+            - clang-5.0
+      env:
+        - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0"
+
+    - name: Linux gcc
+      os: linux
+      compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-8
+      env:
+        - MATRIX_EVAL="CC=gcc-8 && CXX=g++-8"
+
+before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./install-macos-deps.sh; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libboost-system-dev libboost-serialization-dev libboost-thread-dev libgtk2.0-dev libcairo2-dev libbdd-dev; fi
+  - eval "${MATRIX_EVAL}"
+    
+script: 
+  - mkdir build
+  - cd build
+  - cmake ..
+  - make 
+  - make test
