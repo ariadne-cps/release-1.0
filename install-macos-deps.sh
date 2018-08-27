@@ -1,5 +1,4 @@
 #/bin/sh
-brew cask uninstall oclint
 brew install boost gtk cairo zlib
 wget https://sourceforge.net/projects/buddy/files/latest/download
 tar xvzf download
