@@ -51,12 +51,9 @@ script:
   - cd build
   - if [ -n "$COVERAGE" ]; then cmake .. -DCMAKE_BUILD_TYPE=Debug; else cmake ..; fi
   - make tests
-  - make test
-# - if [ -n "$COVERAGE" ]; then make lcov_coverage; else make test; fi
+  - if [ -n "$COVERAGE" ]; then make lcov_coverage; else make test; fi
 
 after_success:
   - if [ -n "$COVERAGE" ]; then
-      lcov --compat-libtool --directory . --capture --output-file lcov_coverage.info;
-      lcov --remove lcov_coverage.info '/usr/*' 'examples/*' --output-file lcov_coverage.clean.info;
       coveralls-lcov lcov_coverage.clean.info;
     fi
