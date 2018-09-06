@@ -57,5 +57,6 @@ script:
 after_success:
   - if [ -n "$COVERAGE" ]; then
       lcov --compat-libtool --directory . --capture --output-file lcov_coverage.info;
-      coveralls-lcov lcov_coverage.info;
+      lcov --remove lcov_coverage.info '/usr/*' 'examples/*' --output-file lcov_coverage.clean.info;
+      coveralls-lcov lcov_coverage.clean.info;
     fi
