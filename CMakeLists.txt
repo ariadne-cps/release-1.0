@@ -16,7 +16,7 @@ find_package(GTK2 REQUIRED)
 find_package(Cairo REQUIRED)
 find_package(Buddy REQUIRED)
 include(UseDoxygen OPTIONAL)
-include(cotire)
+#include(cotire)
 include(CodeCoverage)
 
 if (CMAKE_BUILD_TYPE MATCHES "Debug")
@@ -48,7 +48,7 @@ target_link_libraries(ariadne ${Boost_LIBRARIES} ${GTK2_LIBRARIES} ${CAIRO_LIBRA
 
 SETUP_TARGET_FOR_COVERAGE_LCOV(NAME lcov_coverage EXECUTABLE ctest DEPENDENCIES tests)
 
-cotire(ariadne)
+#cotire(ariadne)
 
 install (TARGETS ariadne DESTINATION lib)
 install (FILES ${PROJECT_BINARY_DIR}/ariadne_install.h RENAME ariadne.h DESTINATION include)
