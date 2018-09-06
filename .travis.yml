@@ -67,6 +67,6 @@ script:
   
 after_success:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then 
-      lcov --compat-libtool --directory . --capture --output-file coverage.info;
+      lcov --compat-libtool --no-external --directory . --capture --output-file coverage.info;
       coveralls-lcov coverage.info;
     fi
