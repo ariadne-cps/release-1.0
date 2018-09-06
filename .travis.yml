@@ -54,8 +54,8 @@ before_install:
   - eval "${MATRIX_EVAL}"
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./install-macos-deps.sh; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then 
-      sudo apt-get install -y lcov gcovr libboost-system-dev libboost-serialization-dev libboost-thread-dev libgtk2.0-dev libcairo2-dev libbdd-dev;
-      pip install --user cpp-coveralls;
+      sudo apt-get install -y lcov libboost-system-dev libboost-serialization-dev libboost-thread-dev libgtk2.0-dev libcairo2-dev libbdd-dev;
+      gem install coveralls-lcov;
     fi
     
 script: 
@@ -63,9 +63,10 @@ script:
   - cd build
   - cmake .. -DCMAKE_BUILD_TYPE=Debug
   - make 
-  - make test
+  - make lcov_coverage
   
 after_success:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then 
-      coveralls --exclude lib --exclude tests --gcov-options '\-lp';
+      lcov --compat-libtool --directory . --capture --output-file coverage.info;
+      coveralls-lcov coverage.info;
     fi
