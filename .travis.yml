@@ -56,5 +56,6 @@ script:
       #lcov --compat-libtool --directory . --capture --rc lcov_branch_coverage=1 --output-file coverage.info;
 after_success:
   - if [ -n "$COVERAGE" ]; then
+      sed -i 's/\/home\/travis\/build\/ariadne-cps\/release-1\.0\///g' lcov_coverage.info.cleaned;
       coveralls-lcov lcov_coverage.info.cleaned;
     fi
