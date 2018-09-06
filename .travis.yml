@@ -61,11 +61,11 @@ before_install:
 script: 
   - mkdir build
   - cd build
-  - if [[ "$COVERAGE" == "ON" ]]; then cmake .. -DCMAKE_BUILD_TYPE=Debug
+  - if [ -n "$COVERAGE" ]; then cmake .. -DCMAKE_BUILD_TYPE=Debug
     else cmake ..;
     fi
   - make
-  - if [[ "$COVERAGE" == "ON" ]]; then make lcov_coverage;
+  - if [ -n "$COVERAGE" ]; then make lcov_coverage;
     else make test;
     fi
   
