@@ -16,8 +16,7 @@ find_package(GTK2 REQUIRED)
 find_package(Cairo REQUIRED)
 find_package(Buddy REQUIRED)
 include(UseDoxygen OPTIONAL)
-
-
+include(cotire)
 
 configure_file ("include/config.h.in"
 	"${PROJECT_BINARY_DIR}/config.h")
@@ -46,10 +45,9 @@ if (CMAKE_BUILD_TYPE MATCHES "Debug")
     include(CodeCoverage)
     APPEND_COVERAGE_COMPILER_FLAGS()
     SETUP_TARGET_FOR_COVERAGE_LCOV(NAME lcov_coverage EXECUTABLE ctest DEPENDENCIES tests)
-else()
-    include(cotire)
-    cotire(ariadne)
 endif()
+
+cotire(ariadne CONFIGURATIONS None)
 
 install (TARGETS ariadne DESTINATION lib)
 install (FILES ${PROJECT_BINARY_DIR}/ariadne_install.h RENAME ariadne.h DESTINATION include)
