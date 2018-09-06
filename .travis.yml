@@ -33,7 +33,7 @@ matrix:
           packages:
             - clang-5.0
       env:
-        - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0"
+        - MATRIX_EVAL="CXX=clang++-5.0"
 
     - name: Linux gcc
       os: linux
@@ -46,7 +46,7 @@ matrix:
           packages:
             - g++-7
       env:
-        - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
+        - MATRIX_EVAL="CXX=g++-7 COVERAGE=ON"
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi 
@@ -61,9 +61,13 @@ before_install:
 script: 
   - mkdir build
   - cd build
-  - cmake .. -DCMAKE_BUILD_TYPE=Debug
-  - make 
-  - make lcov_coverage
+  - if [[ "$COVERAGE" == "ON" ]]; then cmake .. -DCMAKE_BUILD_TYPE=Debug
+    else cmake ..;
+    fi
+  - make
+  - if [[ "$COVERAGE" == "ON" ]]; then make lcov_coverage;
+    else make test;
+    fi
   
 after_success:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then 
