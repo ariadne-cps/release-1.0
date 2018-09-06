@@ -46,9 +46,8 @@ add_library (ariadne SHARED "src/numeric.cc" "src/vector.cc" "src/matrix.cc" "sr
 
 target_link_libraries(ariadne ${Boost_LIBRARIES} ${GTK2_LIBRARIES} ${CAIRO_LIBRARIES} ${Buddy_LIBRARIES})
 
-SETUP_TARGET_FOR_COVERAGE_GCOVR_HTML(NAME gcovr_coverage EXECUTABLE ctest DEPENDENCIES tests)
-SETUP_TARGET_FOR_COVERAGE_LCOV(NAME lcov_coverage EXECUTABLE ctest)
-SETUP_TARGET_FOR_COVERAGE_GCOVR_HTML(NAME gcovr_test EXECUTABLE test/test_taylor_model)
+SETUP_TARGET_FOR_COVERAGE_LCOV(NAME lcov_coverage EXECUTABLE ctest DEPENDENCIES tests)
+
 cotire(ariadne)
 
 install (TARGETS ariadne DESTINATION lib)
