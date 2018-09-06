@@ -24,7 +24,7 @@ matrix:
             - llvm-toolchain-trusty-5.0
           packages:
             - clang-5.0
-      env: CXX=clang++-5.0
+      env: MATRIX_EVAL = "CXX=clang++-5.0"
 
     - name: Linux gcc
       os: linux
@@ -39,7 +39,8 @@ matrix:
       env: CXX=g++-7 COVERAGE=ON
 
 before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; brew cask uninstall --force oclint; ./install-macos-deps.sh; fi 
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; brew cask uninstall --force oclint; ./install-macos-deps.sh; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then eval "${MATRIX_EVAL}"; fi 
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then 
       sudo apt-get install -y lcov libboost-system-dev libboost-serialization-dev libboost-thread-dev libgtk2.0-dev libcairo2-dev libbdd-dev;
       gem install coveralls-lcov;
