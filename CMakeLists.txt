@@ -11,13 +11,17 @@ set(CMAKE_MACOSX_RPATH 1)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 set(CMAKE_CXX_FLAGS  ${CMAKE_CXX_FLAGS} "-Wno-pointer-bool-conversion")
 
-
 find_package(Boost REQUIRED COMPONENTS system serialization thread)
 find_package(GTK2 REQUIRED)
 find_package(Cairo REQUIRED)
 find_package(Buddy REQUIRED)
 include(UseDoxygen OPTIONAL)
 include(cotire)
+include(CodeCoverage)
+
+if (CMAKE_BUILD_TYPE MATCHES "Debug")
+    APPEND_COVERAGE_COMPILER_FLAGS()
+endif()
 
 configure_file ("include/config.h.in"
 	"${PROJECT_BINARY_DIR}/config.h")
@@ -42,6 +46,9 @@ add_library (ariadne SHARED "src/numeric.cc" "src/vector.cc" "src/matrix.cc" "sr
 
 target_link_libraries(ariadne ${Boost_LIBRARIES} ${GTK2_LIBRARIES} ${CAIRO_LIBRARIES} ${Buddy_LIBRARIES})
 
+SETUP_TARGET_FOR_COVERAGE_GCOVR_HTML(NAME gcovr_coverage EXECUTABLE ctest DEPENDENCIES tests)
+SETUP_TARGET_FOR_COVERAGE_LCOV(NAME lcov_coverage EXECUTABLE ctest)
+SETUP_TARGET_FOR_COVERAGE_GCOVR_HTML(NAME gcovr_test EXECUTABLE test/test_taylor_model)
 cotire(ariadne)
 
 install (TARGETS ariadne DESTINATION lib)
