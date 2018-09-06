@@ -21,10 +21,11 @@ matrix:
       addons:
         apt:
           sources:
-            - llvm-toolchain-trusty-6.0
+            - llvm-toolchain-trusty-5.0
           packages:
-            - clang-6.0
-      env: MATRIX_EVAL = "CXX=clang++-6.0"
+            - clang-5.0
+      env: 
+        - MATRIX_EVAL = "CXX=clang++-5.0"
 
     - name: Linux gcc
       os: linux
@@ -40,7 +41,7 @@ matrix:
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; brew cask uninstall --force oclint; ./install-macos-deps.sh; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then eval "${MATRIX_EVAL}"; fi 
+  - eval "${MATRIX_EVAL}" 
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then 
       sudo apt-get install -y lcov libboost-system-dev libboost-serialization-dev libboost-thread-dev libgtk2.0-dev libcairo2-dev libbdd-dev;
       gem install coveralls-lcov;
@@ -53,8 +54,9 @@ script:
   - make
   - if [ -n "$COVERAGE" ]; then make lcov_coverage; else make test; fi
   
+      #lcov --compat-libtool --directory . --capture --rc lcov_branch_coverage=1 --output-file coverage.info;
 after_success:
   - if [ -n "$COVERAGE" ]; then 
-      lcov --compat-libtool --directory . --capture --rc lcov_branch_coverage=1 --output-file coverage.info;
+      ./lcov_coverage;
       coveralls-lcov coverage.info;
     fi
