@@ -53,7 +53,7 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./install-macos-deps.sh; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then 
       sudo apt-get install -y lcov gcov libboost-system-dev libboost-serialization-dev libboost-thread-dev libgtk2.0-dev libcairo2-dev libbdd-dev;
-      pip install --user cpp-coveralls 
+      pip install --user cpp-coveralls;
     fi
     
 script: 
@@ -64,4 +64,6 @@ script:
   - make test
   
 after_success:
-  - coveralls --exclude lib --exclude tests --gcov-options '\-lp'
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then 
+      coveralls --exclude lib --exclude tests --gcov-options '\-lp';
+    fi
