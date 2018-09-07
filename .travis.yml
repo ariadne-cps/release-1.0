@@ -9,7 +9,6 @@ env:
 branches:
   only:
   - master
-  - coverage
 
 matrix:
   include:
