@@ -1,6 +1,5 @@
 # Ariadne 
-[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) [![Build Status](https://travis-ci.org/ariadne-cps/release-1.0.svg?branch=master)](https://travis-ci.org/ariadne-cps/release-1.0) [!
-[codecov](https://codecov.io/gh/ariadne-cps/release-1.0/branch/master/graph/badge.svg)](https://codecov.io/gh/ariadne-cps/release-1.0)
+[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) [![Build Status](https://travis-ci.org/ariadne-cps/release-1.0.svg?branch=master)](https://travis-ci.org/ariadne-cps/release-1.0) [![codecov](https://codecov.io/gh/ariadne-cps/release-1.0/branch/master/graph/badge.svg)](https://codecov.io/gh/ariadne-cps/release-1.0)
 
 This is the *stable* release of the Ariadne C++ library.
 
