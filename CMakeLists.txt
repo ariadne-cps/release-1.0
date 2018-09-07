@@ -46,6 +46,7 @@ if (CMAKE_BUILD_TYPE MATCHES "Debug")
     APPEND_COVERAGE_COMPILER_FLAGS()
     set(COVERAGE_LCOV_EXCLUDES '/usr/*' 'examples/*' 'test/*')
     SETUP_TARGET_FOR_COVERAGE_LCOV(NAME lcov_coverage EXECUTABLE ctest DEPENDENCIES tests)
+    SETUP_TARGET_FOR_COVERAGE_GCOVR_XML(NAME gcovr_coverage EXECUTABLE ctest DEPENDENCIES tests)
 endif()
 
 cotire(ariadne CONFIGURATIONS None)
