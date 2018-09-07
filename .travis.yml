@@ -54,7 +54,7 @@ script:
   - cd build
   - if [ -n "$COVERAGE" ]; then cmake .. -DCMAKE_BUILD_TYPE=Debug; else cmake ..; fi
   - make tests
-  - if [ -n "$COVERAGE" ]; then make lcov_coverage; else make test; fi
+  - if [ -n "$COVERAGE" ]; then make gcovr_coverage; else make test; fi
     #    mv lcov_coverage.info.cleaned coverage.info;
     #  lcov --list coverage.info;
 after_success:
