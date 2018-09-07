@@ -58,7 +58,7 @@ script:
   - if [ -n "$COVERAGE" ]; then make lcov_coverage; else make test; fi
 after_success:
   - if [ -n "$COVERAGE" ]; then
-      lcov_coverage.info.cleaned coverage.info;
+      mv lcov_coverage.info.cleaned coverage.info;
       lcov --list coverage.info;
       bash <(curl -s https://codecov.io/bash) -f coverage.info -X gcov || echo "Codecov did not collect coverage reports";
     fi
