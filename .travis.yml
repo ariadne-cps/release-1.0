@@ -60,5 +60,5 @@ after_success:
   - if [ -n "$COVERAGE" ]; then
       mv lcov_coverage.info.cleaned coverage.info;
       lcov --list coverage.info;
-      bash <(curl -s https://codecov.io/bash) -f coverage.info -X gcov || echo "Codecov did not collect coverage reports";
+      bash <(curl -s https://codecov.io/bash) -f coverage.info || echo "Codecov did not collect coverage reports";
     fi
