@@ -56,10 +56,9 @@ script:
   - if [ -n "$COVERAGE" ]; then cmake .. -DCMAKE_BUILD_TYPE=Debug; else cmake ..; fi
   - make tests
   - if [ -n "$COVERAGE" ]; then make test; else make test; fi
-
-after_success:
-  - if [ -n "$COVERAGE" ]; then
 # mv lcov_coverage.info.cleaned coverage.info;
 # lcov --list coverage.info;
+after_success:
+  - if [ -n "$COVERAGE" ]; then
       bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports";
     fi
