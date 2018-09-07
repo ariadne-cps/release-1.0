@@ -44,10 +44,6 @@ target_link_libraries(ariadne ${Boost_LIBRARIES} ${GTK2_LIBRARIES} ${CAIRO_LIBRA
 if (CMAKE_BUILD_TYPE MATCHES "Debug")
     include(CodeCoverage)
     APPEND_COVERAGE_COMPILER_FLAGS()
-    set(COVERAGE_LCOV_EXCLUDES '/usr/*' 'examples/*' 'test/*')
-    set(COVERAGE_GCOVR_EXCLUDES '/usr/*' 'examples/*' 'test/*')
-    SETUP_TARGET_FOR_COVERAGE_LCOV(NAME lcov_coverage EXECUTABLE ctest DEPENDENCIES tests)
-    SETUP_TARGET_FOR_COVERAGE_GCOVR_XML(NAME gcovr_coverage EXECUTABLE ctest DEPENDENCIES tests)
 endif()
 
 cotire(ariadne CONFIGURATIONS None)
