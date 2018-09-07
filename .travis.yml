@@ -60,5 +60,5 @@ script:
 # lcov --list coverage.info;
 after_success:
   - if [ -n "$COVERAGE" ]; then
-      bash <(curl -s https://codecov.io/bash -g '/home/travis/build/ariadne-cps/release-1.0/test/') || echo "Codecov did not collect coverage reports";
+      bash <(curl -s https://codecov.io/bash) -g 'test' || echo "Codecov did not collect coverage reports";
     fi
