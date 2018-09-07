@@ -55,5 +55,5 @@ script:
 
 after_success:
   - if [ -n "$COVERAGE" ]; then
-      coveralls-lcov lcov_coverage.info.clean;
+      coveralls-lcov lcov_coverage.info.cleaned;
     fi
