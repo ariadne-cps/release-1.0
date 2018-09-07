@@ -2,6 +2,10 @@ language: cpp
 
 sudo: enabled
 
+env:
+  global:
+  - LANG="en_US.UTF-8"
+
 branches:
   only:
   - master
@@ -58,5 +62,5 @@ after_success:
       mv lcov_coverage.info.cleaned coverage.info;
       lcov --list coverage.info;
       coveralls-lcov coverage.info;
-      bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports";
+      bash <(curl -s https://codecov.io/bash --disable=gcov) || echo "Codecov did not collect coverage reports";
     fi
