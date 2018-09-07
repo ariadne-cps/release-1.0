@@ -55,5 +55,8 @@ script:
 
 after_success:
   - if [ -n "$COVERAGE" ]; then
-      coveralls-lcov lcov_coverage.info.cleaned;
+      mv lcov_coverage.info.cleaned coverage.info;
+      lcov --list coverage.info;
+      coveralls-lcov coverage.info;
+      bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports";
     fi
