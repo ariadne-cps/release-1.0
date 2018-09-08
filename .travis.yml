@@ -38,8 +38,8 @@ before_install:
     if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
       if [ -n "$DOCKER" ]; then
         docker pull $DOCKER
-        containerid=$(docker run --detach --tty --volume="$PWD":/ariadne --workdir=/ariadne $DOCKER)
-        DOCKER_RUN="docker exec --tty $containerid"
+        CONTAINER_ID=$(docker run --detach --tty --volume="$PWD":/ariadne --workdir=/ariadne $DOCKER)
+        DOCKER_RUN="docker exec --tty $CONTAINER_ID"
         $DOCKER_RUN sh -c 'apt update'
         $DOCKER_RUN sh -c 'apt install -y curl cmake'
         $DOCKER_RUN sh -c 'apt install -y clang++-5.0 libboost-system-dev libboost-serialization-dev libboost-thread-dev libgtk2.0-dev libcairo2-dev libbdd-dev'   
@@ -48,21 +48,15 @@ before_install:
       fi
     fi
     
-script: 
+script:
+  - CMAKE_ARGS="-DCMAKE_CXX_COMPILER=$COMPILER"
+  - if [ -n "$COVERAGE" ]; then CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_BUILD_TYPE=Debug"; fi
   - |
-    if [ -n "$COVERAGE" ]; then 
-      if [ -n "$DOCKER" ]; then
-        $DOCKER_RUN sh -c 'cmake . -DCMAKE_CXX_COMPILER=$COMPILER -DCMAKE_BUILD_TYPE=Debug'
-      else
-        cmake . -DCMAKE_BUILD_TYPE=Debug
-      fi 
-    else 
-      if [ -n "$DOCKER" ]; then 
-        $DOCKER_RUN sh -c 'cmake .'
-      else
-        cmake .
-      fi
-    fi
+    if [ -n "$DOCKER" ]; then
+      $DOCKER_RUN sh -c 'cmake . $CMAKE_ARGS'
+    else
+      cmake . $CMAKE_ARGS
+    fi 
   - |
     if [ -n "$DOCKER" ]; then 
       $DOCKER_RUN sh -c 'make tests'
