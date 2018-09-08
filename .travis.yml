@@ -33,10 +33,9 @@ matrix:
       
     - name: Docker
       os: linux
-      compiler: gcc
       services:
         - docker
-      env: DOCKER=ubuntu:latest
+      env: DOCKER=ubuntu:latest COVERAGE=ON
 
     - name: Linux gcc
       os: linux
@@ -47,7 +46,7 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-7
-      env: CXX=g++-7 COVERAGE=ON
+      env: CXX=g++-7
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; brew cask uninstall --force oclint; ./install-macos-deps.sh; fi
