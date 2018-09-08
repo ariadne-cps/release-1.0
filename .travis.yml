@@ -23,7 +23,7 @@ matrix:
     - name: Linux clang
       os: linux
       addons:
-      env: COMPILER=clang++-5.0
+      env: DOCKER=ubuntu:latest COMPILER=clang++-5.0
       
     - name: Linux gcc + Coverage
       os: linux
