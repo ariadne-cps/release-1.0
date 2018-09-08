@@ -88,12 +88,11 @@ script:
       make tests
       make test
     fi 
+    
+    #  if [ -n "$DOCKER" ]; then
+    #   $DOCKER_RUN sh -c 'bash <(curl -s https://codecov.io/bash)'
+    #  else
+    #    bash <(curl -s https://codecov.io/bash)
+    #  fi
 after_success:
-  - |
-    if [ -n "$COVERAGE" ]; then
-      if [ -n "$DOCKER" ]; then
-        $DOCKER_RUN sh -c 'bash <(curl -s https://codecov.io/bash)'
-      else
-        bash <(curl -s https://codecov.io/bash)
-      fi
-    fi
+  - if [ -n "$COVERAGE" ]; then bash <(curl -s https://codecov.io/bash); fi
