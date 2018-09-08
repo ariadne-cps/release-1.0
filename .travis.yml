@@ -40,9 +40,9 @@ before_install:
         docker pull $DOCKER
         CONTAINER_ID=$(docker run --detach --tty --volume="$PWD":/ariadne --workdir=/ariadne $DOCKER)
         DOCKER_RUN="docker exec --tty $CONTAINER_ID"
-        $DOCKER_RUN sh -c 'apt update'
-        $DOCKER_RUN sh -c 'apt install -y curl cmake'
-        $DOCKER_RUN sh -c 'apt install -y clang++-5.0 libboost-system-dev libboost-serialization-dev libboost-thread-dev libgtk2.0-dev libcairo2-dev libbdd-dev'   
+        $DOCKER_RUN sh -c "apt update"
+        $DOCKER_RUN sh -c "apt install -y curl cmake"
+        $DOCKER_RUN sh -c "apt install -y clang++-5.0 libboost-system-dev libboost-serialization-dev libboost-thread-dev libgtk2.0-dev libcairo2-dev libbdd-dev"   
       else 
         sudo apt-get install -y libboost-system-dev libboost-serialization-dev libboost-thread-dev libgtk2.0-dev libcairo2-dev libbdd-dev
       fi
@@ -51,12 +51,12 @@ before_install:
 script:
   - CMAKE_ARGS="-DCMAKE_CXX_COMPILER=$COMPILER"
   - if [[ -n "$COVERAGE" ]]; then CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_BUILD_TYPE=Debug"; fi
-  - if [[ -n "$DOCKER" ]]; then $DOCKER_RUN sh -c 'cmake . $CMAKE_ARGS'; fi
+  - if [[ -n "$DOCKER" ]]; then $DOCKER_RUN sh -c "cmake . $CMAKE_ARGS"; fi
   - if [[ -z "$DOCKER" ]]; then cmake . $CMAKE_ARGS; fi
   - |
     if [[ -n "$DOCKER" ]]; then 
-      $DOCKER_RUN sh -c 'make tests'
-      $DOCKER_RUN sh -c 'make test'
+      $DOCKER_RUN sh -c "make tests"
+      $DOCKER_RUN sh -c "make test"
     else
       make tests
       make test
