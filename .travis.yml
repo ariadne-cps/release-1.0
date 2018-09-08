@@ -51,6 +51,7 @@ before_install:
 script:
   - CMAKE_ARGS="-DCMAKE_CXX_COMPILER=$COMPILER"
   - if [ -n "$COVERAGE" ]; then CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_BUILD_TYPE=Debug"; fi
+  - echo $CMAKE_ARGS
   - |
     if [ -n "$DOCKER" ]; then
       $DOCKER_RUN sh -c 'cmake . $CMAKE_ARGS'
