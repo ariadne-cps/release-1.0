@@ -53,7 +53,7 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; brew cask uninstall --force oclint; ./install-macos-deps.sh; fi
   - eval "${MATRIX_EVAL}" 
   - |
-    if [[ "$TRAVIS_OS_NAME" == "linux" ]]
+    if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
       if [ -n "$DOCKER" ]; then 
         docker pull $DOCKER
         containerid=$(docker run --detach --tty --volume="$PWD":/ariadne --workdir=/ariadne $DOCKER)
