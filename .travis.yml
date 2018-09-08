@@ -23,7 +23,7 @@ matrix:
     - name: Linux clang
       os: linux
       addons:
-      env: DOCKER=ubuntu:latest COMPILER=clang++-5.0
+      env: COMPILER=clang++-5.0
       
     - name: Linux gcc + Coverage
       os: linux
@@ -36,7 +36,7 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; brew cask uninstall --force oclint; ./install-macos-deps.sh; fi
   - |
     if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-      if [ -n "$DOCKER" ]; then
+      if [[ -n "$DOCKER" ]]; then
         docker pull $DOCKER
         CONTAINER_ID=$(docker run --detach --tty --volume="$PWD":/ariadne --workdir=/ariadne $DOCKER)
         DOCKER_RUN="docker exec --tty $CONTAINER_ID"
@@ -50,16 +50,11 @@ before_install:
     
 script:
   - CMAKE_ARGS="-DCMAKE_CXX_COMPILER=$COMPILER"
-  - if [ -n "$COVERAGE" ]; then CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_BUILD_TYPE=Debug"; fi
-  - echo $CMAKE_ARGS
+  - if [[ -n "$COVERAGE" ]]; then CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_BUILD_TYPE=Debug"; fi
+  - if [[ -n "$DOCKER" ]]; then $DOCKER_RUN sh -c 'cmake . $CMAKE_ARGS'; fi
+  - if [[ -z "$DOCKER" ]]; then cmake . $CMAKE_ARGS; fi
   - |
-    if [ -n "$DOCKER" ]; then
-      $DOCKER_RUN sh -c 'cmake . $CMAKE_ARGS'
-    else
-      cmake . $CMAKE_ARGS
-    fi 
-  - |
-    if [ -n "$DOCKER" ]; then 
+    if [[ -n "$DOCKER" ]]; then 
       $DOCKER_RUN sh -c 'make tests'
       $DOCKER_RUN sh -c 'make test'
     else
@@ -68,4 +63,4 @@ script:
     fi 
 
 after_success:
-  - if [ -n "$COVERAGE" ]; then bash <(curl -s https://codecov.io/bash); fi
+  - if [[ -n "$COVERAGE" ]]; then bash <(curl -s https://codecov.io/bash); fi
