@@ -23,13 +23,13 @@ matrix:
     - name: Linux clang
       os: linux
       addons:
-      env: DOCKER=ubuntu:latest CXX=clang++-5.0
+      env: DOCKER=ubuntu:latest COMPILER=clang++-5.0
       
     - name: Linux gcc + Coverage
       os: linux
       services:
         - docker
-      env: DOCKER=ubuntu:latest CXX=c++ COVERAGE=ON
+      env: DOCKER=ubuntu:latest COMPILER=c++ COVERAGE=ON
 
 
 before_install:
@@ -52,7 +52,7 @@ script:
   - |
     if [ -n "$COVERAGE" ]; then 
       if [ -n "$DOCKER" ]; then
-        $DOCKER_RUN sh -c 'cmake . CMAKE_CXX_COMPILER=$CXX -DCMAKE_BUILD_TYPE=Debug'
+        $DOCKER_RUN sh -c 'cmake . -DCMAKE_CXX_COMPILER=$COMPILER -DCMAKE_BUILD_TYPE=Debug'
       else
         cmake . -DCMAKE_BUILD_TYPE=Debug
       fi 
