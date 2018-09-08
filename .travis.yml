@@ -20,7 +20,6 @@ matrix:
 
     - name: Linux clang
       os: linux
-      addons:
       env: DOCKER=ubuntu:latest COMPILER=clang++-5.0
       
     - name: Linux gcc + Coverage
@@ -37,13 +36,11 @@ before_install:
         docker pull $DOCKER
         CONTAINER_ID=$(docker run --detach --tty --volume="$PWD":/ariadne --workdir=/ariadne $DOCKER)
         SH_PREFIX="docker exec --tty $CONTAINER_ID"
-        $SH_PREFIX sh -c "apt update"
-        $SH_PREFIX sh -c "apt install -y curl cmake"
-        $SH_PREFIX sh -c "apt install -y clang++-5.0 libboost-system-dev libboost-serialization-dev libboost-thread-dev libgtk2.0-dev libcairo2-dev libbdd-dev"   
-      else 
-        sudo apt-get install -y libboost-system-dev libboost-serialization-dev libboost-thread-dev libgtk2.0-dev libcairo2-dev libbdd-dev
+        $SH_PREFIX apt update
+        $SH_PREFIX apt install -y cmake   
       fi
     fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then $SH_PREFIX apt install -y clang++-5.0 libboost-system-dev libboost-serialization-dev libboost-thread-dev libgtk2.0-dev libcairo2-dev libbdd-dev; fi
     
 script:
   - CMAKE_ARGS="-DCMAKE_CXX_COMPILER=$COMPILER"
