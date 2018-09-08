@@ -55,7 +55,7 @@ before_install:
   - |
     if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
       if [ -n "$DOCKER" ]; then 
-        sudo apt-get upgrade -y docker;
+        sudo apt-get install -y docker;
         docker pull $DOCKER
         containerid=$(docker run --detach --tty --volume="$PWD":/ariadne $DOCKER)
         DOCKER_SETUP="docker exec --tty $containerid"
