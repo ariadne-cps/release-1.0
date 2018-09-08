@@ -67,8 +67,14 @@ before_install:
     fi
     
 script: 
-  - mkdir build
-  - cd build
+  - |
+    if [ -n "$DOCKER" ]; then
+      $DOCKER_RUN sh -c 'mkdir build'
+      $DOCKER_RUN sh -c 'cd build'
+    else
+      mkdir build
+      cd build
+    fi
   - |
     if [ -n "$COVERAGE" ]; then 
       if [ -n "$DOCKER" ]; then
