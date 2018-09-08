@@ -10,8 +10,6 @@ env:
 branches:
   only:
   - master
-  - coverage
-  - docker
 
 matrix:
   include:
@@ -50,9 +48,9 @@ before_install:
 script:
   - CMAKE_ARGS="-DCMAKE_CXX_COMPILER=$COMPILER"
   - if [[ -n "$COVERAGE" ]]; then CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_BUILD_TYPE=Debug"; fi
-  - $SH_PREFIX sh -c "cmake . $CMAKE_ARGS"
-  - $SH_PREFIX sh -c "make tests"
-  - $SH_PREFIX sh -c "make test"
+  - $SH_PREFIX cmake . $CMAKE_ARGS
+  - $SH_PREFIX make tests
+  - $SH_PREFIX make test
 
 after_success:
   - if [[ -n "$COVERAGE" ]]; then bash <(curl -s https://codecov.io/bash); fi
