@@ -22,35 +22,18 @@ matrix:
 
     - name: Linux clang
       os: linux
-      compiler: clang
       addons:
-        apt:
-          sources:
-            - llvm-toolchain-trusty-5.0
-          packages:
-            - clang-5.0
-      env: MATRIX_EVAL="CXX=clang++-5.0"
+      env: DOCKER=ubuntu:latest CXX=clang++-5.0
       
-    - name: Docker
+    - name: Linux gcc + Coverage
       os: linux
       services:
         - docker
-      env: DOCKER=ubuntu:latest COVERAGE=ON
+      env: DOCKER=ubuntu:latest CXX=c++ COVERAGE=ON
 
-    - name: Linux gcc
-      os: linux
-      compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-7
-      env: CXX=g++-7
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; brew cask uninstall --force oclint; ./install-macos-deps.sh; fi
-  - eval "${MATRIX_EVAL}" 
   - |
     if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
       if [ -n "$DOCKER" ]; then
@@ -59,7 +42,7 @@ before_install:
         DOCKER_RUN="docker exec --tty $containerid"
         $DOCKER_RUN sh -c 'apt update'
         $DOCKER_RUN sh -c 'apt install -y curl cmake'
-        $DOCKER_RUN sh -c 'apt install -y libboost-system-dev libboost-serialization-dev libboost-thread-dev libgtk2.0-dev libcairo2-dev libbdd-dev'   
+        $DOCKER_RUN sh -c 'apt install -y clang++-5.0 libboost-system-dev libboost-serialization-dev libboost-thread-dev libgtk2.0-dev libcairo2-dev libbdd-dev'   
       else 
         sudo apt-get install -y libboost-system-dev libboost-serialization-dev libboost-thread-dev libgtk2.0-dev libcairo2-dev libbdd-dev
       fi
@@ -69,7 +52,7 @@ script:
   - |
     if [ -n "$COVERAGE" ]; then 
       if [ -n "$DOCKER" ]; then
-        $DOCKER_RUN sh -c 'cmake . -DCMAKE_BUILD_TYPE=Debug'
+        $DOCKER_RUN sh -c 'cmake . CMAKE_CXX_COMPILER=$CXX -DCMAKE_BUILD_TYPE=Debug'
       else
         cmake . -DCMAKE_BUILD_TYPE=Debug
       fi 
@@ -88,11 +71,6 @@ script:
       make tests
       make test
     fi 
-    
-    #  if [ -n "$DOCKER" ]; then
-    #   $DOCKER_RUN sh -c 'bash <(curl -s https://codecov.io/bash)'
-    #  else
-    #    bash <(curl -s https://codecov.io/bash)
-    #  fi
+
 after_success:
   - if [ -n "$COVERAGE" ]; then bash <(curl -s https://codecov.io/bash); fi
