@@ -1,10 +1,8 @@
 language: cpp
 
 sudo: enabled
-
-services:
-  - docker
-
+dist: trusty
+      
 env:
   global:
   - LANG="en_US.UTF-8"
@@ -24,7 +22,6 @@ matrix:
 
     - name: Linux clang
       os: linux
-      dist: trusty
       compiler: clang
       addons:
         apt:
@@ -36,13 +33,13 @@ matrix:
       
     - name: Docker
       os: linux
-      dist: trusty
       compiler: gcc
-      env: MATRIX_EVAL="DOCKER=ON"
+      services:
+        - docker
+      env: DOCKER=ubuntu:latest
 
     - name: Linux gcc
       os: linux
-      dist: trusty
       compiler: gcc
       addons:
         apt:
@@ -55,7 +52,14 @@ matrix:
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; brew cask uninstall --force oclint; ./install-macos-deps.sh; fi
   - eval "${MATRIX_EVAL}" 
-  - if [ -n "$DOCKER" ]; then docker run -it ubuntu:bionic; apt update; fi
+  - |
+    if [ -n "$DOCKER" ]; then 
+      docker pull $DOCKER
+      containerid=$(docker run --detach --tty --volume="$PWD":/ariadne --workdir=/ariadne $DOCKER)
+      DOCKER_RUN="docker exec --tty $containerid"
+      DOCKER_RUN sh -c 'apt update'
+      DOCKER_RUN sh -c 'apt install -y libboost-system-dev libboost-serialization-dev libboost-thread-dev libgtk2.0-dev libcairo2-dev libbdd-dev'   
+    fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then 
       sudo apt-get install -y libboost-system-dev libboost-serialization-dev libboost-thread-dev libgtk2.0-dev libcairo2-dev libbdd-dev;
     fi
