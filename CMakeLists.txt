@@ -1,18 +1,12 @@
 cmake_minimum_required (VERSION 2.8.12)
-if(POLICY CMP0045)
-  cmake_policy(SET CMP0045 OLD)
-endif()
 
-if(POLICY CMP0058)
-  cmake_policy(SET CMP0058 NEW)
-endif()
+project(Ariadne)
 
 set(CMAKE_MACOSX_RPATH 1)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 set(CMAKE_CXX_FLAGS  ${CMAKE_CXX_FLAGS} "-Wno-pointer-bool-conversion")
 
 find_package(Boost REQUIRED COMPONENTS system serialization thread)
-find_package(GTK2 REQUIRED)
 find_package(Cairo REQUIRED)
 find_package(Buddy REQUIRED)
 include(UseDoxygen OPTIONAL)
@@ -27,7 +21,7 @@ set(INCLUDE_TARGET "ariadne")
 configure_file ("include/ariadne_install.h.in"
         "${PROJECT_BINARY_DIR}/ariadne_install.h")
 
-include_directories ("include" ${PROJECT_BINARY_DIR} ${Boost_INCLUDE_DIRS} ${GTK2_INCLUDE_DIRS} ${CAIRO_INCLUDE_DIRS})
+include_directories ("include" ${PROJECT_BINARY_DIR} ${Boost_INCLUDE_DIRS} ${CAIRO_INCLUDE_DIRS})
 
 add_library (ariadne SHARED "src/numeric.cc" "src/vector.cc" "src/matrix.cc" "src/linear_programming.cc" 
 							"src/differential.cc" "src/taylor_model.cc" "src/expression.cc" "src/affine.cc" "src/polynomial.cc" 
@@ -39,7 +33,7 @@ add_library (ariadne SHARED "src/numeric.cc" "src/vector.cc" "src/matrix.cc" "sr
 							"src/set_checker.cc" "src/reachability_restriction.cc" "src/reachability_analyser.cc" "src/logging.cc" 
 							"src/graphics.cc" "src/textplot.cc" "src/parametric.cc" "src/verifier.cc" "src/verification_input.cc")
 
-target_link_libraries(ariadne ${Boost_LIBRARIES} ${GTK2_LIBRARIES} ${CAIRO_LIBRARIES} ${Buddy_LIBRARIES})
+target_link_libraries(ariadne ${Boost_LIBRARIES} ${CAIRO_LIBRARIES} ${Buddy_LIBRARIES})
 
 if (CMAKE_BUILD_TYPE MATCHES "Debug")
     include(CodeCoverage)

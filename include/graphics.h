@@ -122,7 +122,6 @@ class Figure
     void draw(const DrawableInterface& shape);
 
     void clear();
-    void display();
     void write(const char* filename);
   public:
     class Data;
