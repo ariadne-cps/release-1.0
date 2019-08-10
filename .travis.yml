@@ -16,6 +16,7 @@ matrix:
 
     - name: macOS clang 
       os: osx
+      osx_image: xcode10.2
       compiler: clang
 
     - name: Linux clang
