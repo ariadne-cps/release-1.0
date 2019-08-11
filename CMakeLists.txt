@@ -48,8 +48,6 @@ add_library(ariadne SHARED $<TARGET_OBJECTS:ariadne-src>)
 
 target_link_libraries(ariadne PUBLIC ${Boost_LIBRARIES} ${CAIRO_LIBRARIES} ${Buddy_LIBRARIES} coverage_config)
 
-cotire(ariadne CONFIGURATIONS None)
-
 install (TARGETS ariadne DESTINATION lib)
 install (FILES ${PROJECT_BINARY_DIR}/ariadne_install.h RENAME ariadne.h DESTINATION include)
 install (FILES ${PROJECT_BINARY_DIR}/config.h DESTINATION include/ariadne)

@@ -41,3 +41,5 @@ add_library(ariadne-src OBJECT
         verifier.cpp
         verification_input.cpp
         )
+
+cotire(ariadne-src CONFIGURATIONS None)
