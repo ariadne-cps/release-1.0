@@ -36,7 +36,7 @@ before_install:
       brew cask uninstall --force oclint
       ./install-macos-deps.sh
     fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then apt install -y clang++-5.0 libboost-system-dev libboost-serialization-dev libboost-thread-dev libgtk2.0-dev libcairo2-dev libbdd-dev; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then apt install -y lcov clang++-5.0 libboost-system-dev libboost-serialization-dev libboost-thread-dev libgtk2.0-dev libcairo2-dev libbdd-dev; fi
     
 script:
   - CMAKE_ARGS="-DCMAKE_CXX_COMPILER=$COMPILER"
