@@ -33,11 +33,10 @@ add_library (ariadne SHARED "src/numeric.cc" "src/vector.cc" "src/matrix.cc" "sr
 							"src/set_checker.cc" "src/reachability_restriction.cc" "src/reachability_analyser.cc" "src/logging.cc" 
 							"src/graphics.cc" "src/textplot.cc" "src/parametric.cc" "src/verifier.cc" "src/verification_input.cc")
 
-target_link_libraries(ariadne ${Boost_LIBRARIES} ${CAIRO_LIBRARIES} ${Buddy_LIBRARIES})
+target_link_libraries(ariadne ${Boost_LIBRARIES} ${CAIRO_LIBRARIES} ${Buddy_LIBRARIES} --coverage)
 
 if (CMAKE_BUILD_TYPE MATCHES "Debug")
-    include(CodeCoverage)
-    APPEND_COVERAGE_COMPILER_FLAGS()
+	set(CMAKE_CXX_FLAGS  ${CMAKE_CXX_FLAGS} "-O0 --coverage -g")
 endif()
 
 cotire(ariadne CONFIGURATIONS None)
