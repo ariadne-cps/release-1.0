@@ -43,3 +43,5 @@ add_library(ariadne-src OBJECT
         )
 
 cotire(ariadne-src CONFIGURATIONS None)
+
+target_link_libraries(ariadne-src PUBLIC coverage_config)
