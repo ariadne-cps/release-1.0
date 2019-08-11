@@ -22,21 +22,30 @@ set(INCLUDE_TARGET "ariadne")
 configure_file ("include/ariadne_install.h.in"
         "${PROJECT_BINARY_DIR}/ariadne_install.h")
 
+add_library(coverage_config INTERFACE)
+
+option(COVERAGE "Enable coverage reporting" OFF)
+if(COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+	# Add required flags (GCC & LLVM/Clang)
+	target_compile_options(coverage_config INTERFACE
+			-O0        # no optimization
+			-g         # generate debug info
+			--coverage # sets all required flags
+			)
+	if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.13)
+		target_link_options(coverage_config INTERFACE --coverage)
+	else()
+		target_link_libraries(coverage_config INTERFACE --coverage)
+	endif()
+endif()
+
 include_directories ("include" ${PROJECT_BINARY_DIR} ${Boost_INCLUDE_DIRS} ${CAIRO_INCLUDE_DIRS})
 
 add_subdirectory(src)
 
 add_library(ariadne SHARED $<TARGET_OBJECTS:ariadne-src>)
 
-target_link_libraries(ariadne ${Boost_LIBRARIES} ${CAIRO_LIBRARIES} ${Buddy_LIBRARIES} --coverage)
-
-if (CMAKE_BUILD_TYPE MATCHES "Debug")
-	target_compile_options(ariadne INTERFACE
-			-O0        # no optimization
-			-g         # generate debug info
-			--coverage # sets all required flags
-			)
-endif()
+target_link_libraries(ariadne PUBLIC ${Boost_LIBRARIES} ${CAIRO_LIBRARIES} ${Buddy_LIBRARIES} coverage_config)
 
 cotire(ariadne CONFIGURATIONS None)
 
