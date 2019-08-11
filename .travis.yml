@@ -1,7 +1,7 @@
 language: cpp
 
 sudo: enabled
-dist: trusty
+dist: bionic
       
 env:
   global:
@@ -22,13 +22,11 @@ matrix:
 
     - name: Linux clang
       os: linux
-      env: DOCKER=ubuntu:latest COMPILER=clang++-5.0
+      env: COMPILER=clang++-5.0
       
     - name: Linux gcc + Coverage
       os: linux
-      services:
-        - docker
-      env: DOCKER=ubuntu:latest COMPILER=c++ COVERAGE=ON
+      env: COMPILER=c++ COVERAGE=ON
 
 before_install:
   - |
@@ -38,24 +36,14 @@ before_install:
       brew cask uninstall --force oclint
       ./install-macos-deps.sh
     fi
-  - |
-    if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-      if [[ -n "$DOCKER" ]]; then
-        docker pull $DOCKER
-        CONTAINER_ID=$(docker run --detach --tty --volume="$PWD":/ariadne --workdir=/ariadne $DOCKER)
-        SH_PREFIX="docker exec --tty $CONTAINER_ID"
-        $SH_PREFIX apt update
-        $SH_PREFIX apt install -y cmake   
-      fi
-    fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then $SH_PREFIX apt install -y clang++-5.0 libboost-system-dev libboost-serialization-dev libboost-thread-dev libgtk2.0-dev libcairo2-dev libbdd-dev; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then apt install -y clang++-5.0 libboost-system-dev libboost-serialization-dev libboost-thread-dev libgtk2.0-dev libcairo2-dev libbdd-dev; fi
     
 script:
   - CMAKE_ARGS="-DCMAKE_CXX_COMPILER=$COMPILER"
   - if [[ -n "$COVERAGE" ]]; then CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_BUILD_TYPE=Debug"; fi
-  - $SH_PREFIX cmake . $CMAKE_ARGS
-  - $SH_PREFIX make tests
-  - $SH_PREFIX make test
+  - cmake . $CMAKE_ARGS
+  - make tests
+  - make test
 
 after_success:
   - |
