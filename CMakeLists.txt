@@ -26,6 +26,7 @@ add_library(coverage_config INTERFACE)
 
 option(COVERAGE "Enable coverage reporting" OFF)
 if(COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+	message(STATUS "Enabled coverage reporting")
 	# Add required flags (GCC & LLVM/Clang)
 	target_compile_options(coverage_config INTERFACE
 			-O0        # no optimization
