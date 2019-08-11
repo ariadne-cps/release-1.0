@@ -50,7 +50,7 @@ before_install:
 
 script:
   - CMAKE_ARGS="-DCMAKE_CXX_COMPILER=$COMPILER"
-  - if [[ -n "$COVERAGE" ]]; then CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_BUILD_TYPE=Debug"; fi
+  - if [[ -n "$COVERAGE" ]]; then CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_BUILD_TYPE=Debug -DCOVERAGE=ON"; fi
   - cmake . $CMAKE_ARGS
   - make tests
   - make test
