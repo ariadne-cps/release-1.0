@@ -17,6 +17,12 @@ addons:
     - libboost-thread-dev
     - libcairo2-dev
     - libbdd-dev
+  homebrew:
+    packages:
+      - lcov
+      - boost
+      - cairo
+      - zlib
 
 branches:
   only:
@@ -43,7 +49,6 @@ before_install:
   - |
     if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
       export PKG_CONFIG_PATH=/usr/local/opt/libffi/lib/pkgconfig
-      brew update
       brew cask uninstall --force oclint
       ./install-macos-deps.sh
     fi
