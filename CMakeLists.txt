@@ -36,7 +36,11 @@ add_library (ariadne SHARED "src/numeric.cc" "src/vector.cc" "src/matrix.cc" "sr
 target_link_libraries(ariadne ${Boost_LIBRARIES} ${CAIRO_LIBRARIES} ${Buddy_LIBRARIES} --coverage)
 
 if (CMAKE_BUILD_TYPE MATCHES "Debug")
-	set(CMAKE_CXX_FLAGS  ${CMAKE_CXX_FLAGS} "-O0 --coverage -g")
+	target_compile_options(ariadne INTERFACE
+			-O0        # no optimization
+			-g         # generate debug info
+			--coverage # sets all required flags
+			)
 endif()
 
 cotire(ariadne CONFIGURATIONS None)
